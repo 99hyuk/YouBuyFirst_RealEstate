@@ -15,6 +15,8 @@ docs/workstreams/<트랙명>/README.md가 있으면 그것도 읽어.
 PR 설명과 작업 기록은 한국어로 작성해줘.
 ```
 
+새 채팅은 이전 채팅의 기억을 자동으로 이어받지 못할 수 있습니다. 그래서 담당 에이전트가 계속 참고해야 할 기억은 채팅 안의 약속이 아니라 저장소 문서에 둡니다. 각 에이전트는 시작할 때 `AGENTS.md`, `docs/CURRENT_HANDOFF.md`, 이 문서, 담당 트랙 README를 읽고 자기 역할을 복원합니다.
+
 ## 트랙 목록
 
 | 트랙 | 역할 | 브랜치 예시 |
@@ -23,6 +25,10 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 | `signal-intelligence` | 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교 | `codex/signal-community-alpha-agent` |
 | `market-simulation-engine` | 시세/호가, Redis quote cache, 모의투자, AI 에이전트 | `codex/market-quote-cache` |
 | `product-ops-experience` | 대시보드, 관리자 경험, 문서, Notion, PR/CI, 배포 정책 | `codex/product-dashboard-shell` |
+
+`product-ops-experience` 안에는 `frontend lane`이 있습니다. 프론트는 완전 후반에 몰아서 하지 않고, fixture/mock 기반 화면 골격을 일찍 만들고 API 계약이 생길 때마다 연결합니다.
+
+`market-simulation-engine` 안에는 `market-data`, `simulation-core`, `agent-runtime` lane이 있습니다. 시세 수집, 모의투자 체결, AI 에이전트 실행은 같은 트랙 안에 있지만 같은 PR에 섞지 않습니다.
 
 ## 충돌 방지 규칙
 

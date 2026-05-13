@@ -61,6 +61,10 @@ codex/<short-task-name>
 
 각 트랙의 상세 범위와 파일 소유권은 `docs/workstreams/` 아래 문서를 따릅니다. 한 채팅은 가능한 한 한 트랙만 담당합니다.
 
+프론트 작업은 `product-ops-experience`의 `frontend lane`으로 시작합니다. 화면 골격과 mock 데이터 작업은 API 구현 전에도 진행할 수 있고, 실제 API 연결은 각 기능 트랙의 계약이 생긴 뒤 별도 PR로 진행합니다.
+
+`market-simulation-engine`은 내부적으로 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눕니다. 시세 수집, 모의 체결, 에이전트 판단은 기술 성격이 다르므로 같은 PR에 섞지 않습니다.
+
 트랙별 GitHub 라벨:
 
 - `stream:data`: `community-data-platform`

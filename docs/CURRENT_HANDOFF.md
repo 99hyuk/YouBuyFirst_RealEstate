@@ -34,6 +34,8 @@
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
 - 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `product-ops-experience` 네 트랙으로 나눕니다.
 - 병렬 작업 PR에는 `stream:data`, `stream:signal`, `stream:market`, `stream:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
+- 프론트 작업은 `product-ops-experience`의 `frontend lane`으로 시작하고 `area:frontend` 라벨을 함께 붙입니다.
+- `market-simulation-engine`은 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눠 시세 수집, 모의 체결, AI 에이전트 작업을 같은 PR에 섞지 않습니다.
 
 ## 현재 GitHub 상태
 

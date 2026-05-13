@@ -74,6 +74,7 @@ codex/product-dashboard-shell
 - `[process]`: 작업 방식, 컨벤션, 인수인계
 - `[data]`: 종목 마스터, fixture, seed
 - `[runtime]`: Docker Compose, 환경 변수, 로컬 실행
+- `[frontend]`: 사용자 화면, 대시보드, UI 상태, mock 화면
 
 ## GitHub 라벨 규칙
 
@@ -99,6 +100,7 @@ PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
 - `area:process`
 - `area:data`
 - `area:runtime`
+- `area:frontend`
 
 트랙 라벨:
 

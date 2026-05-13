@@ -63,6 +63,8 @@ codex/<short-task-name>
 
 다른 채팅에서 작업을 시작하면 담당 트랙 문서를 먼저 읽고, 가능하면 해당 트랙 파일만 수정합니다.
 PR에는 담당 트랙에 맞는 `stream:*` 라벨을 붙이고, Notion 작업 카드에도 `트랙` 값을 채웁니다.
+프론트 작업은 `product-ops-experience`의 `frontend lane`으로 처리하고, `area:frontend` 라벨을 함께 붙입니다.
+`market-simulation-engine` 작업은 필요하면 `market-data`, `simulation-core`, `agent-runtime` lane으로 더 나누어 진행합니다.
 
 PR을 열기 전:
 
