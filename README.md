@@ -66,4 +66,4 @@ docker run --rm -v "${PWD}/worker:/workspace" -w /workspace python:3.10-slim sh 
 
 ## 에이전트/PR 작업 흐름
 
-새 채팅이나 다른 에이전트는 먼저 [AGENTS.md](AGENTS.md), [docs/CURRENT_HANDOFF.md](docs/CURRENT_HANDOFF.md), [docs/FINAL_PRODUCT_PLAN.md](docs/FINAL_PRODUCT_PLAN.md), [docs/CONTEXT.md](docs/CONTEXT.md)를 읽고 시작합니다. 작업은 `docs/work-units/`의 문서 하나와 PR 하나로 쪼개는 것을 기본 규칙으로 둡니다.
+새 채팅이나 다른 에이전트는 먼저 [AGENTS.md](AGENTS.md), [docs/CURRENT_HANDOFF.md](docs/CURRENT_HANDOFF.md), [docs/FINAL_PRODUCT_PLAN.md](docs/FINAL_PRODUCT_PLAN.md), [docs/CONTEXT.md](docs/CONTEXT.md), [docs/GIT_CONVENTION.md](docs/GIT_CONVENTION.md)를 읽고 시작합니다. 작업은 작은 PR 하나로 쪼개는 것을 기본 규칙으로 둡니다.

@@ -1,27 +1,29 @@
 # Context Handoff
 
-Use this file at the start of a new chat or when handing work to another agent. For the newest short summary, read `docs/CURRENT_HANDOFF.md` first.
+새 채팅이나 다른 에이전트에게 작업을 넘길 때 이 파일을 읽습니다. 가장 최신 상태 요약은 `docs/CURRENT_HANDOFF.md`를 먼저 봅니다.
 
-## Product
+## 제품
 
-Human Indicator is a simulated investment product that turns community crowd psychology into stock-level indicators. The final product vision is documented in `docs/FINAL_PRODUCT_PLAN.md`. The current MVP is only the data pipeline: crawl community posts, detect stock mentions, classify investment sentiment, and store/query metrics.
+인간지표는 커뮤니티 군중 심리를 종목 단위 지표로 바꾸는 모의투자/분석 제품입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 MVP는 데이터 파이프라인에 집중합니다.
 
-## Current MVP
+## 현재 MVP
 
-- Sources: Naver Finance discussion boards and FM Korea stock board.
-- Backend: Spring Boot owns ingestion, validation, persistence, metrics, and Swagger admin APIs.
-- Worker: Python owns crawling, Playwright rendering fallback, instrument matching, and LLM sentiment analysis.
-- Runtime: Docker Compose starts MySQL, backend, and worker.
+- Source: 네이버 종토방, 에펨코리아 주식 게시판
+- Backend: Spring Boot가 ingestion, validation, persistence, metrics, Swagger admin API를 담당
+- Worker: Python이 crawling, Playwright rendering fallback, instrument matching, LLM sentiment analysis를 담당
+- Runtime: Docker Compose가 MySQL, backend, worker를 실행
 
-## Important Decisions
+## 중요한 결정
 
-- Work conservatively: one branch and one PR per feature or bugfix.
-- Keep PRs small enough to review and debug.
-- Keep `docs/CURRENT_HANDOFF.md` updated so future chats can continue without reconstructing context.
-- No dashboard, OCR, real trading, user auth, proxy rotation, CAPTCHA bypass, or login-session scraping in this MVP.
-- Store limited raw content only: title, content snippet, URL, author hash, published time, content hash.
-- `OPENAI_API_KEY` enables OpenAI analysis; otherwise the worker uses mock sentiment for local demos.
-- MySQL host port is `3307` to avoid colliding with local MySQL on `3306`.
+- 한 작업은 한 브랜치와 한 PR로 처리합니다.
+- PR은 작게 유지합니다. 선호는 5개 파일 이하, 허용은 10개 파일 이하입니다.
+- 사용자용 스크립트는 두지 않고, 에이전트가 `git`과 `gh`를 직접 사용합니다.
+- PR 제목과 커밋 본문은 한국어로 작성합니다.
+- PR 제목은 `[타입][영역] 한국어 요약` 형식을 씁니다.
+- 현재 MVP에는 dashboard, OCR, 실거래, user auth, proxy rotation, CAPTCHA bypass, login-session scraping을 넣지 않습니다.
+- 원문은 제한 저장합니다: title, content snippet, URL, author hash, published time, content hash.
+- `OPENAI_API_KEY`가 있으면 OpenAI 분석을 사용하고, 없으면 로컬 demo용 mock sentiment를 사용합니다.
+- MySQL host port는 로컬 `3306` 충돌을 피하기 위해 `3307`을 사용합니다.
 
 ## Working URLs
 
@@ -29,14 +31,13 @@ Human Indicator is a simulated investment product that turns community crowd psy
 - Swagger: `http://localhost:8080/swagger-ui.html`
 - MySQL: `localhost:3307`
 
-## Verification Snapshot
+## 마지막 검증 Snapshot
 
-Last known local checks:
-
-- Backend Docker test: passed, 2 tests.
-- Worker Docker test: passed, 4 tests.
-- Docker Compose: starts MySQL, backend, worker.
-- Manual worker batch: successfully stored Naver and FM Korea crawl runs.
+- PR #1 GitHub Actions: Backend pass, Worker pass
+- Backend Docker test: pass, 2 tests
+- Worker Docker test: pass, 4 tests
+- Docker Compose: MySQL, backend, worker start 확인
+- Manual worker batch: Naver와 FM Korea crawl run 저장 확인
 
 ## Read First
 
@@ -46,4 +47,5 @@ Last known local checks:
 4. `docs/PROJECT_BRIEF.md`
 5. `docs/TASKS.md`
 6. `docs/WORKFLOW.md`
-7. Latest file in `docs/work-units/`
+7. `docs/GIT_CONVENTION.md`
+8. Latest file in `docs/work-units/`
