@@ -6,9 +6,9 @@
 
 | 질문 | 볼 태그 |
 | --- | --- |
+| 어느 병렬 트랙인가? | `track:*` |
 | 어떤 종류의 작업인가? | `type:*` |
 | 어느 코드/문서 영역인가? | `area:*` |
-| 어느 병렬 트랙인가? | `stream:*` |
 | 리뷰 크기가 어느 정도인가? | `size:*` |
 | Notion에서 지금 상태는? | `상태` |
 | Notion에서 다음 우선순위는? | `우선순위` |
@@ -28,7 +28,21 @@
 | `type:data` | seed, fixture, 종목 마스터 데이터 | 종목 CSV, 테스트 HTML |
 | `type:chore` | 기타 유지보수 | 사소한 정리, 설정 보정 |
 
+### Track
+
+`track:*`는 병렬 작업의 책임 경계입니다. 새 채팅에서 가장 먼저 고르는 라벨입니다.
+
+| 라벨 | 트랙 | 담당 |
+| --- | --- | --- |
+| `track:data` | `community-data-platform` | 커뮤니티 수집, 소스 어댑터, 수집 타깃 |
+| `track:signal` | `signal-intelligence` | 종목 인식, 감성 분석, 열기 지수 |
+| `track:market` | `market-simulation-engine` | 시세, 모의투자, 에이전트 런타임 |
+| `track:frontend` | `frontend-experience` | 사용자 대시보드, UI, mock data, API 연동 |
+| `track:product` | `product-planning-ops` | 기획 조율, 문서, Notion, PR/CI, 배포 정책 |
+
 ### Area
+
+`area:*`는 실제로 건드린 코드나 문서 표면입니다. 리뷰 경로를 돕는 보조 라벨이라, 애매하면 생략해도 됩니다.
 
 | 라벨 | 의미 |
 | --- | --- |
@@ -40,16 +54,6 @@
 | `area:process` | 작업 방식, 컨벤션, 인수인계 |
 | `area:data` | 종목 마스터, fixture, seed |
 | `area:runtime` | Docker Compose와 런타임 설정 |
-
-### Stream
-
-| 라벨 | 트랙 | 담당 |
-| --- | --- | --- |
-| `stream:data` | `community-data-platform` | 커뮤니티 수집, 소스 어댑터, 수집 타깃 |
-| `stream:signal` | `signal-intelligence` | 종목 인식, 감성 분석, 열기 지수 |
-| `stream:market` | `market-simulation-engine` | 시세, 모의투자, 에이전트 런타임 |
-| `stream:frontend` | `frontend-experience` | 사용자 대시보드, UI, mock data, API 연동 |
-| `stream:product` | `product-planning-ops` | 기획 조율, 문서, Notion, PR/CI, 배포 정책 |
 
 ### Size
 
@@ -96,7 +100,7 @@
 
 ## 작성 원칙
 
-- PR 제목은 명사형으로 끝냅니다. 예: `프론트 트랙과 통합 브랜치 전략 분리`
+- PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[product][docs] 프론트 트랙과 통합 브랜치 전략 분리`
 - PR 본문은 카드형 구조로 작성합니다.
 - Notion 작업 카드는 PR 본문과 같은 흐름을 따릅니다.
 - 명령어는 PR 본문 첫 화면에 길게 늘어놓지 않고 접힌 영역에 둡니다.

@@ -23,9 +23,9 @@
 - 사용자용 PowerShell 스크립트는 두지 않습니다.
 - PR 생성, 라벨 지정, CI 확인, merge는 Codex/에이전트가 `git`과 `gh`로 직접 처리합니다.
 - PR 설명과 커밋 본문은 한국어로 작성합니다.
-- PR 제목은 `[타입][영역] 명사형 요약` 형식을 사용합니다. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
+- PR 제목은 `[트랙][타입] 명사형 요약` 형식을 사용합니다. 예: `[product][docs] 에이전트 가이드와 PR 문장 정리`. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
 - PR 본문은 PR #7처럼 카드형 구조로 씁니다. 검증 섹션에는 명령어 나열보다 사람이 읽을 수 있는 통과 결과와 확인 사실을 먼저 적습니다.
-- PR 본문과 Notion 작업일지는 같은 카드 구조를 씁니다: 한눈에 보기, 변경 내용, 검증 결과, 리스크, 다음 에이전트 메모, 라벨/태그 참고.
+- PR 본문과 Notion 작업일지는 같은 카드 구조를 씁니다: 한눈에 보기, 변경 내용, PR 범위, 검증 결과, 리스크, 다음 에이전트 메모, 라벨/태그 참고.
 - GitHub 라벨과 Notion 태그 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
 - Notion 허브는 B + A 하이브리드 구조를 씁니다: 첫 화면은 command center, 세부 기록은 PR 카드 로그입니다.
 - 너무 큰 PR을 피하기 위해 5개 파일 이하를 선호하고, 10개 파일을 넘으면 분리 가능성을 먼저 검토합니다.
@@ -34,8 +34,9 @@
 - 소스별 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다.
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
 - 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `frontend-experience`, `product-planning-ops` 다섯 트랙으로 나눕니다.
-- 병렬 작업 PR에는 `stream:data`, `stream:signal`, `stream:market`, `stream:frontend`, `stream:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
-- 프론트 작업은 `frontend-experience` 트랙으로 시작하고 `stream:frontend`, `area:frontend` 라벨을 함께 붙입니다.
+- 병렬 작업 PR에는 `track:data`, `track:signal`, `track:market`, `track:frontend`, `track:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
+- `area:*` 라벨은 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
+- 프론트 작업은 `frontend-experience` 트랙으로 시작하고 `track:frontend` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
 - 기획/조율/문서/Notion/PR 운영은 `product-planning-ops` 트랙이 맡습니다.
 - `market-simulation-engine`은 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눠 시세 수집, 모의 체결, AI 에이전트 작업을 같은 PR에 섞지 않습니다.
 - 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
@@ -46,7 +47,7 @@
 - Default branch: `main`
 - Bootstrap PR: https://github.com/99hyuk/YouBuyFirst/pull/1
 - PR #1 상태: CI 통과 후 squash merge 완료
-- GitHub labels: `type:*`, `area:*`, `size:*` 라벨 생성 완료
+- GitHub labels: `track:*`, `type:*`, `size:*`, `area:*` 라벨 생성 완료
 - 현재 checkout은 작업자별로 달라질 수 있으므로 `git status --short --branch`로 확인합니다.
 
 ## 현재 Notion 상태
@@ -71,11 +72,11 @@
 1. 먼저 `AGENTS.md`, 이 파일, `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
 2. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
 3. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 인프라 변경만 담습니다.
-4. 제목과 GitHub 라벨로 타입, 영역, 크기를 구분합니다.
+4. 제목과 GitHub 라벨로 트랙, 타입, 크기를 구분합니다. 영역은 필요할 때만 보조 라벨로 표시합니다.
 5. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
 6. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
 7. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
-8. PR 제목은 명사형으로 끝내고, PR 본문과 Notion 작업 카드는 카드형 구조로 씁니다.
+8. PR 제목은 명사형으로 끝내고, PR 본문과 Notion 작업 카드는 사람이 읽기 쉬운 카드형 구조로 씁니다.
 9. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
 
 ## 가장 가까운 다음 작업 후보

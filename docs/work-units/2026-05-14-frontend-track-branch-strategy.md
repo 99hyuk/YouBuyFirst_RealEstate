@@ -8,7 +8,7 @@
 
 - `frontend-experience` 트랙 문서 추가
 - `product-ops-experience`를 `product-planning-ops`로 재정의
-- `stream:frontend` GitHub 라벨과 Notion 트랙 옵션 추가
+- `track:frontend` GitHub 라벨과 Notion 트랙 옵션 추가
 - `main` 우선 통합과 짧은 `track/*` 브랜치 예외 전략 문서화
 - AGENTS, CURRENT_HANDOFF, WORKFLOW, GIT_CONVENTION, TASKS 갱신
 

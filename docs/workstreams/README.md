@@ -59,17 +59,17 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 
 ## PR 라벨
 
-기존 `type:*`, `area:*`, `size:*` 라벨에 더해 `stream:*` 라벨을 반드시 붙입니다.
+PR에는 `track:*`, `type:*`, `size:*` 라벨을 반드시 붙입니다. `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
 
 라벨과 Notion 태그의 상세 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
 
 | 트랙 | GitHub 라벨 | 브랜치 prefix | Notion 트랙 |
 | --- | --- | --- | --- |
-| `community-data-platform` | `stream:data` | `codex/data-*` | `community-data-platform` |
-| `signal-intelligence` | `stream:signal` | `codex/signal-*` | `signal-intelligence` |
-| `market-simulation-engine` | `stream:market` | `codex/market-*` | `market-simulation-engine` |
-| `frontend-experience` | `stream:frontend` | `codex/frontend-*` | `frontend-experience` |
-| `product-planning-ops` | `stream:product` | `codex/product-*` | `product-planning-ops` |
+| `community-data-platform` | `track:data` | `codex/data-*` | `community-data-platform` |
+| `signal-intelligence` | `track:signal` | `codex/signal-*` | `signal-intelligence` |
+| `market-simulation-engine` | `track:market` | `codex/market-*` | `market-simulation-engine` |
+| `frontend-experience` | `track:frontend` | `codex/frontend-*` | `frontend-experience` |
+| `product-planning-ops` | `track:product` | `codex/product-*` | `product-planning-ops` |
 
 예시:
 

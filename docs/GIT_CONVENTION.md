@@ -60,19 +60,19 @@ codex/product-track-branch-strategy
 형식:
 
 ```text
-[타입][영역] 명사형 요약
+[트랙][타입] 명사형 요약
 ```
 
 예시:
 
 ```text
-[feat][backend] 커뮤니티 게시글 중복 저장 방지
-[fix][worker] 에펨코리아 게시글 시간 파싱 보정
-[docs][process] PR 크기와 라벨 규칙 정리
-[infra][ci] 백엔드와 워커 테스트 워크플로 분리
+[data][feat] 커뮤니티 게시글 중복 저장 방지
+[data][fix] 에펨코리아 게시글 시간 파싱 보정
+[product][docs] PR 크기와 라벨 규칙 정리
+[product][infra] 백엔드와 워커 테스트 워크플로 분리
 ```
 
-제목은 가능한 한 `~한다`, `~했다`, `~함` 대신 명사형으로 끝냅니다. GitHub 라벨과 Notion 작업명도 같은 요약을 쓰면 추적하기 쉽습니다.
+첫 번째 태그는 담당 트랙, 두 번째 태그는 작업 타입입니다. 제목은 가능한 한 `~한다`, `~했다`, `~함` 대신 명사형으로 끝냅니다. GitHub 라벨과 Notion 작업명도 같은 요약을 쓰면 추적하기 쉽습니다.
 
 ## 타입 태그
 
@@ -84,6 +84,14 @@ codex/product-track-branch-strategy
 - `[infra]`: Docker, CI, 배포, 개발 환경
 - `[data]`: 종목 마스터, seed, fixture 같은 데이터 변경
 - `[chore]`: 기타 유지보수
+
+## 트랙 태그
+
+- `[data]`: `community-data-platform`
+- `[signal]`: `signal-intelligence`
+- `[market]`: `market-simulation-engine`
+- `[frontend]`: `frontend-experience`
+- `[product]`: `product-planning-ops`
 
 ## 영역 태그
 
@@ -98,7 +106,7 @@ codex/product-track-branch-strategy
 
 ## GitHub 라벨 규칙
 
-PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
+PR을 만들 때 제목 태그와 같은 의미의 `track:*`, `type:*` 라벨을 붙입니다. `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
 
 타입 라벨:
 
@@ -111,6 +119,14 @@ PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
 - `type:data`
 - `type:chore`
 
+트랙 라벨:
+
+- `track:data`: `community-data-platform`
+- `track:signal`: `signal-intelligence`
+- `track:market`: `market-simulation-engine`
+- `track:frontend`: `frontend-experience`
+- `track:product`: `product-planning-ops`
+
 영역 라벨:
 
 - `area:backend`
@@ -121,14 +137,6 @@ PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
 - `area:data`
 - `area:runtime`
 - `area:frontend`
-
-트랙 라벨:
-
-- `stream:data`: `community-data-platform`
-- `stream:signal`: `signal-intelligence`
-- `stream:market`: `market-simulation-engine`
-- `stream:frontend`: `frontend-experience`
-- `stream:product`: `product-planning-ops`
 
 크기 라벨:
 
@@ -150,13 +158,13 @@ PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
 커밋 제목은 PR 제목과 같은 형식을 씁니다.
 
 ```text
-[타입][영역] 명사형 요약
+[트랙][타입] 명사형 요약
 ```
 
 커밋 본문이 필요하면 한국어로 씁니다.
 
 ```text
-[fix][worker] 에펨코리아 시간 파싱 보정
+[data][fix] 에펨코리아 시간 파싱 보정
 
 상대 시간과 당일 시각 표기를 KST 기준으로 정규화한다.
 기존 fixture를 확장해 중복 URL 제거도 함께 검증한다.
@@ -169,7 +177,7 @@ PR 본문은 다음을 반드시 포함합니다.
 - 무엇을 바꿨는지
 - 어떤 트랙의 작업인지
 - 리뷰어가 먼저 볼 곳
-- 왜 이 크기로 묶었는지
+- 이 PR에 포함한 것과 제외한 것
 - 검증 결과
 - 남은 리스크
 - 후속 작업이 있다면 명시
@@ -180,7 +188,7 @@ PR 본문은 Notion 작업 카드와 같은 카드형 순서를 따릅니다. PR
 1. `🧭 한눈에 보기`
 2. `🧩 바뀐 내용`
 3. `🔎 리뷰 가이드`
-4. `📦 왜 이 단위인가`
+4. `📌 PR 범위`
 5. `✅ 검증 결과`
 6. `⚠️ 리스크와 후속 작업`
 7. `🗂️ Notion 기록`

@@ -4,7 +4,7 @@
 
 ## 제품
 
-너나사 (YouBuyFirst)는 커뮤니티 군중 심리, 시장 시세, AI 분석, 모의투자를 결합한 투자 참고형 시뮬레이터입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 MVP는 데이터 파이프라인에 집중합니다.
+너나사 (YouBuyFirst)는 커뮤니티 군중 심리, 시장 시세, AI 분석, 모의투자를 결합한 투자 참고형 시뮬레이터입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 실행 기반은 데이터 파이프라인 MVP입니다. 이후 구현은 `docs/workstreams/`의 병렬 트랙 단위로 진행합니다.
 
 ## 현재 MVP
 
@@ -20,8 +20,8 @@
 - PR은 작게 유지합니다. 선호는 5개 파일 이하, 허용은 10개 파일 이하입니다.
 - 사용자용 스크립트는 두지 않고, 에이전트가 `git`과 `gh`를 직접 사용합니다.
 - PR 제목과 커밋 본문은 한국어로 작성합니다.
-- PR 제목은 `[타입][영역] 한국어 요약` 형식을 씁니다.
-- 현재 MVP에는 dashboard, OCR, 실거래, user auth, proxy rotation, CAPTCHA bypass, login-session scraping을 넣지 않습니다.
+- PR 제목은 `[트랙][타입] 명사형 요약` 형식을 씁니다.
+- 담당 트랙과 명시 요청 없이 OCR, 실거래, user auth, proxy rotation, CAPTCHA bypass, login-session scraping을 넣지 않습니다.
 - 원문은 제한 저장합니다: title, content snippet, URL, author hash, published time, content hash.
 - 공개 UI는 원문보다 집계 지표, 대표 키워드, 감성 비율, AI 재서술 근거를 중심으로 보여줍니다.
 - 병렬 작업은 `docs/workstreams/README.md`의 다섯 트랙으로 나눕니다.

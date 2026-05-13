@@ -28,6 +28,7 @@
 - [x] 프론트를 `frontend-experience` 독립 트랙으로 분리
 - [x] 의존도에 따른 `main`/`track/*` 하이브리드 브랜치 전략 정리
 - [x] PR/Notion 카드형 기록과 라벨/태그 사전 정리
+- [x] AGENTS 범위 설명과 PR 라벨/문장 체계 정리
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성
