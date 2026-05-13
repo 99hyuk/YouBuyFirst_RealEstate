@@ -69,7 +69,8 @@ codex/<short-task-name>
 - `product-planning-ops`: 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책
 
 다른 채팅에서 작업을 시작하면 담당 트랙 문서를 먼저 읽고, 가능하면 해당 트랙 파일만 수정합니다.
-PR에는 담당 트랙에 맞는 `track:*` 라벨을 붙이고, Notion 작업 카드에도 `트랙` 값을 채웁니다.
+PR에는 담당 트랙에 맞는 작업 트랙 `track:*` 라벨을 붙이고, Notion 작업 카드에도 `트랙` 값을 채웁니다.
+작업 타입은 `type:*` 라벨로 표시합니다. 실제로 건드린 코드나 문서 표면은 개발 영역 `area:*` 라벨로 표시하되, 필요할 때만 붙입니다.
 프론트 작업은 `frontend-experience` 트랙으로 처리하고, `track:frontend` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
 `market-simulation-engine` 작업은 필요하면 `market-data`, `simulation-core`, `agent-runtime` lane으로 더 나누어 진행합니다.
 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.

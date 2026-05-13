@@ -29,6 +29,7 @@
 - [x] 의존도에 따른 `main`/`track/*` 하이브리드 브랜치 전략 정리
 - [x] PR/Notion 카드형 기록과 라벨/태그 사전 정리
 - [x] AGENTS 범위 설명과 PR 라벨/문장 체계 정리
+- [x] 라벨 설명을 작업 트랙/작업 타입/개발 영역으로 명확화
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성

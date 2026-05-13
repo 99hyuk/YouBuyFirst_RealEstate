@@ -35,7 +35,7 @@
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
 - 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `frontend-experience`, `product-planning-ops` 다섯 트랙으로 나눕니다.
 - 병렬 작업 PR에는 `track:data`, `track:signal`, `track:market`, `track:frontend`, `track:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
-- `area:*` 라벨은 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
+- `type:*`는 작업 타입, `track:*`는 작업 트랙, `area:*`는 개발 영역입니다. `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
 - 프론트 작업은 `frontend-experience` 트랙으로 시작하고 `track:frontend` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
 - 기획/조율/문서/Notion/PR 운영은 `product-planning-ops` 트랙이 맡습니다.
 - `market-simulation-engine`은 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눠 시세 수집, 모의 체결, AI 에이전트 작업을 같은 PR에 섞지 않습니다.
@@ -72,7 +72,7 @@
 1. 먼저 `AGENTS.md`, 이 파일, `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
 2. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
 3. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 인프라 변경만 담습니다.
-4. 제목과 GitHub 라벨로 트랙, 타입, 크기를 구분합니다. 영역은 필요할 때만 보조 라벨로 표시합니다.
+4. 제목과 GitHub 라벨로 작업 트랙, 작업 타입, 크기를 구분합니다. 개발 영역은 필요할 때만 보조 라벨로 표시합니다.
 5. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
 6. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
 7. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.

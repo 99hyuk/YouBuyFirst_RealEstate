@@ -72,9 +72,9 @@ codex/product-track-branch-strategy
 [product][infra] 백엔드와 워커 테스트 워크플로 분리
 ```
 
-첫 번째 태그는 담당 트랙, 두 번째 태그는 작업 타입입니다. 제목은 가능한 한 `~한다`, `~했다`, `~함` 대신 명사형으로 끝냅니다. GitHub 라벨과 Notion 작업명도 같은 요약을 쓰면 추적하기 쉽습니다.
+첫 번째 태그는 작업 트랙, 두 번째 태그는 작업 타입입니다. 제목은 가능한 한 `~한다`, `~했다`, `~함` 대신 명사형으로 끝냅니다. GitHub 라벨과 Notion 작업명도 같은 요약을 쓰면 추적하기 쉽습니다.
 
-## 타입 태그
+## 작업 타입 태그
 
 - `[feat]`: 사용자나 시스템의 새 동작 추가
 - `[fix]`: 버그 수정
@@ -85,7 +85,7 @@ codex/product-track-branch-strategy
 - `[data]`: 종목 마스터, seed, fixture 같은 데이터 변경
 - `[chore]`: 기타 유지보수
 
-## 트랙 태그
+## 작업 트랙 태그
 
 - `[data]`: `community-data-platform`
 - `[signal]`: `signal-intelligence`
@@ -93,7 +93,7 @@ codex/product-track-branch-strategy
 - `[frontend]`: `frontend-experience`
 - `[product]`: `product-planning-ops`
 
-## 영역 태그
+## 개발 영역 태그
 
 - `[backend]`: Spring Boot, DB schema, API, JPA
 - `[worker]`: Python crawler, matcher, LLM provider
@@ -106,9 +106,9 @@ codex/product-track-branch-strategy
 
 ## GitHub 라벨 규칙
 
-PR을 만들 때 제목 태그와 같은 의미의 `track:*`, `type:*` 라벨을 붙입니다. `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
+PR을 만들 때 제목 태그와 같은 의미의 작업 트랙 `track:*`, 작업 타입 `type:*` 라벨을 붙입니다. 개발 영역 `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
 
-타입 라벨:
+작업 타입 라벨:
 
 - `type:feat`
 - `type:fix`
@@ -119,7 +119,7 @@ PR을 만들 때 제목 태그와 같은 의미의 `track:*`, `type:*` 라벨을
 - `type:data`
 - `type:chore`
 
-트랙 라벨:
+작업 트랙 라벨:
 
 - `track:data`: `community-data-platform`
 - `track:signal`: `signal-intelligence`
@@ -127,7 +127,7 @@ PR을 만들 때 제목 태그와 같은 의미의 `track:*`, `type:*` 라벨을
 - `track:frontend`: `frontend-experience`
 - `track:product`: `product-planning-ops`
 
-영역 라벨:
+개발 영역 라벨:
 
 - `area:backend`
 - `area:worker`
