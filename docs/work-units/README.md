@@ -1,6 +1,13 @@
-# Work Units
+# 작업 단위 문서
 
-Each file in this directory describes one small unit of work that should map to one branch and one PR.
+이 폴더의 문서는 하나의 bounded branch/PR을 설명합니다.
 
-Use `scripts/new-work-unit.ps1` to create a new file from the standard template.
+사용자용 생성 스크립트는 두지 않습니다. 에이전트가 필요할 때 직접 `YYYY-MM-DD-<작업명>.md` 파일을 추가합니다.
 
+짧게 적습니다.
+
+- 목표
+- 범위
+- 제외 범위
+- 검증
+- 다음 에이전트가 알아야 할 메모

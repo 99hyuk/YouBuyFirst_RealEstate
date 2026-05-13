@@ -14,17 +14,16 @@
 - [x] Docker Compose 로컬 실행 구성
 - [x] 프로젝트 공통 기획/에이전트 문서 추가
 - [x] GitHub Actions CI 추가
-- [x] PR 자동화 스크립트 추가
 - [x] 작업 단위 문서 체계 추가
 - [x] 최종 제품 기획안 문서 추가
+- [x] GitHub CLI 인증 확인
+- [x] GitHub remote 연결
+- [x] 첫 bootstrap PR 생성
+- [x] 첫 bootstrap PR merge
 
 ## 지금 가장 가까운 작업
 
-- [x] GitHub CLI 설치 확인
-- [x] `gh auth login` 완료 확인
-- [x] GitHub remote 연결
-- [x] 첫 bootstrap draft PR 생성
-- [ ] 첫 bootstrap draft PR 생성
+- [x] 사용자용 스크립트 제거와 한국어 PR 컨벤션 정리
 - [ ] 실제 네이버 종토방 HTML 구조에 맞춘 parser 보강
 - [ ] 실제 에펨코리아 주식 게시판 구조에 맞춘 parser 보강
 - [ ] worker가 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
@@ -37,7 +36,7 @@
 - [ ] retention cleanup 테스트 추가
 - [ ] 사용자용 sentiment ranking API 추가
 - [ ] 30분 집계 산식 검증 테스트 추가
-- [ ] Docker Compose smoke test 스크립트 추가
+- [ ] Docker Compose smoke test 정리
 
 ## 최종 제품 후순위 작업
 

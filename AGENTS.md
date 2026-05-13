@@ -1,25 +1,25 @@
-# Agent Working Guide
+# 에이전트 작업 가이드
 
-This repository implements the Human Indicator MVP: a community crawling and sentiment ingestion pipeline.
+이 저장소는 인간지표 MVP를 구현합니다. 현재 범위는 커뮤니티 크롤링과 감성 ingestion 파이프라인입니다.
 
-## Product Goal
+## 제품 목표
 
-Collect new posts from Naver Finance discussion boards and FM Korea stock boards every 30 minutes, detect mentions of Korean stocks plus US-listed stocks/ETFs, classify each mention as `bullish`, `bearish`, or `neutral`, and persist metrics through the Spring Boot backend.
+네이버 종토방과 에펨코리아 주식 게시판에서 신규 글을 수집하고, 국내 주식과 미국 상장 주식/ETF 언급을 인식한 뒤, 각 언급을 `bullish`, `bearish`, `neutral`로 분류해 Spring Boot 백엔드에 저장합니다.
 
-## Current Architecture
+## 현재 아키텍처
 
-- `backend/`: Spring Boot 3.3, Java 21, JPA, Flyway, MySQL, Swagger.
-- `worker/`: Python worker with APScheduler, HTTPX, BeautifulSoup, Playwright fallback, OpenAI provider abstraction.
-- `docker-compose.yml`: local MySQL + backend + worker runtime.
+- `backend/`: Spring Boot 3.3, Java 21, JPA, Flyway, MySQL, Swagger
+- `worker/`: Python worker, APScheduler, HTTPX, BeautifulSoup, Playwright fallback, OpenAI provider abstraction
+- `docker-compose.yml`: local MySQL + backend + worker runtime
 
-## Boundaries
+## 범위 제한
 
-- Do not add dashboard UI, OCR asset sync, real trading, or login/security unless a task explicitly asks for it.
-- Do not add CAPTCHA bypass, login-session scraping, proxy rotation, or fingerprint evasion.
-- Prefer public HTTP crawling first; use Playwright only as a rendering fallback.
-- Keep stored raw content limited to title, content snippet, URL, author hash, published time, and content hash.
+- 명시 요청 없이 dashboard UI, OCR 자산 연동, 실거래, 로그인/보안을 추가하지 않습니다.
+- CAPTCHA 우회, 로그인 세션 크롤링, 프록시 회전, fingerprint 위장은 하지 않습니다.
+- 공개 HTTP 수집을 우선하고, Playwright는 렌더링 fallback으로만 사용합니다.
+- 저장 원문은 제목, 본문 일부, URL, 작성자 해시, 작성 시각, 원문 해시로 제한합니다.
 
-## Verification Commands
+## 검증 명령
 
 Backend:
 
@@ -46,28 +46,30 @@ Swagger:
 http://localhost:8080/swagger-ui.html
 ```
 
-## Branch/PR Habit
+## 브랜치와 PR 규칙
 
-Use one branch per work unit. This is a hard project habit: one feature, bugfix, or infrastructure change maps to one PR.
+작업 하나는 브랜치 하나와 PR 하나로 처리합니다. 기능 하나, 버그 하나, 문서 정리 하나, 인프라 변경 하나를 한 PR에 담습니다.
 
 ```text
 codex/<short-task-name>
 ```
 
-Before opening a PR:
+PR을 열기 전:
 
-1. Read `docs/CONTEXT.md`.
-2. Read `docs/CURRENT_HANDOFF.md`.
-3. Create or update a file in `docs/work-units/`.
-4. Run relevant tests.
-5. Update `docs/CURRENT_HANDOFF.md` and `docs/TASKS.md` if the task changes project state or scope.
-6. Use `scripts/open-pr.ps1` when GitHub remote and `gh` are configured.
+1. `docs/CONTEXT.md`를 읽습니다.
+2. `docs/CURRENT_HANDOFF.md`를 읽습니다.
+3. `docs/GIT_CONVENTION.md`를 읽습니다.
+4. 필요한 경우 `docs/work-units/`에 작업 단위 문서를 만들거나 갱신합니다.
+5. 관련 테스트를 실행합니다.
+6. 작업 상태나 범위가 바뀌면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
+7. `git`과 `gh`로 직접 push, PR 생성, 라벨 지정, CI 확인을 수행합니다.
 
-Do not mix unrelated backend, worker, infrastructure, and product-scope changes in one PR unless the repository is being bootstrapped.
+무관한 backend, worker, infra, product-scope 변경을 한 PR에 섞지 않습니다.
 
-## Planning References
+## 참고 문서
 
-- Final product vision: `docs/FINAL_PRODUCT_PLAN.md`
-- Current MVP scope: `docs/PROJECT_BRIEF.md`
-- Current handoff state: `docs/CURRENT_HANDOFF.md`
-- PR workflow: `docs/WORKFLOW.md` and `docs/PR_AUTOMATION.md`
+- 최종 제품 기획: `docs/FINAL_PRODUCT_PLAN.md`
+- 현재 MVP 범위: `docs/PROJECT_BRIEF.md`
+- 현재 인수인계 상태: `docs/CURRENT_HANDOFF.md`
+- Git/PR 컨벤션: `docs/GIT_CONVENTION.md`
+- 작업 방식: `docs/WORKFLOW.md`
