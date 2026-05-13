@@ -2,7 +2,7 @@
 
 ## Goal
 
-Build the first Human Indicator data pipeline MVP.
+Build the first YouBuyFirst data pipeline MVP.
 
 ## Scope
 

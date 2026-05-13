@@ -1,4 +1,4 @@
-# 인간지표 MVP
+# 너나사 (YouBuyFirst) MVP
 
 커뮤니티 게시글을 30분 단위로 수집하고, 종목 언급량과 `bullish / bearish / neutral` 투자 심리를 Spring Boot 중심 파이프라인에 저장하는 MVP입니다.
 

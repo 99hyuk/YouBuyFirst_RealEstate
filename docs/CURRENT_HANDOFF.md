@@ -6,7 +6,7 @@
 
 ## 지금까지 한 일
 
-- 인간지표 MVP 저장소를 초기 구성했습니다.
+- 너나사 (YouBuyFirst) MVP 저장소를 초기 구성했습니다.
 - Spring Boot 백엔드, Python worker, MySQL, Docker Compose 기반 로컬 실행 구성을 만들었습니다.
 - 네이버 종토방과 에펨코리아 게시글 수집, 종목 매칭, LLM provider 추상화, mock sentiment fallback, ingestion API, admin 조회 API를 구현했습니다.
 - 제한 원문 저장 정책을 반영했습니다: 제목, 본문 일부, URL, 작성 시각, 작성자 표시명 해시, 원문 해시만 저장합니다.
