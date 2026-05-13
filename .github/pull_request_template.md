@@ -1,6 +1,6 @@
 ## 🧭 한눈에 보기
 
-> 이번 PR은 <한 문장 요약>
+> 이번 PR은 <한 문장 요약>입니다.
 
 | 항목 | 내용 |
 | --- | --- |
@@ -8,8 +8,9 @@
 | 영역 | `area:` |
 | 트랙 | `stream:` |
 | 크기 | `size:` |
-| 상태 | CI 확인 전 |
-| Notion 기록 | 작업일지 반영 전 |
+| 기준 문서 | `docs/LABEL_GUIDE.md` |
+| 상태 | CI 확인 전 / CI 통과 / 병합 완료 |
+| Notion 기록 | 작업일지 반영 전 / 반영 완료 |
 
 ## 🧩 바뀐 내용
 
@@ -23,7 +24,7 @@
 
 ## 📦 왜 이 단위인가
 
-- 제목 형식: `[타입][영역] 한국어 요약`
+- 제목 형식: `[타입][영역] 명사형 요약`
 - 트랙 구분: `stream:data` / `stream:signal` / `stream:market` / `stream:frontend` / `stream:product`
 - 이 범위로 묶은 이유:
 - 분리하지 않았다면 그 이유:
@@ -60,3 +61,8 @@ git diff --check
 - 작업일지:
 - 트러블슈팅:
 - 다음 에이전트 메모:
+
+## 🏷️ 라벨/태그 참고
+
+- GitHub/Notion 라벨 의미: `docs/LABEL_GUIDE.md`
+- 트랙별 작업 기준: `docs/workstreams/README.md`

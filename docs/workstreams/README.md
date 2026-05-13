@@ -61,6 +61,8 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 
 기존 `type:*`, `area:*`, `size:*` 라벨에 더해 `stream:*` 라벨을 반드시 붙입니다.
 
+라벨과 Notion 태그의 상세 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
+
 | 트랙 | GitHub 라벨 | 브랜치 prefix | Notion 트랙 |
 | --- | --- | --- | --- |
 | `community-data-platform` | `stream:data` | `codex/data-*` | `community-data-platform` |
@@ -81,3 +83,5 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 작업 로그 DB와 다음 작업 DB에는 `트랙` select 속성을 둡니다. 새 작업 카드는 담당 트랙을 반드시 채웁니다.
 
 기획, 운영 기준 정리, 다른 트랙 조율 작업은 기본적으로 `product-planning-ops`로 둡니다. 실제 기능 구현은 각 기능 트랙으로 분리합니다.
+
+Notion 작업 카드는 PR 본문과 같은 카드형 흐름을 따릅니다. 트랙은 카드 제목, 아이콘, `트랙` 속성 중 적어도 두 곳에서 드러나야 합니다.
