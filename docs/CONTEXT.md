@@ -24,7 +24,7 @@
 - 현재 MVP에는 dashboard, OCR, 실거래, user auth, proxy rotation, CAPTCHA bypass, login-session scraping을 넣지 않습니다.
 - 원문은 제한 저장합니다: title, content snippet, URL, author hash, published time, content hash.
 - 공개 UI는 원문보다 집계 지표, 대표 키워드, 감성 비율, AI 재서술 근거를 중심으로 보여줍니다.
-- 병렬 작업은 `docs/workstreams/README.md`의 네 트랙으로 나눕니다.
+- 병렬 작업은 `docs/workstreams/README.md`의 다섯 트랙으로 나눕니다.
 - `OPENAI_API_KEY`가 있으면 OpenAI 분석을 사용하고, 없으면 로컬 demo용 mock sentiment를 사용합니다.
 - MySQL host port는 로컬 `3306` 충돌을 피하기 위해 `3307`을 사용합니다.
 

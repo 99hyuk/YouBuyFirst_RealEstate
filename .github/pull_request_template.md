@@ -24,7 +24,7 @@
 ## 📦 왜 이 단위인가
 
 - 제목 형식: `[타입][영역] 한국어 요약`
-- 트랙 구분: `stream:data` / `stream:signal` / `stream:market` / `stream:product`
+- 트랙 구분: `stream:data` / `stream:signal` / `stream:market` / `stream:frontend` / `stream:product`
 - 이 범위로 묶은 이유:
 - 분리하지 않았다면 그 이유:
 

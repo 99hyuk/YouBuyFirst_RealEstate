@@ -48,29 +48,47 @@ codex/<short-task-name>
 - `codex/data-naver-target-scheduler`
 - `codex/signal-community-alpha-agent`
 - `codex/market-quote-cache`
-- `codex/product-dashboard-shell`
+- `codex/frontend-dashboard-shell`
+- `codex/product-track-branch-strategy`
 
 ## 병렬 작업 트랙
 
-여러 채팅에서 동시에 작업할 때는 아래 네 트랙 중 하나를 고릅니다.
+여러 채팅에서 동시에 작업할 때는 아래 다섯 트랙 중 하나를 고릅니다.
 
 - `community-data-platform`: 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책
 - `signal-intelligence`: 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교
 - `market-simulation-engine`: 시세/호가, Redis quote cache, 모의투자, AI 에이전트
-- `product-ops-experience`: 대시보드, 관리자 경험, 문서, Notion, PR/CI, 배포 정책
+- `frontend-experience`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
+- `product-planning-ops`: 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책
 
 각 트랙의 상세 범위와 파일 소유권은 `docs/workstreams/` 아래 문서를 따릅니다. 한 채팅은 가능한 한 한 트랙만 담당합니다.
 
-프론트 작업은 `product-ops-experience`의 `frontend lane`으로 시작합니다. 화면 골격과 mock 데이터 작업은 API 구현 전에도 진행할 수 있고, 실제 API 연결은 각 기능 트랙의 계약이 생긴 뒤 별도 PR로 진행합니다.
+프론트 작업은 `frontend-experience` 트랙으로 시작합니다. 화면 골격과 mock 데이터 작업은 API 구현 전에도 진행할 수 있고, 실제 API 연결은 각 기능 트랙의 계약이 생긴 뒤 별도 PR로 진행합니다.
 
 `market-simulation-engine`은 내부적으로 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눕니다. 시세 수집, 모의 체결, 에이전트 판단은 기술 성격이 다르므로 같은 PR에 섞지 않습니다.
+
+## 통합 브랜치 전략
+
+기본은 `main`에 자주 통합하는 방식입니다.
+
+- 의존이 적은 작업은 `codex/<prefix>-<task>` 브랜치에서 작업하고, 테스트 통과 후 `main`으로 PR을 보냅니다.
+- 공통 계약 PR은 먼저 `main`에 넣어 다른 트랙이 같은 기준을 보게 합니다.
+- 미완성 기능은 feature flag, mock mode, disabled default로 숨깁니다.
+
+결합이 강한 작업만 짧은 수명의 `track/*` 브랜치를 씁니다.
+
+- 예: `track/frontend-dashboard`, `track/market-quotes`
+- 하위 PR은 해당 `track/*` 브랜치를 base로 보냅니다.
+- `track/*` 브랜치는 2-4개 PR, 3-5일 안에 `main`으로 통합합니다.
+- 통합 전에는 해당 트랙 테스트와 필요한 smoke test를 실행합니다.
 
 트랙별 GitHub 라벨:
 
 - `stream:data`: `community-data-platform`
 - `stream:signal`: `signal-intelligence`
 - `stream:market`: `market-simulation-engine`
-- `stream:product`: `product-ops-experience`
+- `stream:frontend`: `frontend-experience`
+- `stream:product`: `product-planning-ops`
 
 ## PR에 반드시 포함할 내용
 

@@ -54,17 +54,19 @@ http://localhost:8080/swagger-ui.html
 codex/<short-task-name>
 ```
 
-병렬 작업은 `docs/workstreams/README.md`의 네 트랙 중 하나로 구분합니다.
+병렬 작업은 `docs/workstreams/README.md`의 다섯 트랙 중 하나로 구분합니다.
 
 - `community-data-platform`: 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책
 - `signal-intelligence`: 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교
 - `market-simulation-engine`: 시세/호가, Redis quote cache, 모의투자, AI 에이전트
-- `product-ops-experience`: 대시보드, 관리자 경험, 문서, Notion, PR/CI, 배포 정책
+- `frontend-experience`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
+- `product-planning-ops`: 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책
 
 다른 채팅에서 작업을 시작하면 담당 트랙 문서를 먼저 읽고, 가능하면 해당 트랙 파일만 수정합니다.
 PR에는 담당 트랙에 맞는 `stream:*` 라벨을 붙이고, Notion 작업 카드에도 `트랙` 값을 채웁니다.
-프론트 작업은 `product-ops-experience`의 `frontend lane`으로 처리하고, `area:frontend` 라벨을 함께 붙입니다.
+프론트 작업은 `frontend-experience` 트랙으로 처리하고, `stream:frontend`, `area:frontend` 라벨을 함께 붙입니다.
 `market-simulation-engine` 작업은 필요하면 `market-data`, `simulation-core`, `agent-runtime` lane으로 더 나누어 진행합니다.
+의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
 
 PR을 열기 전:
 

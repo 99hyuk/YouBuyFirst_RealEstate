@@ -16,7 +16,7 @@
 - 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-worker`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
 - 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
 - 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
-- 여러 채팅이 동시에 일할 수 있도록 네 개의 병렬 작업 트랙 문서를 추가했습니다.
+- 여러 채팅이 동시에 일할 수 있도록 다섯 개의 병렬 작업 트랙 문서를 추가했습니다.
 
 ## 최근 결정
 
@@ -32,10 +32,12 @@
 - 공개 배포 시 원문 재게시, 작성자 추적, 닉네임 랭킹은 하지 않고 집계 지표와 AI 재서술 근거 중심으로 표시합니다.
 - 소스별 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다.
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
-- 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `product-ops-experience` 네 트랙으로 나눕니다.
-- 병렬 작업 PR에는 `stream:data`, `stream:signal`, `stream:market`, `stream:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
-- 프론트 작업은 `product-ops-experience`의 `frontend lane`으로 시작하고 `area:frontend` 라벨을 함께 붙입니다.
+- 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `frontend-experience`, `product-planning-ops` 다섯 트랙으로 나눕니다.
+- 병렬 작업 PR에는 `stream:data`, `stream:signal`, `stream:market`, `stream:frontend`, `stream:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
+- 프론트 작업은 `frontend-experience` 트랙으로 시작하고 `stream:frontend`, `area:frontend` 라벨을 함께 붙입니다.
+- 기획/조율/문서/Notion/PR 운영은 `product-planning-ops` 트랙이 맡습니다.
 - `market-simulation-engine`은 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눠 시세 수집, 모의 체결, AI 에이전트 작업을 같은 PR에 섞지 않습니다.
+- 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
 
 ## 현재 GitHub 상태
 

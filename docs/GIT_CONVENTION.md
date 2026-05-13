@@ -27,7 +27,8 @@ codex/<short-task-name>
 codex/data-naver-target-scheduler
 codex/signal-community-alpha-agent
 codex/market-quote-cache
-codex/product-dashboard-shell
+codex/frontend-dashboard-shell
+codex/product-track-branch-strategy
 ```
 
 트랙별 권장 prefix:
@@ -35,7 +36,24 @@ codex/product-dashboard-shell
 - `data-`: `community-data-platform`
 - `signal-`: `signal-intelligence`
 - `market-`: `market-simulation-engine`
-- `product-`: `product-ops-experience`
+- `frontend-`: `frontend-experience`
+- `product-`: `product-planning-ops`
+
+## 트랙 브랜치 전략
+
+기본은 작은 PR을 `main`에 자주 통합하는 방식입니다.
+
+- 의존이 적은 작업은 `codex/<prefix>-<task>` 브랜치에서 작업하고, 관련 단위 테스트와 검증을 통과하면 `main`으로 PR을 보냅니다.
+- API schema, DB migration, fixture, mock response 같은 공통 계약은 가능한 한 먼저 `main`에 넣습니다.
+- 아직 사용자에게 노출하면 안 되는 기능은 feature flag, mock mode, disabled default로 숨깁니다.
+
+결합이 강한 작업만 짧은 수명의 `track/*` 브랜치를 씁니다.
+
+- 예: `track/frontend-dashboard`, `track/market-quotes`
+- 하위 작업은 `codex/<prefix>-<task>` 브랜치에서 만들고, PR base를 해당 `track/*` 브랜치로 둡니다.
+- `track/*` 브랜치는 2-4개 PR, 3-5일 안에 `main`으로 통합하는 것을 목표로 합니다.
+- `track/*` 브랜치가 길어지면 통합 리스크가 뒤로 밀리므로 범위를 줄이거나 계약 PR을 먼저 `main`에 넣습니다.
+- `track/*`에서 `main`으로 통합하기 전에는 해당 트랙 테스트와 필요한 smoke test를 실행합니다.
 
 ## PR 제목 규칙
 
@@ -107,7 +125,8 @@ PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
 - `stream:data`: `community-data-platform`
 - `stream:signal`: `signal-intelligence`
 - `stream:market`: `market-simulation-engine`
-- `stream:product`: `product-ops-experience`
+- `stream:frontend`: `frontend-experience`
+- `stream:product`: `product-planning-ops`
 
 크기 라벨:
 

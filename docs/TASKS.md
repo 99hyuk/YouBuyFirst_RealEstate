@@ -25,6 +25,8 @@
 - [x] 병렬 작업 트랙 문서 추가
 - [x] GitHub/PR/Notion 병렬 작업 트랙 표시 기준 추가
 - [x] 프론트 lane과 market 내부 lane 기준 추가
+- [x] 프론트를 `frontend-experience` 독립 트랙으로 분리
+- [x] 의존도에 따른 `main`/`track/*` 하이브리드 브랜치 전략 정리
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성
@@ -37,7 +39,7 @@
 - [ ] 실제 에펨코리아 주식 게시판 구조에 맞춘 parser 보강
 - [ ] 종목 게시판형 수집을 위한 `CrawlTarget` 최소 설계
 - [ ] 소스별 활성화 상태(`enabled`, `public-demo-only`, `local-research-only`, `disabled`) 설계
-- [ ] `product-ops-experience` frontend lane에서 첫 대시보드 정보 구조와 mock 화면 설계
+- [ ] `frontend-experience` 트랙에서 첫 대시보드 정보 구조와 mock 화면 설계
 - [ ] `market-simulation-engine` market-data lane에서 quote snapshot 계약 설계
 - [ ] worker가 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
 - [ ] `POST /internal/ingestions/community-posts` payload 예시를 Swagger에 추가
