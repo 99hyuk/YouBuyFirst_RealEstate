@@ -10,14 +10,15 @@
 
 1. `docs/CONTEXT.md`, `docs/CURRENT_HANDOFF.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`를 읽습니다.
 2. `docs/GIT_CONVENTION.md`의 제목, 라벨, 크기 규칙을 확인합니다.
-3. 작업이 크거나 병렬화될 수 있으면 `docs/work-units/`에 짧은 작업 단위 문서를 직접 추가합니다.
-4. 해당 작업만 구현합니다.
-5. 관련 검증을 실행합니다.
-6. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
-7. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다.
-8. GitHub 라벨을 붙이고 CI를 확인합니다.
-9. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
-10. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
+3. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
+4. 작업이 크거나 병렬화될 수 있으면 `docs/work-units/`에 짧은 작업 단위 문서를 직접 추가합니다.
+5. 해당 작업만 구현합니다.
+6. 관련 검증을 실행합니다.
+7. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
+8. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다.
+9. GitHub 라벨을 붙이고 CI를 확인합니다.
+10. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+11. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
 
 ## PR 크기 기준
 
@@ -39,6 +40,26 @@ codex/<short-task-name>
 - `codex/crawler-parser-hardening`
 - `codex/add-ci`
 - `codex/instrument-master-import`
+
+트랙이 분명하면 브랜치 이름 앞부분에 트랙을 드러냅니다.
+
+예시:
+
+- `codex/data-naver-target-scheduler`
+- `codex/signal-community-alpha-agent`
+- `codex/market-quote-cache`
+- `codex/product-dashboard-shell`
+
+## 병렬 작업 트랙
+
+여러 채팅에서 동시에 작업할 때는 아래 네 트랙 중 하나를 고릅니다.
+
+- `community-data-platform`: 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책
+- `signal-intelligence`: 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교
+- `market-simulation-engine`: 시세/호가, Redis quote cache, 모의투자, AI 에이전트
+- `product-ops-experience`: 대시보드, 관리자 경험, 문서, Notion, PR/CI, 배포 정책
+
+각 트랙의 상세 범위와 파일 소유권은 `docs/workstreams/` 아래 문서를 따릅니다. 한 채팅은 가능한 한 한 트랙만 담당합니다.
 
 ## PR에 반드시 포함할 내용
 

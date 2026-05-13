@@ -1,8 +1,8 @@
 # 현재 작업 인수인계
 
-마지막 갱신: 2026-05-13
+마지막 갱신: 2026-05-14
 
-이 문서는 새 채팅, 병렬 에이전트, 또는 다음 작업자가 가장 먼저 읽는 요약입니다. 자세한 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`, 현재 MVP 범위는 `docs/PROJECT_BRIEF.md`, 작업 방식은 `docs/WORKFLOW.md`, Git/PR 규칙은 `docs/GIT_CONVENTION.md`를 기준으로 봅니다.
+이 문서는 새 채팅, 병렬 에이전트, 또는 다음 작업자가 가장 먼저 읽는 요약입니다. 자세한 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`, 현재 MVP 범위는 `docs/PROJECT_BRIEF.md`, 작업 방식은 `docs/WORKFLOW.md`, Git/PR 규칙은 `docs/GIT_CONVENTION.md`를 기준으로 봅니다. 크롤링/공개 배포 리스크는 `docs/LEGAL_RISK_CASES.md`, 병렬 작업 트랙은 `docs/workstreams/README.md`를 기준으로 봅니다.
 
 ## 지금까지 한 일
 
@@ -14,6 +14,9 @@
 - GitHub Actions CI와 PR 템플릿을 추가했습니다.
 - 최종 기획안, MVP 범위, 작업 목록, 에이전트 인수인계 문서를 추가했습니다.
 - 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-worker`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
+- 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
+- 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
+- 여러 채팅이 동시에 일할 수 있도록 네 개의 병렬 작업 트랙 문서를 추가했습니다.
 
 ## 최근 결정
 
@@ -25,6 +28,11 @@
 - PR 본문과 Notion 작업일지는 같은 카드 구조를 씁니다: 한눈에 보기, 변경 내용, 검증 결과, 리스크, 다음 에이전트 메모.
 - Notion 허브는 B + A 하이브리드 구조를 씁니다: 첫 화면은 command center, 세부 기록은 PR 카드 로그입니다.
 - 너무 큰 PR을 피하기 위해 5개 파일 이하를 선호하고, 10개 파일을 넘으면 분리 가능성을 먼저 검토합니다.
+- 30분 커뮤니티 집계는 제품 핵심으로 유지합니다.
+- 공개 배포 시 원문 재게시, 작성자 추적, 닉네임 랭킹은 하지 않고 집계 지표와 AI 재서술 근거 중심으로 표시합니다.
+- 소스별 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다.
+- 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
+- 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `product-ops-experience` 네 트랙으로 나눕니다.
 
 ## 현재 GitHub 상태
 
@@ -55,16 +63,19 @@
 ## 다음 에이전트가 지켜야 할 규칙
 
 1. 먼저 `AGENTS.md`, 이 파일, `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
-2. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 인프라 변경만 담습니다.
-3. 제목과 GitHub 라벨로 타입, 영역, 크기를 구분합니다.
-4. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
-5. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
-6. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
-7. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+2. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
+3. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 인프라 변경만 담습니다.
+4. 제목과 GitHub 라벨로 타입, 영역, 크기를 구분합니다.
+5. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
+6. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
+7. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
+8. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
 
 ## 가장 가까운 다음 작업 후보
 
 - 네이버 종토방 실제 HTML 변화에 맞춘 parser 보강
 - 에펨코리아 게시판 parser 보강
+- 종목 게시판형 소스를 위한 `CrawlTarget` 최소 설계
+- 소스별 활성화 상태 설계
 - worker가 backend readiness를 기다리도록 개선
 - admin API Swagger 예시와 validation 오류 응답 정리

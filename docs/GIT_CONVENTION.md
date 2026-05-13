@@ -11,6 +11,25 @@
 - `main`에 직접 push하지 않습니다. 항상 `codex/<작업명>` 브랜치를 사용합니다.
 - CI 통과 전에는 merge하지 않습니다.
 
+## 브랜치 이름
+
+기본 형식:
+
+```text
+codex/<short-task-name>
+```
+
+병렬 작업 트랙이 분명하면 브랜치 이름 앞부분에 트랙을 드러냅니다.
+
+예시:
+
+```text
+codex/data-naver-target-scheduler
+codex/signal-community-alpha-agent
+codex/market-quote-cache
+codex/product-dashboard-shell
+```
+
 ## PR 제목 규칙
 
 형식:

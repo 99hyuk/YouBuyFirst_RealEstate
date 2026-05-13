@@ -4,7 +4,7 @@
 
 ## 제품
 
-너나사 (YouBuyFirst)는 커뮤니티 군중 심리를 종목 단위 지표로 바꾸는 모의투자/분석 제품입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 MVP는 데이터 파이프라인에 집중합니다.
+너나사 (YouBuyFirst)는 커뮤니티 군중 심리, 시장 시세, AI 분석, 모의투자를 결합한 투자 참고형 시뮬레이터입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 MVP는 데이터 파이프라인에 집중합니다.
 
 ## 현재 MVP
 
@@ -12,6 +12,7 @@
 - Backend: Spring Boot가 ingestion, validation, persistence, metrics, Swagger admin API를 담당
 - Worker: Python이 crawling, Playwright rendering fallback, instrument matching, LLM sentiment analysis를 담당
 - Runtime: Docker Compose가 MySQL, backend, worker를 실행
+- 30분 집계는 유지하되, 공개 배포 시 소스별 활성화 상태를 관리합니다.
 
 ## 중요한 결정
 
@@ -22,6 +23,8 @@
 - PR 제목은 `[타입][영역] 한국어 요약` 형식을 씁니다.
 - 현재 MVP에는 dashboard, OCR, 실거래, user auth, proxy rotation, CAPTCHA bypass, login-session scraping을 넣지 않습니다.
 - 원문은 제한 저장합니다: title, content snippet, URL, author hash, published time, content hash.
+- 공개 UI는 원문보다 집계 지표, 대표 키워드, 감성 비율, AI 재서술 근거를 중심으로 보여줍니다.
+- 병렬 작업은 `docs/workstreams/README.md`의 네 트랙으로 나눕니다.
 - `OPENAI_API_KEY`가 있으면 OpenAI 분석을 사용하고, 없으면 로컬 demo용 mock sentiment를 사용합니다.
 - MySQL host port는 로컬 `3306` 충돌을 피하기 위해 `3307`을 사용합니다.
 
@@ -48,4 +51,6 @@
 5. `docs/TASKS.md`
 6. `docs/WORKFLOW.md`
 7. `docs/GIT_CONVENTION.md`
-8. Latest file in `docs/work-units/`
+8. `docs/LEGAL_RISK_CASES.md`
+9. `docs/workstreams/README.md`
+10. Latest file in `docs/work-units/`
