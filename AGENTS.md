@@ -79,13 +79,15 @@ PR을 열기 전:
 
 1. `docs/CONTEXT.md`를 읽습니다.
 2. `docs/CURRENT_HANDOFF.md`를 읽습니다.
-3. `docs/GIT_CONVENTION.md`를 읽습니다.
-4. `docs/LABEL_GUIDE.md`에서 GitHub 라벨과 Notion 태그 의미를 확인합니다.
-5. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
-6. 필요한 경우 `docs/work-units/`에 작업 단위 문서를 만들거나 갱신합니다.
-7. 관련 테스트를 실행합니다.
-8. 작업 상태나 범위가 바뀌면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
-9. `git`과 `gh`로 직접 push, PR 생성, 라벨 지정, CI 확인을 수행합니다.
+3. `docs/DOCUMENTATION_GUIDE.md`에서 매번 읽을 문서와 검색용 기록을 구분합니다.
+4. `docs/GIT_CONVENTION.md`를 읽습니다.
+5. `docs/LABEL_GUIDE.md`에서 GitHub 라벨과 Notion 태그 의미를 확인합니다.
+6. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
+7. 문제가 발생했거나 반복될 가능성이 있으면 `docs/TROUBLESHOOTING_GUIDE.md`를 읽고 Notion 트러블슈팅 DB에 기록합니다.
+8. 필요한 경우 `docs/work-units/`에 작업 단위 문서를 만들거나 갱신합니다.
+9. 관련 테스트를 실행합니다.
+10. 작업 상태나 범위가 바뀌면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
+11. `git`과 `gh`로 직접 push, PR 생성, 라벨 지정, CI 확인을 수행합니다.
 
 무관한 backend, worker, infra, product-scope 변경을 한 PR에 섞지 않습니다.
 
@@ -93,11 +95,15 @@ PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[product
 
 PR 본문과 Notion 작업 카드는 같은 카드형 흐름으로 씁니다: 한눈에 보기, 바뀐 내용, 리뷰 가이드, PR 범위, 검증 결과, 리스크와 후속 작업, Notion 기록, 라벨/태그 참고. 검증은 명령어보다 사람이 읽기 쉬운 결과를 먼저 적습니다.
 
+트러블슈팅은 작업일지보다 자세히 남깁니다. CI, Docker, GitHub, Notion, 외부 API, 인증, 환경 변수, 반복 가능성이 있는 문제는 Notion 트러블슈팅 DB에 `증상`, `발생 맥락`, `조사 과정`, `원인`, `해결`, `검증`, `재발 방지`를 카드형으로 기록합니다.
+
 ## 참고 문서
 
 - 최종 제품 기획: `docs/FINAL_PRODUCT_PLAN.md`
 - 현재 MVP 범위: `docs/PROJECT_BRIEF.md`
 - 현재 인수인계 상태: `docs/CURRENT_HANDOFF.md`
+- 문서 구조와 읽기 우선순위: `docs/DOCUMENTATION_GUIDE.md`
+- 트러블슈팅 기록 기준: `docs/TROUBLESHOOTING_GUIDE.md`
 - 크롤링/공개 배포 리스크 사례: `docs/LEGAL_RISK_CASES.md`
 - 라벨/태그 사전: `docs/LABEL_GUIDE.md`
 - 병렬 작업 트랙: `docs/workstreams/README.md`

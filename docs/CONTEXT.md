@@ -46,11 +46,9 @@
 
 1. `AGENTS.md`
 2. `docs/CURRENT_HANDOFF.md`
-3. `docs/FINAL_PRODUCT_PLAN.md`
-4. `docs/PROJECT_BRIEF.md`
-5. `docs/TASKS.md`
-6. `docs/WORKFLOW.md`
-7. `docs/GIT_CONVENTION.md`
-8. `docs/LEGAL_RISK_CASES.md`
-9. `docs/workstreams/README.md`
-10. Latest file in `docs/work-units/`
+3. `docs/DOCUMENTATION_GUIDE.md`
+4. `docs/WORKFLOW.md`
+5. `docs/GIT_CONVENTION.md`
+6. `docs/workstreams/README.md`
+
+필요할 때만 `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/LEGAL_RISK_CASES.md`, `docs/TROUBLESHOOTING_GUIDE.md`, `docs/work-units/`를 검색해서 봅니다.

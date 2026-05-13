@@ -2,7 +2,7 @@
 
 마지막 갱신: 2026-05-14
 
-이 문서는 새 채팅, 병렬 에이전트, 또는 다음 작업자가 가장 먼저 읽는 요약입니다. 자세한 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`, 현재 MVP 범위는 `docs/PROJECT_BRIEF.md`, 작업 방식은 `docs/WORKFLOW.md`, Git/PR 규칙은 `docs/GIT_CONVENTION.md`를 기준으로 봅니다. 크롤링/공개 배포 리스크는 `docs/LEGAL_RISK_CASES.md`, 병렬 작업 트랙은 `docs/workstreams/README.md`를 기준으로 봅니다.
+이 문서는 새 채팅, 병렬 에이전트, 또는 다음 작업자가 가장 먼저 읽는 요약입니다. 문서 읽기 우선순위는 `docs/DOCUMENTATION_GUIDE.md`를 기준으로 봅니다. 자세한 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`, 현재 MVP 범위는 `docs/PROJECT_BRIEF.md`, 작업 방식은 `docs/WORKFLOW.md`, Git/PR 규칙은 `docs/GIT_CONVENTION.md`를 기준으로 봅니다. 크롤링/공개 배포 리스크는 `docs/LEGAL_RISK_CASES.md`, 병렬 작업 트랙은 `docs/workstreams/README.md`를 기준으로 봅니다.
 
 ## 지금까지 한 일
 
@@ -28,6 +28,8 @@
 - PR 본문과 Notion 작업일지는 같은 카드 구조를 씁니다: 한눈에 보기, 변경 내용, PR 범위, 검증 결과, 리스크, 다음 에이전트 메모, 라벨/태그 참고.
 - GitHub 라벨과 Notion 태그 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
 - Notion 허브는 B + A 하이브리드 구조를 씁니다: 첫 화면은 command center, 세부 기록은 PR 카드 로그입니다.
+- 문서는 길게 누적하지 않고 계층화합니다. 매번 읽는 문서와 검색용 기록은 `docs/DOCUMENTATION_GUIDE.md`를 기준으로 구분합니다.
+- 트러블슈팅은 작업일지보다 자세히 기록합니다. 반복 가능성이 있는 문제는 `docs/TROUBLESHOOTING_GUIDE.md` 구조로 Notion 트러블슈팅 DB에 남깁니다.
 - 너무 큰 PR을 피하기 위해 5개 파일 이하를 선호하고, 10개 파일을 넘으면 분리 가능성을 먼저 검토합니다.
 - 30분 커뮤니티 집계는 제품 핵심으로 유지합니다.
 - 공개 배포 시 원문 재게시, 작성자 추적, 닉네임 랭킹은 하지 않고 집계 지표와 AI 재서술 근거 중심으로 표시합니다.
@@ -57,7 +59,7 @@
 - 트러블슈팅: https://www.notion.so/35fdf321bd8981559e31e55584337cea
 - GitHub PR 운영 메모: https://www.notion.so/35fdf321bd89815c9808ff01a683f4bc
 - 작업이 끝나면 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 Notion 작업일지에 남깁니다.
-- 트러블슈팅이 반복될 가능성이 있으면 트러블슈팅 페이지에 incident card 형태로 증상, 영향, 원인, 해결, 검증, 재발 방지를 남깁니다.
+- 트러블슈팅이 반복될 가능성이 있으면 트러블슈팅 DB에 incident card 형태로 증상, 발생 맥락, 조사 과정, 원인, 해결, 검증, 재발 방지를 남깁니다.
 
 ## 마지막 검증 기록
 
@@ -69,7 +71,7 @@
 
 ## 다음 에이전트가 지켜야 할 규칙
 
-1. 먼저 `AGENTS.md`, 이 파일, `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
+1. 먼저 `AGENTS.md`, 이 파일, `docs/DOCUMENTATION_GUIDE.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
 2. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
 3. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 인프라 변경만 담습니다.
 4. 제목과 GitHub 라벨로 작업 트랙, 작업 타입, 크기를 구분합니다. 개발 영역은 필요할 때만 보조 라벨로 표시합니다.
@@ -77,7 +79,8 @@
 6. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
 7. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
 8. PR 제목은 명사형으로 끝내고, PR 본문과 Notion 작업 카드는 사람이 읽기 쉬운 카드형 구조로 씁니다.
-9. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+9. 문제를 조사했거나 반복 가능성이 있으면 Notion 트러블슈팅 DB에 상세 기록을 남깁니다.
+10. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
 
 ## 가장 가까운 다음 작업 후보
 

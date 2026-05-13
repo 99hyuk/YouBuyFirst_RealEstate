@@ -8,17 +8,19 @@
 
 ## 작업 순서
 
-1. `docs/CONTEXT.md`, `docs/CURRENT_HANDOFF.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`를 읽습니다.
+1. `AGENTS.md`, `docs/CURRENT_HANDOFF.md`, `docs/DOCUMENTATION_GUIDE.md`를 읽습니다.
 2. `docs/GIT_CONVENTION.md`와 `docs/LABEL_GUIDE.md`의 제목, 라벨, 크기 규칙을 확인합니다.
 3. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
-4. 작업이 크거나 병렬화될 수 있으면 `docs/work-units/`에 짧은 작업 단위 문서를 직접 추가합니다.
-5. 해당 작업만 구현합니다.
-6. 관련 검증을 실행합니다.
-7. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
-8. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다.
-9. 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` GitHub 라벨을 붙이고, 필요할 때만 개발 영역 `area:*` 라벨을 추가한 뒤 CI를 확인합니다.
-10. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
-11. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
+4. 필요한 경우에만 `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`를 추가로 읽습니다.
+5. 작업이 크거나 병렬화될 수 있으면 `docs/work-units/`에 짧은 작업 단위 문서를 직접 추가합니다.
+6. 해당 작업만 구현합니다.
+7. 관련 검증을 실행합니다.
+8. 문제가 발생했거나 반복될 수 있으면 `docs/TROUBLESHOOTING_GUIDE.md`를 기준으로 Notion 트러블슈팅 DB에 기록합니다.
+9. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
+10. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다.
+11. 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` GitHub 라벨을 붙이고, 필요할 때만 개발 영역 `area:*` 라벨을 추가한 뒤 CI를 확인합니다.
+12. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+13. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
 
 ## PR 크기 기준
 
@@ -116,4 +118,10 @@ PR 본문은 PR #7 수준의 카드형 구조로 씁니다. 첫 화면에서 의
 
 Notion은 B + A 하이브리드 구조를 씁니다. 프로젝트 허브는 현재 상태를 빠르게 보는 command center 역할을 하고, 작업일지는 PR별 카드 로그 역할을 합니다.
 
-Notion 작업일지는 PR 본문과 같은 카드형 흐름을 따릅니다. 작업 요약, 변경 범위, 검증 결과, PR 링크, 다음 작업자 메모를 시각적으로 구분해 남기고, 트랙 아이콘과 `트랙` 속성으로 병렬 작업 단위를 바로 알아볼 수 있게 합니다. 장애나 반복될 가능성이 있는 문제는 트러블슈팅 문서에 증상, 원인, 해결, 재발 방지 순서로 남깁니다.
+Notion 작업일지는 PR 본문과 같은 카드형 흐름을 따릅니다. 작업 요약, 변경 범위, 검증 결과, PR 링크, 다음 작업자 메모를 시각적으로 구분해 남기고, 트랙 아이콘과 `트랙` 속성으로 병렬 작업 단위를 바로 알아볼 수 있게 합니다.
+
+트러블슈팅은 작업일지보다 자세히 씁니다. 문제를 조사했거나 반복될 가능성이 있으면 Notion 트러블슈팅 DB에 `증상`, `발생 맥락`, `조사 과정`, `원인`, `해결`, `검증`, `재발 방지`를 남깁니다. 작성 구조는 `docs/TROUBLESHOOTING_GUIDE.md`를 따릅니다.
+
+## 문서 길이 관리
+
+문서 구조와 읽기 우선순위는 `docs/DOCUMENTATION_GUIDE.md`를 따릅니다. 새 채팅은 모든 문서를 읽지 않습니다. 먼저 `AGENTS.md`, `CURRENT_HANDOFF.md`, `DOCUMENTATION_GUIDE.md`, 담당 트랙 문서를 읽고, 나머지는 필요한 키워드로 검색합니다.

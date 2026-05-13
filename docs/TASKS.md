@@ -30,6 +30,7 @@
 - [x] PR/Notion 카드형 기록과 라벨/태그 사전 정리
 - [x] AGENTS 범위 설명과 PR 라벨/문장 체계 정리
 - [x] 라벨 설명을 작업 트랙/작업 타입/개발 영역으로 명확화
+- [x] 문서 구조와 트러블슈팅 기록 기준 정리
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성
