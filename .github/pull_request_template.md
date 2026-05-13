@@ -6,6 +6,7 @@
 | --- | --- |
 | 타입 | `type:` |
 | 영역 | `area:` |
+| 트랙 | `stream:` |
 | 크기 | `size:` |
 | 상태 | CI 확인 전 |
 | Notion 기록 | 작업일지 반영 전 |
@@ -23,6 +24,7 @@
 ## 📦 왜 이 단위인가
 
 - 제목 형식: `[타입][영역] 한국어 요약`
+- 트랙 구분: `stream:data` / `stream:signal` / `stream:market` / `stream:product`
 - 이 범위로 묶은 이유:
 - 분리하지 않았다면 그 이유:
 

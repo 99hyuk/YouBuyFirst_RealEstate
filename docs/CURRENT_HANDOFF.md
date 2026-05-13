@@ -33,6 +33,7 @@
 - 소스별 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다.
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
 - 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `product-ops-experience` 네 트랙으로 나눕니다.
+- 병렬 작업 PR에는 `stream:data`, `stream:signal`, `stream:market`, `stream:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
 
 ## 현재 GitHub 상태
 

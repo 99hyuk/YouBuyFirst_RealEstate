@@ -23,6 +23,7 @@
 - [x] 최종 기획에 커뮤니티별 수익률 비교 에이전트 반영
 - [x] 크롤링 리스크 사례와 공개 배포 정책 문서화
 - [x] 병렬 작업 트랙 문서 추가
+- [x] GitHub/PR/Notion 병렬 작업 트랙 표시 기준 추가
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성

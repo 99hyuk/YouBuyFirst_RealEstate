@@ -30,6 +30,13 @@ codex/market-quote-cache
 codex/product-dashboard-shell
 ```
 
+트랙별 권장 prefix:
+
+- `data-`: `community-data-platform`
+- `signal-`: `signal-intelligence`
+- `market-`: `market-simulation-engine`
+- `product-`: `product-ops-experience`
+
 ## PR 제목 규칙
 
 형식:
@@ -93,6 +100,13 @@ PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
 - `area:data`
 - `area:runtime`
 
+트랙 라벨:
+
+- `stream:data`: `community-data-platform`
+- `stream:signal`: `signal-intelligence`
+- `stream:market`: `market-simulation-engine`
+- `stream:product`: `product-ops-experience`
+
 크기 라벨:
 
 - `size:XS`: 1-2개 파일, 아주 작은 수정
@@ -130,6 +144,7 @@ PR을 만들 때 제목 태그와 같은 의미의 라벨을 붙입니다.
 PR 본문은 다음을 반드시 포함합니다.
 
 - 무엇을 바꿨는지
+- 어떤 트랙의 작업인지
 - 리뷰어가 먼저 볼 곳
 - 왜 이 크기로 묶었는지
 - 검증 결과

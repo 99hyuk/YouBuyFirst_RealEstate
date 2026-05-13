@@ -16,7 +16,7 @@
 6. 관련 검증을 실행합니다.
 7. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
 8. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다.
-9. GitHub 라벨을 붙이고 CI를 확인합니다.
+9. `type:*`, `area:*`, `stream:*`, `size:*` GitHub 라벨을 붙이고 CI를 확인합니다.
 10. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
 11. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
 
@@ -61,11 +61,18 @@ codex/<short-task-name>
 
 각 트랙의 상세 범위와 파일 소유권은 `docs/workstreams/` 아래 문서를 따릅니다. 한 채팅은 가능한 한 한 트랙만 담당합니다.
 
+트랙별 GitHub 라벨:
+
+- `stream:data`: `community-data-platform`
+- `stream:signal`: `signal-intelligence`
+- `stream:market`: `market-simulation-engine`
+- `stream:product`: `product-ops-experience`
+
 ## PR에 반드시 포함할 내용
 
 - 한국어 요약
 - `[타입][영역]` 제목
-- 타입/영역/크기 라벨
+- 타입/영역/트랙/크기 라벨
 - 리뷰 가이드
 - 사람이 읽기 쉬운 검증 결과
 - 남은 리스크

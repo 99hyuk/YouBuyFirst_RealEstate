@@ -34,7 +34,14 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 
 ## PR 라벨
 
-기존 `type:*`, `area:*`, `size:*` 라벨에 더해 작업 설명에는 트랙명을 명시합니다.
+기존 `type:*`, `area:*`, `size:*` 라벨에 더해 `stream:*` 라벨을 반드시 붙입니다.
+
+| 트랙 | GitHub 라벨 | 브랜치 prefix | Notion 트랙 |
+| --- | --- | --- | --- |
+| `community-data-platform` | `stream:data` | `codex/data-*` | `community-data-platform` |
+| `signal-intelligence` | `stream:signal` | `codex/signal-*` | `signal-intelligence` |
+| `market-simulation-engine` | `stream:market` | `codex/market-*` | `market-simulation-engine` |
+| `product-ops-experience` | `stream:product` | `codex/product-*` | `product-ops-experience` |
 
 예시:
 
@@ -43,4 +50,8 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 변경 범위: worker crawler scheduler, docs/workstreams/community-data-platform
 ```
 
-GitHub 라벨이 필요하면 나중에 `stream:data`, `stream:signal`, `stream:market`, `stream:product`를 추가할 수 있습니다. 당장은 제목과 PR 본문으로 구분합니다.
+## Notion 구분
+
+작업 로그 DB와 다음 작업 DB에는 `트랙` select 속성을 둡니다. 새 작업 카드는 담당 트랙을 반드시 채웁니다.
+
+기획/운영 기준 정리처럼 여러 트랙을 조율하는 작업은 기본적으로 `product-ops-experience`로 둡니다. 단, 실제 구현은 각 기능 트랙으로 분리합니다.

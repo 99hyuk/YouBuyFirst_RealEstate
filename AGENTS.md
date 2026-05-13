@@ -62,6 +62,7 @@ codex/<short-task-name>
 - `product-ops-experience`: 대시보드, 관리자 경험, 문서, Notion, PR/CI, 배포 정책
 
 다른 채팅에서 작업을 시작하면 담당 트랙 문서를 먼저 읽고, 가능하면 해당 트랙 파일만 수정합니다.
+PR에는 담당 트랙에 맞는 `stream:*` 라벨을 붙이고, Notion 작업 카드에도 `트랙` 값을 채웁니다.
 
 PR을 열기 전:
 
