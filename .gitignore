@@ -1,0 +1,13 @@
+.idea/
+.vscode/
+.gradle/
+target/
+build/
+__pycache__/
+.pytest_cache/
+.venv/
+.env
+.superpowers/
+*.egg-info/
+*.pyc
+*.log

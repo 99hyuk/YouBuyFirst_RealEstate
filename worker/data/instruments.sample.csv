@@ -1,0 +1,7 @@
+market,symbol,name,aliases,type
+KR,005930,삼성전자,삼전|삼성전자,STOCK
+KR,000660,SK하이닉스,하닉|SK하이닉스,STOCK
+US,TSLA,Tesla,테슬라|TSLA,STOCK
+US,NVDA,NVIDIA,엔비디아|엔비|NVDA,STOCK
+US,SPY,SPDR S&P 500 ETF Trust,SPY|에스피와이,ETF
+

@@ -1,0 +1,27 @@
+[project]
+name = "human-indicator-worker"
+version = "0.1.0"
+description = "Python crawler and LLM sentiment worker for Human Indicator MVP"
+requires-python = ">=3.10"
+dependencies = [
+    "apscheduler>=3.10",
+    "beautifulsoup4>=4.12",
+    "httpx>=0.27",
+    "openai>=1.50",
+    "playwright==1.48.0",
+    "pydantic>=2.8",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.3",
+    "respx>=0.21",
+]
+
+[project.scripts]
+human-indicator-worker = "human_indicator_worker.main:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

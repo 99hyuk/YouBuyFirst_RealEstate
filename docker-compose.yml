@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: human_indicator
+      MYSQL_USER: human
+      MYSQL_PASSWORD: human
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uhuman", "-phuman"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/human_indicator?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: human
+      SPRING_DATASOURCE_PASSWORD: human
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: ./worker
+    environment:
+      SPRING_BASE_URL: http://backend:8080
+      CRAWL_INTERVAL_MINUTES: 30
+      NAVER_STOCK_CODES: 005930,000660
+      INSTRUMENT_CSV_PATH: data/instruments.sample.csv
+      LOG_LEVEL: INFO
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
