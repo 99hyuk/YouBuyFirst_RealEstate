@@ -24,7 +24,7 @@
 Backend:
 
 ```bash
-docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.9-eclipse-temurin-21 mvn test
+docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.9-eclipse-temurin-21 mvn clean test
 ```
 
 Worker:

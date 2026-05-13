@@ -53,14 +53,14 @@ US,TSLA,Tesla,테슬라|TSLA,STOCK
 로컬에 Maven/Python이 있으면:
 
 ```bash
-cd backend && mvn test
+cd backend && mvn clean test
 cd worker && pip install -e .[test] && pytest
 ```
 
 Docker로 실행하려면:
 
 ```bash
-docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.9-eclipse-temurin-21 mvn test
+docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.9-eclipse-temurin-21 mvn clean test
 docker run --rm -v "${PWD}/worker:/workspace" -w /workspace python:3.10-slim sh -lc "pip install -e .[test] && pytest"
 ```
 

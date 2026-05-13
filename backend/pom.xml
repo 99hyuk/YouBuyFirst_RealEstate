@@ -11,11 +11,11 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.humanindicator</groupId>
-    <artifactId>backend</artifactId>
+    <groupId>com.youbuyfirst</groupId>
+    <artifactId>youbuyfirst-backend</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>human-indicator-backend</name>
-    <description>Community sentiment ingestion API for Human Indicator MVP</description>
+    <name>youbuyfirst-backend</name>
+    <description>Community sentiment ingestion API for YouBuyFirst MVP</description>
 
     <properties>
         <java.version>21</java.version>
@@ -73,4 +73,3 @@
         </plugins>
     </build>
 </project>
-

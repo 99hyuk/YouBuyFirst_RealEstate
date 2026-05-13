@@ -1,5 +1,5 @@
-from human_indicator_worker.matcher import InstrumentMatcher
-from human_indicator_worker.models import Instrument
+from youbuyfirst_worker.matcher import InstrumentMatcher
+from youbuyfirst_worker.models import Instrument
 
 
 def test_matches_korean_aliases_and_us_tickers_without_duplicates():

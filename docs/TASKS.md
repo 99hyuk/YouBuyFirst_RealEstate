@@ -16,6 +16,7 @@
 - [x] GitHub Actions CI 추가
 - [x] 작업 단위 문서 체계 추가
 - [x] 최종 제품 기획안 문서 추가
+- [x] 프로젝트명/런타임 식별자를 너나사 (YouBuyFirst) 기준으로 정리
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성

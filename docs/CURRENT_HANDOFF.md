@@ -13,6 +13,7 @@
 - Swagger에서 crawl run, posts, stock metrics를 확인할 수 있게 했습니다.
 - GitHub Actions CI와 PR 템플릿을 추가했습니다.
 - 최종 기획안, MVP 범위, 작업 목록, 에이전트 인수인계 문서를 추가했습니다.
+- 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-worker`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
 
 ## 최근 결정
 
@@ -33,10 +34,11 @@
 
 ## 마지막 검증 기록
 
-- PR #1 GitHub Actions: `Backend` 통과, `Worker` 통과
-- Backend Docker test: 통과, 2 tests
-- Worker Docker test: 통과, 4 tests
-- `git diff --check`: 통과
+- Runtime identifier rename branch: Backend Docker test 통과, 2 tests
+- Runtime identifier rename branch: Worker Docker test 통과, 4 tests
+- Runtime identifier rename branch: Docker Compose 기동 및 Swagger `200` 확인
+- Runtime identifier rename branch: 옛 프로젝트명/패키지명 검색 결과 없음
+- Runtime identifier rename branch: `git diff --check` 통과
 
 ## 다음 에이전트가 지켜야 할 규칙
 

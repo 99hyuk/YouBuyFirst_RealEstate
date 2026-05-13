@@ -1,7 +1,7 @@
 [project]
-name = "human-indicator-worker"
+name = "youbuyfirst-worker"
 version = "0.1.0"
-description = "Python crawler and LLM sentiment worker for Human Indicator MVP"
+description = "Python crawler and LLM sentiment worker for YouBuyFirst MVP"
 requires-python = ">=3.10"
 dependencies = [
     "apscheduler>=3.10",
@@ -20,7 +20,7 @@ test = [
 ]
 
 [project.scripts]
-human-indicator-worker = "human_indicator_worker.main:main"
+youbuyfirst-worker = "youbuyfirst_worker.main:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

@@ -2,16 +2,16 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_DATABASE: human_indicator
-      MYSQL_USER: human
-      MYSQL_PASSWORD: human
+      MYSQL_DATABASE: youbuyfirst
+      MYSQL_USER: youbuyfirst
+      MYSQL_PASSWORD: youbuyfirst
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - youbuyfirst-mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uhuman", "-phuman"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uyoubuyfirst", "-pyoubuyfirst"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -20,9 +20,9 @@ services:
     build:
       context: ./backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/human_indicator?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: human
-      SPRING_DATASOURCE_PASSWORD: human
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/youbuyfirst?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: youbuyfirst
+      SPRING_DATASOURCE_PASSWORD: youbuyfirst
     ports:
       - "8080:8080"
     depends_on:
@@ -42,4 +42,4 @@ services:
       - backend
 
 volumes:
-  mysql-data:
+  youbuyfirst-mysql-data:

@@ -1,5 +1,5 @@
-from human_indicator_worker.llm import MockLLMProvider
-from human_indicator_worker.models import Mention
+from youbuyfirst_worker.llm import MockLLMProvider
+from youbuyfirst_worker.models import Mention
 
 
 def test_mock_llm_returns_structured_sentiment_for_each_mention():

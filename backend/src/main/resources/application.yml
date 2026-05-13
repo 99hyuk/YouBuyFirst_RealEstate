@@ -1,10 +1,10 @@
 spring:
   application:
-    name: human-indicator-backend
+    name: youbuyfirst-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/human_indicator?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
-    username: ${SPRING_DATASOURCE_USERNAME:human}
-    password: ${SPRING_DATASOURCE_PASSWORD:human}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/youbuyfirst?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:youbuyfirst}
+    password: ${SPRING_DATASOURCE_PASSWORD:youbuyfirst}
   flyway:
     enabled: true
   jpa:

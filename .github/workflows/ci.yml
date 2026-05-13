@@ -21,7 +21,7 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-      - run: mvn test
+      - run: mvn clean test
 
   worker:
     name: Worker
