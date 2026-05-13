@@ -66,6 +66,8 @@ PR을 열기 전:
 
 무관한 backend, worker, infra, product-scope 변경을 한 PR에 섞지 않습니다.
 
+PR 본문은 Notion 작업 카드와 같은 흐름으로 씁니다: 한눈에 보기, 바뀐 내용, 리뷰 가이드, 왜 이 단위인가, 검증 결과, 리스크와 후속 작업, Notion 기록. 검증은 명령어보다 사람이 읽기 쉬운 결과를 먼저 적습니다.
+
 ## 참고 문서
 
 - 최종 제품 기획: `docs/FINAL_PRODUCT_PLAN.md`

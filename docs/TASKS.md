@@ -19,6 +19,7 @@
 - [x] 프로젝트명/런타임 식별자를 너나사 (YouBuyFirst) 기준으로 정리
 - [x] PR 본문을 사람이 읽기 쉬운 결과 중심 형식으로 개선
 - [x] Notion 작업일지/트러블슈팅 허브 생성
+- [x] Notion 허브와 PR 템플릿을 B + A 하이브리드 UI 구조로 개선
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성
