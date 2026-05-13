@@ -112,9 +112,27 @@ PR 본문은 다음을 반드시 포함합니다.
 
 - 무엇을 바꿨는지
 - 왜 이 크기로 묶었는지
-- 검증 명령과 결과
+- 검증 결과
 - 남은 리스크
 - 후속 작업이 있다면 명시
+
+검증 섹션은 명령어 목록만 붙이지 않습니다. 먼저 사람이 읽을 수 있는 문장으로 무엇을 확인했고 결과가 어땠는지 씁니다. 필요한 명령어는 `<details>` 블록 안에 접어두거나, 결과 문장 뒤에 보조 정보로 둡니다.
+
+좋은 예:
+
+```text
+- Backend는 Docker Maven 컨테이너에서 `mvn clean test`로 실행했고, 통합 테스트 2개가 통과했습니다.
+- Worker는 Python 3.10 컨테이너에서 의존성을 설치한 뒤 `pytest`를 실행했고, 테스트 4개가 통과했습니다.
+- Docker Compose로 MySQL, backend, worker가 모두 정상 기동되는 것을 확인했습니다.
+```
+
+피해야 할 예:
+
+```text
+- docker run --rm ...
+- docker compose up --build -d
+- git diff --check
+```
 
 ## Merge 규칙
 

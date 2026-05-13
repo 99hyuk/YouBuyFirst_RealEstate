@@ -21,6 +21,7 @@
 - PR 생성, 라벨 지정, CI 확인, merge는 Codex/에이전트가 `git`과 `gh`로 직접 처리합니다.
 - PR 설명과 커밋 본문은 한국어로 작성합니다.
 - PR 제목은 `[타입][영역] 한국어 요약` 형식을 사용합니다.
+- PR 본문은 결과 중심으로 씁니다. 검증 섹션에는 명령어 나열보다 사람이 읽을 수 있는 통과 결과와 확인 사실을 먼저 적습니다.
 - 너무 큰 PR을 피하기 위해 5개 파일 이하를 선호하고, 10개 파일을 넘으면 분리 가능성을 먼저 검토합니다.
 
 ## 현재 GitHub 상태
@@ -31,6 +32,14 @@
 - PR #1 상태: CI 통과 후 squash merge 완료
 - GitHub labels: `type:*`, `area:*`, `size:*` 라벨 생성 완료
 - 현재 checkout은 작업자별로 달라질 수 있으므로 `git status --short --branch`로 확인합니다.
+
+## 현재 Notion 상태
+
+- Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
+- 작업일지: https://www.notion.so/35fdf321bd898183bd4ec871623d8917
+- 트러블슈팅: https://www.notion.so/35fdf321bd8981559e31e55584337cea
+- GitHub PR 운영 메모: https://www.notion.so/35fdf321bd89815c9808ff01a683f4bc
+- 작업이 끝나면 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 Notion 작업일지에 남깁니다.
 
 ## 마지막 검증 기록
 
@@ -47,7 +56,8 @@
 3. 제목과 GitHub 라벨로 타입, 영역, 크기를 구분합니다.
 4. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
 5. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
-6. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+6. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
+7. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
 
 ## 가장 가까운 다음 작업 후보
 

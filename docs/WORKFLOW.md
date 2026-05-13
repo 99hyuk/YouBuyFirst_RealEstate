@@ -17,6 +17,7 @@
 7. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다.
 8. GitHub 라벨을 붙이고 CI를 확인합니다.
 9. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+10. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
 
 ## PR 크기 기준
 
@@ -44,6 +45,17 @@ codex/<short-task-name>
 - 한국어 요약
 - `[타입][영역]` 제목
 - 타입/영역/크기 라벨
-- 검증 명령과 결과
+- 사람이 읽기 쉬운 검증 결과
 - 남은 리스크
 - 후속 작업
+
+검증은 명령어 자체보다 확인한 사실을 먼저 씁니다. 예를 들어 "Backend Docker test 통과, 2 tests"처럼 결과를 요약하고, 실제 명령어는 PR 본문의 접힌 영역이나 보조 설명에 둡니다.
+
+## Notion 기록
+
+- Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
+- 작업일지: https://www.notion.so/35fdf321bd898183bd4ec871623d8917
+- 트러블슈팅: https://www.notion.so/35fdf321bd8981559e31e55584337cea
+- GitHub PR 운영 메모: https://www.notion.so/35fdf321bd89815c9808ff01a683f4bc
+
+Notion 작업일지는 PR마다 길게 쓰지 않습니다. 작업 요약, 변경 범위, 검증 결과, PR 링크, 다음 작업자 메모가 있으면 충분합니다. 장애나 반복될 가능성이 있는 문제는 트러블슈팅 문서에 증상, 원인, 해결, 재발 방지 순서로 남깁니다.
