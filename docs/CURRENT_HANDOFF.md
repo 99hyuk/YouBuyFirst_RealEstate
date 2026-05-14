@@ -32,7 +32,7 @@
 - GitHub 라벨과 Notion 태그 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
 - Notion 허브는 B + A 하이브리드 구조를 씁니다: 첫 화면은 command center, 세부 기록은 PR 카드 로그입니다.
 - 문서는 길게 누적하지 않고 계층화합니다. 매번 읽는 문서와 검색용 기록은 `docs/DOCUMENTATION_GUIDE.md`를 기준으로 구분합니다.
-- 트러블슈팅은 작업일지보다 자세히 기록합니다. 반복 가능성이 있는 문제는 `docs/TROUBLESHOOTING_GUIDE.md` 구조로 Notion 트러블슈팅 DB에 남깁니다.
+- 기술 경험 기록은 작업일지보다 자세히 기록합니다. 반복 가능성이 있는 문제는 `docs/TROUBLESHOOTING_GUIDE.md` 구조로 Notion 기술 경험 기록 DB의 `문제해결` 유형에 남깁니다.
 - 너무 큰 PR을 피하기 위해 5개 파일 이하를 선호하고, 10개 파일을 넘으면 분리 가능성을 먼저 검토합니다.
 - 30분 커뮤니티 집계는 제품 핵심으로 유지합니다.
 - 공개 배포 시 원문 재게시, 작성자 추적, 닉네임 랭킹은 하지 않고 집계 지표와 AI 재서술 근거 중심으로 표시합니다.
@@ -46,6 +46,11 @@
 - 기획/조율/문서/Notion/PR 운영은 `ops` 트랙이 맡습니다.
 - 시세 수집은 `market`, 모의 체결은 `trade`, AI 에이전트 판단은 `agent`가 맡습니다. 세 작업을 같은 PR에 섞지 않습니다.
 - 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
+- Notion의 기존 트러블슈팅 DB는 `기술 경험 기록 DB`로 확장합니다.
+- 기술 경험 기록은 `문제해결`, `성능개선`, `품질개선`, `기술결정`, `도구/운영`으로 구분합니다.
+- 포트폴리오 후보는 `대표`, `보조`, `기록`으로 나누며, 단순 도구 운영 이슈는 기본적으로 `도구/운영`과 `기록`으로 둡니다.
+- Notion 루트는 전체 DB를 inline으로 펼치지 않고, 최근 요약과 이동 링크만 둡니다.
+- Notion 루트/Archive를 수정할 때 `allow_deleting_content`는 피합니다. child page/database 링크 블록을 삭제할 수 있어, 레이아웃 정리는 `update_content` 중심으로 합니다.
 
 ## 현재 GitHub 상태
 
@@ -60,12 +65,16 @@
 ## 현재 Notion 상태
 
 - Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
-- 작업일지: https://www.notion.so/35fdf321bd898183bd4ec871623d8917
-- 트러블슈팅: https://www.notion.so/35fdf321bd8981559e31e55584337cea
+- Archive & Admin: https://www.notion.so/360df321bd8981a6a60df71bca8bad5d
+- 제품 기획과 작업 맥락: https://www.notion.so/360df321bd89815c9767e703058990db
+- 작업 로그 DB data source: `collection://8e877781-3fbd-4a2e-99e7-84fac6aad303`
+- 기술 경험 기록 DB data source: `collection://ca06b075-a60d-4740-a5a6-7fb6eee29dde`
+- 다음 작업 DB data source: `collection://cf61f402-dfb8-4140-97f8-b8858f64ac26`
 - GitHub PR 운영 메모: https://www.notion.so/35fdf321bd89815c9808ff01a683f4bc
+- 작업일지는 작업 로그 DB에 남기는 PR별 카드형 기록을 뜻합니다.
 - 작업 로그 DB와 다음 작업 DB는 `변경 파트` 컬럼을 사용합니다.
 - 작업이 끝나면 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 Notion 작업일지에 남깁니다.
-- 트러블슈팅이 반복될 가능성이 있으면 트러블슈팅 DB에 incident card 형태로 증상, 발생 맥락, 조사 과정, 원인, 해결, 검증, 재발 방지를 남깁니다.
+- 트러블슈팅은 기술 경험 기록 DB의 `문제해결` 유형으로 남깁니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 종류와 포트폴리오 후보를 선택합니다.
 
 ## 마지막 검증 기록
 
@@ -91,7 +100,7 @@
 7. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
 8. PR 제목은 명사형으로 끝내고, PR 본문과 Notion 작업 카드는 사람이 읽기 쉬운 카드형 구조로 씁니다.
 9. PR 생성/수정 후 `gh pr view --json body --jq .body`와 `??` 검색으로 한글 깨짐이 없는지 확인합니다.
-10. 문제를 조사했거나 반복 가능성이 있으면 Notion 트러블슈팅 DB에 상세 기록을 남깁니다.
+10. 문제를 조사했거나 반복 가능성이 있으면 Notion 기술 경험 기록 DB에 상세 기록을 남깁니다.
 11. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
 
 ## 가장 가까운 다음 작업 후보

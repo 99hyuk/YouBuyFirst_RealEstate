@@ -2,7 +2,11 @@
 
 트러블슈팅은 작업일지보다 자세히 씁니다. 목적은 “이번 문제를 해결했다”에서 끝나는 것이 아니라, 다음 에이전트가 같은 문제를 만나도 빠르게 판단할 수 있게 만드는 것입니다.
 
-문제가 반복될 가능성이 있거나, 원인 조사에 시간이 들었거나, 외부 도구/GitHub/Notion/Docker/CI와 얽힌 문제라면 Notion 트러블슈팅 DB에 기록합니다.
+## 기술 경험 기록과의 관계
+
+트러블슈팅은 `기술 경험 기록 DB` 안의 `문제해결` 유형입니다. 모든 기술 경험이 트러블슈팅은 아닙니다. 성능 개선, 품질 개선, 기술 의사결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 기록합니다.
+
+문제가 반복될 가능성이 있거나, 원인 조사에 시간이 들었거나, 외부 도구/GitHub/Notion/Docker/CI와 얽힌 문제라면 Notion 기술 경험 기록 DB에 기록합니다.
 
 ## 기록 대상
 
@@ -20,13 +24,16 @@
 ## Notion DB 위치
 
 - Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
-- 트러블슈팅 DB: https://www.notion.so/35fdf321bd8981559e31e55584337cea
+- Archive & Admin: https://www.notion.so/360df321bd8981a6a60df71bca8bad5d
+- 기술 경험 기록 DB data source: `collection://ca06b075-a60d-4740-a5a6-7fb6eee29dde`
 
 ## 속성 작성 기준
 
 | 속성 | 작성 기준 |
 | --- | --- |
 | `문제` | 증상을 한 문장으로 씁니다. 예: `GitHub PR 본문 한글이 물음표로 깨짐` |
+| `종류` | 트러블슈팅은 보통 `문제해결`입니다. 단순 도구 운영 이슈는 트러블슈팅 카드가 아니라 `도구/운영` 기록으로 분리합니다 |
+| `포트폴리오 후보` | 대표 사례는 `대표`, 보조 근거는 `보조`, 단순 운영 기록은 `기록` |
 | `상태` | `Open`, `Watching`, `Resolved` |
 | `심각도` | 작업 차단은 `High`, 우회 가능은 `Medium`, 참고 수준은 `Low` |
 | `영역` | `GitHub`, `Notion`, `Docker`, `CI`, `Backend`, `Pipeline` 중 관련 영역 |
@@ -42,9 +49,15 @@
 
 Windows PowerShell에서 `$body | gh pr create --body-file -`처럼 pipeline/stdin으로 본문을 넘긴 기록이 있으면 UTF-8 no BOM 파일과 `--body-file <path>`로 다시 올립니다. 수정 후에는 `gh pr view <number> --json body --jq .body | Select-String -Pattern '\?\?'`로 남은 치환 문자열을 확인합니다.
 
+## Notion 루트 페이지 수정 주의
+
+Notion 루트나 Archive 페이지를 `replace_content`로 바꿀 때 child page/database 블록을 누락하면 기존 페이지와 linked view가 `deleted` 상태로 표시될 수 있습니다.
+
+레이아웃만 정리할 때는 가능하면 `update_content`로 필요한 문장과 링크만 바꿉니다. 꼭 전체 교체가 필요하면 fetch 결과에서 보존해야 할 `<page>`와 `<database>` 태그를 먼저 확인하고, `allow_deleting_content`를 기본값처럼 쓰지 않습니다.
+
 ## 카드 본문 템플릿
 
-Notion 트러블슈팅 카드 본문은 아래 구조를 씁니다.
+Notion 기술 경험 기록 DB의 문제해결 카드 본문은 아래 구조를 씁니다.
 
 ```md
 ## 🚨 한눈에 보기
@@ -117,6 +130,6 @@ Notion 트러블슈팅 카드 본문은 아래 구조를 씁니다.
 ## PR과의 관계
 
 - PR 본문에는 트러블슈팅 링크와 요약만 둡니다.
-- 긴 로그와 조사 과정은 Notion 트러블슈팅 DB에 둡니다.
+- 긴 로그와 조사 과정은 Notion 기술 경험 기록 DB에 둡니다.
 - 해결 PR이 있으면 트러블슈팅 카드의 `링크` 속성에 PR URL을 넣습니다.
 - 재발 방지 작업이 남으면 `TASKS.md`나 Notion 다음 작업 DB에 추가합니다.
