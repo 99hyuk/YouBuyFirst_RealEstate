@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Iterable
 
 import httpx
 
-from youbuyfirst_worker.models import EnrichedPost
+from youbuyfirst_pipeline.models import EnrichedPost
 
 
 class SpringIngestionClient:

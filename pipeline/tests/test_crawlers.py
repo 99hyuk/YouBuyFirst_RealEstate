@@ -1,5 +1,5 @@
-from youbuyfirst_worker.crawlers.fmkorea import FmkoreaAdapter
-from youbuyfirst_worker.crawlers.naver import NaverBoardAdapter
+﻿from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
+from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
 
 
 def test_naver_fixture_is_parsed_into_posts():

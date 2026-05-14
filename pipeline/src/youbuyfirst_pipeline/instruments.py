@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import csv
 from pathlib import Path
 
-from youbuyfirst_worker.models import Instrument
+from youbuyfirst_pipeline.models import Instrument
 
 
 def load_instruments(path: str | Path) -> list[Instrument]:

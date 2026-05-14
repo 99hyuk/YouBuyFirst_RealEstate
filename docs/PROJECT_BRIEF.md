@@ -1,4 +1,4 @@
-# 너나사 (YouBuyFirst) 프로젝트 기획 요약
+﻿# 너나사 (YouBuyFirst) 프로젝트 기획 요약
 
 ## 현재 MVP 설명
 
@@ -25,7 +25,7 @@
 ## 확정 설계 결정
 
 - Spring Boot가 중심 시스템이며 저장, 검증, 중복 제거, admin API를 담당합니다.
-- Python worker는 크롤링, Playwright fallback, LLM 분석을 담당합니다.
+- Python pipeline은 크롤링, Playwright fallback, LLM 분석을 담당합니다.
 - LLM provider는 추상화하고, 기본 구현은 OpenAI adapter로 둡니다.
 - `OPENAI_API_KEY`가 없으면 mock provider로 로컬 시연을 가능하게 합니다.
 - 차단된 소스는 우회하지 않고 crawl run 실패 상태로 기록합니다.

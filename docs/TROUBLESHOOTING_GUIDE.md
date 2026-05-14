@@ -1,4 +1,4 @@
-# 트러블슈팅 기록 가이드
+﻿# 트러블슈팅 기록 가이드
 
 트러블슈팅은 작업일지보다 자세히 씁니다. 목적은 “이번 문제를 해결했다”에서 끝나는 것이 아니라, 다음 에이전트가 같은 문제를 만나도 빠르게 판단할 수 있게 만드는 것입니다.
 
@@ -29,7 +29,7 @@
 | `문제` | 증상을 한 문장으로 씁니다. 예: `GitHub PR 본문 한글이 물음표로 깨짐` |
 | `상태` | `Open`, `Watching`, `Resolved` |
 | `심각도` | 작업 차단은 `High`, 우회 가능은 `Medium`, 참고 수준은 `Low` |
-| `영역` | `GitHub`, `Notion`, `Docker`, `CI`, `Backend`, `Worker` 중 관련 영역 |
+| `영역` | `GitHub`, `Notion`, `Docker`, `CI`, `Backend`, `Pipeline` 중 관련 영역 |
 | `원인` | 확정 원인만 씁니다. 추정이면 `추정:`으로 시작합니다 |
 | `해결` | 실제로 먹힌 해결 방법을 씁니다 |
 | `재발 방지` | 다음에 어떻게 피할지 씁니다 |
@@ -49,7 +49,7 @@ Notion 트러블슈팅 카드 본문은 아래 구조를 씁니다.
 | --- | --- |
 | 상태 | Open / Watching / Resolved |
 | 심각도 | Low / Medium / High |
-| 영역 | GitHub / Notion / Docker / CI / Backend / Worker |
+| 영역 | GitHub / Notion / Docker / CI / Backend / Pipeline |
 | 관련 PR | 링크 |
 | 현재 결론 | 확정 원인 또는 아직 모르는 점 |
 

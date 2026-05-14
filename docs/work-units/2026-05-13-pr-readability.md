@@ -1,4 +1,4 @@
-# Work Unit: PR Readability
+﻿# Work Unit: PR Readability
 
 ## Goal
 
@@ -15,7 +15,7 @@
 
 - CI 동작 변경
 - PR 승인 자동화 구현
-- 크롤러, backend, worker 기능 변경
+- 크롤러, backend, pipeline 기능 변경
 
 ## Verification
 

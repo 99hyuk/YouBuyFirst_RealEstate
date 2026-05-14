@@ -1,4 +1,4 @@
-# Work Unit: Runtime Identifier Rename
+﻿# Work Unit: Runtime Identifier Rename
 
 ## Goal
 
@@ -8,7 +8,7 @@
 
 - Java 패키지명을 `com.youbuyfirst`로 변경
 - Spring Boot 애플리케이션 클래스를 `YouBuyFirstApplication`으로 변경
-- Python worker 패키지명을 `youbuyfirst_worker`로 변경
+- Python pipeline 패키지명을 `youbuyfirst_pipeline`로 변경
 - Docker Compose, Spring datasource, MySQL DB/user/password, Docker 이미지/JAR 이름을 `youbuyfirst` 기준으로 변경
 - CI와 로컬 검증 명령을 stale target 영향을 받지 않도록 `mvn clean test`로 조정
 
@@ -21,8 +21,8 @@
 ## Verification
 
 - Backend Docker test: `mvn clean test`
-- Worker Docker test: `pip install -e .[test] && pytest`
-- Docker Compose smoke test: MySQL, backend, worker 기동 확인
+- Pipeline Docker test: `pip install -e .[test] && pytest`
+- Docker Compose smoke test: MySQL, backend, pipeline 기동 확인
 - 옛 프로젝트명/패키지명 식별자 검색
 
 ## Notes

@@ -1,8 +1,8 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import re
 
-from youbuyfirst_worker.models import Instrument, Mention
+from youbuyfirst_pipeline.models import Instrument, Mention
 
 
 class InstrumentMatcher:

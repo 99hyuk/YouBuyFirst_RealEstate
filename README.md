@@ -5,8 +5,8 @@
 ## 구성
 
 - `backend/`: Spring Boot API, MySQL 저장, Swagger 관리 조회
-- `worker/`: Python crawler, Playwright fallback, 종목 별칭 매칭, LLM 감성 분석
-- `docker-compose.yml`: MySQL, backend, worker 로컬 실행 환경
+- `pipeline/`: Python crawler/analysis pipeline, Playwright fallback, 종목 별칭 매칭, LLM 감성 분석
+- `docker-compose.yml`: MySQL, backend, pipeline 로컬 실행 환경
 
 ## 실행
 
@@ -32,7 +32,7 @@ POST /internal/ingestions/crawl-runs
 
 ## LLM 설정
 
-`OPENAI_API_KEY`가 있으면 worker가 OpenAI provider를 사용합니다. 없으면 로컬 시연용 `MockLLMProvider`가 사용됩니다.
+`OPENAI_API_KEY`가 있으면 pipeline이 OpenAI provider를 사용합니다. 없으면 로컬 시연용 `MockLLMProvider`가 사용됩니다.
 
 ```bash
 OPENAI_API_KEY=...
@@ -41,7 +41,7 @@ OPENAI_MODEL=gpt-4.1-mini
 
 ## 종목 마스터
 
-샘플 CSV인 `worker/data/instruments.sample.csv`는 backend Flyway seed에도 들어 있습니다. 국내 전체 종목 + 미국 상장 주식/ETF로 확장할 때는 같은 컬럼 형식의 CSV를 준비하고 `INSTRUMENT_CSV_PATH`를 교체합니다. `NAVER_STOCK_CODES`를 별도로 지정하지 않으면 worker는 CSV 안의 `KR` 종목 전체를 네이버 종토방 수집 대상으로 사용합니다.
+샘플 CSV인 `pipeline/data/instruments.sample.csv`는 backend Flyway seed에도 들어 있습니다. 국내 전체 종목 + 미국 상장 주식/ETF로 확장할 때는 같은 컬럼 형식의 CSV를 준비하고 `INSTRUMENT_CSV_PATH`를 교체합니다. `NAVER_STOCK_CODES`를 별도로 지정하지 않으면 pipeline은 CSV 안의 `KR` 종목 전체를 네이버 종토방 수집 대상으로 사용합니다.
 
 ```csv
 market,symbol,name,aliases,type
@@ -54,14 +54,14 @@ US,TSLA,Tesla,테슬라|TSLA,STOCK
 
 ```bash
 cd backend && mvn clean test
-cd worker && pip install -e .[test] && pytest
+cd pipeline && pip install -e .[test] && pytest
 ```
 
 Docker로 실행하려면:
 
 ```bash
 docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.9-eclipse-temurin-21 mvn clean test
-docker run --rm -v "${PWD}/worker:/workspace" -w /workspace python:3.10-slim sh -lc "pip install -e .[test] && pytest"
+docker run --rm -v "${PWD}/pipeline:/workspace" -w /workspace python:3.10-slim sh -lc "pip install -e .[test] && pytest"
 ```
 
 ## 에이전트/PR 작업 흐름

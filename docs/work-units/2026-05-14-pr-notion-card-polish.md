@@ -1,4 +1,4 @@
-# 작업 단위: PR/Notion 카드형 기록 정리
+﻿# 작업 단위: PR/Notion 카드형 기록 정리
 
 ## 목적
 
@@ -14,7 +14,7 @@ PR과 Notion 작업 기록이 다시 텍스트만 길게 이어지는 형태로 
 ## 제외 범위
 
 - GitHub Actions 동작 변경
-- backend, worker, frontend 기능 구현
+- backend, pipeline, front 기능 구현
 - Notion 데이터베이스 schema 변경
 
 ## 검증 기준

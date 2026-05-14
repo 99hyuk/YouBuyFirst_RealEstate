@@ -1,4 +1,4 @@
-# 현재 작업 인수인계
+﻿# 현재 작업 인수인계
 
 마지막 갱신: 2026-05-14
 
@@ -7,16 +7,18 @@
 ## 지금까지 한 일
 
 - 너나사 (YouBuyFirst) MVP 저장소를 초기 구성했습니다.
-- Spring Boot 백엔드, Python worker, MySQL, Docker Compose 기반 로컬 실행 구성을 만들었습니다.
+- Spring Boot 백엔드, Python pipeline, MySQL, Docker Compose 기반 로컬 실행 구성을 만들었습니다.
 - 네이버 종토방과 에펨코리아 게시글 수집, 종목 매칭, LLM provider 추상화, mock sentiment fallback, ingestion API, admin 조회 API를 구현했습니다.
 - 제한 원문 저장 정책을 반영했습니다: 제목, 본문 일부, URL, 작성 시각, 작성자 표시명 해시, 원문 해시만 저장합니다.
 - Swagger에서 crawl run, posts, stock metrics를 확인할 수 있게 했습니다.
 - GitHub Actions CI와 PR 템플릿을 추가했습니다.
 - 최종 기획안, MVP 범위, 작업 목록, 에이전트 인수인계 문서를 추가했습니다.
-- 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-worker`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
+- 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-pipeline`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
 - 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
 - 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
 - 여러 채팅이 동시에 일할 수 있도록 일곱 개의 병렬 작업 트랙 문서를 추가했습니다.
+- GitHub 라벨 체계를 `track:*`, `type:*`, `part:*`, `size:*`로 정리했습니다.
+- Python 실행 단위 이름을 `worker`에서 `pipeline`으로 정리했습니다.
 
 ## 최근 결정
 
@@ -37,8 +39,9 @@
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
 - 병렬 작업은 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops` 일곱 트랙으로 나눕니다.
 - 병렬 작업 PR에는 `track:crawl`, `track:data`, `track:market`, `track:trade`, `track:agent`, `track:front`, `track:ops` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
-- `type:*`는 작업 타입, `track:*`는 작업 트랙, `area:*`는 개발 영역입니다. `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
-- 프론트 작업은 `front` 트랙으로 시작하고 `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
+- `type:*`는 작업 타입, `track:*`는 작업 트랙, `part:*`는 변경 파트입니다. `part:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
+- Notion 작업 로그와 다음 작업 DB에서는 같은 의미를 `변경 파트` 컬럼으로 기록합니다.
+- 프론트 작업은 `front` 트랙으로 시작하고 `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `part:front`도 함께 붙입니다.
 - 기획/조율/문서/Notion/PR 운영은 `ops` 트랙이 맡습니다.
 - 시세 수집은 `market`, 모의 체결은 `trade`, AI 에이전트 판단은 `agent`가 맡습니다. 세 작업을 같은 PR에 섞지 않습니다.
 - 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
@@ -49,7 +52,8 @@
 - Default branch: `main`
 - Bootstrap PR: https://github.com/99hyuk/YouBuyFirst/pull/1
 - PR #1 상태: CI 통과 후 squash merge 완료
-- GitHub labels: `track:*`, `type:*`, `size:*`, `area:*` 라벨 생성 완료
+- GitHub labels: `track:*`, `type:*`, `size:*`, `part:*` 라벨 생성 완료
+- 현재 작업 타입 라벨은 `feat`, `fix`, `docs`, `refactor`, `perf`, `chore`만 씁니다.
 - 현재 checkout은 작업자별로 달라질 수 있으므로 `git status --short --branch`로 확인합니다.
 
 ## 현재 Notion 상태
@@ -58,13 +62,19 @@
 - 작업일지: https://www.notion.so/35fdf321bd898183bd4ec871623d8917
 - 트러블슈팅: https://www.notion.so/35fdf321bd8981559e31e55584337cea
 - GitHub PR 운영 메모: https://www.notion.so/35fdf321bd89815c9808ff01a683f4bc
+- 작업 로그 DB와 다음 작업 DB는 `변경 파트` 컬럼을 사용합니다.
 - 작업이 끝나면 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 Notion 작업일지에 남깁니다.
 - 트러블슈팅이 반복될 가능성이 있으면 트러블슈팅 DB에 incident card 형태로 증상, 발생 맥락, 조사 과정, 원인, 해결, 검증, 재발 방지를 남깁니다.
 
 ## 마지막 검증 기록
 
+- Label/part/pipeline branch: Pipeline Docker test 통과, 4 tests
+- Label/part/pipeline branch: Docker Compose config service가 `mysql`, `backend`, `pipeline`으로 출력됨
+- Label/part/pipeline branch: GitHub labels가 `track:*`, `type:*`, `part:*`, `size:*` 체계로 정리됨
+- Label/part/pipeline branch: Notion 라벨/태그 사전과 DB `변경 파트` schema 확인
+- Label/part/pipeline branch: `git diff --check` 통과
 - Runtime identifier rename branch: Backend Docker test 통과, 2 tests
-- Runtime identifier rename branch: Worker Docker test 통과, 4 tests
+- Runtime identifier rename branch: Pipeline Docker test 통과, 4 tests
 - Runtime identifier rename branch: Docker Compose 기동 및 Swagger `200` 확인
 - Runtime identifier rename branch: 옛 프로젝트명/패키지명 검색 결과 없음
 - Runtime identifier rename branch: `git diff --check` 통과
@@ -73,8 +83,8 @@
 
 1. 먼저 `AGENTS.md`, 이 파일, `docs/DOCUMENTATION_GUIDE.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
 2. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
-3. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 인프라 변경만 담습니다.
-4. 제목과 GitHub 라벨로 작업 트랙, 작업 타입, 크기를 구분합니다. 개발 영역은 필요할 때만 보조 라벨로 표시합니다.
+3. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 CI/runtime 설정 변경만 담습니다.
+4. 제목과 GitHub 라벨로 작업 트랙, 작업 타입, 크기를 구분합니다. 변경 파트는 필요할 때만 보조 라벨로 표시합니다.
 5. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
 6. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
 7. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
@@ -88,5 +98,5 @@
 - 에펨코리아 게시판 parser 보강
 - 종목 게시판형 소스를 위한 `CrawlTarget` 최소 설계
 - 소스별 활성화 상태 설계
-- worker가 backend readiness를 기다리도록 개선
+- pipeline이 backend readiness를 기다리도록 개선
 - admin API Swagger 예시와 validation 오류 응답 정리

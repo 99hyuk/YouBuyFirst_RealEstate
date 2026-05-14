@@ -1,11 +1,11 @@
-# 너나사 (YouBuyFirst) 작업 목록
+﻿# 너나사 (YouBuyFirst) 작업 목록
 
 ## 완료된 초기 MVP 작업
 
 - [x] Spring Boot ingestion API 추가
 - [x] MySQL/Flyway schema 추가
 - [x] Swagger admin 조회 API 추가
-- [x] Python worker skeleton 추가
+- [x] Python pipeline skeleton 추가
 - [x] 네이버 종토방 crawler adapter 추가
 - [x] 에펨코리아 crawler adapter 추가
 - [x] crawler fixture test 추가
@@ -29,9 +29,11 @@
 - [x] 의존도에 따른 `main`/`track/*` 하이브리드 브랜치 전략 정리
 - [x] PR/Notion 카드형 기록과 라벨/태그 사전 정리
 - [x] AGENTS 범위 설명과 PR 라벨/문장 체계 정리
-- [x] 라벨 설명을 작업 트랙/작업 타입/개발 영역으로 명확화
+- [x] 라벨 설명을 작업 트랙/작업 타입/변경 파트로 명확화
 - [x] 문서 구조와 트러블슈팅 기록 기준 정리
 - [x] 병렬 트랙을 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops`로 재정리
+- [x] GitHub/Notion 라벨 체계를 `area:*`에서 `part:*`와 `변경 파트`로 정리
+- [x] Python 실행 단위와 패키지를 `worker`에서 `pipeline`으로 정리
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성
@@ -48,7 +50,7 @@
 - [ ] `market` 트랙에서 quote snapshot 계약 설계
 - [ ] `trade` 트랙에서 모의 계좌와 주문/체결 최소 도메인 설계
 - [ ] `agent` 트랙에서 역발상 페르소나 입력 contract 설계
-- [ ] worker가 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
+- [ ] pipeline이 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
 - [ ] `POST /internal/ingestions/community-posts` payload 예시를 Swagger에 추가
 
 ## 다음 MVP 작업 후보

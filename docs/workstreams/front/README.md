@@ -1,4 +1,4 @@
-# front
+﻿# front
 
 ## 역할
 
@@ -23,11 +23,11 @@
 
 주로 담당:
 
-- frontend 또는 dashboard 패키지
-- frontend fixture/mock data
-- frontend client adapter
+- front 또는 dashboard 패키지
+- front fixture/mock data
+- front client adapter
 - UI component와 page layout
-- frontend 테스트
+- front 테스트
 
 공유 전 협의:
 
@@ -49,9 +49,9 @@
 ## PR 규칙
 
 - 브랜치 prefix는 `codex/front-*`를 씁니다.
-- GitHub 라벨은 `track:front`를 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
+- GitHub 라벨은 `track:front`를 붙입니다. 화면 파일을 직접 바꾸면 `part:front`도 함께 붙입니다.
 - 실제 API가 없으면 fixture/mock data를 명시합니다.
-- dashboard shell, component system, chart area, real API integration을 한 PR에 섞지 않습니다.
+- dashboard shell, component system, chart view, real API integration을 한 PR에 섞지 않습니다.
 - UI 구현 PR은 가능하면 스크린샷 또는 브라우저 검증 결과를 PR 본문에 남깁니다.
 
 ## 하지 않는 일

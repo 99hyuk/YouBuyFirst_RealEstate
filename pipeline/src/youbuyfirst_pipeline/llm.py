@@ -1,10 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import os
 from typing import Protocol
 
-from youbuyfirst_worker.models import Analysis, Mention
+from youbuyfirst_pipeline.models import Analysis, Mention
 
 
 class LLMProvider(Protocol):

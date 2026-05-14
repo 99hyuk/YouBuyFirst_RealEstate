@@ -1,4 +1,4 @@
-# Context Handoff
+﻿# Context Handoff
 
 새 채팅이나 다른 에이전트에게 작업을 넘길 때 이 파일을 읽습니다. 가장 최신 상태 요약은 `docs/CURRENT_HANDOFF.md`를 먼저 봅니다.
 
@@ -10,8 +10,8 @@
 
 - Source: 네이버 종토방, 에펨코리아 주식 게시판
 - Backend: Spring Boot가 ingestion, validation, persistence, metrics, Swagger admin API를 담당
-- Worker: Python이 crawling, Playwright rendering fallback, instrument matching, LLM sentiment analysis를 담당
-- Runtime: Docker Compose가 MySQL, backend, worker를 실행
+- Pipeline: Python이 crawling, Playwright rendering fallback, instrument matching, LLM sentiment analysis를 담당
+- Runtime: Docker Compose가 MySQL, backend, pipeline을 실행
 - 30분 집계는 유지하되, 공개 배포 시 소스별 활성화 상태를 관리합니다.
 
 ## 중요한 결정
@@ -24,7 +24,8 @@
 - 담당 트랙과 명시 요청 없이 OCR, 실거래, user auth, proxy rotation, CAPTCHA bypass, login-session scraping을 넣지 않습니다.
 - 원문은 제한 저장합니다: title, content snippet, URL, author hash, published time, content hash.
 - 공개 UI는 원문보다 집계 지표, 대표 키워드, 감성 비율, AI 재서술 근거를 중심으로 보여줍니다.
-- 병렬 작업은 `docs/workstreams/README.md`의 다섯 트랙으로 나눕니다.
+- 병렬 작업은 `docs/workstreams/README.md`의 일곱 트랙으로 나눕니다.
+- 라벨은 `track:*`, `type:*`, `size:*`를 기본으로 쓰고, 실제 변경 표면이 분명할 때만 `part:*`를 추가합니다.
 - `OPENAI_API_KEY`가 있으면 OpenAI 분석을 사용하고, 없으면 로컬 demo용 mock sentiment를 사용합니다.
 - MySQL host port는 로컬 `3306` 충돌을 피하기 위해 `3307`을 사용합니다.
 
@@ -36,11 +37,11 @@
 
 ## 마지막 검증 Snapshot
 
-- PR #1 GitHub Actions: Backend pass, Worker pass
+- PR #1 GitHub Actions: Backend pass, Pipeline pass
 - Backend Docker test: pass, 2 tests
-- Worker Docker test: pass, 4 tests
-- Docker Compose: MySQL, backend, worker start 확인
-- Manual worker batch: Naver와 FM Korea crawl run 저장 확인
+- Pipeline Docker test: pass, 4 tests
+- Docker Compose: MySQL, backend, pipeline start 확인
+- Manual pipeline batch: Naver와 FM Korea crawl run 저장 확인
 
 ## Read First
 

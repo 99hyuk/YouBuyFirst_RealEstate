@@ -1,4 +1,4 @@
-# ops
+﻿# ops
 
 ## 역할
 
@@ -32,9 +32,9 @@
 공유 전 협의:
 
 - backend API contract
-- worker payload contract
+- pipeline payload contract
 - DB migration
-- frontend package
+- front package
 - quote/sentiment/simulation domain schema
 
 ## 현재 우선순위

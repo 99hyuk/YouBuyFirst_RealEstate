@@ -29,9 +29,9 @@ services:
       mysql:
         condition: service_healthy
 
-  worker:
+  pipeline:
     build:
-      context: ./worker
+      context: ./pipeline
     environment:
       SPRING_BASE_URL: http://backend:8080
       CRAWL_INTERVAL_MINUTES: 30

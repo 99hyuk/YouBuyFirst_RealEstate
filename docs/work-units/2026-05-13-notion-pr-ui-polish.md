@@ -1,4 +1,4 @@
-# Work Unit: Notion and PR UI Polish
+﻿# Work Unit: Notion and PR UI Polish
 
 ## Goal
 
@@ -15,13 +15,13 @@ Notion과 GitHub PR을 B + A 하이브리드 정보 구조로 정리해, 새 채
 
 - Notion database 생성
 - GitHub Actions에서 Notion 자동 업데이트
-- 코드/크롤러/backend/worker 기능 변경
+- 코드/크롤러/backend/pipeline 기능 변경
 
 ## Verification
 
 - `git diff --check`로 문서 공백 오류 확인
 - Notion fetch로 hub와 핵심 child page가 새 구조를 포함하는지 확인
-- GitHub Actions Backend/Worker 체크 확인
+- GitHub Actions Backend/Pipeline 체크 확인
 
 ## Notes
 

@@ -1,4 +1,4 @@
-# data
+﻿# data
 
 ## 역할
 
@@ -20,8 +20,8 @@
 
 주로 담당:
 
-- `worker/src/youbuyfirst_worker/matcher.py`
-- `worker/src/youbuyfirst_worker/llm.py`
+- `pipeline/src/youbuyfirst_pipeline/matcher.py`
+- `pipeline/src/youbuyfirst_pipeline/llm.py`
 - sentiment/metrics 관련 backend domain
 - metrics API
 - instrument seed/fixture

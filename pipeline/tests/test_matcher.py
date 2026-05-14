@@ -1,5 +1,5 @@
-from youbuyfirst_worker.matcher import InstrumentMatcher
-from youbuyfirst_worker.models import Instrument
+﻿from youbuyfirst_pipeline.matcher import InstrumentMatcher
+from youbuyfirst_pipeline.models import Instrument
 
 
 def test_matches_korean_aliases_and_us_tickers_without_duplicates():

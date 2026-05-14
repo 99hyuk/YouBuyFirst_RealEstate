@@ -1,4 +1,4 @@
-# 병렬 작업 트랙 안내
+﻿# 병렬 작업 트랙 안내
 
 너나사 (YouBuyFirst)는 여러 채팅과 에이전트가 동시에 일할 수 있도록 일곱 개의 짧은 작업 트랙으로 나눕니다. 실제 MSA로 바로 분리하지는 않지만, 문서, 브랜치, PR, 파일 소유권은 서비스 경계처럼 명확히 나눕니다.
 
@@ -67,7 +67,7 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 
 ## PR 라벨
 
-PR에는 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` 라벨을 반드시 붙입니다. 개발 영역 `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
+PR에는 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` 라벨을 반드시 붙입니다. 변경 파트 `part:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
 
 라벨과 Notion 태그의 상세 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
 
@@ -85,7 +85,7 @@ PR에는 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` 라벨
 
 ```text
 트랙: crawl
-변경 범위: worker crawler scheduler, docs/workstreams/crawl
+변경 범위: pipeline crawler scheduler, docs/workstreams/crawl
 ```
 
 ## Notion 구분

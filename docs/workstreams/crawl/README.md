@@ -1,4 +1,4 @@
-# crawl
+﻿# crawl
 
 ## 역할
 
@@ -19,9 +19,9 @@
 
 주로 담당:
 
-- `worker/src/youbuyfirst_worker/crawlers/`
-- `worker/src/youbuyfirst_worker/scheduler.py`
-- `worker/tests/fixtures/`
+- `pipeline/src/youbuyfirst_pipeline/crawlers/`
+- `pipeline/src/youbuyfirst_pipeline/scheduler.py`
+- `pipeline/tests/fixtures/`
 - crawler 관련 backend ingestion payload contract
 - `docs/LEGAL_RISK_CASES.md`
 

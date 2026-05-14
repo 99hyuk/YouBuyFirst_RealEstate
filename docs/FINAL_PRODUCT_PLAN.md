@@ -1,4 +1,4 @@
-# 너나사 (YouBuyFirst) 최종 기획안
+﻿# 너나사 (YouBuyFirst) 최종 기획안
 
 ## 제품 한 줄 설명
 
@@ -176,7 +176,7 @@
 
 ```mermaid
 flowchart LR
-    C["Community Sources"] --> W["Python Crawler Worker"]
+    C["Community Sources"] --> W["Python Crawler Pipeline"]
     W --> L["LLM Sentiment Provider"]
     L --> W
     W --> B["Spring Boot Backend"]

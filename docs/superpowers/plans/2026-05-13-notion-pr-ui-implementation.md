@@ -1,4 +1,4 @@
-# Notion PR UI Implementation Plan
+﻿# Notion PR UI Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -26,7 +26,7 @@ Use a small metadata table, outcome-first verification, details blocks for comma
 
 - [ ] **Step 2: Update workflow docs**
 
-Document that PRs should use the same structure as Notion work cards: at-a-glance, changed areas, verification outcomes, risks, next agent memo.
+Document that PRs should use the same structure as Notion work cards: at-a-glance, changed parts, verification outcomes, risks, next agent memo.
 
 - [ ] **Step 3: Update handoff and task list**
 
@@ -74,12 +74,12 @@ Run: `git status -sb` and `git diff --stat`.
 
 - [ ] **Step 2: Commit with Korean convention**
 
-Commit title: `[docs][process] Notion과 PR 문서 UI를 개선한다`
+Commit title: `[ops][docs] Notion과 PR 문서 UI 개선`
 
 - [ ] **Step 3: Push and open PR**
 
-Use branch `codex/notion-pr-ui-design`, add `type:docs`, `area:process`, `area:docs`, `size:M` or `size:L` depending on final file count.
+Use branch `codex/notion-pr-ui-design`, add `type:docs`, `part:rule`, `part:docs`, `size:M` or `size:L` depending on final file count.
 
 - [ ] **Step 4: Verify CI and merge**
 
-Wait for Backend and Worker checks. If both pass, squash merge and delete the remote branch.
+Wait for Backend and Pipeline checks. If both pass, squash merge and delete the remote branch.

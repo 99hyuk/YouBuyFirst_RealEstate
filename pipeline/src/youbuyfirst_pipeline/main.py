@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import asyncio
@@ -8,15 +8,15 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from youbuyfirst_worker.client import SpringIngestionClient
-from youbuyfirst_worker.crawlers.base import BrowserCapableFetcher
-from youbuyfirst_worker.crawlers.fmkorea import FmkoreaAdapter
-from youbuyfirst_worker.crawlers.naver import NaverBoardAdapter
-from youbuyfirst_worker.instruments import load_instruments
-from youbuyfirst_worker.llm import build_llm_provider
-from youbuyfirst_worker.matcher import InstrumentMatcher
-from youbuyfirst_worker.pipeline import CommunityPipeline
-from youbuyfirst_worker.scheduler import serve
+from youbuyfirst_pipeline.client import SpringIngestionClient
+from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher
+from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
+from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
+from youbuyfirst_pipeline.instruments import load_instruments
+from youbuyfirst_pipeline.llm import build_llm_provider
+from youbuyfirst_pipeline.matcher import InstrumentMatcher
+from youbuyfirst_pipeline.pipeline import CommunityPipeline
+from youbuyfirst_pipeline.scheduler import serve
 
 
 def build_pipeline() -> CommunityPipeline:

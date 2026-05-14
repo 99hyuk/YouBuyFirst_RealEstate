@@ -1,4 +1,4 @@
-# Notion + GitHub PR UI Design
+﻿# Notion + GitHub PR UI Design
 
 ## Decision
 
@@ -53,7 +53,7 @@ Each work log entry should be written as a compact PR card:
 1. Header
    - PR number and title.
    - Status.
-   - Labels or area.
+   - Labels or changed part.
    - Date.
 2. Why
    - One sentence explaining the reason for the work.
@@ -90,7 +90,7 @@ Recommended sections:
 
 1. At-a-glance summary
    - One sentence.
-   - Small metadata table for type, area, size, status.
+   - Small metadata table for type, part, size, status.
 2. Reviewer path
    - What to read first.
    - What can be skimmed.

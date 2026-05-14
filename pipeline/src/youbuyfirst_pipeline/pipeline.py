@@ -1,13 +1,13 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from youbuyfirst_worker.client import SpringIngestionClient
-from youbuyfirst_worker.crawlers.base import CommunityAdapter, SourceBlockedError
-from youbuyfirst_worker.llm import LLMProvider
-from youbuyfirst_worker.matcher import InstrumentMatcher
-from youbuyfirst_worker.models import EnrichedPost, RawPost
+from youbuyfirst_pipeline.client import SpringIngestionClient
+from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedError
+from youbuyfirst_pipeline.llm import LLMProvider
+from youbuyfirst_pipeline.matcher import InstrumentMatcher
+from youbuyfirst_pipeline.models import EnrichedPost, RawPost
 
 
 class CommunityPipeline:

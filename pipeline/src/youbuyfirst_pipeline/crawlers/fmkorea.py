@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from bs4 import BeautifulSoup
 
-from youbuyfirst_worker.crawlers.base import BrowserCapableFetcher, parse_datetime
-from youbuyfirst_worker.models import RawPost
+from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher, parse_datetime
+from youbuyfirst_pipeline.models import RawPost
 
 
 class FmkoreaAdapter:

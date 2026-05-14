@@ -6,7 +6,7 @@
 | --- | --- |
 | 작업 트랙 | `track:` |
 | 작업 타입 | `type:` |
-| 개발 영역 | `area:` 필요할 때만 |
+| 변경 파트 | `part:` 필요할 때만 |
 | 크기 | `size:` |
 | 기준 문서 | `docs/LABEL_GUIDE.md` |
 | 상태 | CI 확인 전 / CI 통과 / 병합 완료 |
@@ -33,7 +33,7 @@
 ## ✅ 검증 결과
 
 - Backend:
-- Worker:
+- Pipeline:
 - Runtime:
 - 문서/공백:
 
@@ -43,7 +43,7 @@
 ```bash
 # 필요한 항목만 남기고 지웁니다.
 docker run --rm -v "${PWD}\backend:/workspace" -w /workspace maven:3.9-eclipse-temurin-21 mvn clean test
-docker run --rm -v "${PWD}\worker:/workspace" -w /workspace python:3.10-slim sh -lc "pip install -e .[test] >/tmp/pip.log && pytest"
+docker run --rm -v "${PWD}\pipeline:/workspace" -w /workspace python:3.10-slim sh -lc "pip install -e .[test] >/tmp/pip.log && pytest"
 docker compose up --build -d
 docker compose ps
 git diff --check

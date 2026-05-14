@@ -1,4 +1,4 @@
-# 작업 단위: 문서 구조와 트러블슈팅 기록 기준 정리
+﻿# 작업 단위: 문서 구조와 트러블슈팅 기록 기준 정리
 
 ## 목적
 
@@ -16,7 +16,7 @@
 
 - 기존 완료 작업 대량 이동
 - Notion DB schema 변경
-- backend, worker, frontend 기능 구현
+- backend, pipeline, front 기능 구현
 
 ## 검증 기준
 

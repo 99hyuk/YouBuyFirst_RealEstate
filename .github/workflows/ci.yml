@@ -23,12 +23,12 @@ jobs:
           cache: maven
       - run: mvn clean test
 
-  worker:
-    name: Worker
+  pipeline:
+    name: Pipeline
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: worker
+        working-directory: pipeline
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,4 +37,3 @@ jobs:
           cache: pip
       - run: pip install -e .[test]
       - run: pytest
-

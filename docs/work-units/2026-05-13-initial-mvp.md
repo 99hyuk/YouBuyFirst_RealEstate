@@ -1,4 +1,4 @@
-# Work Unit: Initial MVP
+﻿# Work Unit: Initial MVP
 
 ## Goal
 
@@ -8,16 +8,16 @@ Build the first YouBuyFirst data pipeline MVP.
 
 - Spring Boot ingestion/admin APIs
 - MySQL/Flyway schema
-- Python crawler/LLM worker
+- Python crawler/LLM pipeline
 - Docker Compose runtime
 - Project context and workflow docs
 
 ## Verification
 
 - Backend Docker test: passed, 2 tests.
-- Worker Docker test: passed, 4 tests.
-- Docker Compose: starts MySQL, backend, worker.
-- Manual worker run: stores Naver and FM Korea crawl runs.
+- Pipeline Docker test: passed, 4 tests.
+- Docker Compose: starts MySQL, backend, pipeline.
+- Manual pipeline run: stores Naver and FM Korea crawl runs.
 
 ## Notes
 

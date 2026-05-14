@@ -1,7 +1,7 @@
 [project]
-name = "youbuyfirst-worker"
+name = "youbuyfirst-pipeline"
 version = "0.1.0"
-description = "Python crawler and LLM sentiment worker for YouBuyFirst MVP"
+description = "Python crawler and LLM sentiment pipeline for YouBuyFirst MVP"
 requires-python = ">=3.10"
 dependencies = [
     "apscheduler>=3.10",
@@ -20,7 +20,7 @@ test = [
 ]
 
 [project.scripts]
-youbuyfirst-worker = "youbuyfirst_worker.main:main"
+youbuyfirst-pipeline = "youbuyfirst_pipeline.main:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

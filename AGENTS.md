@@ -13,8 +13,8 @@
 ## 현재 아키텍처
 
 - `backend/`: Spring Boot 3.3, Java 21, JPA, Flyway, MySQL, Swagger
-- `worker/`: Python worker, APScheduler, HTTPX, BeautifulSoup, Playwright fallback, OpenAI provider abstraction
-- `docker-compose.yml`: local MySQL + backend + worker runtime
+- `pipeline/`: Python pipeline, APScheduler, HTTPX, BeautifulSoup, Playwright fallback, OpenAI provider abstraction
+- `docker-compose.yml`: local MySQL + backend + pipeline runtime
 
 ## 범위 제한
 
@@ -33,10 +33,10 @@ Backend:
 docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.9-eclipse-temurin-21 mvn clean test
 ```
 
-Worker:
+Pipeline:
 
 ```bash
-docker run --rm -v "${PWD}/worker:/workspace" -w /workspace python:3.10-slim sh -lc "pip install -e .[test] && pytest"
+docker run --rm -v "${PWD}/pipeline:/workspace" -w /workspace python:3.10-slim sh -lc "pip install -e .[test] && pytest"
 ```
 
 Local app:
@@ -54,7 +54,7 @@ http://localhost:8080/swagger-ui.html
 
 ## 브랜치와 PR 규칙
 
-작업 하나는 브랜치 하나와 PR 하나로 처리합니다. 기능 하나, 버그 하나, 문서 정리 하나, 인프라 변경 하나를 한 PR에 담습니다.
+작업 하나는 브랜치 하나와 PR 하나로 처리합니다. 기능 하나, 버그 하나, 문서 정리 하나, CI/runtime 설정 변경 하나를 한 PR에 담습니다.
 
 ```text
 codex/<short-task-name>
@@ -72,8 +72,8 @@ codex/<short-task-name>
 
 다른 채팅에서 작업을 시작하면 담당 트랙 문서를 먼저 읽고, 가능하면 해당 트랙 파일만 수정합니다.
 PR에는 담당 트랙에 맞는 작업 트랙 `track:*` 라벨을 붙이고, Notion 작업 카드에도 `트랙` 값을 채웁니다.
-작업 타입은 `type:*` 라벨로 표시합니다. 실제로 건드린 코드나 문서 표면은 개발 영역 `area:*` 라벨로 표시하되, 필요할 때만 붙입니다.
-프론트 작업은 `front` 트랙으로 처리하고, `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
+작업 타입은 `type:*` 라벨로 표시합니다. 실제로 건드린 부분은 `part:*` 라벨과 Notion `변경 파트` 값으로 표시하되, 필요할 때만 붙입니다.
+프론트 작업은 `front` 트랙으로 처리하고, `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `part:front`도 함께 붙입니다.
 시세, 모의투자, AI 에이전트 작업은 각각 `market`, `trade`, `agent`로 나눕니다. 같은 PR에 섞지 않습니다.
 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
 
@@ -91,7 +91,7 @@ PR을 열기 전:
 10. 작업 상태나 범위가 바뀌면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
 11. `git`과 `gh`로 직접 push, PR 생성, 라벨 지정, CI 확인을 수행합니다.
 
-무관한 backend, worker, infra, product-scope 변경을 한 PR에 섞지 않습니다.
+무관한 backend, pipeline, runtime, ops 범위 변경을 한 PR에 섞지 않습니다.
 
 PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[ops][docs] 에이전트 가이드와 PR 문장 정리`. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
 
