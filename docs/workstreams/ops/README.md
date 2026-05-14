@@ -1,10 +1,10 @@
-# product-planning-ops
+# ops
 
 ## 역할
 
 제품 기획, 작업 분리, 트랙 간 조율, 문서, Notion, PR/CI, 배포 정책을 담당합니다. 이 트랙은 다른 구현 트랙이 충돌 없이 일하도록 기준선을 만드는 역할입니다.
 
-이 트랙은 기획/조율만 하는 트랙이 아닙니다. 문서 자동화, Notion 구조, PR 템플릿, CI, 배포/운영 정책처럼 실제 구현 작업도 포함합니다. 다만 사용자 화면 구현은 `frontend-experience`, 커뮤니티 수집은 `community-data-platform`, 감성 산식은 `signal-intelligence`, 시세/모의투자는 `market-simulation-engine`이 소유합니다.
+이 트랙은 기획/조율만 하는 트랙이 아닙니다. 문서 자동화, Notion 구조, PR 템플릿, CI, 배포/운영 정책처럼 실제 구현 작업도 포함합니다. 다만 사용자 화면 구현은 `front`, 커뮤니티 수집은 `crawl`, 분석 데이터는 `data`, 시세는 `market`, 모의투자는 `trade`, 전략 에이전트는 `agent`가 소유합니다.
 
 ## 담당 범위
 

@@ -25,12 +25,13 @@
 - [x] 병렬 작업 트랙 문서 추가
 - [x] GitHub/PR/Notion 병렬 작업 트랙 표시 기준 추가
 - [x] 프론트 lane과 market 내부 lane 기준 추가
-- [x] 프론트를 `frontend-experience` 독립 트랙으로 분리
+- [x] 프론트를 별도 화면 트랙으로 분리하고 이후 `front`로 단축
 - [x] 의존도에 따른 `main`/`track/*` 하이브리드 브랜치 전략 정리
 - [x] PR/Notion 카드형 기록과 라벨/태그 사전 정리
 - [x] AGENTS 범위 설명과 PR 라벨/문장 체계 정리
 - [x] 라벨 설명을 작업 트랙/작업 타입/개발 영역으로 명확화
 - [x] 문서 구조와 트러블슈팅 기록 기준 정리
+- [x] 병렬 트랙을 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops`로 재정리
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성
@@ -43,8 +44,10 @@
 - [ ] 실제 에펨코리아 주식 게시판 구조에 맞춘 parser 보강
 - [ ] 종목 게시판형 수집을 위한 `CrawlTarget` 최소 설계
 - [ ] 소스별 활성화 상태(`enabled`, `public-demo-only`, `local-research-only`, `disabled`) 설계
-- [ ] `frontend-experience` 트랙에서 첫 대시보드 정보 구조와 mock 화면 설계
-- [ ] `market-simulation-engine` market-data lane에서 quote snapshot 계약 설계
+- [ ] `front` 트랙에서 첫 대시보드 정보 구조와 mock 화면 설계
+- [ ] `market` 트랙에서 quote snapshot 계약 설계
+- [ ] `trade` 트랙에서 모의 계좌와 주문/체결 최소 도메인 설계
+- [ ] `agent` 트랙에서 역발상 페르소나 입력 contract 설계
 - [ ] worker가 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
 - [ ] `POST /internal/ingestions/community-posts` payload 예시를 Swagger에 추가
 
@@ -55,7 +58,7 @@
 - [ ] retention cleanup 테스트 추가
 - [ ] 사용자용 sentiment ranking API 추가
 - [ ] 30분 집계 산식 검증 테스트 추가
-- [ ] 커뮤니티별 수익률 비교 에이전트 데이터 모델 설계
+- [ ] 커뮤니티별 성과 비교 snapshot 모델 설계
 - [ ] 공개 배포 가능한 시세 provider 조사
 - [ ] Docker Compose smoke test 정리
 

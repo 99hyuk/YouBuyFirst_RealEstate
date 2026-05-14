@@ -47,27 +47,31 @@ codex/<short-task-name>
 
 예시:
 
-- `codex/data-naver-target-scheduler`
-- `codex/signal-community-alpha-agent`
+- `codex/crawl-naver-targets`
+- `codex/data-alias-matcher`
 - `codex/market-quote-cache`
-- `codex/frontend-dashboard-shell`
-- `codex/product-track-branch-strategy`
+- `codex/trade-order-domain`
+- `codex/agent-contrarian-log`
+- `codex/front-dashboard-shell`
+- `codex/ops-track-names`
 
 ## 병렬 작업 트랙
 
-여러 채팅에서 동시에 작업할 때는 아래 다섯 트랙 중 하나를 고릅니다.
+여러 채팅에서 동시에 작업할 때는 아래 일곱 트랙 중 하나를 고릅니다.
 
-- `community-data-platform`: 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책
-- `signal-intelligence`: 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교
-- `market-simulation-engine`: 시세/호가, Redis quote cache, 모의투자, AI 에이전트
-- `frontend-experience`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
-- `product-planning-ops`: 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책
+- `crawl`: 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃, 수집 정책
+- `data`: 종목 인식, 별칭 매칭, 감성 분류, 열기 지수, 30분 집계
+- `market`: 실시간/지연 시세, 호가, quote cache, WebSocket
+- `trade`: 가상 계좌, 주문, 체결, 포트폴리오, 수익률
+- `agent`: AI 매매 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그
+- `front`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
+- `ops`: 기획 조율, 문서, Notion, PR/CI, 배포 정책
 
 각 트랙의 상세 범위와 파일 소유권은 `docs/workstreams/` 아래 문서를 따릅니다. 한 채팅은 가능한 한 한 트랙만 담당합니다.
 
-프론트 작업은 `frontend-experience` 트랙으로 시작합니다. 화면 골격과 mock 데이터 작업은 API 구현 전에도 진행할 수 있고, 실제 API 연결은 각 기능 트랙의 계약이 생긴 뒤 별도 PR로 진행합니다.
+프론트 작업은 `front` 트랙으로 시작합니다. 화면 골격과 mock 데이터 작업은 API 구현 전에도 진행할 수 있고, 실제 API 연결은 각 기능 트랙의 계약이 생긴 뒤 별도 PR로 진행합니다.
 
-`market-simulation-engine`은 내부적으로 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눕니다. 시세 수집, 모의 체결, 에이전트 판단은 기술 성격이 다르므로 같은 PR에 섞지 않습니다.
+시세 수집은 `market`, 모의 체결은 `trade`, 에이전트 판단은 `agent`가 맡습니다. 기술 성격이 다르므로 같은 PR에 섞지 않습니다.
 
 ## 통합 브랜치 전략
 
@@ -79,18 +83,20 @@ codex/<short-task-name>
 
 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치를 씁니다.
 
-- 예: `track/frontend-dashboard`, `track/market-quotes`
+- 예: `track/front-dashboard`, `track/market-quotes`
 - 하위 PR은 해당 `track/*` 브랜치를 base로 보냅니다.
 - `track/*` 브랜치는 2-4개 PR, 3-5일 안에 `main`으로 통합합니다.
 - 통합 전에는 해당 트랙 테스트와 필요한 smoke test를 실행합니다.
 
 트랙별 GitHub 라벨:
 
-- `track:data`: `community-data-platform`
-- `track:signal`: `signal-intelligence`
-- `track:market`: `market-simulation-engine`
-- `track:frontend`: `frontend-experience`
-- `track:product`: `product-planning-ops`
+- `track:crawl`: `crawl`
+- `track:data`: `data`
+- `track:market`: `market`
+- `track:trade`: `trade`
+- `track:agent`: `agent`
+- `track:front`: `front`
+- `track:ops`: `ops`
 
 ## PR에 반드시 포함할 내용
 

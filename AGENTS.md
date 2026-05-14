@@ -19,8 +19,8 @@
 ## 범위 제한
 
 - 담당 트랙과 명시 요청 없이 OCR 자산 연동, 실거래, 로그인/보안, 운영 배포를 추가하지 않습니다.
-- 프론트 작업은 `frontend-experience` 트랙에서만 진행합니다.
-- 시세, 모의투자, 에이전트 작업은 `market-simulation-engine` 트랙에서만 진행합니다.
+- 프론트 작업은 `front` 트랙에서만 진행합니다.
+- 시세 작업은 `market`, 모의투자는 `trade`, AI 전략 에이전트는 `agent` 트랙에서만 진행합니다.
 - CAPTCHA 우회, 로그인 세션 크롤링, 프록시 회전, fingerprint 위장은 하지 않습니다.
 - 공개 HTTP 수집을 우선하고, Playwright는 렌더링 fallback으로만 사용합니다.
 - 저장 원문은 제목, 본문 일부, URL, 작성자 해시, 작성 시각, 원문 해시로 제한합니다.
@@ -60,19 +60,21 @@ http://localhost:8080/swagger-ui.html
 codex/<short-task-name>
 ```
 
-병렬 작업은 `docs/workstreams/README.md`의 다섯 트랙 중 하나로 구분합니다.
+병렬 작업은 `docs/workstreams/README.md`의 일곱 트랙 중 하나로 구분합니다.
 
-- `community-data-platform`: 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책
-- `signal-intelligence`: 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교
-- `market-simulation-engine`: 시세/호가, Redis quote cache, 모의투자, AI 에이전트
-- `frontend-experience`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
-- `product-planning-ops`: 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책
+- `crawl`: 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃, 수집 정책
+- `data`: 종목 인식, 별칭 매칭, 감성 분류, 열기 지수, 30분 집계
+- `market`: 실시간/지연 시세, 호가, quote cache, WebSocket
+- `trade`: 가상 계좌, 주문, 체결, 포트폴리오, 수익률
+- `agent`: AI 매매 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그
+- `front`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
+- `ops`: 기획 조율, 문서, Notion, PR/CI, 배포 정책
 
 다른 채팅에서 작업을 시작하면 담당 트랙 문서를 먼저 읽고, 가능하면 해당 트랙 파일만 수정합니다.
 PR에는 담당 트랙에 맞는 작업 트랙 `track:*` 라벨을 붙이고, Notion 작업 카드에도 `트랙` 값을 채웁니다.
 작업 타입은 `type:*` 라벨로 표시합니다. 실제로 건드린 코드나 문서 표면은 개발 영역 `area:*` 라벨로 표시하되, 필요할 때만 붙입니다.
-프론트 작업은 `frontend-experience` 트랙으로 처리하고, `track:frontend` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
-`market-simulation-engine` 작업은 필요하면 `market-data`, `simulation-core`, `agent-runtime` lane으로 더 나누어 진행합니다.
+프론트 작업은 `front` 트랙으로 처리하고, `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
+시세, 모의투자, AI 에이전트 작업은 각각 `market`, `trade`, `agent`로 나눕니다. 같은 PR에 섞지 않습니다.
 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
 
 PR을 열기 전:
@@ -91,7 +93,7 @@ PR을 열기 전:
 
 무관한 backend, worker, infra, product-scope 변경을 한 PR에 섞지 않습니다.
 
-PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[product][docs] 에이전트 가이드와 PR 문장 정리`. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
+PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[ops][docs] 에이전트 가이드와 PR 문장 정리`. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
 
 PR 본문과 Notion 작업 카드는 같은 카드형 흐름으로 씁니다: 한눈에 보기, 바뀐 내용, 리뷰 가이드, PR 범위, 검증 결과, 리스크와 후속 작업, Notion 기록, 라벨/태그 참고. 검증은 명령어보다 사람이 읽기 쉬운 결과를 먼저 적습니다.
 

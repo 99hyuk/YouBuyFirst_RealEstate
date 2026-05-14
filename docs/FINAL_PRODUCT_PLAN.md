@@ -285,10 +285,12 @@ flowchart LR
 
 ## 병렬 작업 트랙
 
-최종 제품은 다섯 개의 작업 트랙으로 나눕니다. 각 트랙의 상세 경계는 `docs/workstreams/` 아래 문서를 기준으로 합니다.
+최종 제품은 일곱 개의 짧은 작업 트랙으로 나눕니다. 각 트랙의 상세 경계는 `docs/workstreams/` 아래 문서를 기준으로 합니다.
 
-- `community-data-platform`: 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책
-- `signal-intelligence`: 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교
-- `market-simulation-engine`: 시세/호가, Redis quote cache, 모의투자, AI 에이전트
-- `frontend-experience`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
-- `product-planning-ops`: 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책
+- `crawl`: 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃, 수집 정책
+- `data`: 종목 인식, 별칭 매칭, 감성 분류, 열기 지수, 30분 집계
+- `market`: 실시간/지연 시세, 호가, quote cache, WebSocket
+- `trade`: 가상 계좌, 주문, 체결, 포트폴리오, 수익률
+- `agent`: AI 매매 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그
+- `front`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
+- `ops`: 기획 조율, 문서, Notion, PR/CI, 배포 정책

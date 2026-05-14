@@ -79,11 +79,15 @@
 
 후속 조정까지 반영해 다섯 개 트랙을 둡니다.
 
-- `community-data-platform`: 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책
-- `signal-intelligence`: 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교
-- `market-simulation-engine`: 시세/호가, Redis quote cache, 모의투자, AI 에이전트
-- `frontend-experience`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
-- `product-planning-ops`: 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책
+이 설계의 긴 트랙명은 후속 문서 정리에서 짧은 트랙명으로 대체했습니다. 최신 기준은 `docs/workstreams/README.md`를 봅니다.
+
+- `crawl`: 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃, 수집 정책
+- `data`: 종목 인식, 별칭 매칭, 감성 분류, 열기 지수, 30분 집계
+- `market`: 실시간/지연 시세, 호가, quote cache, WebSocket
+- `trade`: 가상 계좌, 주문, 체결, 포트폴리오, 수익률
+- `agent`: AI 매매 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그
+- `front`: 사용자 대시보드, UI 상태, mock data, API 연동, 차트
+- `ops`: 기획 조율, 문서, Notion, PR/CI, 배포 정책
 
 각 트랙은 `docs/workstreams/` 아래 독립 문서를 갖습니다. 다른 채팅에서 작업할 때는 `AGENTS.md`, `docs/CURRENT_HANDOFF.md`, `docs/FINAL_PRODUCT_PLAN.md`, 담당 트랙 문서를 먼저 읽습니다.
 

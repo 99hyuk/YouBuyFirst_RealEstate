@@ -27,7 +27,7 @@
 | `type:test` | 테스트 추가 또는 테스트 구조 변경 | fixture, unit test, smoke test |
 | `type:refactor` | 동작 변경 없는 구조 개선 | 패키지 분리, 이름 정리 |
 | `type:infra` | CI, Docker, 배포, 개발 환경 | workflow, compose, env |
-| `type:data` | seed, fixture, 종목 마스터 데이터 | 종목 CSV, 테스트 HTML |
+| `type:dataset` | seed, fixture, 종목 마스터 데이터 | 종목 CSV, 테스트 HTML |
 | `type:chore` | 기타 유지보수 | 사소한 정리, 설정 보정 |
 
 ### 작업 트랙 Track
@@ -36,15 +36,17 @@
 
 | 라벨 | 트랙 | 담당 |
 | --- | --- | --- |
-| `track:data` | `community-data-platform` | 커뮤니티 수집, 소스 어댑터, 수집 타깃 |
-| `track:signal` | `signal-intelligence` | 종목 인식, 감성 분석, 열기 지수 |
-| `track:market` | `market-simulation-engine` | 시세, 모의투자, 에이전트 런타임 |
-| `track:frontend` | `frontend-experience` | 사용자 대시보드, UI, mock data, API 연동 |
-| `track:product` | `product-planning-ops` | 기획 조율, 문서, Notion, PR/CI, 배포 정책 |
+| `track:crawl` | `crawl` | 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃 |
+| `track:data` | `data` | 종목 인식, 감성 분류, 열기 지수, 30분 집계 |
+| `track:market` | `market` | 실시간/지연 시세, 호가, quote cache, WebSocket |
+| `track:trade` | `trade` | 가상 계좌, 주문, 체결, 포트폴리오, 수익률 |
+| `track:agent` | `agent` | AI 매매 판단, 커뮤니티별 성과 비교, 결정 로그 |
+| `track:front` | `front` | 사용자 대시보드, UI, mock data, API 연동 |
+| `track:ops` | `ops` | 기획 조율, 문서, Notion, PR/CI, 배포 정책 |
 
 ### 개발 영역 Area
 
-`area:*`는 실제로 건드린 코드나 문서 표면입니다. 리뷰 경로를 돕는 보조 라벨이라, 애매하면 생략해도 됩니다. 예를 들어 `track:product` 작업이라도 PR 템플릿 파일을 바꾸면 `area:process`나 `area:docs`를 붙일 수 있습니다.
+`area:*`는 실제로 건드린 코드나 문서 표면입니다. 리뷰 경로를 돕는 보조 라벨이라, 애매하면 생략해도 됩니다. 예를 들어 `track:ops` 작업이라도 PR 템플릿 파일을 바꾸면 `area:process`나 `area:docs`를 붙일 수 있습니다.
 
 | 라벨 | 의미 |
 | --- | --- |
@@ -73,7 +75,7 @@
 | 속성 | 의미 |
 | --- | --- |
 | `상태` | `Merged`, `Open`, `Draft`, `Blocked` 중 하나 |
-| `트랙` | 작업 트랙. 다섯 병렬 트랙 중 하나 |
+| `트랙` | 작업 트랙. 일곱 병렬 트랙 중 하나 |
 | `영역` | 개발 영역. 영향을 받은 코드/문서 표면 |
 | `크기` | PR 리뷰 크기 |
 | `검증` | 사람이 읽기 쉬운 검증 결과 |
@@ -94,15 +96,17 @@
 
 | 아이콘 | 트랙 | 표시 위치 |
 | --- | --- | --- |
-| 🕸️ | `community-data-platform` | 수집/크롤링 작업 |
-| 📈 | `signal-intelligence` | 감성/지표 작업 |
-| 💹 | `market-simulation-engine` | 시세/모의투자/에이전트 작업 |
-| 🖥️ | `frontend-experience` | 화면/UI 작업 |
-| 🧭 | `product-planning-ops` | 기획/운영/조율 작업 |
+| 🕸️ | `crawl` | 수집/크롤링 작업 |
+| 📊 | `data` | 종목 인식/감성/집계 작업 |
+| 💹 | `market` | 시세/호가 작업 |
+| 💰 | `trade` | 모의투자/체결 작업 |
+| 🧠 | `agent` | 전략 에이전트 작업 |
+| 🖥️ | `front` | 화면/UI 작업 |
+| 🧭 | `ops` | 기획/운영/조율 작업 |
 
 ## 작성 원칙
 
-- PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[product][docs] 프론트 트랙과 통합 브랜치 전략 분리`
+- PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[ops][docs] 프론트 트랙과 통합 브랜치 전략 분리`
 - PR 본문은 카드형 구조로 작성합니다.
 - Notion 작업 카드는 PR 본문과 같은 흐름을 따릅니다.
 - 명령어는 PR 본문 첫 화면에 길게 늘어놓지 않고 접힌 영역에 둡니다.

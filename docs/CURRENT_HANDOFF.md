@@ -16,14 +16,14 @@
 - 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-worker`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
 - 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
 - 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
-- 여러 채팅이 동시에 일할 수 있도록 다섯 개의 병렬 작업 트랙 문서를 추가했습니다.
+- 여러 채팅이 동시에 일할 수 있도록 일곱 개의 병렬 작업 트랙 문서를 추가했습니다.
 
 ## 최근 결정
 
 - 사용자용 PowerShell 스크립트는 두지 않습니다.
 - PR 생성, 라벨 지정, CI 확인, merge는 Codex/에이전트가 `git`과 `gh`로 직접 처리합니다.
 - PR 설명과 커밋 본문은 한국어로 작성합니다.
-- PR 제목은 `[트랙][타입] 명사형 요약` 형식을 사용합니다. 예: `[product][docs] 에이전트 가이드와 PR 문장 정리`. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
+- PR 제목은 `[트랙][타입] 명사형 요약` 형식을 사용합니다. 예: `[ops][docs] 에이전트 가이드와 PR 문장 정리`. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
 - PR 본문은 PR #7처럼 카드형 구조로 씁니다. 검증 섹션에는 명령어 나열보다 사람이 읽을 수 있는 통과 결과와 확인 사실을 먼저 적습니다.
 - PR 본문과 Notion 작업일지는 같은 카드 구조를 씁니다: 한눈에 보기, 변경 내용, PR 범위, 검증 결과, 리스크, 다음 에이전트 메모, 라벨/태그 참고.
 - GitHub 라벨과 Notion 태그 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
@@ -35,12 +35,12 @@
 - 공개 배포 시 원문 재게시, 작성자 추적, 닉네임 랭킹은 하지 않고 집계 지표와 AI 재서술 근거 중심으로 표시합니다.
 - 소스별 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다.
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
-- 병렬 작업은 `community-data-platform`, `signal-intelligence`, `market-simulation-engine`, `frontend-experience`, `product-planning-ops` 다섯 트랙으로 나눕니다.
-- 병렬 작업 PR에는 `track:data`, `track:signal`, `track:market`, `track:frontend`, `track:product` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
+- 병렬 작업은 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops` 일곱 트랙으로 나눕니다.
+- 병렬 작업 PR에는 `track:crawl`, `track:data`, `track:market`, `track:trade`, `track:agent`, `track:front`, `track:ops` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
 - `type:*`는 작업 타입, `track:*`는 작업 트랙, `area:*`는 개발 영역입니다. `area:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
-- 프론트 작업은 `frontend-experience` 트랙으로 시작하고 `track:frontend` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
-- 기획/조율/문서/Notion/PR 운영은 `product-planning-ops` 트랙이 맡습니다.
-- `market-simulation-engine`은 `market-data`, `simulation-core`, `agent-runtime` lane으로 나눠 시세 수집, 모의 체결, AI 에이전트 작업을 같은 PR에 섞지 않습니다.
+- 프론트 작업은 `front` 트랙으로 시작하고 `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
+- 기획/조율/문서/Notion/PR 운영은 `ops` 트랙이 맡습니다.
+- 시세 수집은 `market`, 모의 체결은 `trade`, AI 에이전트 판단은 `agent`가 맡습니다. 세 작업을 같은 PR에 섞지 않습니다.
 - 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
 
 ## 현재 GitHub 상태

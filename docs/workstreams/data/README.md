@@ -1,8 +1,8 @@
-# signal-intelligence
+# data
 
 ## 역할
 
-수집된 글을 종목 신호로 바꾸고, 그 신호가 실제 가격 변화와 어떤 관계가 있는지 검증합니다. 이 트랙은 너나사의 "인간지표" 자체를 만드는 영역입니다.
+수집된 글을 투자 참고에 쓸 수 있는 분석 데이터로 바꿉니다. 이 트랙은 종목 인식, 감성 분류, 열기 지수, 30분 집계를 맡고, 매수/매도 판단 자체는 `agent` 트랙에 넘깁니다.
 
 ## 담당 범위
 
@@ -13,7 +13,7 @@
 - 열기 지수 산식
 - 30분 metric snapshot
 - AI 3줄 요약 입력 데이터
-- 커뮤니티별 수익률 비교 에이전트
+- 커뮤니티별 신호와 이후 수익률 비교용 원천 지표
 - `CommunitySignal`, `ForwardReturn`, `CommunityPerformanceSnapshot`
 
 ## 파일 소유권
@@ -31,6 +31,7 @@
 - crawler raw payload
 - quote provider contract
 - dashboard API contract
+- agent decision input contract
 - simulation order/portfolio schema
 
 ## 현재 우선순위
@@ -38,11 +39,12 @@
 1. 종목 별칭 매칭 테스트 확장
 2. 30분 집계 산식 검증 테스트 추가
 3. 열기 지수 산식 문서화
-4. 커뮤니티별 수익률 비교 에이전트의 최소 데이터 모델 설계
+4. 커뮤니티별 성과 비교용 snapshot 모델 설계
 
 ## 하지 않는 일
 
 - 크롤러 우회 전략
 - 시세 provider 직접 연동
 - 모의 주문 체결
+- AI 매매 판단과 페르소나 실행
 - UI 레이아웃 구현

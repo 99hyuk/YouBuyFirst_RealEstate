@@ -1,6 +1,6 @@
 # 병렬 작업 트랙 안내
 
-너나사 (YouBuyFirst)는 여러 채팅과 에이전트가 동시에 일할 수 있도록 다섯 개의 작업 트랙으로 나눕니다. 실제 MSA로 바로 분리하지는 않지만, 문서, 브랜치, PR, 파일 소유권은 서비스 경계처럼 명확히 나눕니다.
+너나사 (YouBuyFirst)는 여러 채팅과 에이전트가 동시에 일할 수 있도록 일곱 개의 짧은 작업 트랙으로 나눕니다. 실제 MSA로 바로 분리하지는 않지만, 문서, 브랜치, PR, 파일 소유권은 서비스 경계처럼 명확히 나눕니다.
 
 ## 공통 시작 절차
 
@@ -8,7 +8,7 @@
 
 ```text
 너는 너나사 (YouBuyFirst)의 <트랙명> 담당 에이전트야.
-먼저 AGENTS.md, docs/CURRENT_HANDOFF.md, docs/FINAL_PRODUCT_PLAN.md를 읽고,
+먼저 AGENTS.md, docs/CURRENT_HANDOFF.md, docs/DOCUMENTATION_GUIDE.md를 읽고,
 docs/workstreams/<트랙명>/README.md도 읽어.
 이 채팅에서는 <작업 범위>만 다루고, 다른 트랙 파일은 건드리지 마.
 작업 하나는 브랜치 하나와 PR 하나로 만들어줘.
@@ -19,19 +19,27 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 
 ## 트랙 목록
 
-| 트랙 | 역할 | 브랜치 예시 |
-| --- | --- | --- |
-| `community-data-platform` | 커뮤니티 수집, 소스 어댑터, 종목별 수집 타깃, 수집 정책 | `codex/data-naver-target-scheduler` |
-| `signal-intelligence` | 종목 인식, 감성 분석, 열기 지수, 커뮤니티별 수익률 비교 | `codex/signal-community-alpha-agent` |
-| `market-simulation-engine` | 시세/호가, Redis quote cache, 모의투자, AI 에이전트 | `codex/market-quote-cache` |
-| `frontend-experience` | 사용자 대시보드, UI 상태, mock data, API 연동, 차트 | `codex/frontend-dashboard-shell` |
-| `product-planning-ops` | 기획 조율, 작업 분리, 문서, Notion, PR/CI, 배포 정책 | `codex/product-track-branch-strategy` |
+| 트랙 | 한국어 의미 | 역할 | 브랜치 예시 |
+| --- | --- | --- | --- |
+| `crawl` | 수집 | 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃, 수집 정책 | `codex/crawl-naver-targets` |
+| `data` | 분석 데이터 | 종목 인식, 별칭 매칭, 감성 분류, 열기 지수, 30분 집계 | `codex/data-alias-matcher` |
+| `market` | 시세 | 실시간/지연 시세, 호가, quote cache, WebSocket | `codex/market-quote-cache` |
+| `trade` | 모의투자 | 가상 계좌, 주문, 체결, 포트폴리오, 수익률 | `codex/trade-order-domain` |
+| `agent` | 전략 에이전트 | AI 매매 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그 | `codex/agent-contrarian-log` |
+| `front` | 화면 | 대시보드, 차트, 관리자 화면, mock/API 연동 | `codex/front-dashboard-shell` |
+| `ops` | 운영/조율 | 기획, 문서, Notion, PR/CI, 배포 정책, 트랙 조율 | `codex/ops-track-names` |
 
-`frontend-experience`는 별도 구현 트랙입니다. 프론트는 완전 후반에 몰아서 하지 않고, fixture/mock 기반 화면 골격을 일찍 만들고 API 계약이 생길 때마다 연결합니다.
+`crawl`은 외부 커뮤니티에서 제한 원문과 메타데이터를 가져오는 입력 파이프라인입니다.
 
-`product-planning-ops`는 구현이 전혀 없는 트랙이 아닙니다. 다만 이 트랙의 구현은 문서, 자동화, CI, Notion, 배포 정책, 작업 조율에 한정합니다. 사용자 화면 구현은 `frontend-experience`가 맡습니다.
+`data`는 `crawl`이 넘긴 글을 투자 신호로 쓸 수 있는 분석 데이터로 바꿉니다. 종목 인식과 감성 분류, 30분 집계는 여기까지입니다. 매수/매도 판단은 `agent`가 맡습니다.
 
-`market-simulation-engine` 안에는 `market-data`, `simulation-core`, `agent-runtime` lane이 있습니다. 시세 수집, 모의투자 체결, AI 에이전트 실행은 같은 트랙 안에 있지만 같은 PR에 섞지 않습니다.
+`market`은 시세/호가 데이터만 소유합니다. 모의 계좌, 주문, 체결은 `trade`가 맡습니다.
+
+`agent`는 `data`, `market`, `trade`의 상태를 읽어 전략적 판단을 만들지만, 크롤링/시세 수집/체결 로직을 직접 소유하지 않습니다.
+
+`front`는 별도 구현 트랙입니다. 프론트는 완전 후반에 몰아서 하지 않고, fixture/mock 기반 화면 골격을 일찍 만들고 API 계약이 생길 때마다 연결합니다.
+
+`ops`는 구현이 전혀 없는 트랙이 아닙니다. 다만 이 트랙의 구현은 문서, 자동화, CI, Notion, 배포 정책, 작업 조율에 한정합니다.
 
 ## 충돌 방지 규칙
 
@@ -51,7 +59,7 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 
 결합이 강한 작업만 짧은 수명의 `track/*` 통합 브랜치를 씁니다.
 
-- 예: `track/frontend-dashboard`, `track/market-quotes`
+- 예: `track/front-dashboard`, `track/market-quotes`
 - 하위 작업은 `codex/<prefix>-<task>` 브랜치에서 만들고, PR base를 해당 `track/*` 브랜치로 둡니다.
 - `track/*` 브랜치는 2-4개 PR, 3-5일 안에 `main`으로 통합하는 것을 목표로 합니다.
 - `track/*`가 길어지면 통합 리스크가 뒤로 밀리므로 쪼개거나 계약 PR을 먼저 `main`에 넣습니다.
@@ -65,23 +73,25 @@ PR에는 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` 라벨
 
 | 트랙 | GitHub 라벨 | 브랜치 prefix | Notion 트랙 |
 | --- | --- | --- | --- |
-| `community-data-platform` | `track:data` | `codex/data-*` | `community-data-platform` |
-| `signal-intelligence` | `track:signal` | `codex/signal-*` | `signal-intelligence` |
-| `market-simulation-engine` | `track:market` | `codex/market-*` | `market-simulation-engine` |
-| `frontend-experience` | `track:frontend` | `codex/frontend-*` | `frontend-experience` |
-| `product-planning-ops` | `track:product` | `codex/product-*` | `product-planning-ops` |
+| `crawl` | `track:crawl` | `codex/crawl-*` | `crawl` |
+| `data` | `track:data` | `codex/data-*` | `data` |
+| `market` | `track:market` | `codex/market-*` | `market` |
+| `trade` | `track:trade` | `codex/trade-*` | `trade` |
+| `agent` | `track:agent` | `codex/agent-*` | `agent` |
+| `front` | `track:front` | `codex/front-*` | `front` |
+| `ops` | `track:ops` | `codex/ops-*` | `ops` |
 
 예시:
 
 ```text
-트랙: community-data-platform
-변경 범위: worker crawler scheduler, docs/workstreams/community-data-platform
+트랙: crawl
+변경 범위: worker crawler scheduler, docs/workstreams/crawl
 ```
 
 ## Notion 구분
 
 작업 로그 DB와 다음 작업 DB에는 `트랙` select 속성을 둡니다. 새 작업 카드는 담당 트랙을 반드시 채웁니다.
 
-기획, 운영 기준 정리, 다른 트랙 조율 작업은 기본적으로 `product-planning-ops`로 둡니다. 실제 기능 구현은 각 기능 트랙으로 분리합니다.
+기획, 운영 기준 정리, 다른 트랙 조율 작업은 기본적으로 `ops`로 둡니다. 실제 기능 구현은 각 기능 트랙으로 분리합니다.
 
 Notion 작업 카드는 PR 본문과 같은 카드형 흐름을 따릅니다. 트랙은 카드 제목, 아이콘, `트랙` 속성 중 적어도 두 곳에서 드러나야 합니다.

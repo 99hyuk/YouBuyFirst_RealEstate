@@ -2,13 +2,13 @@
 
 ## 목적
 
-프론트 작업을 `product-planning-ops`에서 분리해 `frontend-experience` 독립 트랙으로 만들고, 의존도에 따라 `main`에 바로 통합할지 `track/*` 브랜치를 거칠지 판단하는 기준을 정합니다.
+프론트 작업을 `ops`에서 분리해 `front` 독립 트랙으로 만들고, 의존도에 따라 `main`에 바로 통합할지 `track/*` 브랜치를 거칠지 판단하는 기준을 정합니다.
 
 ## 범위
 
-- `frontend-experience` 트랙 문서 추가
-- `product-ops-experience`를 `product-planning-ops`로 재정의
-- `track:frontend` GitHub 라벨과 Notion 트랙 옵션 추가
+- `front` 트랙 문서 추가
+- 운영/조율 트랙을 `ops`로 재정의
+- `track:front` GitHub 라벨과 Notion 트랙 옵션 추가
 - `main` 우선 통합과 짧은 `track/*` 브랜치 예외 전략 문서화
 - AGENTS, CURRENT_HANDOFF, WORKFLOW, GIT_CONVENTION, TASKS 갱신
 

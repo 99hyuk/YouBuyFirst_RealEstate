@@ -1,4 +1,4 @@
-# community-data-platform
+# crawl
 
 ## 역할
 
@@ -30,6 +30,7 @@
 - DB migration
 - `Instrument` schema
 - ingestion API request/response
+- data 분석 payload contract
 - `docs/FINAL_PRODUCT_PLAN.md`
 
 ## 현재 우선순위
@@ -42,6 +43,7 @@
 ## 하지 않는 일
 
 - LLM 감성 산식 변경
+- 종목별 감성/열기 지수 집계
 - 사용자 대시보드 UI
 - 모의투자 체결 엔진
 - 로그인, CAPTCHA, 프록시, fingerprint 우회

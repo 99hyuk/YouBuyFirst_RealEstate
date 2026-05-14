@@ -1,4 +1,4 @@
-# frontend-experience
+# front
 
 ## 역할
 
@@ -34,7 +34,7 @@
 - backend API contract
 - metrics API response
 - quote snapshot response
-- simulation/agent API response
+- trade/agent API response
 - 문서/Notion/PR 운영 기준
 
 ## 초기 작업 순서
@@ -48,8 +48,8 @@
 
 ## PR 규칙
 
-- 브랜치 prefix는 `codex/frontend-*`를 씁니다.
-- GitHub 라벨은 `track:frontend`를 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
+- 브랜치 prefix는 `codex/front-*`를 씁니다.
+- GitHub 라벨은 `track:front`를 붙입니다. 화면 파일을 직접 바꾸면 `area:frontend`도 함께 붙입니다.
 - 실제 API가 없으면 fixture/mock data를 명시합니다.
 - dashboard shell, component system, chart area, real API integration을 한 PR에 섞지 않습니다.
 - UI 구현 PR은 가능하면 스크린샷 또는 브라우저 검증 결과를 PR 본문에 남깁니다.
