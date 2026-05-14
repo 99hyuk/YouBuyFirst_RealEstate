@@ -19,3 +19,11 @@ Notion의 기존 트러블슈팅 중심 기록을 기술 경험 기록 체계로
 다른 에이전트가 Notion DB와 루트 페이지를 동시에 수정할 수 있으므로, repo 문서 작업자는 Notion 도구를 사용하지 않습니다. 기존 카드 분류 보정은 별도 Notion 작업자가 `종류`와 `포트폴리오 후보` 기준으로 처리합니다.
 
 Notion 루트/Archive를 수정할 때는 `allow_deleting_content`를 쉽게 쓰지 않습니다. child page와 linked database block이 삭제 표시될 수 있으므로, 먼저 fetch로 보존 대상 링크를 확인하고 가능한 경우 `update_content`로 좁게 수정합니다.
+
+## 후속 복구 메모
+
+루트/Archive 정리 중 기존 원본 DB parent가 `deleted`로 표시되어 새 Archive 아래에 원본 DB 3개를 다시 만들었습니다. 이후 작업자는 아래 data source를 기준으로 기록합니다.
+
+- 작업 로그 DB: `collection://be609137-1bd8-4b22-989e-a987a8185135`
+- 기술 경험 기록 DB: `collection://95866ee7-17cb-412b-a9c8-80b1fde414dc`
+- 다음 작업 DB: `collection://ecdda994-6376-489d-bd83-4cfbadb6de70`

@@ -51,6 +51,7 @@
 - 포트폴리오 후보는 `대표`, `보조`, `기록`으로 나누며, 단순 도구 운영 이슈는 기본적으로 `도구/운영`과 `기록`으로 둡니다.
 - Notion 루트는 전체 DB를 inline으로 펼치지 않고, 최근 요약과 이동 링크만 둡니다.
 - Notion 루트/Archive를 수정할 때 `allow_deleting_content`는 피합니다. child page/database 링크 블록을 삭제할 수 있어, 레이아웃 정리는 `update_content` 중심으로 합니다.
+- 기존 Notion 원본 DB parent가 삭제 표시되어 새 Archive 아래에 작업 로그/기술 경험 기록/다음 작업 DB를 다시 만들었습니다. 새 작업은 현재 Notion 상태의 data source id만 사용합니다.
 
 ## 현재 GitHub 상태
 
@@ -67,9 +68,9 @@
 - Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
 - Archive & Admin: https://www.notion.so/360df321bd8981a6a60df71bca8bad5d
 - 제품 기획과 작업 맥락: https://www.notion.so/360df321bd89815c9767e703058990db
-- 작업 로그 DB data source: `collection://8e877781-3fbd-4a2e-99e7-84fac6aad303`
-- 기술 경험 기록 DB data source: `collection://ca06b075-a60d-4740-a5a6-7fb6eee29dde`
-- 다음 작업 DB data source: `collection://cf61f402-dfb8-4140-97f8-b8858f64ac26`
+- 작업 로그 DB data source: `collection://be609137-1bd8-4b22-989e-a987a8185135`
+- 기술 경험 기록 DB data source: `collection://95866ee7-17cb-412b-a9c8-80b1fde414dc`
+- 다음 작업 DB data source: `collection://ecdda994-6376-489d-bd83-4cfbadb6de70`
 - GitHub PR 운영 메모: https://www.notion.so/35fdf321bd89815c9808ff01a683f4bc
 - 작업일지는 작업 로그 DB에 남기는 PR별 카드형 기록을 뜻합니다.
 - 작업 로그 DB와 다음 작업 DB는 `변경 파트` 컬럼을 사용합니다.

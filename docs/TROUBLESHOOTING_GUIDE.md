@@ -25,7 +25,7 @@
 
 - Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
 - Archive & Admin: https://www.notion.so/360df321bd8981a6a60df71bca8bad5d
-- 기술 경험 기록 DB data source: `collection://ca06b075-a60d-4740-a5a6-7fb6eee29dde`
+- 기술 경험 기록 DB data source: `collection://95866ee7-17cb-412b-a9c8-80b1fde414dc`
 
 ## 속성 작성 기준
 
