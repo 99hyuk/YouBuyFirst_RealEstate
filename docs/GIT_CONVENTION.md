@@ -204,6 +204,29 @@ PR 본문은 Notion 작업 카드와 같은 카드형 순서를 따릅니다. PR
 
 트러블슈팅 섹션에는 짧은 결론과 링크만 남깁니다. CI, Docker, GitHub, Notion, 외부 API, 인증, 환경 변수처럼 반복될 수 있는 문제는 `docs/TROUBLESHOOTING_GUIDE.md` 형식으로 Notion 트러블슈팅 DB에 자세히 기록합니다.
 
+## GitHub CLI 인코딩 규칙
+
+한국어 PR 본문은 PowerShell 파이프나 stdin으로 `gh`에 넘기지 않습니다. Windows PowerShell에서 `$body | gh pr create --body-file -` 또는 `$body | gh pr edit --body-file -`를 쓰면 한국어와 이모지가 `?`로 치환되어 GitHub에 저장될 수 있습니다.
+
+PR 본문은 UTF-8 no BOM 파일로 저장한 뒤 파일 경로를 넘깁니다.
+
+```powershell
+$tmp = Join-Path $env:TEMP 'pr-body.md'
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($tmp, $body, $utf8NoBom)
+gh pr create --body-file $tmp
+Remove-Item -LiteralPath $tmp
+```
+
+PR 생성이나 수정 직후에는 저장 결과를 확인합니다.
+
+```powershell
+gh pr view <number> --json body --jq .body
+gh pr view <number> --json body --jq .body | Select-String -Pattern '\?\?'
+```
+
+두 번째 명령에서 본문 치환으로 보이는 `??`가 나오면 PR 본문을 UTF-8 파일 방식으로 다시 올립니다.
+
 좋은 예:
 
 ```text

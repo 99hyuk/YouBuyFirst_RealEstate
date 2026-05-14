@@ -36,6 +36,12 @@
 | `링크` | 관련 PR, 로그, 문서 중 가장 대표 링크 |
 | `발생일` | 문제를 확인한 날짜 |
 
+## 자주 반복되는 GitHub 인코딩 문제
+
+한국어 PR/issue 본문이 GitHub에서 `??`로 보이면 브라우저 문제가 아니라 저장된 본문 자체가 손상됐을 가능성이 큽니다. `gh pr view <number> --json body --jq .body`로 raw body를 먼저 확인합니다.
+
+Windows PowerShell에서 `$body | gh pr create --body-file -`처럼 pipeline/stdin으로 본문을 넘긴 기록이 있으면 UTF-8 no BOM 파일과 `--body-file <path>`로 다시 올립니다. 수정 후에는 `gh pr view <number> --json body --jq .body | Select-String -Pattern '\?\?'`로 남은 치환 문자열을 확인합니다.
+
 ## 카드 본문 템플릿
 
 Notion 트러블슈팅 카드 본문은 아래 구조를 씁니다.

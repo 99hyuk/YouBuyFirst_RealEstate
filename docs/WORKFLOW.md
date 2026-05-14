@@ -17,10 +17,11 @@
 7. 관련 검증을 실행합니다.
 8. 문제가 발생했거나 반복될 수 있으면 `docs/TROUBLESHOOTING_GUIDE.md`를 기준으로 Notion 트러블슈팅 DB에 기록합니다.
 9. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
-10. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다.
+10. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다. 한국어 PR 본문은 UTF-8 no BOM 파일을 `gh --body-file <path>`로 넘깁니다.
 11. 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` GitHub 라벨을 붙이고, 필요할 때만 변경 파트 `part:*` 라벨을 추가한 뒤 CI를 확인합니다.
-12. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
-13. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
+12. `gh pr view --json body --jq .body`로 PR 본문이 깨지지 않았는지 확인합니다. `??` 치환 문자열이 보이면 merge 전에 고칩니다.
+13. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+14. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
 
 ## PR 크기 기준
 
@@ -114,6 +115,8 @@ codex/<short-task-name>
 PR 본문은 PR #7 수준의 카드형 구조로 씁니다. 첫 화면에서 의도와 상태를 보고, 중간에서 변경 범위를 이해하고, 마지막에서 검증과 다음 작업을 확인할 수 있어야 합니다.
 
 검증은 명령어 자체보다 확인한 사실을 먼저 씁니다. 예를 들어 "Backend Docker test 통과, 2 tests"처럼 결과를 요약하고, 실제 명령어는 PR 본문의 접힌 영역이나 보조 설명에 둡니다.
+
+Windows PowerShell에서 한국어 본문을 `gh`에 파이프로 전달하면 글자가 `??`로 저장될 수 있습니다. PR 생성/수정은 UTF-8 no BOM 파일과 `--body-file <path>`를 사용하고, 생성 직후 `gh pr view --json body --jq .body`로 확인합니다.
 
 ## Notion 기록
 

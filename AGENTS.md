@@ -90,6 +90,8 @@ PR을 열기 전:
 9. 관련 테스트를 실행합니다.
 10. 작업 상태나 범위가 바뀌면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
 11. `git`과 `gh`로 직접 push, PR 생성, 라벨 지정, CI 확인을 수행합니다.
+12. 한국어 PR 본문은 PowerShell 파이프나 stdin으로 `gh`에 넘기지 않고, UTF-8 no BOM 파일을 만든 뒤 `--body-file <path>`로 전달합니다.
+13. PR 생성/수정 직후 `gh pr view --json body --jq .body`로 본문이 깨지지 않았는지 확인하고, `??` 치환 문자열이 보이면 즉시 고칩니다.
 
 무관한 backend, pipeline, runtime, ops 범위 변경을 한 PR에 섞지 않습니다.
 

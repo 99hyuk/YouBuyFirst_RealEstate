@@ -34,6 +34,7 @@
 - [x] 병렬 트랙을 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops`로 재정리
 - [x] GitHub/Notion 라벨 체계를 `area:*`에서 `part:*`와 `변경 파트`로 정리
 - [x] Python 실행 단위와 패키지를 `worker`에서 `pipeline`으로 정리
+- [x] PR 본문 한글 깨짐 방지를 위한 `gh --body-file` UTF-8 규칙 추가
 - [x] GitHub CLI 인증 확인
 - [x] GitHub remote 연결
 - [x] 첫 bootstrap PR 생성
