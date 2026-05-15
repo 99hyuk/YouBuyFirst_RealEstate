@@ -12,16 +12,30 @@
 2. `docs/GIT_CONVENTION.md`와 `docs/LABEL_GUIDE.md`의 제목, 라벨, 크기 규칙을 확인합니다.
 3. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
 4. 필요한 경우에만 `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`를 추가로 읽습니다.
-5. 작업이 크거나 병렬화될 수 있으면 `docs/work-units/`에 짧은 작업 단위 문서를 직접 추가합니다.
-6. 해당 작업만 구현합니다.
-7. 관련 검증을 실행합니다.
-8. 문제가 발생했거나 반복될 수 있으면 `docs/TROUBLESHOOTING_GUIDE.md`를 기준으로 Notion 기술 경험 기록 DB의 `문제해결` 유형에 기록합니다. 성능/품질 개선이나 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 남깁니다.
-9. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
-10. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다. 한국어 PR 본문은 UTF-8 no BOM 파일을 `gh --body-file <path>`로 넘깁니다.
-11. 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` GitHub 라벨을 붙이고, 필요할 때만 변경 파트 `part:*` 라벨을 추가한 뒤 CI를 확인합니다.
-12. `gh pr view --json body --jq .body`로 PR 본문이 깨지지 않았는지 확인합니다. `??` 치환 문자열이 보이면 merge 전에 고칩니다.
-13. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
-14. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
+5. Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기술 경험 기록, 에이전트 운영 로그, Archive를 바꾸는 작업이면 아래 `Notion 구조 변경 게이트`를 먼저 통과합니다.
+6. 작업이 크거나 병렬화될 수 있으면 `docs/work-units/`에 짧은 작업 단위 문서를 직접 추가합니다.
+7. 해당 작업만 구현합니다.
+8. 관련 검증을 실행합니다.
+9. 문제가 발생했거나 반복될 수 있으면 `docs/TROUBLESHOOTING_GUIDE.md`를 기준으로 Notion 기술 경험 기록 DB의 `문제해결` 유형에 기록합니다. 성능/품질 개선이나 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 남깁니다.
+10. 필요하면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
+11. `codex/<작업명>` 브랜치를 push하고 PR을 엽니다. 한국어 PR 본문은 UTF-8 no BOM 파일을 `gh --body-file <path>`로 넘깁니다.
+12. 작업 트랙 `track:*`, 작업 타입 `type:*`, 크기 `size:*` GitHub 라벨을 붙이고, 필요할 때만 변경 파트 `part:*` 라벨을 추가한 뒤 CI를 확인합니다.
+13. `gh pr view --json body --jq .body`로 PR 본문이 깨지지 않았는지 확인합니다. `??` 치환 문자열이 보이면 merge 전에 고칩니다.
+14. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+15. Notion 작업일지에 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 남깁니다.
+
+## Notion 구조 변경 게이트
+
+Notion의 사람용 화면은 단순 메모장이 아니라 프로젝트 탐색 UI입니다. 구조 변경은 아래 순서를 지킨 뒤 적용합니다.
+
+1. 변경 전 대상 페이지를 fetch하고 기존 child page/database 링크를 확인합니다.
+2. 사용자용 정보 구조 변경과 에이전트 운영 규칙 정리를 분리합니다.
+3. 큰 변경은 바로 덮어쓰지 않고 후보 구조, 별도 후보 페이지, 작은 섹션 수정 중 하나로 시작합니다.
+4. `replace_content`는 최후 수단으로 두고, 가능한 한 작은 섹션 단위로 수정합니다.
+5. 제품 기획, 작업 로그, 기술 경험 기록, 에이전트 운영 로그의 목적을 섞지 않습니다.
+6. 홈카드와 DB 페이지는 전체 DB보다 필터된 보기, 대표 보기, 이동 링크를 먼저 배치합니다.
+7. 변경 후 루트와 핵심 카드 2개 이상을 다시 확인합니다.
+8. 사용자가 UI 회귀나 정보 손실을 지적하면 에이전트 운영 로그에 원인과 재발 방지를 남깁니다.
 
 ## PR 크기 기준
 

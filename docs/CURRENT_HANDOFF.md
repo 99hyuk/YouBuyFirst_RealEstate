@@ -1,6 +1,6 @@
 ﻿# 현재 작업 인수인계
 
-마지막 갱신: 2026-05-14
+마지막 갱신: 2026-05-15
 
 이 문서는 새 채팅, 병렬 에이전트, 또는 다음 작업자가 가장 먼저 읽는 요약입니다. 문서 읽기 우선순위는 `docs/DOCUMENTATION_GUIDE.md`를 기준으로 봅니다. 자세한 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`, 현재 MVP 범위는 `docs/PROJECT_BRIEF.md`, 작업 방식은 `docs/WORKFLOW.md`, Git/PR 규칙은 `docs/GIT_CONVENTION.md`를 기준으로 봅니다. 크롤링/공개 배포 리스크는 `docs/LEGAL_RISK_CASES.md`, 병렬 작업 트랙은 `docs/workstreams/README.md`를 기준으로 봅니다.
 
@@ -51,6 +51,7 @@
 - 포트폴리오 후보는 `대표`, `보조`, `기록`으로 나누며, 단순 도구 운영 이슈는 기본적으로 `도구/운영`과 `기록`으로 둡니다.
 - Notion 루트는 전체 DB를 inline으로 펼치지 않고, 최근 요약과 이동 링크만 둡니다.
 - Notion 루트/Archive를 수정할 때 `allow_deleting_content`는 피합니다. child page/database 링크 블록을 삭제할 수 있어, 레이아웃 정리는 `update_content` 중심으로 합니다.
+- Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기술 경험 기록, 에이전트 운영 로그, Archive 변경은 사용자용 정보 구조 변경으로 취급합니다. 변경 전 fetch와 child link 확인, 사용자 UI와 운영 규칙 분리, 후보안 또는 작은 섹션 단위 변경, 변경 후 루트/핵심 카드 재확인을 거칩니다.
 - 기존 Notion 원본 DB parent가 삭제 표시되어 새 Archive 아래에 작업 로그/기술 경험 기록/다음 작업 DB를 다시 만들었습니다. 새 작업은 현재 Notion 상태의 data source id만 사용합니다.
 
 ## 현재 GitHub 상태
