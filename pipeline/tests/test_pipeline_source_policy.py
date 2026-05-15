@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 
+from youbuyfirst_pipeline.crawl_targets import CrawlTarget
 from youbuyfirst_pipeline.models import RawPost
 from youbuyfirst_pipeline.pipeline import CommunityPipeline
 from youbuyfirst_pipeline.source_policy import (
@@ -18,6 +19,7 @@ class FakeAdapter:
         self.source = source
         self.posts = posts or []
         self.called = False
+        self.target = CrawlTarget.stock_board(source, market="KR", symbol="005930")
 
     async def fetch_posts(self) -> list[RawPost]:
         self.called = True
@@ -92,6 +94,8 @@ def test_public_runtime_skips_local_research_source_without_fetching():
     assert adapter.called is False
     assert results[0]["source"] == "NAVER"
     assert results[0]["status"] == "skipped"
+    assert results[0]["targetId"] == "NAVER:KR:005930"
+    assert results[0]["targetKind"] == "stock-board"
     assert results[0]["sourceStatus"] == "local-research-only"
     assert results[0]["runtimeEnvironment"] == "public"
     assert "not allowed in public runtime" in results[0]["skipReason"]
@@ -130,6 +134,7 @@ def test_local_runtime_allows_local_research_source_to_fetch():
 
     assert adapter.called is True
     assert results[0]["source"] == "NAVER"
+    assert results[0]["targetId"] == "NAVER:KR:005930"
     assert results[0]["seenPosts"] == 0
     assert results[0]["acceptedPosts"] == 0
 
@@ -156,4 +161,5 @@ def test_enabled_source_still_ingests_enriched_posts():
 
     assert adapter.called is True
     assert results[0]["source"] == "SAFE"
+    assert results[0]["targetId"] == "SAFE:KR:005930"
     assert results[0]["acceptedPosts"] == 1

@@ -9,6 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from youbuyfirst_pipeline.client import SpringIngestionClient
+from youbuyfirst_pipeline.crawl_targets import CrawlTarget, CrawlTargetKind, default_crawl_targets
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher
 from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
 from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
@@ -32,13 +33,12 @@ def build_pipeline() -> CommunityPipeline:
     instrument_path = Path(os.getenv("INSTRUMENT_CSV_PATH", "data/instruments.sample.csv"))
     instruments = load_instruments(instrument_path)
 
-    configured_naver_codes = os.getenv("NAVER_STOCK_CODES")
-    if configured_naver_codes:
-        naver_codes = [code.strip() for code in configured_naver_codes.split(",") if code.strip()]
-    else:
-        naver_codes = [instrument.symbol for instrument in instruments if instrument.market == "KR"]
-    adapters = [NaverBoardAdapter(fetcher, stock_code=code) for code in naver_codes]
-    adapters.append(FmkoreaAdapter(fetcher, url=os.getenv("FMKOREA_STOCK_URL")))
+    targets = default_crawl_targets(
+        instruments,
+        naver_stock_codes=_configured_naver_codes(os.getenv("NAVER_STOCK_CODES")),
+        fmkorea_url=os.getenv("FMKOREA_STOCK_URL"),
+    )
+    adapters = _adapters_from_targets(targets, fetcher)
 
     matcher = InstrumentMatcher(instruments)
     client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
@@ -50,6 +50,27 @@ def build_pipeline() -> CommunityPipeline:
         source_policy_registry=default_source_policy_registry(),
         runtime_environment=runtime_environment,
     )
+
+
+def _configured_naver_codes(value: str | None) -> list[str] | None:
+    if not value:
+        return None
+    return [code.strip() for code in value.split(",") if code.strip()]
+
+
+def _adapters_from_targets(targets: list[CrawlTarget], fetcher: BrowserCapableFetcher) -> list:
+    adapters = []
+    for target in targets:
+        if target.source == "NAVER" and target.kind == CrawlTargetKind.STOCK_BOARD:
+            if not target.symbol:
+                raise ValueError(f"{target.target_id} is missing symbol")
+            adapters.append(NaverBoardAdapter(fetcher, stock_code=target.symbol, target=target))
+            continue
+        if target.source == "FMKOREA" and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
+            adapters.append(FmkoreaAdapter(fetcher, url=target.url, target=target))
+            continue
+        raise ValueError(f"unsupported crawl target: {target.target_id}")
+    return adapters
 
 
 async def async_main() -> None:

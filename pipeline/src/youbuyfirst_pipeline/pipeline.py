@@ -37,11 +37,13 @@ class CommunityPipeline:
         for adapter in self.adapters:
             started = datetime.now(timezone.utc)
             run_id = f"{adapter.source.lower()}-{started.strftime('%Y%m%d%H%M')}-{uuid4().hex[:8]}"
+            result_context = _target_result_context(adapter)
             policy_decision = self.source_policy_registry.decide(adapter.source, self.runtime_environment)
             if not policy_decision.allowed:
                 results.append(
                     {
                         "source": adapter.source,
+                        **result_context,
                         "runId": run_id,
                         "status": "skipped",
                         "sourceStatus": policy_decision.policy.status.value,
@@ -55,23 +57,26 @@ class CommunityPipeline:
                 enriched = [self._enrich(post) for post in raw_posts]
                 finished = datetime.now(timezone.utc)
                 if enriched:
-                    results.append(self.client.ingest(adapter.source, run_id, started, finished, enriched))
+                    result = self.client.ingest(adapter.source, run_id, started, finished, enriched)
+                    results.append({**result_context, **result})
                 else:
                     record_error = self._safe_record_run(adapter.source, run_id, started, finished, "SUCCESS", 0, 0, None)
-                    results.append({"source": adapter.source, "runId": run_id, "seenPosts": 0, "acceptedPosts": 0})
+                    results.append(
+                        {"source": adapter.source, **result_context, "runId": run_id, "seenPosts": 0, "acceptedPosts": 0}
+                    )
                     if record_error:
                         results[-1]["recordError"] = record_error
             except SourceBlockedError as exc:
                 finished = datetime.now(timezone.utc)
                 record_error = self._safe_record_run(adapter.source, run_id, started, finished, "PARTIAL_FAILURE", 0, 0, str(exc))
-                result = {"source": adapter.source, "runId": run_id, "status": "blocked", "error": str(exc)}
+                result = {"source": adapter.source, **result_context, "runId": run_id, "status": "blocked", "error": str(exc)}
                 if record_error:
                     result["recordError"] = record_error
                 results.append(result)
             except Exception as exc:
                 finished = datetime.now(timezone.utc)
                 record_error = self._safe_record_run(adapter.source, run_id, started, finished, "FAILED", 0, 0, str(exc))
-                result = {"source": adapter.source, "runId": run_id, "status": "failed", "error": str(exc)}
+                result = {"source": adapter.source, **result_context, "runId": run_id, "status": "failed", "error": str(exc)}
                 if record_error:
                     result["recordError"] = record_error
                 results.append(result)
@@ -138,3 +143,21 @@ def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecisi
         seen.add(key)
         accepted.append(decision)
     return accepted
+
+
+def _target_result_context(adapter: CommunityAdapter) -> dict:
+    target = getattr(adapter, "target", None)
+    if target is None:
+        return {}
+    context = {
+        "targetId": target.target_id,
+        "targetKind": target.kind.value,
+        "targetLabel": target.label,
+    }
+    if target.market:
+        context["targetMarket"] = target.market
+    if target.symbol:
+        context["targetSymbol"] = target.symbol
+    if target.url:
+        context["targetUrl"] = target.url
+    return context

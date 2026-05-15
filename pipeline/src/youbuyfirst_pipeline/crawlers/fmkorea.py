@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlparse
 
 from bs4 import BeautifulSoup
 
+from youbuyfirst_pipeline.crawl_targets import CrawlTarget
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher, parse_datetime
 from youbuyfirst_pipeline.models import RawPost
 
@@ -12,9 +13,10 @@ class FmkoreaAdapter:
     source = "FMKOREA"
     default_url = "https://www.fmkorea.com/stock"
 
-    def __init__(self, fetcher: BrowserCapableFetcher, url: str | None = None) -> None:
+    def __init__(self, fetcher: BrowserCapableFetcher, url: str | None = None, target: CrawlTarget | None = None) -> None:
         self.fetcher = fetcher
         self.url = url or self.default_url
+        self.target = target or CrawlTarget.community_board(self.source, url=self.url, label="FMKOREA stock board")
 
     async def fetch_posts(self) -> list[RawPost]:
         result = await self.fetcher.fetch_html(self.url)

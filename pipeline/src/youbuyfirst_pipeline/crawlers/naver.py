@@ -5,6 +5,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 
 from bs4 import BeautifulSoup
 
+from youbuyfirst_pipeline.crawl_targets import CrawlTarget
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher, parse_datetime
 from youbuyfirst_pipeline.models import RawPost
 
@@ -13,9 +14,10 @@ class NaverBoardAdapter:
     source = "NAVER"
     base_url = "https://finance.naver.com"
 
-    def __init__(self, fetcher: BrowserCapableFetcher, stock_code: str) -> None:
+    def __init__(self, fetcher: BrowserCapableFetcher, stock_code: str, target: CrawlTarget | None = None) -> None:
         self.fetcher = fetcher
         self.stock_code = stock_code
+        self.target = target or CrawlTarget.stock_board(self.source, market="KR", symbol=stock_code)
 
     async def fetch_posts(self) -> list[RawPost]:
         url = f"{self.base_url}/item/board.naver?code={self.stock_code}"
