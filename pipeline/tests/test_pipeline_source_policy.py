@@ -69,12 +69,17 @@ class FakeClient:
         )
 
 
-def _pipeline(adapter: FakeAdapter, registry: SourcePolicyRegistry, runtime: CrawlRuntimeEnvironment) -> CommunityPipeline:
+def _pipeline(
+    adapter: FakeAdapter,
+    registry: SourcePolicyRegistry,
+    runtime: CrawlRuntimeEnvironment,
+    client: FakeClient | None = None,
+) -> CommunityPipeline:
     return CommunityPipeline(
         adapters=[adapter],
         matcher=FakeMatcher(),
         llm_provider=FakeLLMProvider(),
-        client=FakeClient(),
+        client=client or FakeClient(),
         source_policy_registry=registry,
         runtime_environment=runtime,
     )
@@ -87,7 +92,8 @@ def test_public_runtime_skips_local_research_source_without_fetching():
             "NAVER": SourcePolicy("NAVER", SourceStatus.LOCAL_RESEARCH_ONLY, "local only"),
         }
     )
-    pipeline = _pipeline(adapter, registry, CrawlRuntimeEnvironment.PUBLIC)
+    client = FakeClient()
+    pipeline = _pipeline(adapter, registry, CrawlRuntimeEnvironment.PUBLIC, client)
 
     results = asyncio.run(pipeline.run_once())
 
@@ -99,9 +105,22 @@ def test_public_runtime_skips_local_research_source_without_fetching():
     assert results[0]["sourceStatus"] == "local-research-only"
     assert results[0]["runtimeEnvironment"] == "public"
     assert "not allowed in public runtime" in results[0]["skipReason"]
+    assert client.recorded_runs == [
+        {
+            "source": "NAVER",
+            "runId": results[0]["runId"],
+            "status": "SKIPPED",
+            "postsSeen": 0,
+            "postsAccepted": 0,
+            "errorMessage": (
+                "targetId=NAVER:KR:005930; sourceStatus=local-research-only; "
+                "runtimeEnvironment=public; reason=source policy local-research-only is not allowed in public runtime"
+            ),
+        }
+    ]
 
 
-def test_disabled_source_skips_without_backend_run_record():
+def test_disabled_source_skips_and_records_backend_run():
     adapter = FakeAdapter("UNKNOWN")
     registry = SourcePolicyRegistry({})
     client = FakeClient()
@@ -118,7 +137,19 @@ def test_disabled_source_skips_without_backend_run_record():
 
     assert adapter.called is False
     assert results[0]["status"] == "skipped"
-    assert client.recorded_runs == []
+    assert client.recorded_runs == [
+        {
+            "source": "UNKNOWN",
+            "runId": results[0]["runId"],
+            "status": "SKIPPED",
+            "postsSeen": 0,
+            "postsAccepted": 0,
+            "errorMessage": (
+                "targetId=UNKNOWN:KR:005930; sourceStatus=disabled; "
+                "runtimeEnvironment=local; reason=source is not registered; default disabled"
+            ),
+        }
+    ]
 
 
 def test_local_runtime_allows_local_research_source_to_fetch():

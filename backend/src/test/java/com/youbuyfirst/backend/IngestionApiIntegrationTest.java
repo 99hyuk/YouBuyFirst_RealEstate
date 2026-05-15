@@ -1,5 +1,7 @@
 package com.youbuyfirst.backend;
 
+import com.youbuyfirst.backend.crawl.CrawlRunStatus;
+import com.youbuyfirst.backend.ingestion.dto.CrawlRunReportRequest;
 import com.youbuyfirst.backend.ingestion.dto.IngestionRequest;
 import com.youbuyfirst.backend.ingestion.dto.IngestionResponse;
 import com.youbuyfirst.backend.ingestion.dto.MentionPayload;
@@ -102,5 +104,32 @@ class IngestionApiIntegrationTest {
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void recordsSkippedCrawlRunsForAdminInspection() {
+        CrawlRunReportRequest request = new CrawlRunReportRequest(
+                "NAVER",
+                "naver-skip-20260515",
+                Instant.parse("2026-05-15T00:00:00Z"),
+                Instant.parse("2026-05-15T00:00:01Z"),
+                CrawlRunStatus.SKIPPED,
+                0,
+                0,
+                "targetId=NAVER:KR:005930; sourceStatus=local-research-only; "
+                        + "runtimeEnvironment=public; reason=policy denied"
+        );
+
+        ResponseEntity<Void> response = restTemplate.postForEntity(
+                "/internal/ingestions/crawl-runs",
+                request,
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String runs = restTemplate.getForObject("/admin/crawl-runs?limit=5", String.class);
+        assertThat(runs).contains("\"status\":\"SKIPPED\"");
+        assertThat(runs).contains("sourceStatus=local-research-only");
     }
 }

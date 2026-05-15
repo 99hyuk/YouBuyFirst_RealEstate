@@ -17,6 +17,7 @@
 - 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
 - 소스별 활성화 상태 계약을 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`에 정리했습니다.
 - pipeline에 source policy registry와 scheduler gate를 구현했습니다. 로컬 Compose는 `CRAWL_RUNTIME_ENV=local`로 실행하고, 기본 MVP 소스는 local research 범위에서 실행됩니다.
+- source policy로 skip된 수집 실행도 backend `crawl_runs`에 `SKIPPED` 상태로 기록되도록 연결했습니다. `/admin/crawl-runs`에서 source, runId, status, errorMessage로 skip 사유를 확인합니다.
 - data 트랙에서 별칭 중첩 매칭을 보강하고, AI mention resolver 계약과 pipeline filtering을 구현했습니다. `OPENAI_API_KEY`가 없으면 mock provider가 테스트/데모용 판단을 수행합니다.
 - front 트랙에서 화면 라우팅 인벤토리 설계와 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell을 추가했습니다.
 - 병렬 작업은 루트 checkout을 공유하지 않고 프로젝트 하위 `.worktrees/<task>`에서 진행하도록 정리했습니다.
@@ -113,6 +114,9 @@
 
 ## 마지막 검증 기록
 
+- Crawl skip run record branch: Backend Docker test 통과, 3 tests
+- Crawl skip run record branch: Pipeline Docker test 통과, 24 tests
+- Crawl skip run record branch: `git diff --check` 통과
 - Front Vue shell branch: `npm test --prefix front` 통과, `npm run build --prefix front` 통과
 - Crawl source policy gate branch: pipeline pytest 통과, source policy skip 테스트 통과
 - Data AI mention resolver branch: pipeline pytest 통과, mock/OpenAI provider 계약 테스트 통과

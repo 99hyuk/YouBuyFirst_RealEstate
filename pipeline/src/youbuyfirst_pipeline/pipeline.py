@@ -10,6 +10,7 @@ from youbuyfirst_pipeline.matcher import InstrumentMatcher
 from youbuyfirst_pipeline.models import Analysis, EnrichedPost, Mention, MentionDecision, RawPost
 from youbuyfirst_pipeline.source_policy import (
     CrawlRuntimeEnvironment,
+    SourcePolicyDecision,
     SourcePolicyRegistry,
     default_source_policy_registry,
 )
@@ -40,17 +41,23 @@ class CommunityPipeline:
             result_context = _target_result_context(adapter)
             policy_decision = self.source_policy_registry.decide(adapter.source, self.runtime_environment)
             if not policy_decision.allowed:
-                results.append(
-                    {
-                        "source": adapter.source,
-                        **result_context,
-                        "runId": run_id,
-                        "status": "skipped",
-                        "sourceStatus": policy_decision.policy.status.value,
-                        "runtimeEnvironment": self.runtime_environment.value,
-                        "skipReason": policy_decision.reason,
-                    }
+                finished = datetime.now(timezone.utc)
+                skip_message = _skip_record_message(result_context, policy_decision)
+                record_error = self._safe_record_run(
+                    adapter.source, run_id, started, finished, "SKIPPED", 0, 0, skip_message
                 )
+                result = {
+                    "source": adapter.source,
+                    **result_context,
+                    "runId": run_id,
+                    "status": "skipped",
+                    "sourceStatus": policy_decision.policy.status.value,
+                    "runtimeEnvironment": self.runtime_environment.value,
+                    "skipReason": policy_decision.reason,
+                }
+                if record_error:
+                    result["recordError"] = record_error
+                results.append(result)
                 continue
             try:
                 raw_posts = await adapter.fetch_posts()
@@ -161,3 +168,18 @@ def _target_result_context(adapter: CommunityAdapter) -> dict:
     if target.url:
         context["targetUrl"] = target.url
     return context
+
+
+def _skip_record_message(result_context: dict, policy_decision: SourcePolicyDecision) -> str:
+    parts: list[str] = []
+    target_id = result_context.get("targetId")
+    if target_id:
+        parts.append(f"targetId={target_id}")
+    parts.extend(
+        [
+            f"sourceStatus={policy_decision.policy.status.value}",
+            f"runtimeEnvironment={policy_decision.runtime_environment.value}",
+            f"reason={policy_decision.reason}",
+        ]
+    )
+    return "; ".join(parts)

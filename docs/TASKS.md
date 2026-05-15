@@ -47,6 +47,7 @@
 - [x] data 별칭 중첩 매칭 보강
 - [x] data AI 종목 언급 검증 계약과 pipeline filtering 구현
 - [x] crawl source policy registry와 scheduler gate 구현
+- [x] crawl source policy skip 상태를 crawl run 기록에 표시
 - [x] front 화면 라우팅 인벤토리 설계
 - [x] front Vue 3 + Vite + TypeScript 와이어프레임 shell 구현
 
@@ -67,7 +68,6 @@
 ## 다음 MVP 작업 후보
 
 - [ ] 종목 마스터 CSV를 국내 전체 + 미국 주식/ETF 데이터로 확장
-- [ ] source policy skip 상태와 crawl run 기록의 운영 표시 방식 정리
 - [ ] crawl run 실패/차단 원인별 backoff 정책 세분화
 - [ ] retention cleanup 테스트 추가
 - [ ] 사용자용 analysis ranking/indicator API 추가
