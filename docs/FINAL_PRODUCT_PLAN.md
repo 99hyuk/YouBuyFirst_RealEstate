@@ -194,12 +194,12 @@ flowchart LR
 
 ## 주요 데이터 도메인
 
-- Instrument: 국내/미국 주식, ETF, 별칭
+- Stock: 국내/미국 주식, ETF, 별칭
 - CrawlTarget: 소스별/종목별 수집 대상과 우선순위
 - CommunityPost: 제한 저장된 게시글 메타데이터와 snippet
 - StockMention: 게시글 안에서 인식된 종목 언급
-- SentimentAnalysis: 종목별 감성, confidence, 짧은 근거
-- MetricSnapshot: 30분 단위 집계
+- AnalysisResult: 종목별 분위기 판단, confidence, 짧은 근거
+- IndicatorSnapshot: 30분 단위 집계와 투자 참고 지표
 - CommunitySignal: 커뮤니티별 종목 신호
 - ForwardReturn: 신호 이후 가격 변화와 기간별 수익률
 - CommunityPerformanceSnapshot: 커뮤니티별 추종/역추종 전략 성과
