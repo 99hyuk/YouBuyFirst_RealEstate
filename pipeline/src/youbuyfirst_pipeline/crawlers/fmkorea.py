@@ -1,4 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
+
+from urllib.parse import parse_qs, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -29,15 +31,15 @@ class FmkoreaAdapter:
             classes = set(row.get("class", []))
             if "notice" in classes:
                 continue
-            anchor = row.select_one("td.title a[href^='/']")
+            anchor = _post_anchor(row)
             if not anchor:
                 continue
             href = anchor.get("href", "").strip()
             title = anchor.get_text(" ", strip=True)
             if not href or not title:
                 continue
-            post_id = href.strip("/").split("/")[-1].split("?")[0]
-            if not post_id.isdigit():
+            post_id = _post_id_from_href(href)
+            if not post_id:
                 continue
             if not post_id or post_id in seen:
                 continue
@@ -58,6 +60,25 @@ class FmkoreaAdapter:
                 )
             )
         return posts
+
+
+def _post_anchor(row):
+    for anchor in row.select("td.title a[href^='/']"):
+        classes = set(anchor.get("class", []))
+        if "replyNum" in classes or anchor.get("href", "").endswith("#comment"):
+            continue
+        if _post_id_from_href(anchor.get("href", "")):
+            return anchor
+    return None
+
+
+def _post_id_from_href(href: str) -> str:
+    parsed = urlparse(href)
+    path_id = parsed.path.strip("/").split("/")[-1]
+    if path_id.isdigit():
+        return path_id
+    document_srl = parse_qs(parsed.query).get("document_srl", [""])[0]
+    return document_srl if document_srl.isdigit() else ""
 
 
 def _first_text(container, selectors: list[str]) -> str | None:

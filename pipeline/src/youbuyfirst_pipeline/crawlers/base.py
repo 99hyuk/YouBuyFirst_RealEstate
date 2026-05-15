@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -74,6 +74,11 @@ def parse_datetime(value: str | None) -> datetime:
         return datetime.now(timezone.utc)
     normalized = value.strip()
     for fmt in ("%Y.%m.%d %H:%M", "%Y-%m-%d %H:%M", "%Y.%m.%d. %H:%M"):
+        try:
+            return datetime.strptime(normalized, fmt).replace(tzinfo=kst).astimezone(timezone.utc)
+        except ValueError:
+            pass
+    for fmt in ("%Y.%m.%d", "%Y-%m-%d", "%Y.%m.%d.", "%y.%m.%d", "%y.%m.%d."):
         try:
             return datetime.strptime(normalized, fmt).replace(tzinfo=kst).astimezone(timezone.utc)
         except ValueError:

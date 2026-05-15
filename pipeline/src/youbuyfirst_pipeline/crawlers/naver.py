@@ -1,5 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
+import re
 from urllib.parse import parse_qs, urljoin, urlparse
 
 from bs4 import BeautifulSoup
@@ -44,8 +45,9 @@ class NaverBoardAdapter:
             seen.add(external_id)
             row = anchor.find_parent("tr")
             cells = row.find_all("td") if row else []
-            date_text = _cell_text(cells, 1)
-            author = _cell_text(cells, 2)
+            title_index = _cell_index(cells, anchor.find_parent("td"))
+            date_text = _published_at_text(cells, title_index)
+            author = _author_text(cells, title_index)
             posts.append(
                 RawPost(
                     source=NaverBoardAdapter.source,
@@ -64,3 +66,51 @@ def _cell_text(cells, index: int) -> str:
     if index >= len(cells):
         return ""
     return cells[index].get_text(" ", strip=True)
+
+
+def _cell_index(cells, cell) -> int:
+    for index, candidate in enumerate(cells):
+        if candidate is cell:
+            return index
+    return -1
+
+
+def _published_at_text(cells, title_index: int) -> str:
+    candidate_indices = []
+    if title_index > 0:
+        candidate_indices.append(title_index - 1)
+    if title_index >= 0:
+        candidate_indices.append(title_index + 1)
+    candidate_indices.extend(range(len(cells)))
+
+    seen: set[int] = set()
+    for index in candidate_indices:
+        if index in seen or index < 0 or index >= len(cells):
+            continue
+        seen.add(index)
+        text = _cell_text(cells, index)
+        if _looks_like_datetime(text):
+            return text
+    return ""
+
+
+def _author_text(cells, title_index: int) -> str:
+    start = title_index + 1 if title_index >= 0 else 0
+    for index in range(start, len(cells)):
+        text = _cell_text(cells, index)
+        if text and not _looks_like_datetime(text) and not _looks_like_count(text):
+            return text
+    return ""
+
+
+def _looks_like_datetime(value: str) -> bool:
+    return bool(
+        re.fullmatch(
+            r"(\d{4}[.-]\d{1,2}[.-]\d{1,2}\.?\s+\d{1,2}:\d{2}|\d{2,4}[.-]\d{1,2}[.-]\d{1,2}\.?|\d{1,2}:\d{2})",
+            value.strip(),
+        )
+    )
+
+
+def _looks_like_count(value: str) -> bool:
+    return bool(re.fullmatch(r"[\d,]+|[\d.]+[만천백]?", value.strip()))
