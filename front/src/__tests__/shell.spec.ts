@@ -53,6 +53,9 @@ describe('front dashboard shell', () => {
     expect(wrapper.get('[data-testid="nav-communities"]').text()).toContain('커뮤니티');
     expect(wrapper.get('[data-testid="nav-agents"]').text()).toContain('에이전트');
     expect(wrapper.get('[data-testid="nav-portfolio"]').text()).toContain('준비 중');
+    expect(wrapper.text()).toContain('오늘 커뮤니티 브리핑');
+    expect(wrapper.text()).toContain('투자자들이 먼저 떠드는 종목을 읽습니다');
+    expect(wrapper.text()).toContain('반응 터미널');
     expect(wrapper.text()).toContain('기획자 확인 필요');
   });
 });

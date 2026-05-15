@@ -2,7 +2,7 @@
   <div class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">커뮤니티 반응 관찰형 투자 참고 서비스</p>
+        <p class="eyebrow">커뮤니티 반응으로 시장의 먼저 흔들리는 지점을 관찰합니다.</p>
         <h1 data-testid="app-title">너나사 YouBuyFirst</h1>
       </div>
       <nav class="main-nav" aria-label="주요 화면">

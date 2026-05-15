@@ -15,6 +15,7 @@
       },
       "heatScore": 82,
       "topKeywords": ["실적", "반도체", "외국인"],
+      "priceStatus": "mock quote",
       "dataStatus": "mock"
     },
     {
@@ -30,6 +31,7 @@
       },
       "heatScore": 68,
       "topKeywords": ["실적", "가격", "변동성"],
+      "priceStatus": "stale quote",
       "dataStatus": "mock"
     }
   ]
