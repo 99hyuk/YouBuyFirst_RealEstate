@@ -33,7 +33,7 @@ AI 전략 에이전트를 담당합니다. `data`의 커뮤니티 신호, `marke
 
 공유 전 협의:
 
-- sentiment metric schema
+- analysis/indicator schema
 - community performance snapshot schema
 - quote snapshot contract
 - trade order request contract

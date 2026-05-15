@@ -30,7 +30,7 @@
 
 공유 전 협의:
 
-- sentiment metric schema
+- analysis/indicator schema
 - community signal schema
 - dashboard API contract
 - external quote provider 이용 조건 문서

@@ -7,11 +7,11 @@
 ## 담당 범위
 
 - 종목명, 티커, 별칭 matcher
-- 국내/미국 instrument master 확장
-- LLM provider interface와 sentiment schema
+- 국내/미국 stock master 확장
+- LLM provider interface와 analysis schema
 - `bullish`, `bearish`, `neutral` 분류 품질
 - 열기 지수 산식
-- 30분 metric snapshot
+- 30분 indicator snapshot
 - AI 3줄 요약 입력 데이터
 - 커뮤니티별 신호와 이후 수익률 비교용 원천 지표
 - `CommunitySignal`, `ForwardReturn`, `CommunityPerformanceSnapshot`
@@ -22,9 +22,9 @@
 
 - `pipeline/src/youbuyfirst_pipeline/matcher.py`
 - `pipeline/src/youbuyfirst_pipeline/llm.py`
-- sentiment/metrics 관련 backend domain
-- metrics API
-- instrument seed/fixture
+- `stock`, `analysis`, `indicator` 관련 backend domain
+- indicator API
+- stock seed/fixture
 
 공유 전 협의:
 

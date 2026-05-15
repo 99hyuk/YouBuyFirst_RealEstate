@@ -38,7 +38,7 @@
 - pipeline payload contract
 - DB migration
 - front package
-- quote/sentiment/simulation domain schema
+- quote/analysis/indicator/trade domain schema
 
 ## 현재 우선순위
 

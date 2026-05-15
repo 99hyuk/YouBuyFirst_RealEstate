@@ -19,6 +19,7 @@
 - 여러 채팅이 동시에 일할 수 있도록 일곱 개의 병렬 작업 트랙 문서를 추가했습니다.
 - GitHub 라벨 체계를 `track:*`, `type:*`, `part:*`, `size:*`로 정리했습니다.
 - Python 실행 단위 이름을 `worker`에서 `pipeline`으로 정리했습니다.
+- 트랙 이름은 작업 관리 단위로 유지하고, 코드 패키지는 도메인 단위로 정리하기로 했습니다. 목표 도메인 패키지 이름은 `stock`, `analysis`, `indicator`, `market`, `trade`, `agent`입니다.
 
 ## 최근 결정
 
@@ -85,6 +86,7 @@
 - 작업 로그 DB와 다음 작업 DB는 `변경 파트` 컬럼을 사용합니다.
 - 작업이 끝나면 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 Notion 작업일지에 남깁니다.
 - 제품 개발/운영 트러블슈팅은 개발자 기술 경험 DB의 `문제해결` 유형으로 남깁니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 종류와 포트폴리오 후보를 선택합니다. 에이전트/도구 운영 사고는 에이전트 운영 로그 DB에 남깁니다.
+- 도메인 패키지 이름 기준은 `docs/DOMAIN_PACKAGE_GUIDE.md`를 봅니다. 현재 코드에 남아 있는 `instrument`, `sentiment`, `metrics` 패키지 리네임은 후속 PR로 분리합니다.
 
 ## 마지막 검증 기록
 
@@ -123,3 +125,4 @@
 - 소스별 활성화 상태 설계
 - pipeline이 backend readiness를 기다리도록 개선
 - admin API Swagger 예시와 validation 오류 응답 정리
+- backend 도메인 패키지를 `stock`, `analysis`, `indicator` 목표 이름으로 리네임

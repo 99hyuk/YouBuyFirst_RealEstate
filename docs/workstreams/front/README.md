@@ -32,7 +32,7 @@
 공유 전 협의:
 
 - backend API contract
-- metrics API response
+- indicator API response
 - quote snapshot response
 - trade/agent API response
 - 문서/Notion/PR 운영 기준
@@ -41,7 +41,7 @@
 
 1. 대시보드 정보 구조와 라우팅 후보 설계
 2. fixture/mock 기반 dashboard shell 구현
-3. 감성 ranking/metrics API 계약 연결
+3. analysis ranking/indicator API 계약 연결
 4. quote snapshot API 계약 연결
 5. 커뮤니티별 수익률 비교 화면 연결
 6. 모의투자/AI 에이전트 화면 연결

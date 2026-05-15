@@ -6,6 +6,8 @@
 
 무관한 작업을 묶지 않습니다. 여러 subsystem을 건드리는 일이면, 함께 배포되어야 앱이 동작하는 경우를 제외하고 나눕니다.
 
+트랙 이름은 작업 관리 단위이고 코드 패키지는 도메인 단위입니다. 패키지 경계가 헷갈리면 `docs/DOMAIN_PACKAGE_GUIDE.md`를 먼저 확인합니다.
+
 ## 작업 순서
 
 1. `AGENTS.md`, `docs/CURRENT_HANDOFF.md`, `docs/DOCUMENTATION_GUIDE.md`를 읽습니다.
@@ -71,7 +73,7 @@ codex/<short-task-name>
 
 - `codex/crawler-parser-hardening`
 - `codex/add-ci`
-- `codex/instrument-master-import`
+- `codex/stock-master-import`
 
 트랙이 분명하면 브랜치 이름 앞부분에 트랙을 드러냅니다.
 

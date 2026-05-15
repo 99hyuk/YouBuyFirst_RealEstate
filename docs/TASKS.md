@@ -56,6 +56,8 @@
 - [ ] `market` 트랙에서 quote snapshot 계약 설계
 - [ ] `trade` 트랙에서 모의 계좌와 주문/체결 최소 도메인 설계
 - [ ] `agent` 트랙에서 역발상 페르소나 입력 contract 설계
+- [ ] backend 도메인 패키지 `instrument/sentiment/metrics`를 `stock/analysis/indicator`로 리네임
+- [ ] pipeline 종목 매칭 모듈을 `stock` 기준 이름으로 정리
 - [ ] pipeline이 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
 - [ ] `POST /internal/ingestions/community-posts` payload 예시를 Swagger에 추가
 
@@ -64,7 +66,7 @@
 - [ ] 종목 마스터 CSV를 국내 전체 + 미국 주식/ETF 데이터로 확장
 - [ ] crawl run 실패/차단 원인별 backoff 정책 세분화
 - [ ] retention cleanup 테스트 추가
-- [ ] 사용자용 sentiment ranking API 추가
+- [ ] 사용자용 analysis ranking/indicator API 추가
 - [ ] 30분 집계 산식 검증 테스트 추가
 - [ ] 커뮤니티별 성과 비교 snapshot 모델 설계
 - [ ] 공개 배포 가능한 시세 provider 조사

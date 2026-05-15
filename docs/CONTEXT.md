@@ -9,8 +9,8 @@
 ## 현재 MVP
 
 - Source: 네이버 종토방, 에펨코리아 주식 게시판
-- Backend: Spring Boot가 ingestion, validation, persistence, metrics, Swagger admin API를 담당
-- Pipeline: Python이 crawling, Playwright rendering fallback, instrument matching, LLM sentiment analysis를 담당
+- Backend: Spring Boot가 ingestion, validation, persistence, indicator, Swagger admin API를 담당
+- Pipeline: Python이 crawling, Playwright rendering fallback, stock matching, LLM analysis를 담당
 - Runtime: Docker Compose가 MySQL, backend, pipeline을 실행
 - 30분 집계는 유지하되, 공개 배포 시 소스별 활성화 상태를 관리합니다.
 
@@ -25,6 +25,7 @@
 - 원문은 제한 저장합니다: title, content snippet, URL, author hash, published time, content hash.
 - 공개 UI는 원문보다 집계 지표, 대표 키워드, 감성 비율, AI 재서술 근거를 중심으로 보여줍니다.
 - 병렬 작업은 `docs/workstreams/README.md`의 일곱 트랙으로 나눕니다.
+- 트랙은 작업 관리 단위이고 코드 패키지는 도메인 단위입니다. 도메인 패키지 목표 이름은 `stock`, `analysis`, `indicator`, `market`, `trade`, `agent`입니다.
 - 라벨은 `track:*`, `type:*`, `size:*`를 기본으로 쓰고, 실제 변경 표면이 분명할 때만 `part:*`를 추가합니다.
 - `OPENAI_API_KEY`가 있으면 OpenAI 분석을 사용하고, 없으면 로컬 demo용 mock sentiment를 사용합니다.
 - MySQL host port는 로컬 `3306` 충돌을 피하기 위해 `3307`을 사용합니다.

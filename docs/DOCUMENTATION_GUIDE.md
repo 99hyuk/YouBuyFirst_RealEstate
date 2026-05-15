@@ -31,6 +31,7 @@
 | `docs/PROJECT_BRIEF.md` | 현재 MVP 범위를 확인할 때 |
 | `docs/GIT_CONVENTION.md` | PR/커밋/라벨 규칙을 확인할 때 |
 | `docs/LABEL_GUIDE.md` | GitHub/Notion 라벨 의미가 헷갈릴 때 |
+| `docs/DOMAIN_PACKAGE_GUIDE.md` | 트랙과 코드 패키지 경계가 헷갈릴 때 |
 | `docs/LEGAL_RISK_CASES.md` | 크롤링/공개 배포 리스크를 다룰 때 |
 | `docs/ENGINEERING_EVIDENCE_GUIDE.md` | 문제 해결, 성능 개선, 품질 개선, 기술 결정 기록 기준을 확인할 때 |
 | `docs/TROUBLESHOOTING_GUIDE.md` | 버그, 장애, 반복 이슈를 기록할 때 |

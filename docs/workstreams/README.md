@@ -47,6 +47,24 @@ PR 설명과 작업 기록은 한국어로 작성해줘.
 
 `ops`는 구현이 전혀 없는 트랙이 아닙니다. 다만 이 트랙의 구현은 문서, 자동화, CI, Notion, 배포 정책, 작업 조율에 한정합니다.
 
+## 트랙과 코드 패키지
+
+트랙 이름과 코드 패키지 이름은 다릅니다. 트랙은 PR/Notion/브랜치의 작업 구분이고, 패키지는 제품 도메인 구분입니다.
+
+패키지는 사용자가 이해하기 쉬운 도메인 이름을 씁니다.
+
+| 트랙 | 주 소유 도메인 패키지 |
+| --- | --- |
+| `crawl` | `crawlers`, `crawl`, `ingestion` 일부 |
+| `data` | `stock`, `analysis`, `indicator` |
+| `market` | `market` |
+| `trade` | `trade` |
+| `agent` | `agent` |
+| `front` | frontend app |
+| `ops` | `docs`, `.github`, Notion, CI/운영 문서 |
+
+상세 기준은 `docs/DOMAIN_PACKAGE_GUIDE.md`를 봅니다.
+
 ## 충돌 방지 규칙
 
 - 한 PR은 한 트랙만 소유합니다.
