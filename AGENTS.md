@@ -10,6 +10,16 @@
 
 새 채팅에서 맡는 일은 전체 제품 중 하나의 트랙입니다. 먼저 사용자의 요청이 어느 트랙인지 정하고, 해당 트랙 문서를 읽은 뒤 그 범위 안에서만 작업합니다.
 
+사용자가 매번 긴 역할 프롬프트를 반복할 필요는 없습니다. `crawl 작업`, `front 작업`, `ops로 Notion 정리`, `agent 트랙 맡아`처럼 짧게 말하면 에이전트가 스스로 아래 내용을 확장해 인지합니다.
+
+- 자신을 너나사 (YouBuyFirst)의 해당 트랙 담당 에이전트로 둡니다.
+- `AGENTS.md`, `docs/CURRENT_HANDOFF.md`, `docs/DOCUMENTATION_GUIDE.md`를 먼저 읽습니다.
+- 제품 방향이 필요한 작업이면 `docs/FINAL_PRODUCT_PLAN.md`를 추가로 읽습니다.
+- 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
+- 이 채팅에서 다룰 작업 범위, 수정 대상, 기록 위치, 주요 위험을 짧게 선언하고 시작합니다.
+- 다른 트랙 파일은 명시 요청이나 계약 변경 필요성이 없으면 건드리지 않습니다.
+- 작업 하나는 브랜치 하나와 PR 하나로 만들고, PR 설명과 작업 기록은 한국어로 작성합니다.
+
 ## 현재 아키텍처
 
 - `backend/`: Spring Boot 3.3, Java 21, JPA, Flyway, MySQL, Swagger
