@@ -20,6 +20,18 @@ class Mention:
 
 
 @dataclass(frozen=True)
+class MentionDecision:
+    market: str
+    symbol: str
+    matched_text: str
+    is_mentioned: bool
+    reaction_direction: str
+    confidence: float
+    rationale: str
+    model: str
+
+
+@dataclass(frozen=True)
 class Analysis:
     market: str
     symbol: str
@@ -44,4 +56,3 @@ class RawPost:
 class EnrichedPost(RawPost):
     mentions: list[Mention] = field(default_factory=list)
     analyses: list[Analysis] = field(default_factory=list)
-

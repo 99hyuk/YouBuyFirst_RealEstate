@@ -7,7 +7,7 @@ from youbuyfirst_pipeline.client import SpringIngestionClient
 from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedError
 from youbuyfirst_pipeline.llm import LLMProvider
 from youbuyfirst_pipeline.matcher import InstrumentMatcher
-from youbuyfirst_pipeline.models import EnrichedPost, RawPost
+from youbuyfirst_pipeline.models import Analysis, EnrichedPost, Mention, MentionDecision, RawPost
 
 
 class CommunityPipeline:
@@ -57,8 +57,24 @@ class CommunityPipeline:
 
     def _enrich(self, post: RawPost) -> EnrichedPost:
         text = f"{post.title}\n{post.content}"
-        mentions = self.matcher.match(text)
-        analyses = self.llm_provider.analyze(post.title, post.content, mentions)
+        candidates = self.matcher.match(text)
+        decisions = self.llm_provider.resolve_mentions(post.title, post.content, candidates)
+        accepted_decisions = _accepted_decisions(candidates, decisions)
+        mentions = [
+            Mention(market=decision.market, symbol=decision.symbol, matched_text=decision.matched_text)
+            for decision in accepted_decisions
+        ]
+        analyses = [
+            Analysis(
+                market=decision.market,
+                symbol=decision.symbol,
+                sentiment=decision.reaction_direction,
+                confidence=decision.confidence,
+                rationale=decision.rationale,
+                model=decision.model,
+            )
+            for decision in accepted_decisions
+        ]
         return EnrichedPost(
             source=post.source,
             external_id=post.external_id,
@@ -87,3 +103,16 @@ class CommunityPipeline:
             return None
         except Exception as exc:
             return str(exc)
+
+
+def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecision]) -> list[MentionDecision]:
+    candidate_keys = {(candidate.market.upper(), candidate.symbol.upper(), candidate.matched_text) for candidate in candidates}
+    accepted: list[MentionDecision] = []
+    seen: set[tuple[str, str, str]] = set()
+    for decision in decisions:
+        key = (decision.market.upper(), decision.symbol.upper(), decision.matched_text)
+        if key in seen or key not in candidate_keys or not decision.is_mentioned:
+            continue
+        seen.add(key)
+        accepted.append(decision)
+    return accepted
