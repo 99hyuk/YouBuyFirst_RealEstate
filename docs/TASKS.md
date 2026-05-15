@@ -43,21 +43,22 @@
 - [x] 기술 경험 기록 체계 repo 문서 반영
 - [x] 기술 경험 기록 DB의 기존 주요 카드 분류 보정
 - [x] 개발자 기술 경험 DB와 에이전트 운영 로그 DB의 정본 역할 분리
+- [x] 프로젝트 하위 `.worktrees/` 기반 병렬 작업 기준 반영
+- [x] data 별칭 중첩 매칭 보강
+- [x] data AI 종목 언급 검증 계약과 pipeline filtering 구현
+- [x] crawl source policy registry와 scheduler gate 구현
+- [x] front 화면 라우팅 인벤토리 설계
+- [x] front Vue 3 + Vite + TypeScript 와이어프레임 shell 구현
 
 ## 지금 가장 가까운 작업
 
-- [x] 사용자용 스크립트 제거와 한국어 PR 컨벤션 정리
-- [ ] 성능/품질 개선 사례가 실제로 생기면 개선 전후 수치와 측정 방법 기록
-- [ ] 실제 네이버 종토방 HTML 구조에 맞춘 parser 보강
-- [ ] 실제 에펨코리아 주식 게시판 구조에 맞춘 parser 보강
+- [ ] crawl parser 견고화 PR #33 리뷰와 merge 여부 결정
 - [ ] 종목 게시판형 수집을 위한 `CrawlTarget` 최소 설계
-- [x] 소스별 활성화 상태(`enabled`, `public-demo-only`, `local-research-only`, `disabled`) 설계
-- [ ] `crawl` 트랙에서 source policy registry와 scheduler gate 구현
-- [ ] `front` 트랙에서 화면 인벤토리, 라우팅 후보, mock data/API 응답 후보, 기획자 확인 필요 항목 정리
-- [ ] `front` 트랙에서 Vue 3 + Vite + TypeScript 기반 와이어프레임 shell 구현
+- [ ] front shell 브라우저 QA와 기획자 확인 필요 항목 정리
 - [ ] `market` 트랙에서 quote snapshot 계약 설계
 - [ ] `trade` 트랙에서 모의 계좌와 주문/체결 최소 도메인 설계
 - [ ] `agent` 트랙에서 역발상 페르소나 입력 contract 설계
+- [ ] 성능/품질 개선 사례가 실제로 생기면 개선 전후 수치와 측정 방법 기록
 - [ ] backend 도메인 패키지 `instrument/sentiment/metrics`를 `stock/analysis/indicator`로 리네임
 - [ ] pipeline 종목 매칭 모듈을 `stock` 기준 이름으로 정리
 - [ ] pipeline이 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
@@ -66,10 +67,12 @@
 ## 다음 MVP 작업 후보
 
 - [ ] 종목 마스터 CSV를 국내 전체 + 미국 주식/ETF 데이터로 확장
+- [ ] source policy skip 상태와 crawl run 기록의 운영 표시 방식 정리
 - [ ] crawl run 실패/차단 원인별 backoff 정책 세분화
 - [ ] retention cleanup 테스트 추가
 - [ ] 사용자용 analysis ranking/indicator API 추가
 - [ ] 30분 집계 산식 검증 테스트 추가
+- [ ] 실제 `OPENAI_API_KEY` 기반 AI mention resolver 샘플 품질 확인
 - [ ] 커뮤니티별 성과 비교 snapshot 모델 설계
 - [ ] 공개 배포 가능한 시세 provider 조사
 - [ ] Docker Compose smoke test 정리

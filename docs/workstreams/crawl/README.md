@@ -35,12 +35,12 @@
 
 ## 현재 우선순위
 
-1. 실제 네이버 종토방 HTML 구조에 맞춘 parser 보강
-2. 실제 에펨코리아 주식 게시판 구조에 맞춘 parser 보강
-3. 종목 게시판형 소스를 위한 `CrawlTarget` 설계
-4. 소스별 `enabled`, `public-demo-only`, `local-research-only`, `disabled` 상태 구현
+1. 게시판 parser 견고화 PR #33 리뷰와 merge 여부 결정
+2. 종목 게시판형 소스를 위한 `CrawlTarget` 설계
+3. source policy skip 상태와 crawl run 기록의 운영 표시 방식 정리
+4. crawl run 실패/차단 원인별 backoff 정책 세분화
 
-소스별 활성화 상태의 의미와 트랙별 책임은 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`를 기준으로 봅니다. `CrawlTarget`은 이 상태값보다 아래 단계의 실행 단위입니다.
+소스별 활성화 상태의 의미와 트랙별 책임은 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`를 기준으로 봅니다. source policy registry와 scheduler gate는 구현되어 있으며, `CrawlTarget`은 이 상태값보다 아래 단계의 실행 단위입니다.
 
 ## 하지 않는 일
 

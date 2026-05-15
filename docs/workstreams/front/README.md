@@ -19,6 +19,8 @@
 
 프론트 에이전트는 화면을 만들면서 기획을 임의로 확정하지 않습니다. 애매한 지표, 화면 문구, API 응답, 사용자 행동은 `기획자 확인 필요` 항목으로 남기고, mock 화면은 그 경계를 명시한 상태로 진행합니다.
 
+현재 `front/`에는 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell이 있습니다. 실제 backend API 연결, 차트 라이브러리 확정, 고충실도 디자인은 아직 하지 않았습니다.
+
 ## 프론트 에이전트 시작 지시
 
 사용자가 새 채팅에서 `front 작업`, `프론트 맡아줘`, `화면 와이어프레임 해줘`처럼 짧게 말하면 아래 지시를 사용자가 다시 붙여 넣지 않아도 프론트 에이전트가 스스로 적용합니다.
@@ -69,16 +71,17 @@ docs/workstreams/README.md, docs/workstreams/front/README.md를 읽는다.
 
 ## 초기 작업 순서
 
-1. 화면 인벤토리와 라우팅 후보 설계
-2. mock data와 API 응답 후보 정리
-3. fixture/mock 기반 dashboard shell 구현
-4. 메인 대시보드 와이어프레임
-5. 종목 상세/커뮤니티 반응 와이어프레임
-6. 시세/모의투자/AI 에이전트 화면 초안
-7. analysis ranking/indicator API 계약 연결
-8. quote snapshot API 계약 연결
-9. 커뮤니티별 수익률 비교 화면 연결
-10. 모의투자/AI 에이전트 화면 연결
+1. 화면 인벤토리와 라우팅 후보 설계 완료
+2. mock data와 API 응답 후보 정리 완료
+3. fixture/mock 기반 dashboard shell 구현 완료
+4. 브라우저 QA와 기획자 확인 필요 항목 정리
+5. 메인 대시보드 와이어프레임 보강
+6. 종목 상세/커뮤니티 반응 와이어프레임 보강
+7. 시세/모의투자/AI 에이전트 화면 초안
+8. analysis ranking/indicator API 계약 연결
+9. quote snapshot API 계약 연결
+10. 커뮤니티별 수익률 비교 화면 연결
+11. 모의투자/AI 에이전트 화면 연결
 
 ## PR 규칙
 

@@ -16,6 +16,10 @@
 - 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-pipeline`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
 - 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
 - 소스별 활성화 상태 계약을 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`에 정리했습니다.
+- pipeline에 source policy registry와 scheduler gate를 구현했습니다. 로컬 Compose는 `CRAWL_RUNTIME_ENV=local`로 실행하고, 기본 MVP 소스는 local research 범위에서 실행됩니다.
+- data 트랙에서 별칭 중첩 매칭을 보강하고, AI mention resolver 계약과 pipeline filtering을 구현했습니다. `OPENAI_API_KEY`가 없으면 mock provider가 테스트/데모용 판단을 수행합니다.
+- front 트랙에서 화면 라우팅 인벤토리 설계와 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell을 추가했습니다.
+- 병렬 작업은 루트 checkout을 공유하지 않고 프로젝트 하위 `.worktrees/<task>`에서 진행하도록 정리했습니다.
 - 제품 용어는 `감성` 대신 사용자 화면에서는 `커뮤니티 반응`, 문서/기술 설명에서는 `커뮤니티 반응 데이터`를 기준으로 씁니다. 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`입니다.
 - 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
 - 여러 채팅이 동시에 일할 수 있도록 일곱 개의 병렬 작업 트랙 문서를 추가했습니다.
@@ -44,6 +48,7 @@
 - 새 소스는 기본적으로 `disabled`에서 시작합니다. 현재 MVP 소스도 공개 배포 전에는 별도 검토 없이 `enabled`로 올리지 않습니다.
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
 - 병렬 작업은 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops` 일곱 트랙으로 나눕니다.
+- 루트 `C:\agents\YouBuyFirst` checkout은 main/조율용으로 둡니다. 병렬 작업자는 `C:\agents\YouBuyFirst\.worktrees\<task>` 아래 worktree에서만 브랜치를 전환하고 작업합니다.
 - 사용자가 `crawl 작업`, `front 작업`, `ops로 Notion 정리`처럼 짧게 말해도 에이전트가 긴 역할 프롬프트를 자동 확장합니다. 사용자가 매번 읽을 문서, 범위 제한, PR 규칙을 반복해서 말할 필요는 없습니다.
 - 작업 시작 시 에이전트는 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 스스로 짧게 선언합니다. 예: `작업 트랙: ops / 수정 대상: Notion / 기록 위치: 작업 로그 + 필요 시 에이전트 운영 로그 / 위험: child DB 보존`.
 - 빈 채팅에서 사용자가 `뭐 해야 해?`, `다음 뭐하지?`처럼 물으면 바로 구현하지 않고 `docs/CHAT_START_GUIDE.md` 기준으로 트랙 설명과 가까운 다음 작업 후보를 보여준 뒤 트랙 선택을 돕습니다.
@@ -70,6 +75,14 @@
 
 - Repository: `99hyuk/YouBuyFirst`
 - Default branch: `main`
+- 최근 merge: PR #39 `[front][feat] Vue 와이어프레임 shell`
+- 최근 merge: PR #38 `[crawl][feat] 소스 정책 실행 게이트`
+- 최근 merge: PR #37 `[ops][docs] 소스 활성화 상태 계약`
+- 최근 merge: PR #36 `[front][docs] 화면 라우팅 인벤토리 설계`
+- 최근 merge: PR #35 `[data][feat] AI 종목 언급 검증 계약`
+- 최근 merge: PR #34 `[ops][chore] 프로젝트 worktree 디렉터리 제외`
+- 최근 merge: PR #32 `[data][fix] 별칭 중첩 매칭 보강`
+- 현재 Draft PR: PR #33 `[crawl][fix] 게시판 parser 견고화`
 - Bootstrap PR: https://github.com/99hyuk/YouBuyFirst/pull/1
 - PR #1 상태: CI 통과 후 squash merge 완료
 - GitHub labels: `track:*`, `type:*`, `size:*`, `part:*` 라벨 생성 완료
@@ -96,9 +109,15 @@
 - 도메인 패키지 이름 기준은 `docs/DOMAIN_PACKAGE_GUIDE.md`를 봅니다. 현재 코드에 남아 있는 `instrument`, `sentiment`, `metrics` 패키지 리네임은 후속 PR로 분리합니다.
 - 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/COMMUNITY_REACTION_GUIDE.md`를 봅니다.
 - 프론트 와이어프레임 전략과 front 에이전트 시작 지시는 `docs/workstreams/front/README.md`를 봅니다.
+- front 앱은 `front/` 디렉터리에 있습니다. 현재는 mock fixture 기반 와이어프레임 shell이며 실제 backend API 연결은 후속 PR입니다.
 
 ## 마지막 검증 기록
 
+- Front Vue shell branch: `npm test --prefix front` 통과, `npm run build --prefix front` 통과
+- Crawl source policy gate branch: pipeline pytest 통과, source policy skip 테스트 통과
+- Data AI mention resolver branch: pipeline pytest 통과, mock/OpenAI provider 계약 테스트 통과
+- Data alias matcher branch: pipeline pytest 통과
+- Ops worktree branch: Backend/Pipeline GitHub Actions 통과, `.worktrees/` ignore 확인
 - Label/part/pipeline branch: Pipeline Docker test 통과, 4 tests
 - Label/part/pipeline branch: Docker Compose config service가 `mysql`, `backend`, `pipeline`으로 출력됨
 - Label/part/pipeline branch: GitHub labels가 `track:*`, `type:*`, `part:*`, `size:*` 체계로 정리됨
@@ -114,26 +133,27 @@
 
 1. 먼저 `AGENTS.md`, 이 파일, `docs/DOCUMENTATION_GUIDE.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
 2. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
-3. 사용자의 요구를 무조건 수용하지 않습니다. 모순, 리스크, 더 나은 대안이 보이면 먼저 질문하거나 반박합니다.
-4. 사용자의 짧은 트랙 지시는 긴 역할 프롬프트로 자동 확장합니다. 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 먼저 선언합니다.
-5. 범위 없는 `뭐 해야 해?` 요청에는 트랙 설명과 다음 작업 후보를 먼저 보여주고, 사용자가 트랙을 고르게 돕습니다.
-6. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 CI/runtime 설정 변경만 담습니다.
-7. 제목과 GitHub 라벨로 작업 트랙, 작업 타입, 크기를 구분합니다. 변경 파트는 필요할 때만 보조 라벨로 표시합니다.
-8. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
-9. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
-10. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
-11. PR 제목은 명사형으로 끝내고, PR 본문과 Notion 작업 카드는 사람이 읽기 쉬운 카드형 구조로 씁니다.
-12. PR 생성/수정 후 `gh pr view --json body --jq .body`와 `??` 검색으로 한글 깨짐이 없는지 확인합니다.
-13. 제품 개발/운영 문제를 조사했거나 반복 가능성이 있으면 Notion 개발자 기술 경험 DB에 상세 기록을 남깁니다. Codex/Notion/PR/문서 운영 사고는 에이전트 운영 로그 DB에 남깁니다.
-14. CI가 통과하면 squash merge하고 브랜치를 삭제합니다.
+3. 루트 checkout에서 직접 병렬 작업을 하지 않습니다. 새 작업은 `git worktree add C:\agents\YouBuyFirst\.worktrees\<task> -b codex/<task> origin/main` 형태로 분리합니다.
+4. 사용자의 요구를 무조건 수용하지 않습니다. 모순, 리스크, 더 나은 대안이 보이면 먼저 질문하거나 반박합니다.
+5. 사용자의 짧은 트랙 지시는 긴 역할 프롬프트로 자동 확장합니다. 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 먼저 선언합니다.
+6. 범위 없는 `뭐 해야 해?` 요청에는 트랙 설명과 다음 작업 후보를 먼저 보여주고, 사용자가 트랙을 고르게 돕습니다.
+7. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 CI/runtime 설정 변경만 담습니다.
+8. 제목과 GitHub 라벨로 작업 트랙, 작업 타입, 크기를 구분합니다. 변경 파트는 필요할 때만 보조 라벨로 표시합니다.
+9. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
+10. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
+11. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
+12. PR 제목은 명사형으로 끝내고, PR 본문과 Notion 작업 카드는 사람이 읽기 쉬운 카드형 구조로 씁니다.
+13. PR 생성/수정 후 `gh pr view --json body --jq .body`와 `??` 검색으로 한글 깨짐이 없는지 확인합니다.
+14. 제품 개발/운영 문제를 조사했거나 반복 가능성이 있으면 Notion 개발자 기술 경험 DB에 상세 기록을 남깁니다. Codex/Notion/PR/문서 운영 사고는 에이전트 운영 로그 DB에 남깁니다.
+15. CI가 통과하면 squash merge하고 브랜치와 worktree를 정리합니다.
 
 ## 가장 가까운 다음 작업 후보
 
-- 네이버 종토방 실제 HTML 변화에 맞춘 parser 보강
-- 에펨코리아 게시판 parser 보강
+- crawl parser 견고화 PR #33 리뷰와 merge 여부 결정
 - 종목 게시판형 소스를 위한 `CrawlTarget` 최소 설계
-- `crawl` 트랙에서 source policy registry와 scheduler gate 구현
-- front 화면 인벤토리, 라우팅 후보, mock data/API 응답 후보 정리
+- front shell 브라우저 QA와 기획자 확인 필요 항목 정리
+- market quote snapshot 계약 설계
+- 실제 `OPENAI_API_KEY` 기반 AI mention resolver 샘플 품질 확인
 - pipeline이 backend readiness를 기다리도록 개선
 - admin API Swagger 예시와 validation 오류 응답 정리
 - backend 도메인 패키지를 `stock`, `analysis`, `indicator` 목표 이름으로 리네임
