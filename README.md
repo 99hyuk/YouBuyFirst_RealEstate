@@ -48,6 +48,23 @@ market,symbol,name,aliases,type
 US,TSLA,Tesla,테슬라|TSLA,STOCK
 ```
 
+## 수집 소스 정책
+
+pipeline은 crawler adapter를 실행하기 전에 소스 상태와 실행 환경을 확인합니다. 현재 MVP 소스인 `NAVER`, `FMKOREA`는 공개 검토 전까지 `local-research-only`로 취급합니다.
+
+상태 의미:
+
+- `enabled`: local/public 환경에서 실제 수집 가능
+- `local-research-only`: `CRAWL_RUNTIME_ENV=local`일 때만 실제 수집 가능
+- `public-demo-only`: 실제 외부 요청 금지, fixture/sample 데이터만 사용
+- `disabled`: 실제 외부 요청 금지
+
+`CRAWL_RUNTIME_ENV`가 없거나 알 수 없는 값이면 `public`처럼 처리합니다. 공개 환경에서 값을 빠뜨렸을 때 외부 요청이 나가지 않게 하기 위한 fail-closed 기본값입니다. 로컬에서 실제 수집을 돌리려면 아래처럼 명시합니다.
+
+```bash
+CRAWL_RUNTIME_ENV=local
+```
+
 ## 테스트
 
 로컬에 Maven/Python이 있으면:

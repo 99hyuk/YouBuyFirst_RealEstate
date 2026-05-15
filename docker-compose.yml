@@ -34,6 +34,7 @@ services:
       context: ./pipeline
     environment:
       SPRING_BASE_URL: http://backend:8080
+      CRAWL_RUNTIME_ENV: local
       CRAWL_INTERVAL_MINUTES: 30
       NAVER_STOCK_CODES: 005930,000660
       INSTRUMENT_CSV_PATH: data/instruments.sample.csv

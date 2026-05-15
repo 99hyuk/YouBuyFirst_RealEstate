@@ -8,6 +8,11 @@ from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedEr
 from youbuyfirst_pipeline.llm import LLMProvider
 from youbuyfirst_pipeline.matcher import InstrumentMatcher
 from youbuyfirst_pipeline.models import Analysis, EnrichedPost, Mention, MentionDecision, RawPost
+from youbuyfirst_pipeline.source_policy import (
+    CrawlRuntimeEnvironment,
+    SourcePolicyRegistry,
+    default_source_policy_registry,
+)
 
 
 class CommunityPipeline:
@@ -17,17 +22,34 @@ class CommunityPipeline:
         matcher: InstrumentMatcher,
         llm_provider: LLMProvider,
         client: SpringIngestionClient,
+        source_policy_registry: SourcePolicyRegistry | None = None,
+        runtime_environment: CrawlRuntimeEnvironment = CrawlRuntimeEnvironment.PUBLIC,
     ) -> None:
         self.adapters = adapters
         self.matcher = matcher
         self.llm_provider = llm_provider
         self.client = client
+        self.source_policy_registry = source_policy_registry or default_source_policy_registry()
+        self.runtime_environment = runtime_environment
 
     async def run_once(self) -> list[dict]:
         results: list[dict] = []
         for adapter in self.adapters:
             started = datetime.now(timezone.utc)
             run_id = f"{adapter.source.lower()}-{started.strftime('%Y%m%d%H%M')}-{uuid4().hex[:8]}"
+            policy_decision = self.source_policy_registry.decide(adapter.source, self.runtime_environment)
+            if not policy_decision.allowed:
+                results.append(
+                    {
+                        "source": adapter.source,
+                        "runId": run_id,
+                        "status": "skipped",
+                        "sourceStatus": policy_decision.policy.status.value,
+                        "runtimeEnvironment": self.runtime_environment.value,
+                        "skipReason": policy_decision.reason,
+                    }
+                )
+                continue
             try:
                 raw_posts = await adapter.fetch_posts()
                 enriched = [self._enrich(post) for post in raw_posts]

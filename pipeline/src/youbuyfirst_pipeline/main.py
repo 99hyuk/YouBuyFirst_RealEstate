@@ -17,10 +17,12 @@ from youbuyfirst_pipeline.llm import build_llm_provider
 from youbuyfirst_pipeline.matcher import InstrumentMatcher
 from youbuyfirst_pipeline.pipeline import CommunityPipeline
 from youbuyfirst_pipeline.scheduler import serve
+from youbuyfirst_pipeline.source_policy import default_source_policy_registry, runtime_environment_from_env
 
 
 def build_pipeline() -> CommunityPipeline:
     load_dotenv()
+    runtime_environment = runtime_environment_from_env(os.getenv("CRAWL_RUNTIME_ENV"))
     user_agent = os.getenv(
         "CRAWLER_USER_AGENT",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
@@ -45,6 +47,8 @@ def build_pipeline() -> CommunityPipeline:
         matcher=matcher,
         llm_provider=build_llm_provider(),
         client=client,
+        source_policy_registry=default_source_policy_registry(),
+        runtime_environment=runtime_environment,
     )
 
 
