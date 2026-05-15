@@ -2,14 +2,14 @@
 
 ## 역할
 
-수집된 글을 투자 참고에 쓸 수 있는 분석 데이터로 바꿉니다. 이 트랙은 종목 인식, 감성 분류, 열기 지수, 30분 집계를 맡고, 매수/매도 판단 자체는 `agent` 트랙에 넘깁니다.
+수집된 글을 투자 참고에 쓸 수 있는 분석 데이터로 바꿉니다. 이 트랙은 종목 인식, 반응 방향 분류, 열기 지수, 30분 집계를 맡고, 매수/매도 판단 자체는 `agent` 트랙에 넘깁니다.
 
 ## 담당 범위
 
 - 종목명, 티커, 별칭 matcher
 - 국내/미국 stock master 확장
 - LLM provider interface와 analysis schema
-- `bullish`, `bearish`, `neutral` 분류 품질
+- `bullish`, `bearish`, `neutral` 반응 방향 분류 품질
 - 열기 지수 산식
 - 30분 indicator snapshot
 - AI 3줄 요약 입력 데이터

@@ -8,13 +8,14 @@
 
 - 너나사 (YouBuyFirst) MVP 저장소를 초기 구성했습니다.
 - Spring Boot 백엔드, Python pipeline, MySQL, Docker Compose 기반 로컬 실행 구성을 만들었습니다.
-- 네이버 종토방과 에펨코리아 게시글 수집, 종목 매칭, LLM provider 추상화, mock sentiment fallback, ingestion API, admin 조회 API를 구현했습니다.
+- 네이버 종토방과 에펨코리아 게시글 수집, 종목 매칭, LLM provider 추상화, mock 반응 분석 fallback, ingestion API, admin 조회 API를 구현했습니다.
 - 제한 원문 저장 정책을 반영했습니다: 제목, 본문 일부, URL, 작성 시각, 작성자 표시명 해시, 원문 해시만 저장합니다.
 - Swagger에서 crawl run, posts, stock metrics를 확인할 수 있게 했습니다.
 - GitHub Actions CI와 PR 템플릿을 추가했습니다.
 - 최종 기획안, MVP 범위, 작업 목록, 에이전트 인수인계 문서를 추가했습니다.
 - 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-pipeline`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
 - 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
+- 제품 용어는 `감성` 대신 `커뮤니티 반응 신호`를 대표 용어로 쓰고, 단일 분석값은 `반응 방향`으로 정리했습니다. 내부 후보 필드는 `reactionDirection`입니다.
 - 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
 - 여러 채팅이 동시에 일할 수 있도록 일곱 개의 병렬 작업 트랙 문서를 추가했습니다.
 - GitHub 라벨 체계를 `track:*`, `type:*`, `part:*`, `size:*`로 정리했습니다.
@@ -89,6 +90,7 @@
 - 작업이 끝나면 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 Notion 작업일지에 남깁니다.
 - 제품 개발/운영 트러블슈팅은 개발자 기술 경험 DB의 `문제해결` 유형으로 남깁니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 종류와 포트폴리오 후보를 선택합니다. 에이전트/도구 운영 사고는 에이전트 운영 로그 DB에 남깁니다.
 - 도메인 패키지 이름 기준은 `docs/DOMAIN_PACKAGE_GUIDE.md`를 봅니다. 현재 코드에 남아 있는 `instrument`, `sentiment`, `metrics` 패키지 리네임은 후속 PR로 분리합니다.
+- 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/COMMUNITY_REACTION_GUIDE.md`를 봅니다.
 
 ## 마지막 검증 기록
 

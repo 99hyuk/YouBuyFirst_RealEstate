@@ -4,7 +4,7 @@
 
 ## 제품
 
-너나사 (YouBuyFirst)는 커뮤니티 군중 심리, 시장 시세, AI 분석, 모의투자를 결합한 투자 참고형 시뮬레이터입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 실행 기반은 데이터 파이프라인 MVP입니다. 이후 구현은 `docs/workstreams/`의 병렬 트랙 단위로 진행합니다.
+너나사 (YouBuyFirst)는 커뮤니티 반응 신호, 시장 시세, AI 분석, 모의투자를 결합한 투자 참고형 시뮬레이터입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 실행 기반은 데이터 파이프라인 MVP입니다. 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/COMMUNITY_REACTION_GUIDE.md`를 기준으로 합니다. 이후 구현은 `docs/workstreams/`의 병렬 트랙 단위로 진행합니다.
 
 ## 현재 MVP
 
@@ -23,11 +23,11 @@
 - PR 제목은 `[트랙][타입] 명사형 요약` 형식을 씁니다.
 - 담당 트랙과 명시 요청 없이 OCR, 실거래, user auth, proxy rotation, CAPTCHA bypass, login-session scraping을 넣지 않습니다.
 - 원문은 제한 저장합니다: title, content snippet, URL, author hash, published time, content hash.
-- 공개 UI는 원문보다 집계 지표, 대표 키워드, 감성 비율, AI 재서술 근거를 중심으로 보여줍니다.
+- 공개 UI는 원문보다 집계 지표, 대표 키워드, 반응 방향 비율, AI 재서술 근거를 중심으로 보여줍니다.
 - 병렬 작업은 `docs/workstreams/README.md`의 일곱 트랙으로 나눕니다.
 - 트랙은 작업 관리 단위이고 코드 패키지는 도메인 단위입니다. 도메인 패키지 목표 이름은 `stock`, `analysis`, `indicator`, `market`, `trade`, `agent`입니다.
 - 라벨은 `track:*`, `type:*`, `size:*`를 기본으로 쓰고, 실제 변경 표면이 분명할 때만 `part:*`를 추가합니다.
-- `OPENAI_API_KEY`가 있으면 OpenAI 분석을 사용하고, 없으면 로컬 demo용 mock sentiment를 사용합니다.
+- `OPENAI_API_KEY`가 있으면 OpenAI 분석을 사용하고, 없으면 로컬 demo용 mock 반응 분석을 사용합니다.
 - MySQL host port는 로컬 `3306` 충돌을 피하기 위해 `3307`을 사용합니다.
 
 ## Working URLs
