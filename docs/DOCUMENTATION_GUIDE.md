@@ -17,6 +17,7 @@
 | --- | --- | --- |
 | `AGENTS.md` | 공통 작업 규칙과 금지 사항 | 짧게 유지 |
 | `docs/CURRENT_HANDOFF.md` | 현재 상태, 최근 결정, 다음 후보 | 오래된 내용 제거 |
+| `docs/CHAT_START_GUIDE.md` | 빈 채팅, 짧은 트랙 지시, 작업자 응답 틀 | 짧게 유지 |
 | `docs/workstreams/README.md` | 트랙 선택 기준 | 표 중심 |
 | 담당 트랙 README | 맡은 트랙의 파일 소유권과 범위 | 트랙별로 유지 |
 
@@ -69,6 +70,7 @@
 | 성능/품질을 개선하거나 중요한 기술 결정을 내림 | Notion 개발자 기술 경험 DB, 필요하면 `ENGINEERING_EVIDENCE_GUIDE.md` |
 | Codex/Notion/PR/문서 운영 사고가 생김 | Notion 에이전트 운영 로그 DB |
 | PR 하나가 끝남 | Notion 작업일지, 필요한 경우 `docs/work-units/` |
+| 채팅 시작 방식이나 트랙 배정 방식이 바뀜 | `CHAT_START_GUIDE.md`, `WORKFLOW.md`, `CURRENT_HANDOFF.md` |
 
 ## 에이전트 메모
 
