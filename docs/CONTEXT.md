@@ -4,7 +4,7 @@
 
 ## 제품
 
-너나사 (YouBuyFirst)는 커뮤니티 반응 신호, 시장 시세, AI 분석, 모의투자를 결합한 투자 참고형 시뮬레이터입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 실행 기반은 데이터 파이프라인 MVP입니다. 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/COMMUNITY_REACTION_GUIDE.md`를 기준으로 합니다. 이후 구현은 `docs/workstreams/`의 병렬 트랙 단위로 진행합니다.
+너나사 (YouBuyFirst)는 커뮤니티 반응, 시장 시세, AI 분석, 모의투자를 결합한 투자 참고형 시뮬레이터입니다. 최종 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`에 있고, 현재 실행 기반은 데이터 파이프라인 MVP입니다. 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/COMMUNITY_REACTION_GUIDE.md`를 기준으로 합니다. 이후 구현은 `docs/workstreams/`의 병렬 트랙 단위로 진행합니다.
 
 ## 현재 MVP
 

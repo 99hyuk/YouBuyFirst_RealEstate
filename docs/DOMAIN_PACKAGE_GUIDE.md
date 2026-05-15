@@ -76,6 +76,6 @@ pipeline/
 
 1. Backend 도메인 패키지 리네임: `instrument -> stock`, `sentiment -> analysis`, `metrics -> indicator`
 2. Pipeline 모듈 리네임: `instruments.py`와 matcher 주변을 `stock` 기준으로 정리
-3. 문서/Swagger/API 용어 정리: 사용자 facing 용어는 `커뮤니티 반응 신호`, 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`으로 맞춤
+3. 문서/Swagger/API 용어 정리: 사용자 facing 용어는 `커뮤니티 반응`, 문서/기술 설명은 `커뮤니티 반응 데이터`, 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`으로 맞춤
 
 DB table 이름은 별도 결정 전까지 유지합니다. 기존 데이터와 migration 안정성을 위해 package/class 이름 변경과 DB schema 변경은 분리합니다.
