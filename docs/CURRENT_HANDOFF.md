@@ -15,6 +15,7 @@
 - 최종 기획안, MVP 범위, 작업 목록, 에이전트 인수인계 문서를 추가했습니다.
 - 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-pipeline`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
 - 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
+- 소스별 활성화 상태 계약을 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`에 정리했습니다.
 - 제품 용어는 `감성` 대신 사용자 화면에서는 `커뮤니티 반응`, 문서/기술 설명에서는 `커뮤니티 반응 데이터`를 기준으로 씁니다. 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`입니다.
 - 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
 - 여러 채팅이 동시에 일할 수 있도록 일곱 개의 병렬 작업 트랙 문서를 추가했습니다.
@@ -40,6 +41,7 @@
 - 30분 커뮤니티 집계는 제품 핵심으로 유지합니다.
 - 공개 배포 시 원문 재게시, 작성자 추적, 닉네임 랭킹은 하지 않고 집계 지표와 AI 재서술 근거 중심으로 표시합니다.
 - 소스별 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다.
+- 새 소스는 기본적으로 `disabled`에서 시작합니다. 현재 MVP 소스도 공개 배포 전에는 별도 검토 없이 `enabled`로 올리지 않습니다.
 - 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
 - 병렬 작업은 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops` 일곱 트랙으로 나눕니다.
 - 사용자가 `crawl 작업`, `front 작업`, `ops로 Notion 정리`처럼 짧게 말해도 에이전트가 긴 역할 프롬프트를 자동 확장합니다. 사용자가 매번 읽을 문서, 범위 제한, PR 규칙을 반복해서 말할 필요는 없습니다.
@@ -130,7 +132,7 @@
 - 네이버 종토방 실제 HTML 변화에 맞춘 parser 보강
 - 에펨코리아 게시판 parser 보강
 - 종목 게시판형 소스를 위한 `CrawlTarget` 최소 설계
-- 소스별 활성화 상태 설계
+- `crawl` 트랙에서 source policy registry와 scheduler gate 구현
 - front 화면 인벤토리, 라우팅 후보, mock data/API 응답 후보 정리
 - pipeline이 backend readiness를 기다리도록 개선
 - admin API Swagger 예시와 validation 오류 응답 정리

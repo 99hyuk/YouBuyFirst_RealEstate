@@ -38,7 +38,9 @@
 1. 실제 네이버 종토방 HTML 구조에 맞춘 parser 보강
 2. 실제 에펨코리아 주식 게시판 구조에 맞춘 parser 보강
 3. 종목 게시판형 소스를 위한 `CrawlTarget` 설계
-4. 소스별 `enabled`, `public-demo-only`, `local-research-only`, `disabled` 상태 도입
+4. 소스별 `enabled`, `public-demo-only`, `local-research-only`, `disabled` 상태 구현
+
+소스별 활성화 상태의 의미와 트랙별 책임은 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`를 기준으로 봅니다. `CrawlTarget`은 이 상태값보다 아래 단계의 실행 단위입니다.
 
 ## 하지 않는 일
 
