@@ -4,15 +4,17 @@
 
 ## 기술 경험 기록과의 관계
 
-트러블슈팅은 `기술 경험 기록 DB` 안의 `문제해결` 유형입니다. 모든 기술 경험이 트러블슈팅은 아닙니다. 성능 개선, 품질 개선, 기술 의사결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 기록합니다.
+트러블슈팅은 제품 개발/운영 문제를 원인까지 조사해 해결한 기록이며, Notion `개발자 기술 경험 DB` 안의 `문제해결` 유형으로 남깁니다. 모든 기술 경험이 트러블슈팅은 아닙니다. 성능 개선, 품질 개선, 기술 의사결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 기록합니다.
 
-문제가 반복될 가능성이 있거나, 원인 조사에 시간이 들었거나, 외부 도구/GitHub/Notion/Docker/CI와 얽힌 문제라면 Notion 기술 경험 기록 DB에 기록합니다.
+문제가 반복될 가능성이 있거나, 원인 조사에 시간이 들었거나, backend, pipeline, crawler, DB, front, Docker, CI, 외부 API, 인증, 환경 변수와 얽힌 문제라면 Notion 개발자 기술 경험 DB에 기록합니다.
+
+Codex가 Notion 구조를 잘못 바꿨거나, PR 본문 인코딩을 깨뜨렸거나, 문서 운영 규칙을 어긴 문제는 개발자 기술 경험이 아니라 Notion `에이전트 운영 로그 DB`에 기록합니다.
 
 ## 기록 대상
 
 아래 중 하나라도 해당하면 기록합니다.
 
-- CI, Docker, GitHub, Notion, 외부 API, 인증, 환경 변수 때문에 작업이 막힘
+- backend, pipeline, crawler, DB, front, CI, Docker, 외부 API, 인증, 환경 변수 때문에 제품 개발/운영 작업이 막힘
 - 같은 증상이 다시 나타날 가능성이 있음
 - 원인을 찾기까지 10분 이상 조사함
 - 해결에 특정 명령, 설정, 순서가 필요했음
@@ -25,14 +27,17 @@
 
 - Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
 - Archive & Admin: https://www.notion.so/360df321bd8981a6a60df71bca8bad5d
-- 기술 경험 기록 DB data source: `collection://95866ee7-17cb-412b-a9c8-80b1fde414dc`
+- 개발자 기술 경험: https://www.notion.so/360df321bd89819aa871fe52c1a5cc56
+- 개발자 기술 경험 DB data source: `collection://7f052514-c585-4621-ad28-b54bb2eac5a8`
+- 에이전트 운영 로그: https://www.notion.so/360df321bd89818989d4f2de0d77da06
+- 에이전트 운영 로그 DB data source: `collection://8646042e-8ea0-4dd5-a056-c01a8ec096ec`
 
 ## 속성 작성 기준
 
 | 속성 | 작성 기준 |
 | --- | --- |
 | `문제` | 증상을 한 문장으로 씁니다. 예: `GitHub PR 본문 한글이 물음표로 깨짐` |
-| `종류` | 트러블슈팅은 보통 `문제해결`입니다. 단순 도구 운영 이슈는 트러블슈팅 카드가 아니라 `도구/운영` 기록으로 분리합니다 |
+| `종류` | 트러블슈팅은 보통 `문제해결`입니다. 단순 에이전트/도구 운영 이슈는 개발자 기술 경험 카드가 아니라 에이전트 운영 로그로 분리합니다 |
 | `포트폴리오 후보` | 대표 사례는 `대표`, 보조 근거는 `보조`, 단순 운영 기록은 `기록` |
 | `상태` | `Open`, `Watching`, `Resolved` |
 | `심각도` | 작업 차단은 `High`, 우회 가능은 `Medium`, 참고 수준은 `Low` |
@@ -57,7 +62,7 @@ Notion 루트나 Archive 페이지를 `replace_content`로 바꿀 때 child page
 
 ## 카드 본문 템플릿
 
-Notion 기술 경험 기록 DB의 문제해결 카드 본문은 아래 구조를 씁니다.
+Notion 개발자 기술 경험 DB의 문제해결 카드 본문은 아래 구조를 씁니다.
 
 ```md
 ## 🚨 한눈에 보기
@@ -130,6 +135,6 @@ Notion 기술 경험 기록 DB의 문제해결 카드 본문은 아래 구조를
 ## PR과의 관계
 
 - PR 본문에는 트러블슈팅 링크와 요약만 둡니다.
-- 긴 로그와 조사 과정은 Notion 기술 경험 기록 DB에 둡니다.
+- 긴 로그와 조사 과정은 Notion 개발자 기술 경험 DB에 둡니다.
 - 해결 PR이 있으면 트러블슈팅 카드의 `링크` 속성에 PR URL을 넣습니다.
 - 재발 방지 작업이 남으면 `TASKS.md`나 Notion 다음 작업 DB에 추가합니다.

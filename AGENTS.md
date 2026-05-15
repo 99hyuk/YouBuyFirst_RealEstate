@@ -30,7 +30,8 @@
 - Codex는 사용자의 요구를 무조건 수용하지 않습니다. 모순, 리스크, 더 나은 대안이 보이면 질문하거나 반박합니다.
 - Superpowers는 기획, 설계, 구현 계획, 검증, 디버깅 게이트로 사용합니다.
 - gstack은 브라우저 QA, 시각 확인, 성능/품질 검증처럼 실제 확인 가치가 있을 때 사용합니다.
-- 개발/운영 문제 해결, 성능 개선, 품질 개선, 기술 의사결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 Notion 기술 경험 기록 DB에 남깁니다.
+- 제품 개발/운영 중 겪은 문제 해결, 성능 개선, 품질 개선, 기술 의사결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 Notion `개발자 기술 경험 DB`에 남깁니다.
+- Codex, Notion, GitHub PR, 문서 운영 과정에서 생긴 에이전트/도구 운영 사고는 개발자 기술 경험과 섞지 않고 Notion `에이전트 운영 로그 DB`에 남깁니다.
 - Notion 루트나 Archive 페이지를 `replace_content`로 수정할 때는 child page/database 보존 여부를 먼저 확인합니다. `allow_deleting_content`는 링크 블록을 실제 삭제할 수 있으므로, 단순 레이아웃 정리에는 쓰지 않습니다.
 
 ## Notion 구조 변경 게이트
@@ -106,7 +107,7 @@ PR을 열기 전:
 4. `docs/GIT_CONVENTION.md`를 읽습니다.
 5. `docs/LABEL_GUIDE.md`에서 GitHub 라벨과 Notion 태그 의미를 확인합니다.
 6. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
-7. 문제가 발생했거나 반복될 가능성이 있으면 `docs/TROUBLESHOOTING_GUIDE.md`를 읽고 Notion 기술 경험 기록 DB의 `문제해결` 유형으로 기록합니다.
+7. 제품 개발/운영 문제가 발생했거나 반복될 가능성이 있으면 `docs/TROUBLESHOOTING_GUIDE.md`를 읽고 Notion `개발자 기술 경험 DB`의 `문제해결` 유형으로 기록합니다. Codex/Notion/PR/문서 운영 사고는 `에이전트 운영 로그 DB`에 분리해 기록합니다.
 8. 필요한 경우 `docs/work-units/`에 작업 단위 문서를 만들거나 갱신합니다.
 9. 관련 테스트를 실행합니다.
 10. 작업 상태나 범위가 바뀌면 `docs/CURRENT_HANDOFF.md`와 `docs/TASKS.md`를 갱신합니다.
@@ -120,7 +121,7 @@ PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다. 예: `[ops][do
 
 PR 본문과 Notion 작업 카드는 같은 카드형 흐름으로 씁니다: 한눈에 보기, 바뀐 내용, 리뷰 가이드, PR 범위, 검증 결과, 리스크와 후속 작업, Notion 기록, 라벨/태그 참고. 검증은 명령어보다 사람이 읽기 쉬운 결과를 먼저 적습니다.
 
-기술 경험 기록은 작업일지보다 자세히 남깁니다. CI, Docker, GitHub, Notion, 외부 API, 인증, 환경 변수처럼 반복 가능성이 있는 문제는 Notion 기술 경험 기록 DB의 `문제해결` 유형에 `증상`, `발생 맥락`, `조사 과정`, `원인`, `해결`, `검증`, `재발 방지`를 카드형으로 기록합니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 별도 종류를 선택합니다.
+기술 경험 기록은 작업일지보다 자세히 남깁니다. 백엔드, pipeline, crawler, DB, 시세, 프론트, CI/Docker 실행 환경, 외부 API, 인증, 환경 변수처럼 제품 개발/운영에 영향을 주는 문제는 Notion `개발자 기술 경험 DB`의 `문제해결` 유형에 `증상`, `발생 맥락`, `조사 과정`, `원인`, `해결`, `검증`, `재발 방지`를 카드형으로 기록합니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 별도 종류를 선택합니다. Codex가 Notion 구조를 잘못 바꾸거나 PR 본문을 깨뜨리는 등 에이전트 운영 문제는 `에이전트 운영 로그 DB`에 기록합니다.
 
 ## 참고 문서
 

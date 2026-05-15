@@ -202,7 +202,7 @@ PR 본문은 Notion 작업 카드와 같은 카드형 순서를 따릅니다. PR
 
 검증 섹션은 명령어 목록만 붙이지 않습니다. 먼저 사람이 읽을 수 있는 문장으로 무엇을 확인했고 결과가 어땠는지 씁니다. 필요한 명령어는 `<details>` 블록 안에 접어두거나, 결과 문장 뒤에 보조 정보로 둡니다.
 
-트러블슈팅 섹션에는 짧은 결론과 링크만 남깁니다. CI, Docker, GitHub, Notion, 외부 API, 인증, 환경 변수처럼 반복될 수 있는 문제는 `docs/TROUBLESHOOTING_GUIDE.md` 형식으로 Notion 기술 경험 기록 DB의 `문제해결` 유형에 자세히 기록합니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 별도 종류를 선택합니다.
+트러블슈팅 섹션에는 짧은 결론과 링크만 남깁니다. 제품 개발/운영에 영향을 주는 CI, Docker, 외부 API, 인증, 환경 변수 문제는 `docs/TROUBLESHOOTING_GUIDE.md` 형식으로 Notion `개발자 기술 경험 DB`의 `문제해결` 유형에 자세히 기록합니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 별도 종류를 선택합니다. Codex/Notion/GitHub PR/문서 운영 사고는 `에이전트 운영 로그 DB`에 분리해 남깁니다.
 
 ## GitHub CLI 인코딩 규칙
 

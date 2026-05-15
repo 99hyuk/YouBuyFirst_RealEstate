@@ -44,14 +44,15 @@
 | `docs/superpowers/specs/` | 승인된 설계 기록 |
 | `docs/superpowers/plans/` | 상세 실행 계획 기록 |
 | Notion 작업일지 | 사람이 보는 PR 카드 로그 |
-| Notion 기술 경험 기록 DB | 문제 원인, 개선 근거, 기술 결정 기록 |
+| Notion 개발자 기술 경험 DB | 제품 개발/운영 문제 원인, 개선 근거, 기술 결정 기록 |
+| Notion 에이전트 운영 로그 DB | Codex, Notion, GitHub PR, 문서 운영 사고와 재발 방지 |
 
 ## 문서 길이 관리
 
 - `CURRENT_HANDOFF.md`는 최신 결정과 다음 행동만 남깁니다.
 - 오래된 완료 내역은 `TASKS.md`나 `docs/work-units/`로 넘기고, 인수인계 문서에 반복하지 않습니다.
 - `TASKS.md`는 앞으로 할 일을 먼저 보여줍니다. 완료 목록이 길어지면 묶어서 요약합니다.
-- `docs/work-units/`는 짧게 씁니다. 자세한 조사 과정은 기술 경험 기록 DB나 별도 가이드에 둡니다.
+- `docs/work-units/`는 짧게 씁니다. 자세한 제품 개발/운영 조사 과정은 개발자 기술 경험 DB나 별도 가이드에 둡니다. 에이전트/도구 운영 사고는 에이전트 운영 로그 DB에 둡니다.
 - PR 본문은 사람이 리뷰하기 좋은 카드형으로 쓰고, 명령어 덩어리는 접힌 영역에 둡니다.
 
 ## 업데이트 규칙
@@ -64,8 +65,9 @@
 | 작업 방식이나 라벨 기준이 바뀜 | `WORKFLOW.md`, `GIT_CONVENTION.md`, `LABEL_GUIDE.md` |
 | 다음 작업 후보가 바뀜 | `TASKS.md`, `CURRENT_HANDOFF.md` |
 | 새 트랙 경계가 생김 | `docs/workstreams/` |
-| 문제를 조사하거나 해결함 | Notion 기술 경험 기록 DB, 필요하면 `TROUBLESHOOTING_GUIDE.md` |
-| 성능/품질을 개선하거나 중요한 기술 결정을 내림 | Notion 기술 경험 기록 DB, 필요하면 `ENGINEERING_EVIDENCE_GUIDE.md` |
+| 제품 개발/운영 문제를 조사하거나 해결함 | Notion 개발자 기술 경험 DB, 필요하면 `TROUBLESHOOTING_GUIDE.md` |
+| 성능/품질을 개선하거나 중요한 기술 결정을 내림 | Notion 개발자 기술 경험 DB, 필요하면 `ENGINEERING_EVIDENCE_GUIDE.md` |
+| Codex/Notion/PR/문서 운영 사고가 생김 | Notion 에이전트 운영 로그 DB |
 | PR 하나가 끝남 | Notion 작업일지, 필요한 경우 `docs/work-units/` |
 
 ## 에이전트 메모
