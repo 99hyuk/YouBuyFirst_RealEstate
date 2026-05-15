@@ -21,3 +21,31 @@ def test_matches_korean_aliases_and_us_tickers_without_duplicates():
         ("US", "NVDA", "NVDA"),
     }
 
+
+def test_matches_short_alias_when_it_appears_again_outside_long_alias():
+    matcher = InstrumentMatcher(
+        [
+            Instrument(market="US", symbol="NVDA", name="NVIDIA", aliases=["엔비디아", "엔비"]),
+        ]
+    )
+
+    mentions = matcher.match("엔비디아는 강하고 엔비도 같이 언급됨")
+
+    assert [(m.market, m.symbol, m.matched_text) for m in mentions] == [
+        ("US", "NVDA", "엔비디아"),
+        ("US", "NVDA", "엔비"),
+    ]
+
+
+def test_ascii_tickers_require_token_boundaries():
+    matcher = InstrumentMatcher(
+        [
+            Instrument(market="US", symbol="TSLA", name="Tesla", aliases=["테슬라"]),
+        ]
+    )
+
+    mentions = matcher.match("TSLAX와 myTSLAwatch는 제외하고 tsla는 언급")
+
+    assert [(m.market, m.symbol, m.matched_text) for m in mentions] == [
+        ("US", "TSLA", "TSLA"),
+    ]

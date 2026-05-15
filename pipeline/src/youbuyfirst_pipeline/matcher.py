@@ -21,20 +21,16 @@ class InstrumentMatcher:
         upper_text = text.upper()
 
         for instrument, alias, pattern in self.entries:
-            span = None
-            if pattern:
-                match = pattern.search(upper_text)
-                if match:
-                    span = match.span()
-            elif alias in text:
-                index = text.find(alias)
-                span = (index, index + len(alias))
+            instrument_key = (instrument.market, instrument.symbol)
+            span = _find_first_available_span(
+                text=upper_text if pattern else text,
+                alias=alias.upper() if pattern else alias,
+                pattern=pattern,
+                existing_spans=spans_by_instrument.get(instrument_key, []),
+            )
             if span is None:
                 continue
 
-            instrument_key = (instrument.market, instrument.symbol)
-            if _is_inside_existing_span(span, spans_by_instrument.get(instrument_key, [])):
-                continue
             key = (instrument.market, instrument.symbol, alias)
             if key in seen:
                 continue
@@ -50,6 +46,29 @@ def _is_ascii_token(value: str) -> bool:
 
 def _ticker_pattern(value: str) -> re.Pattern[str]:
     return re.compile(rf"(?<![A-Z0-9]){re.escape(value.upper())}(?![A-Z0-9])")
+
+
+def _find_first_available_span(
+    text: str,
+    alias: str,
+    pattern: re.Pattern[str] | None,
+    existing_spans: list[tuple[int, int]],
+) -> tuple[int, int] | None:
+    if pattern:
+        for match in pattern.finditer(text):
+            if not _is_inside_existing_span(match.span(), existing_spans):
+                return match.span()
+        return None
+
+    start_at = 0
+    while True:
+        index = text.find(alias, start_at)
+        if index == -1:
+            return None
+        span = (index, index + len(alias))
+        if not _is_inside_existing_span(span, existing_spans):
+            return span
+        start_at = index + 1
 
 
 def _is_inside_existing_span(candidate: tuple[int, int], spans: list[tuple[int, int]]) -> bool:
