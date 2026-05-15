@@ -46,6 +46,7 @@ front 작업해
 crawl 쪽 맡아줘
 ops로 Notion 정리해
 agent 트랙에서 커뮤니티별 성과 비교 설계해
+프론트 와이어프레임 잡아줘
 ```
 
 에이전트는 내부적으로 아래 프롬프트를 확장해 인지합니다.
@@ -60,12 +61,18 @@ AGENTS.md, docs/CURRENT_HANDOFF.md, docs/DOCUMENTATION_GUIDE.md를 읽는다.
 PR 설명과 작업 기록은 한국어로 작성한다.
 ```
 
+`front` 지시를 받으면 프론트 에이전트는 추가로 `docs/workstreams/front/README.md`의 프론트 에이전트 시작 지시를 적용합니다. 기본값은 `Vue 3 + Vite + TypeScript` 기반 저충실도 와이어프레임이며, 화면 구조, 라우팅, mock data, API 계약 후보, `기획자 확인 필요` 항목을 드러내는 것이 목표입니다. 최종 브랜드 디자인, 고충실도 UI, Figma AI/Stitch 산출물 고정은 별도 지시나 기획 합의 전에는 하지 않습니다.
+
 ## 작업 시작 선언
 
 트랙과 범위가 정해지면 에이전트는 한두 문장으로 선언하고 시작합니다.
 
 ```text
 작업 트랙: front / 수정 대상: 대시보드 화면 / 기록 위치: PR + Notion 작업 로그 / 주요 위험: API 계약 미확정으로 mock 데이터 경계 유지.
+```
+
+```text
+작업 트랙: front / 수정 대상: 화면 인벤토리와 와이어프레임 / 기록 위치: PR + Notion 작업 로그 / 주요 위험: 화면 구조가 제품 기획을 임의로 고정하지 않도록 기획자 확인 필요 항목 분리.
 ```
 
 ```text

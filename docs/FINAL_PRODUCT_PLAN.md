@@ -242,6 +242,8 @@ flowchart LR
 
 ### Phase 2. 커뮤니티 반응/시세 대시보드
 
+- 프론트 초기 구현은 `Vue 3 + Vite + TypeScript` 기반 저충실도 와이어프레임으로 시작
+- 화면 인벤토리, 라우팅, mock data, API 응답 후보, 기획자 확인 필요 항목 정리
 - 사용자용 ranking API
 - 열기 지수 산식 확정
 - 종목별 추세 조회

@@ -52,7 +52,8 @@
 - [ ] 실제 에펨코리아 주식 게시판 구조에 맞춘 parser 보강
 - [ ] 종목 게시판형 수집을 위한 `CrawlTarget` 최소 설계
 - [ ] 소스별 활성화 상태(`enabled`, `public-demo-only`, `local-research-only`, `disabled`) 설계
-- [ ] `front` 트랙에서 첫 대시보드 정보 구조와 mock 화면 설계
+- [ ] `front` 트랙에서 화면 인벤토리, 라우팅 후보, mock data/API 응답 후보, 기획자 확인 필요 항목 정리
+- [ ] `front` 트랙에서 Vue 3 + Vite + TypeScript 기반 와이어프레임 shell 구현
 - [ ] `market` 트랙에서 quote snapshot 계약 설계
 - [ ] `trade` 트랙에서 모의 계좌와 주문/체결 최소 도메인 설계
 - [ ] `agent` 트랙에서 역발상 페르소나 입력 contract 설계

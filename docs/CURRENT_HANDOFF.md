@@ -50,6 +50,8 @@
 - `type:*`는 작업 타입, `track:*`는 작업 트랙, `part:*`는 변경 파트입니다. `part:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
 - Notion 작업 로그와 다음 작업 DB에서는 같은 의미를 `변경 파트` 컬럼으로 기록합니다.
 - 프론트 작업은 `front` 트랙으로 시작하고 `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `part:front`도 함께 붙입니다.
+- `front` 트랙의 초기 기본값은 `Vue 3 + Vite + TypeScript` 기반 저충실도 와이어프레임입니다. 목적은 최종 디자인 확정이 아니라 화면 구조, 라우팅, mock data, API 계약 후보, `기획자 확인 필요` 항목을 드러내는 것입니다.
+- Figma AI, Stitch 같은 디자인 도구는 시안 탐색용으로만 쓰고, 초기 front 작업의 정본은 repo 코드와 문서입니다. 브랜드 컬러, 고충실도 UI, 일러스트, 최종 디자인 시스템은 후순위로 둡니다.
 - 기획/조율/문서/Notion/PR 운영은 `ops` 트랙이 맡습니다.
 - 시세 수집은 `market`, 모의 체결은 `trade`, AI 에이전트 판단은 `agent`가 맡습니다. 세 작업을 같은 PR에 섞지 않습니다.
 - 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
@@ -91,6 +93,7 @@
 - 제품 개발/운영 트러블슈팅은 개발자 기술 경험 DB의 `문제해결` 유형으로 남깁니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 종류와 포트폴리오 후보를 선택합니다. 에이전트/도구 운영 사고는 에이전트 운영 로그 DB에 남깁니다.
 - 도메인 패키지 이름 기준은 `docs/DOMAIN_PACKAGE_GUIDE.md`를 봅니다. 현재 코드에 남아 있는 `instrument`, `sentiment`, `metrics` 패키지 리네임은 후속 PR로 분리합니다.
 - 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/COMMUNITY_REACTION_GUIDE.md`를 봅니다.
+- 프론트 와이어프레임 전략과 front 에이전트 시작 지시는 `docs/workstreams/front/README.md`를 봅니다.
 
 ## 마지막 검증 기록
 
@@ -128,6 +131,7 @@
 - 에펨코리아 게시판 parser 보강
 - 종목 게시판형 소스를 위한 `CrawlTarget` 최소 설계
 - 소스별 활성화 상태 설계
+- front 화면 인벤토리, 라우팅 후보, mock data/API 응답 후보 정리
 - pipeline이 backend readiness를 기다리도록 개선
 - admin API Swagger 예시와 validation 오류 응답 정리
 - backend 도메인 패키지를 `stock`, `analysis`, `indicator` 목표 이름으로 리네임
