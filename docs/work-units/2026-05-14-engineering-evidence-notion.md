@@ -1,5 +1,7 @@
 # 2026-05-14 기술 경험 기록 Notion 재구성
 
+> 현재 정본 기록 구조는 이 작업 단위 이후 분리되었습니다. 새 기록은 제품 개발/운영 경험을 `개발자 기술 경험 DB`, Codex/Notion/PR/문서 운영 사고를 `에이전트 운영 로그 DB`에 나눠 남깁니다. 이 문서는 당시 설계 배경 확인용입니다.
+
 ## 한눈에 보기
 
 Notion의 기존 트러블슈팅 중심 기록을 기술 경험 기록 체계로 확장합니다. 목적은 취업 준비에 쓸 수 있는 문제 해결, 성능 개선, 품질 개선, 기술 의사결정 근거를 쌓는 것입니다.
@@ -25,5 +27,7 @@ Notion 루트/Archive를 수정할 때는 `allow_deleting_content`를 쉽게 쓰
 루트/Archive 정리 중 기존 원본 DB parent가 `deleted`로 표시되어 새 Archive 아래에 원본 DB 3개를 다시 만들었습니다. 이후 작업자는 아래 data source를 기준으로 기록합니다.
 
 - 작업 로그 DB: `collection://be609137-1bd8-4b22-989e-a987a8185135`
-- 기술 경험 기록 DB: `collection://95866ee7-17cb-412b-a9c8-80b1fde414dc`
+- Legacy 기술 경험 기록 DB: `collection://95866ee7-17cb-412b-a9c8-80b1fde414dc`
+- 개발자 기술 경험 DB: `collection://7f052514-c585-4621-ad28-b54bb2eac5a8`
+- 에이전트 운영 로그 DB: `collection://8646042e-8ea0-4dd5-a056-c01a8ec096ec`
 - 다음 작업 DB: `collection://ecdda994-6376-489d-bd83-4cfbadb6de70`

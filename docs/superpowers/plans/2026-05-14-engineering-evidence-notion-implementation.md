@@ -1,5 +1,7 @@
 # Engineering Evidence Notion Implementation Plan
 
+> Superseded note: 이 계획은 2026-05-14 당시의 단일 `기술 경험 기록 DB` 구현 계획입니다. 현재 정본은 제품 개발/운영 경험을 `개발자 기술 경험 DB`, Codex/Notion/PR/문서 운영 사고를 `에이전트 운영 로그 DB`에 분리하는 구조입니다. 새 작업자는 최신 기준으로 `docs/ENGINEERING_EVIDENCE_GUIDE.md`, `docs/TROUBLESHOOTING_GUIDE.md`, `docs/CURRENT_HANDOFF.md`를 먼저 확인합니다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Rebuild the Notion recording system so it captures developer-facing engineering evidence, not only ad-hoc troubleshooting, while keeping the root dashboard readable.

@@ -1,5 +1,7 @@
 # Engineering Evidence Notion Design
 
+> Superseded note: 이 문서는 2026-05-14 당시의 설계 기록입니다. 현재 정본은 제품 개발/운영 경험을 `개발자 기술 경험 DB`, Codex/Notion/PR/문서 운영 사고를 `에이전트 운영 로그 DB`에 분리하는 구조입니다. 최신 기준은 `docs/ENGINEERING_EVIDENCE_GUIDE.md`, `docs/TROUBLESHOOTING_GUIDE.md`, `docs/CURRENT_HANDOFF.md`를 따릅니다.
+
 ## 배경
 
 너나사 (YouBuyFirst)의 Notion은 지금까지 작업 로그, 트러블슈팅, 다음 작업을 기록하는 운영 허브 역할을 했습니다. 다만 기존 `트러블슈팅 DB`는 개발자 포트폴리오 관점의 문제 해결 기록이라기보다 GitHub, Notion, Docker 같은 도구 운영 이슈까지 섞인 사고 기록에 가까워졌습니다.

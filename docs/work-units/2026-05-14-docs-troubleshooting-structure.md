@@ -10,7 +10,7 @@
 - `docs/TROUBLESHOOTING_GUIDE.md` 추가
 - `docs/archive/README.md` 추가
 - `AGENTS.md`, `WORKFLOW.md`, `CURRENT_HANDOFF.md`에 문서 계층과 트러블슈팅 기록 규칙 반영
-- Notion 기술 경험 기록 DB의 `문제해결` 유형에 카드형 템플릿 기준 추가
+- Notion 개발자 기술 경험 DB의 `문제해결` 유형에 카드형 템플릿 기준 추가
 
 ## 제외 범위
 
@@ -21,5 +21,5 @@
 ## 검증 기준
 
 - 새 에이전트가 매번 읽을 문서와 검색용 기록 문서를 구분할 수 있습니다.
-- 문제 발생 시 Notion 기술 경험 기록 DB에 남길 상세 템플릿을 확인할 수 있습니다.
+- 제품 개발/운영 문제 발생 시 Notion 개발자 기술 경험 DB에 남길 상세 템플릿을 확인할 수 있습니다.
 - `git diff --check`가 통과합니다.
