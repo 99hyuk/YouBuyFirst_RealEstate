@@ -14,7 +14,13 @@ public record CrawlRunView(
         CrawlRunStatus status,
         int postsSeen,
         int postsAccepted,
-        String errorMessage
+        String errorMessage,
+        String targetId,
+        String targetKind,
+        String backoffCategory,
+        Instant backoffUntil,
+        String backoffReason,
+        String skipReason
 ) {
     public static CrawlRunView from(CrawlRun run) {
         return new CrawlRunView(
@@ -26,8 +32,13 @@ public record CrawlRunView(
                 run.getStatus(),
                 run.getPostsSeen(),
                 run.getPostsAccepted(),
-                run.getErrorMessage()
+                run.getErrorMessage(),
+                run.getTargetId(),
+                run.getTargetKind(),
+                run.getBackoffCategory(),
+                run.getBackoffUntil(),
+                run.getBackoffReason(),
+                run.getSkipReason()
         );
     }
 }
-

@@ -44,10 +44,47 @@ public class CrawlRun {
     @Column(name = "error_message", length = 1000)
     private String errorMessage;
 
+    @Column(name = "target_id", length = 160)
+    private String targetId;
+
+    @Column(name = "target_kind", length = 40)
+    private String targetKind;
+
+    @Column(name = "backoff_category", length = 40)
+    private String backoffCategory;
+
+    @Column(name = "backoff_until")
+    private Instant backoffUntil;
+
+    @Column(name = "backoff_reason", length = 500)
+    private String backoffReason;
+
+    @Column(name = "skip_reason", length = 500)
+    private String skipReason;
+
     protected CrawlRun() {
     }
 
     public CrawlRun(String source, String externalRunId, Instant startedAt, Instant finishedAt, CrawlRunStatus status, int postsSeen, int postsAccepted, String errorMessage) {
+        this(source, externalRunId, startedAt, finishedAt, status, postsSeen, postsAccepted, errorMessage, null, null, null, null, null, null);
+    }
+
+    public CrawlRun(
+            String source,
+            String externalRunId,
+            Instant startedAt,
+            Instant finishedAt,
+            CrawlRunStatus status,
+            int postsSeen,
+            int postsAccepted,
+            String errorMessage,
+            String targetId,
+            String targetKind,
+            String backoffCategory,
+            Instant backoffUntil,
+            String backoffReason,
+            String skipReason
+    ) {
         this.source = source;
         this.externalRunId = externalRunId;
         this.startedAt = startedAt;
@@ -56,6 +93,12 @@ public class CrawlRun {
         this.postsSeen = postsSeen;
         this.postsAccepted = postsAccepted;
         this.errorMessage = errorMessage;
+        this.targetId = targetId;
+        this.targetKind = targetKind;
+        this.backoffCategory = backoffCategory;
+        this.backoffUntil = backoffUntil;
+        this.backoffReason = backoffReason;
+        this.skipReason = skipReason;
     }
 
     public Long getId() {
@@ -93,5 +136,28 @@ public class CrawlRun {
     public String getErrorMessage() {
         return errorMessage;
     }
-}
 
+    public String getTargetId() {
+        return targetId;
+    }
+
+    public String getTargetKind() {
+        return targetKind;
+    }
+
+    public String getBackoffCategory() {
+        return backoffCategory;
+    }
+
+    public Instant getBackoffUntil() {
+        return backoffUntil;
+    }
+
+    public String getBackoffReason() {
+        return backoffReason;
+    }
+
+    public String getSkipReason() {
+        return skipReason;
+    }
+}

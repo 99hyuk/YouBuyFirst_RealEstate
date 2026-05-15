@@ -14,10 +14,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,6 +29,9 @@ class IngestionApiIntegrationTest {
 
     @Autowired
     private TestRestTemplate restTemplate;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     void ingestsCommunityPostsIdempotentlyAndCreatesMetrics() {
@@ -108,6 +113,7 @@ class IngestionApiIntegrationTest {
 
     @Test
     void recordsSkippedCrawlRunsForAdminInspection() {
+        Instant backoffUntil = Instant.parse("2026-05-15T06:00:00Z");
         CrawlRunReportRequest request = new CrawlRunReportRequest(
                 "NAVER",
                 "naver-skip-20260515",
@@ -116,8 +122,13 @@ class IngestionApiIntegrationTest {
                 CrawlRunStatus.SKIPPED,
                 0,
                 0,
-                "targetId=NAVER:KR:005930; sourceStatus=local-research-only; "
-                        + "runtimeEnvironment=public; reason=policy denied"
+                "sourceStatus=local-research-only; runtimeEnvironment=public; reason=policy denied",
+                "NAVER:KR:005930",
+                "stock-board",
+                "policy-denied",
+                backoffUntil,
+                "public runtime policy denied",
+                "policy denied"
         );
 
         ResponseEntity<Void> response = restTemplate.postForEntity(
@@ -131,5 +142,147 @@ class IngestionApiIntegrationTest {
         String runs = restTemplate.getForObject("/admin/crawl-runs?limit=5", String.class);
         assertThat(runs).contains("\"status\":\"SKIPPED\"");
         assertThat(runs).contains("sourceStatus=local-research-only");
+        assertThat(runs).contains("\"targetId\":\"NAVER:KR:005930\"");
+        assertThat(runs).contains("\"targetKind\":\"stock-board\"");
+        assertThat(runs).contains("\"backoffCategory\":\"policy-denied\"");
+        assertThat(runs).contains("\"backoffUntil\":\"2026-05-15T06:00:00Z\"");
+        assertThat(runs).contains("\"skipReason\":\"policy denied\"");
+    }
+
+    @Test
+    void exposesCrawlTargetsForAdminInspection() {
+        String targets = restTemplate.getForObject("/admin/crawl-targets", String.class);
+
+        assertThat(targets).contains("\"targetId\":\"NAVER:KR:005930\"");
+        assertThat(targets).contains("\"status\":\"ACTIVE\"");
+        assertThat(targets).contains("\"targetKind\":\"stock-board\"");
+    }
+
+    @Test
+    void claimsOnlyDueActiveTargetsFromAllowedSources() {
+        resetCrawlTargets();
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "/internal/crawl-targets/claim",
+                Map.of(
+                        "workerId", "test-worker",
+                        "runtimeEnvironment", "local",
+                        "allowedSources", List.of("NAVER"),
+                        "limit", 10
+                ),
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("\"targetId\":\"NAVER:KR:005930\"");
+        assertThat(response.getBody()).doesNotContain("FMKOREA:community-board");
+    }
+
+    @Test
+    void claimedTargetIsNotClaimedAgainBeforeLeaseExpires() {
+        resetCrawlTargets();
+        Map<String, Object> request = Map.of(
+                "workerId", "test-worker",
+                "runtimeEnvironment", "local",
+                "allowedSources", List.of("NAVER"),
+                "limit", 1
+        );
+
+        ResponseEntity<String> first = restTemplate.postForEntity("/internal/crawl-targets/claim", request, String.class);
+        ResponseEntity<String> second = restTemplate.postForEntity("/internal/crawl-targets/claim", request, String.class);
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(first.getBody()).contains("\"targetId\":\"NAVER:KR:005930\"");
+        assertThat(second.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(second.getBody()).contains("\"targets\":[]");
+    }
+
+    @Test
+    void successfulCompletionClearsBackoffAndSchedulesNormalInterval() {
+        resetCrawlTargets();
+        claimNaverTarget();
+
+        ResponseEntity<Void> response = restTemplate.postForEntity(
+                "/internal/crawl-targets/NAVER:KR:005930/complete",
+                Map.of(
+                        "workerId", "test-worker",
+                        "status", "SUCCESS",
+                        "startedAt", "2026-05-15T00:00:00Z",
+                        "finishedAt", "2026-05-15T00:00:12Z",
+                        "postsSeen", 3,
+                        "postsAccepted", 2
+                ),
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String targets = restTemplate.getForObject("/admin/crawl-targets?limit=10", String.class);
+        assertThat(targets).contains("\"targetId\":\"NAVER:KR:005930\"");
+        assertThat(targets).contains("\"lastStatus\":\"SUCCESS\"");
+        assertThat(targets).contains("\"consecutiveFailures\":0");
+        assertThat(targets).contains("\"backoffCategory\":null");
+    }
+
+    @Test
+    void blockedCompletionPersistsBackoffUntil() {
+        resetCrawlTargets();
+        claimNaverTarget();
+
+        ResponseEntity<Void> response = restTemplate.postForEntity(
+                "/internal/crawl-targets/NAVER:KR:005930/complete",
+                Map.of(
+                        "workerId", "test-worker",
+                        "status", "PARTIAL_FAILURE",
+                        "startedAt", "2026-05-15T00:00:00Z",
+                        "finishedAt", "2026-05-15T00:00:12Z",
+                        "postsSeen", 0,
+                        "postsAccepted", 0,
+                        "backoffCategory", "blocked",
+                        "backoffUntil", "2026-05-15T06:00:00Z",
+                        "backoffReason", "block or rate-limit"
+                ),
+                Void.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String targets = restTemplate.getForObject("/admin/crawl-targets?limit=10", String.class);
+        assertThat(targets).contains("\"targetId\":\"NAVER:KR:005930\"");
+        assertThat(targets).contains("\"lastStatus\":\"PARTIAL_FAILURE\"");
+        assertThat(targets).contains("\"consecutiveFailures\":1");
+        assertThat(targets).contains("\"backoffCategory\":\"blocked\"");
+        assertThat(targets).contains("\"backoffReason\":\"block or rate-limit\"");
+    }
+
+    private void claimNaverTarget() {
+        restTemplate.postForEntity(
+                "/internal/crawl-targets/claim",
+                Map.of(
+                        "workerId", "test-worker",
+                        "runtimeEnvironment", "local",
+                        "allowedSources", List.of("NAVER"),
+                        "limit", 1
+                ),
+                String.class
+        );
+    }
+
+    private void resetCrawlTargets() {
+        jdbcTemplate.update("""
+                update crawl_targets
+                set status = 'ACTIVE',
+                    next_attempt_at = timestamp '2026-05-15 00:00:00',
+                    last_attempt_at = null,
+                    last_success_at = null,
+                    last_status = null,
+                    consecutive_failures = 0,
+                    backoff_category = null,
+                    backoff_until = null,
+                    backoff_reason = null,
+                    lease_owner = null,
+                    leased_until = null,
+                    updated_at = current_timestamp(6)
+                """);
     }
 }

@@ -1,6 +1,8 @@
 package com.youbuyfirst.backend.admin;
 
 import com.youbuyfirst.backend.crawl.CrawlRunRepository;
+import com.youbuyfirst.backend.crawl.CrawlTargetRepository;
+import com.youbuyfirst.backend.crawl.dto.CrawlTargetView;
 import com.youbuyfirst.backend.instrument.InstrumentRepository;
 import com.youbuyfirst.backend.metrics.MetricSnapshotRepository;
 import com.youbuyfirst.backend.post.CommunityPostRepository;
@@ -19,12 +21,14 @@ import java.util.List;
 public class AdminController {
 
     private final CrawlRunRepository crawlRunRepository;
+    private final CrawlTargetRepository crawlTargetRepository;
     private final CommunityPostRepository postRepository;
     private final InstrumentRepository instrumentRepository;
     private final MetricSnapshotRepository metricSnapshotRepository;
 
-    public AdminController(CrawlRunRepository crawlRunRepository, CommunityPostRepository postRepository, InstrumentRepository instrumentRepository, MetricSnapshotRepository metricSnapshotRepository) {
+    public AdminController(CrawlRunRepository crawlRunRepository, CrawlTargetRepository crawlTargetRepository, CommunityPostRepository postRepository, InstrumentRepository instrumentRepository, MetricSnapshotRepository metricSnapshotRepository) {
         this.crawlRunRepository = crawlRunRepository;
+        this.crawlTargetRepository = crawlTargetRepository;
         this.postRepository = postRepository;
         this.instrumentRepository = instrumentRepository;
         this.metricSnapshotRepository = metricSnapshotRepository;
@@ -34,6 +38,13 @@ public class AdminController {
     public List<CrawlRunView> crawlRuns(@RequestParam(defaultValue = "20") int limit) {
         return crawlRunRepository.findByOrderByStartedAtDesc(PageRequest.of(0, clamp(limit))).stream()
                 .map(CrawlRunView::from)
+                .toList();
+    }
+
+    @GetMapping("/crawl-targets")
+    public List<CrawlTargetView> crawlTargets(@RequestParam(defaultValue = "50") int limit) {
+        return crawlTargetRepository.findByOrderByPriorityAscTargetIdAsc(PageRequest.of(0, clamp(limit))).stream()
+                .map(CrawlTargetView::from)
                 .toList();
     }
 

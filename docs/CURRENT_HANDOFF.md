@@ -20,6 +20,8 @@
 - source policy로 skip된 수집 실행도 backend `crawl_runs`에 `SKIPPED` 상태로 기록되도록 연결했습니다. `/admin/crawl-runs`에서 source, runId, status, errorMessage로 skip 사유를 확인합니다.
 - pipeline에 in-memory crawl backoff 정책을 추가했습니다. 차단/레이트 리밋 신호는 6시간, 일시적 네트워크/서버 오류는 15분, 알 수 없는 crawler 오류는 60분 동안 같은 프로세스에서 외부 fetch를 쉬게 합니다.
 - persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계를 추가했습니다. source policy는 소스 실행 가능 여부를 정하는 상위 게이트로 두고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/종목을 언제 다시 수집할지 정하는 실행 단위로 분리합니다.
+- backend에 `crawl_targets` migration, admin target 조회, worker claim/complete API를 추가했습니다. 이제 관리자는 어떤 수집 대상이 활성/대기/backoff 상태인지 구조화된 필드로 볼 수 있고, pipeline은 다음 PR에서 이 API를 호출해 DB 기반 큐를 사용할 수 있습니다.
+- `crawl_runs`에 `targetId`, `targetKind`, `backoffCategory`, `backoffUntil`, `backoffReason`, `skipReason` 구조화 필드를 추가했습니다. skip/backoff 이유를 더 이상 `errorMessage` 문자열만 파싱하지 않아도 됩니다.
 - data 트랙에서 별칭 중첩 매칭을 보강하고, AI mention resolver 계약과 pipeline filtering을 구현했습니다. `OPENAI_API_KEY`가 없으면 mock provider가 테스트/데모용 판단을 수행합니다.
 - front 트랙에서 화면 라우팅 인벤토리 설계와 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell을 추가했습니다.
 - 병렬 작업은 루트 checkout을 공유하지 않고 프로젝트 하위 `.worktrees/<task>`에서 진행하도록 정리했습니다.
@@ -119,6 +121,9 @@
 
 ## 마지막 검증 기록
 
+- CrawlTarget backend API branch: Backend Docker test 통과, 8 tests
+- CrawlTarget backend API branch: `git diff --check` 통과
+- CrawlTarget backend API branch: placeholder scan 통과
 - Crawl target queue design branch: `git diff --check` 통과
 - Crawl target queue design branch: 새 설계 문서 placeholder scan 통과
 - Crawl backoff policy branch: Pipeline Docker test 통과, 30 tests
@@ -163,8 +168,8 @@
 
 ## 가장 가까운 다음 작업 후보
 
-- crawl `CrawlTarget` backend migration과 claim/complete API 구현
 - pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
+- admin target pause/resume/clear-backoff API와 화면 액션 연결
 - front shell 브라우저 QA와 기획자 확인 필요 항목 정리
 - market quote snapshot 계약 설계
 - 실제 `OPENAI_API_KEY` 기반 AI mention resolver 샘플 품질 확인

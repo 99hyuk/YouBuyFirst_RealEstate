@@ -128,6 +128,7 @@ alter table crawl_runs
     add column target_kind varchar(40),
     add column backoff_category varchar(40),
     add column backoff_until datetime(6),
+    add column backoff_reason varchar(500),
     add column skip_reason varchar(500);
 
 create index idx_crawl_runs_target_started_at on crawl_runs (target_id, started_at);

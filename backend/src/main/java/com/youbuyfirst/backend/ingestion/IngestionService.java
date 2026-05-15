@@ -110,7 +110,13 @@ public class IngestionService {
                 request.status(),
                 request.postsSeen(),
                 request.postsAccepted(),
-                trimTo(request.errorMessage(), 1000)
+                trimTo(request.errorMessage(), 1000),
+                trimTo(request.targetId(), 160),
+                trimTo(request.targetKind(), 40),
+                trimTo(request.backoffCategory(), 40),
+                request.backoffUntil(),
+                trimTo(request.backoffReason(), 500),
+                trimTo(request.skipReason(), 500)
         ));
     }
 

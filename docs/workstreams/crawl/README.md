@@ -35,8 +35,8 @@
 
 ## 현재 우선순위
 
-1. `CrawlTarget` backend migration과 claim/complete API 구현
-2. pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
+1. pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
+2. admin target pause/resume/clear-backoff API와 화면 액션 연결
 3. source별 robots/약관 검토 결과 기록 방식 정리
 4. pipeline이 backend readiness를 기다리도록 개선
 

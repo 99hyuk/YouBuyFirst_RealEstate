@@ -23,11 +23,11 @@
 - Create `backend/src/main/java/com/youbuyfirst/backend/crawl/CrawlTargetRepository.java`
   - Finds due targets and target rows by `targetId`.
 - Create `backend/src/main/java/com/youbuyfirst/backend/crawl/CrawlTargetService.java`
-  - Owns claim, completion, pause, resume, and clear-backoff behavior.
+  - Owns claim and completion behavior. Admin pause/resume/clear-backoff remains a follow-up.
 - Create DTOs under `backend/src/main/java/com/youbuyfirst/backend/crawl/dto/`
   - `CrawlTargetClaimRequest`, `CrawlTargetClaimResponse`, `CrawlTargetView`, `CrawlTargetCompletionRequest`.
 - Modify `backend/src/main/java/com/youbuyfirst/backend/admin/AdminController.java`
-  - Adds admin target list and action endpoints.
+  - Adds admin target list endpoint.
 - Modify `backend/src/main/java/com/youbuyfirst/backend/admin/CrawlRunView.java`
   - Includes structured target/backoff fields.
 - Modify `backend/src/main/java/com/youbuyfirst/backend/crawl/CrawlRun.java`
@@ -53,7 +53,7 @@
 - Create: `backend/src/main/java/com/youbuyfirst/backend/crawl/CrawlTargetRepository.java`
 - Modify: `backend/src/main/java/com/youbuyfirst/backend/crawl/CrawlRun.java`
 
-- [ ] **Step 1: Write the failing backend test**
+- [x] **Step 1: Write the failing backend test**
 
 Add a test that expects `/admin/crawl-targets` to expose a seeded target after Flyway migration.
 
@@ -68,7 +68,7 @@ void exposesCrawlTargetsForAdminInspection() {
 }
 ```
 
-- [ ] **Step 2: Run the test and verify RED**
+- [x] **Step 2: Run the test and verify RED**
 
 Run:
 
@@ -78,7 +78,7 @@ docker run --rm -v "${PWD}/backend:/workspace" -w /workspace maven:3.9-eclipse-t
 
 Expected: FAIL because `/admin/crawl-targets` does not exist yet.
 
-- [ ] **Step 3: Add migration**
+- [x] **Step 3: Add migration**
 
 Use the SQL contract from `docs/superpowers/specs/2026-05-15-crawl-target-queue-design.md`.
 
@@ -94,15 +94,15 @@ insert into crawl_targets (
 ('FMKOREA', 'FMKOREA:community-board', 'community-board', 'ACTIVE', null, null, 'https://www.fmkorea.com/stock', 'FMKOREA stock board', 200, 1800, current_timestamp(6), 0, current_timestamp(6), current_timestamp(6));
 ```
 
-- [ ] **Step 4: Add entity and repository**
+- [x] **Step 4: Add entity and repository**
 
 `CrawlTarget` must normalize `source` and keep `targetId` stable. Do not store raw post content or author data in this table.
 
-- [ ] **Step 5: Add read endpoint**
+- [x] **Step 5: Add read endpoint**
 
 Add `GET /admin/crawl-targets` returning `CrawlTargetView`.
 
-- [ ] **Step 6: Run backend test and verify GREEN**
+- [x] **Step 6: Run backend test and verify GREEN**
 
 Run the same focused Docker Maven command. Expected: PASS.
 
@@ -114,7 +114,7 @@ Run the same focused Docker Maven command. Expected: PASS.
 - Modify: `backend/src/main/java/com/youbuyfirst/backend/admin/AdminController.java`
 - Modify: `backend/src/test/java/com/youbuyfirst/backend/IngestionApiIntegrationTest.java`
 
-- [ ] **Step 1: Write claim tests first**
+- [x] **Step 1: Write claim tests first**
 
 Add tests for these behaviors:
 
@@ -166,11 +166,11 @@ void claimedTargetIsNotClaimedAgainBeforeLeaseExpires() {
 }
 ```
 
-- [ ] **Step 2: Run tests and verify RED**
+- [x] **Step 2: Run tests and verify RED**
 
 Expected: FAIL because claim endpoint and service do not exist yet.
 
-- [ ] **Step 3: Implement claim service**
+- [x] **Step 3: Implement claim service**
 
 Claim query must filter:
 
@@ -182,7 +182,7 @@ Claim query must filter:
 
 Then set `leaseOwner` and `leasedUntil = now + 5 minutes`.
 
-- [ ] **Step 4: Write completion tests**
+- [x] **Step 4: Write completion tests**
 
 Add tests for success and blocked completion:
 
@@ -202,11 +202,11 @@ void blockedCompletionPersistsBackoffUntil() {
 }
 ```
 
-- [ ] **Step 5: Implement completion service**
+- [x] **Step 5: Implement completion service**
 
 Completion releases lease in all cases. Success clears backoff and failures. Failure persists category, until, reason, and increments failures.
 
-- [ ] **Step 6: Run focused backend tests**
+- [x] **Step 6: Run focused backend tests**
 
 Run:
 
@@ -225,7 +225,7 @@ Expected: PASS.
 - Modify: `backend/src/main/java/com/youbuyfirst/backend/ingestion/IngestionService.java`
 - Modify: `backend/src/test/java/com/youbuyfirst/backend/IngestionApiIntegrationTest.java`
 
-- [ ] **Step 1: Write failing admin history test**
+- [x] **Step 1: Write failing admin history test**
 
 Extend the existing skipped crawl run test so `/admin/crawl-runs` contains structured fields:
 
@@ -235,11 +235,11 @@ assertThat(runs).contains("\"backoffCategory\":\"blocked\"");
 assertThat(runs).contains("\"skipReason\":\"backoff\"");
 ```
 
-- [ ] **Step 2: Run test and verify RED**
+- [x] **Step 2: Run test and verify RED**
 
 Expected: FAIL because the DTO/view does not expose those fields yet.
 
-- [ ] **Step 3: Add optional fields through DTO, entity, and view**
+- [x] **Step 3: Add optional fields through DTO, entity, and view**
 
 Fields are nullable to preserve existing ingestion clients:
 
@@ -249,7 +249,7 @@ Fields are nullable to preserve existing ingestion clients:
 - `backoffUntil`
 - `skipReason`
 
-- [ ] **Step 4: Run backend tests and verify GREEN**
+- [x] **Step 4: Run backend tests and verify GREEN**
 
 Run backend Docker Maven tests. Expected: PASS.
 
