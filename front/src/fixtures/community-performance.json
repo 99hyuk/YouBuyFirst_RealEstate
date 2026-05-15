@@ -1,0 +1,23 @@
+{
+  "window": "7d",
+  "items": [
+    {
+      "community": "fmkorea",
+      "communityLabel": "에펨코리아",
+      "strategyLabel": "추종 관찰",
+      "signalCount": 12,
+      "averageForwardReturnPct": 2.1,
+      "maxDrawdownPct": -4.7,
+      "dataStatus": "mock"
+    },
+    {
+      "community": "naver",
+      "communityLabel": "네이버 종토방",
+      "strategyLabel": "공포 관찰",
+      "signalCount": 9,
+      "averageForwardReturnPct": -0.6,
+      "maxDrawdownPct": -5.2,
+      "dataStatus": "mock"
+    }
+  ]
+}

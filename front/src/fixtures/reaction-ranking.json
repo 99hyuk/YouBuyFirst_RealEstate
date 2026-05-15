@@ -1,0 +1,36 @@
+{
+  "window": "1h",
+  "windowLabel": "최근 1시간",
+  "items": [
+    {
+      "symbol": "005930",
+      "name": "삼성전자",
+      "market": "KRX",
+      "mentionCount": 128,
+      "mentionDeltaPct": 42.3,
+      "reactionDirectionRatio": {
+        "bullish": 0.52,
+        "bearish": 0.31,
+        "neutral": 0.17
+      },
+      "heatScore": 82,
+      "topKeywords": ["실적", "반도체", "외국인"],
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla",
+      "market": "NASDAQ",
+      "mentionCount": 74,
+      "mentionDeltaPct": 18.7,
+      "reactionDirectionRatio": {
+        "bullish": 0.41,
+        "bearish": 0.43,
+        "neutral": 0.16
+      },
+      "heatScore": 68,
+      "topKeywords": ["실적", "가격", "변동성"],
+      "dataStatus": "mock"
+    }
+  ]
+}

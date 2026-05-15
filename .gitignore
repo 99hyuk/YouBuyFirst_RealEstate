@@ -9,6 +9,8 @@ __pycache__/
 .env
 .superpowers/
 .worktrees/
+node_modules/
+front/dist/
 *.egg-info/
 *.pyc
 *.log

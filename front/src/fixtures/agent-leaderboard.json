@@ -1,0 +1,18 @@
+{
+  "items": [
+    {
+      "agentId": "contrarian",
+      "name": "역발상 에이전트",
+      "persona": "공포 구간 관찰",
+      "returnPct": 1.8,
+      "dataStatus": "mock"
+    },
+    {
+      "agentId": "momentum",
+      "name": "모멘텀 에이전트",
+      "persona": "언급량과 가격 동반 상승 관찰",
+      "returnPct": -0.4,
+      "dataStatus": "mock"
+    }
+  ]
+}

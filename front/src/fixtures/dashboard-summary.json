@@ -1,0 +1,10 @@
+{
+  "productName": "너나사",
+  "title": "오늘 커뮤니티 반응 대시보드",
+  "description": "커뮤니티 반응이 커진 종목을 mock 데이터로 빠르게 훑어보는 저충실도 화면입니다.",
+  "confirmationNeeded": [
+    "열기 지수 용어 확정",
+    "기본 시간창 1h, 24h, 30m 중 선택",
+    "AI 3줄 요약 placeholder 문구 확정"
+  ]
+}
