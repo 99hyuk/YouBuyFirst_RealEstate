@@ -1,8 +1,10 @@
 ﻿from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Callable
 from uuid import uuid4
 
+from youbuyfirst_pipeline.backoff import CrawlBackoffDecision, CrawlBackoffPolicy, format_utc
 from youbuyfirst_pipeline.client import SpringIngestionClient
 from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedError
 from youbuyfirst_pipeline.llm import LLMProvider
@@ -25,6 +27,8 @@ class CommunityPipeline:
         client: SpringIngestionClient,
         source_policy_registry: SourcePolicyRegistry | None = None,
         runtime_environment: CrawlRuntimeEnvironment = CrawlRuntimeEnvironment.PUBLIC,
+        backoff_policy: CrawlBackoffPolicy | None = None,
+        now_provider: Callable[[], datetime] | None = None,
     ) -> None:
         self.adapters = adapters
         self.matcher = matcher
@@ -32,16 +36,41 @@ class CommunityPipeline:
         self.client = client
         self.source_policy_registry = source_policy_registry or default_source_policy_registry()
         self.runtime_environment = runtime_environment
+        self.backoff_policy = backoff_policy or CrawlBackoffPolicy()
+        self.now_provider = now_provider or _utc_now
+        self._active_backoffs: dict[str, CrawlBackoffDecision] = {}
 
     async def run_once(self) -> list[dict]:
         results: list[dict] = []
         for adapter in self.adapters:
-            started = datetime.now(timezone.utc)
+            started = self.now_provider()
             run_id = f"{adapter.source.lower()}-{started.strftime('%Y%m%d%H%M')}-{uuid4().hex[:8]}"
             result_context = _target_result_context(adapter)
+            backoff_key = _backoff_key(adapter, result_context)
+            active_backoff = self._active_backoffs.get(backoff_key)
+            if active_backoff and started < active_backoff.retry_after:
+                finished = self.now_provider()
+                message = _active_backoff_record_message(result_context, active_backoff)
+                record_error = self._safe_record_run(
+                    adapter.source, run_id, started, finished, "SKIPPED", 0, 0, message
+                )
+                result = {
+                    "source": adapter.source,
+                    **result_context,
+                    "runId": run_id,
+                    "status": "backoff",
+                    **_backoff_result_fields(active_backoff),
+                    "skipReason": active_backoff.reason,
+                }
+                if record_error:
+                    result["recordError"] = record_error
+                results.append(result)
+                continue
+            if active_backoff:
+                self._active_backoffs.pop(backoff_key, None)
             policy_decision = self.source_policy_registry.decide(adapter.source, self.runtime_environment)
             if not policy_decision.allowed:
-                finished = datetime.now(timezone.utc)
+                finished = self.now_provider()
                 skip_message = _skip_record_message(result_context, policy_decision)
                 record_error = self._safe_record_run(
                     adapter.source, run_id, started, finished, "SKIPPED", 0, 0, skip_message
@@ -62,28 +91,61 @@ class CommunityPipeline:
             try:
                 raw_posts = await adapter.fetch_posts()
                 enriched = [self._enrich(post) for post in raw_posts]
-                finished = datetime.now(timezone.utc)
+                finished = self.now_provider()
+                self._active_backoffs.pop(backoff_key, None)
                 if enriched:
                     result = self.client.ingest(adapter.source, run_id, started, finished, enriched)
                     results.append({**result_context, **result})
                 else:
-                    record_error = self._safe_record_run(adapter.source, run_id, started, finished, "SUCCESS", 0, 0, None)
+                    record_error = self._safe_record_run(
+                        adapter.source, run_id, started, finished, "SUCCESS", 0, 0, None
+                    )
                     results.append(
-                        {"source": adapter.source, **result_context, "runId": run_id, "seenPosts": 0, "acceptedPosts": 0}
+                        {
+                            "source": adapter.source,
+                            **result_context,
+                            "runId": run_id,
+                            "seenPosts": 0,
+                            "acceptedPosts": 0,
+                        }
                     )
                     if record_error:
                         results[-1]["recordError"] = record_error
             except SourceBlockedError as exc:
-                finished = datetime.now(timezone.utc)
-                record_error = self._safe_record_run(adapter.source, run_id, started, finished, "PARTIAL_FAILURE", 0, 0, str(exc))
-                result = {"source": adapter.source, **result_context, "runId": run_id, "status": "blocked", "error": str(exc)}
+                finished = self.now_provider()
+                backoff = self.backoff_policy.for_exception(exc, started)
+                self._active_backoffs[backoff_key] = backoff
+                error_message = _failure_record_message(str(exc), backoff)
+                record_error = self._safe_record_run(
+                    adapter.source, run_id, started, finished, "PARTIAL_FAILURE", 0, 0, error_message
+                )
+                result = {
+                    "source": adapter.source,
+                    **result_context,
+                    "runId": run_id,
+                    "status": "blocked",
+                    "error": str(exc),
+                    **_backoff_result_fields(backoff),
+                }
                 if record_error:
                     result["recordError"] = record_error
                 results.append(result)
             except Exception as exc:
-                finished = datetime.now(timezone.utc)
-                record_error = self._safe_record_run(adapter.source, run_id, started, finished, "FAILED", 0, 0, str(exc))
-                result = {"source": adapter.source, **result_context, "runId": run_id, "status": "failed", "error": str(exc)}
+                finished = self.now_provider()
+                backoff = self.backoff_policy.for_exception(exc, started)
+                self._active_backoffs[backoff_key] = backoff
+                error_message = _failure_record_message(str(exc), backoff)
+                record_error = self._safe_record_run(
+                    adapter.source, run_id, started, finished, "FAILED", 0, 0, error_message
+                )
+                result = {
+                    "source": adapter.source,
+                    **result_context,
+                    "runId": run_id,
+                    "status": "failed",
+                    "error": str(exc),
+                    **_backoff_result_fields(backoff),
+                }
                 if record_error:
                     result["recordError"] = record_error
                 results.append(result)
@@ -133,7 +195,9 @@ class CommunityPipeline:
         error_message: str | None,
     ) -> str | None:
         try:
-            self.client.record_crawl_run(source, run_id, started, finished, status, posts_seen, posts_accepted, error_message)
+            self.client.record_crawl_run(
+                source, run_id, started, finished, status, posts_seen, posts_accepted, error_message
+            )
             return None
         except Exception as exc:
             return str(exc)
@@ -183,3 +247,48 @@ def _skip_record_message(result_context: dict, policy_decision: SourcePolicyDeci
         ]
     )
     return "; ".join(parts)
+
+
+def _backoff_key(adapter: CommunityAdapter, result_context: dict) -> str:
+    return result_context.get("targetId") or adapter.source
+
+
+def _backoff_result_fields(backoff: CrawlBackoffDecision) -> dict:
+    return {
+        "backoffCategory": backoff.category,
+        "backoffSeconds": backoff.seconds,
+        "backoffUntil": format_utc(backoff.retry_after),
+        "backoffReason": backoff.reason,
+    }
+
+
+def _failure_record_message(error: str, backoff: CrawlBackoffDecision) -> str:
+    return "; ".join(
+        [
+            error,
+            f"backoffCategory={backoff.category}",
+            f"backoffSeconds={backoff.seconds}",
+            f"backoffUntil={format_utc(backoff.retry_after)}",
+            f"backoffReason={backoff.reason}",
+        ]
+    )
+
+
+def _active_backoff_record_message(result_context: dict, backoff: CrawlBackoffDecision) -> str:
+    parts: list[str] = []
+    target_id = result_context.get("targetId")
+    if target_id:
+        parts.append(f"targetId={target_id}")
+    parts.extend(
+        [
+            f"backoffCategory={backoff.category}",
+            f"backoffSeconds={backoff.seconds}",
+            f"backoffUntil={format_utc(backoff.retry_after)}",
+            f"reason={backoff.reason}",
+        ]
+    )
+    return "; ".join(parts)
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
