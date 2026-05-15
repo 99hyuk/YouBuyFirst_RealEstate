@@ -35,12 +35,12 @@
 
 ## 현재 우선순위
 
-1. 게시판 parser 견고화 PR #33 리뷰와 merge 여부 결정
-2. persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계
+1. `CrawlTarget` backend migration과 claim/complete API 구현
+2. pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
 3. source별 robots/약관 검토 결과 기록 방식 정리
 4. pipeline이 backend readiness를 기다리도록 개선
 
-소스별 활성화 상태의 의미와 트랙별 책임은 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`를 기준으로 봅니다. source policy registry와 scheduler gate는 구현되어 있으며, `CrawlTarget`은 이 상태값보다 아래 단계의 실행 단위입니다. 현재 backoff는 pipeline 프로세스 안에서만 유지되므로, 재시작 뒤에도 유지되는 DB 기반 backoff는 후속 작업입니다.
+소스별 활성화 상태의 의미와 트랙별 책임은 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`를 기준으로 봅니다. persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계는 `docs/superpowers/specs/2026-05-15-crawl-target-queue-design.md`를 기준으로 봅니다. source policy는 `CrawlTarget`보다 상위 게이트이고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/종목을 언제 다시 수집할지 정하는 실행 단위입니다.
 
 ## 하지 않는 일
 

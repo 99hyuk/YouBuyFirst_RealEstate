@@ -19,6 +19,7 @@
 - pipeline에 source policy registry와 scheduler gate를 구현했습니다. 로컬 Compose는 `CRAWL_RUNTIME_ENV=local`로 실행하고, 기본 MVP 소스는 local research 범위에서 실행됩니다.
 - source policy로 skip된 수집 실행도 backend `crawl_runs`에 `SKIPPED` 상태로 기록되도록 연결했습니다. `/admin/crawl-runs`에서 source, runId, status, errorMessage로 skip 사유를 확인합니다.
 - pipeline에 in-memory crawl backoff 정책을 추가했습니다. 차단/레이트 리밋 신호는 6시간, 일시적 네트워크/서버 오류는 15분, 알 수 없는 crawler 오류는 60분 동안 같은 프로세스에서 외부 fetch를 쉬게 합니다.
+- persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계를 추가했습니다. source policy는 소스 실행 가능 여부를 정하는 상위 게이트로 두고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/종목을 언제 다시 수집할지 정하는 실행 단위로 분리합니다.
 - data 트랙에서 별칭 중첩 매칭을 보강하고, AI mention resolver 계약과 pipeline filtering을 구현했습니다. `OPENAI_API_KEY`가 없으면 mock provider가 테스트/데모용 판단을 수행합니다.
 - front 트랙에서 화면 라우팅 인벤토리 설계와 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell을 추가했습니다.
 - 병렬 작업은 루트 checkout을 공유하지 않고 프로젝트 하위 `.worktrees/<task>`에서 진행하도록 정리했습니다.
@@ -78,14 +79,16 @@
 
 - Repository: `99hyuk/YouBuyFirst`
 - Default branch: `main`
+- 최근 merge: PR #46 `[ops][docs] 사용자 이해 중심 완료 보고 규칙`
+- 최근 merge: PR #45 `[crawl][feat] 실패 원인별 backoff 정책`
 - 최근 merge: PR #39 `[front][feat] Vue 와이어프레임 shell`
 - 최근 merge: PR #38 `[crawl][feat] 소스 정책 실행 게이트`
 - 최근 merge: PR #37 `[ops][docs] 소스 활성화 상태 계약`
 - 최근 merge: PR #36 `[front][docs] 화면 라우팅 인벤토리 설계`
 - 최근 merge: PR #35 `[data][feat] AI 종목 언급 검증 계약`
 - 최근 merge: PR #34 `[ops][chore] 프로젝트 worktree 디렉터리 제외`
-- 최근 merge: PR #32 `[data][fix] 별칭 중첩 매칭 보강`
-- 현재 Draft PR: PR #33 `[crawl][fix] 게시판 parser 견고화`
+- 최근 merge: PR #33 `[crawl][fix] 게시판 parser 견고화`
+- 현재 Draft PR: PR #43 `[front][feat] 대시보드 콘텐츠 구조 보강`
 - Bootstrap PR: https://github.com/99hyuk/YouBuyFirst/pull/1
 - PR #1 상태: CI 통과 후 squash merge 완료
 - GitHub labels: `track:*`, `type:*`, `size:*`, `part:*` 라벨 생성 완료
@@ -116,6 +119,8 @@
 
 ## 마지막 검증 기록
 
+- Crawl target queue design branch: `git diff --check` 통과
+- Crawl target queue design branch: 새 설계 문서 placeholder scan 통과
 - Crawl backoff policy branch: Pipeline Docker test 통과, 30 tests
 - Crawl backoff policy branch: `git diff --check` 통과
 - Crawl skip run record branch: Backend Docker test 통과, 3 tests
@@ -158,8 +163,8 @@
 
 ## 가장 가까운 다음 작업 후보
 
-- crawl parser 견고화 PR #33 리뷰와 merge 여부 결정
-- 종목 게시판형 소스를 위한 `CrawlTarget` 최소 설계
+- crawl `CrawlTarget` backend migration과 claim/complete API 구현
+- pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
 - front shell 브라우저 QA와 기획자 확인 필요 항목 정리
 - market quote snapshot 계약 설계
 - 실제 `OPENAI_API_KEY` 기반 AI mention resolver 샘플 품질 확인

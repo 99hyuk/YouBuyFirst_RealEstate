@@ -49,13 +49,14 @@
 - [x] crawl source policy registry와 scheduler gate 구현
 - [x] crawl source policy skip 상태를 crawl run 기록에 표시
 - [x] crawl run 실패/차단 원인별 in-memory backoff 정책 추가
+- [x] crawl persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계
 - [x] front 화면 라우팅 인벤토리 설계
 - [x] front Vue 3 + Vite + TypeScript 와이어프레임 shell 구현
 
 ## 지금 가장 가까운 작업
 
-- [ ] crawl parser 견고화 PR #33 리뷰와 merge 여부 결정
-- [ ] 종목 게시판형 수집을 위한 `CrawlTarget` 최소 설계
+- [ ] crawl `CrawlTarget` backend migration과 claim/complete API 구현
+- [ ] pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
 - [ ] front shell 브라우저 QA와 기획자 확인 필요 항목 정리
 - [ ] `market` 트랙에서 quote snapshot 계약 설계
 - [ ] `trade` 트랙에서 모의 계좌와 주문/체결 최소 도메인 설계
