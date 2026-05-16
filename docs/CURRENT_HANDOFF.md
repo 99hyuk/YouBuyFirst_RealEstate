@@ -9,7 +9,7 @@
 - Repository: `99hyuk/YouBuyFirst`
 - Default branch: `main`
 - 루트 checkout: `C:\agents\YouBuyFirst`는 main/조율용, 병렬 작업은 `.worktrees/<task>`에서 진행합니다.
-- 현재 열려 있는 front/ops 복구 PR: PR #53 `[ops][docs] 프론트 와이어프레임 복구 정리`
+- 최근 머지된 ops 규칙 PR: PR #53 `[ops][docs] 프론트 와이어프레임 복구 정리`
 - 기반: Spring Boot backend, Python pipeline, MySQL, Docker Compose, Vue 3 front mock shell
 
 ## 구현 스냅샷
@@ -25,6 +25,7 @@
 - 채팅이 `앗, 오류가 발생했습니다`로 막히면 제품 코드보다 대화 컨텍스트/도구 출력 과다를 먼저 의심합니다.
 - 스킬 문서, gstack, Notion fetch, 세션 로그 검색은 시작 루틴이 아닙니다.
 - 큰 스킬 문서와 `docs/superpowers/` archive는 전문 출력하지 않습니다. Browser/gstack 검증은 필요할 때 한 번에 모아 실행합니다.
+- 에이전트 행동 규칙 PR이 main에 머지되면 ops가 열린 장기 브랜치의 main 반영 여부를 확인합니다.
 - gstack은 front/UI 변경처럼 실제 브라우저 확인 가치가 있을 때 사용하고, 콘솔/DOM 전문은 대화에 누적하지 않습니다.
 - 로그/세션 분석은 JSONL 전문 검색이 아니라 `token_count` 같은 필요한 이벤트만 파싱해 수치로 요약합니다.
 - 제품 용어는 사용자 화면에서 `커뮤니티 반응`, 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`을 씁니다.
