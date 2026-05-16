@@ -18,6 +18,7 @@
 - backend에는 ingestion/admin API, crawl run/posts/stock metrics 조회, `CrawlTarget` queue API가 있습니다.
 - pipeline에는 source policy gate, skip run 기록, crawl backoff, AI mention resolver/mock provider 흐름이 있습니다.
 - front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드 정본은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`, Stitch 프롬프트는 `docs/workstreams/front/STITCH_DASHBOARD_PROMPT.md`입니다.
+- 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
 
 ## 최근 결정
 
