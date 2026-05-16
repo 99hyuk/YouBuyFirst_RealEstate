@@ -21,6 +21,8 @@
 
 현재 `front/`에는 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell이 있습니다. 실제 backend API 연결, 차트 라이브러리 확정, 고충실도 디자인은 아직 하지 않았습니다.
 
+현재 화면과 디자인 도구 핸드오프 기준은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 먼저 봅니다.
+
 ## 프론트 에이전트 시작 지시
 
 사용자가 새 채팅에서 `front 작업`, `프론트 맡아줘`, `화면 와이어프레임 해줘`처럼 짧게 말하면 아래 지시를 사용자가 다시 붙여 넣지 않아도 프론트 에이전트가 스스로 적용합니다.

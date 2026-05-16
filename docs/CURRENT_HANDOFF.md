@@ -20,6 +20,7 @@
 - pipeline에는 source policy gate, skip run 기록, crawl backoff 정책, AI mention resolver/mock provider 흐름이 있습니다.
 - backend에는 `CrawlTarget` queue API와 구조화된 skip/backoff 필드가 들어갔고, pipeline 연결은 후속 작업입니다.
 - front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell 상태입니다. 실제 backend API 연결은 후속 작업입니다.
+- front 와이어프레임 복구 정본은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`입니다. 현재 dashboard는 `Briefing + Terminal` 방향입니다.
 
 ## 최근 결정
 
