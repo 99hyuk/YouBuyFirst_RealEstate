@@ -18,8 +18,19 @@
 4. 제품 방향이 필요한 경우에만 `docs/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 봅니다.
 5. 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 짧게 선언합니다.
 6. 루트 checkout이 아니라 `.worktrees/<task>`에서 작업합니다.
+7. 장기 브랜치에서 작업을 재개할 때는 `origin/main`보다 뒤처졌는지 확인합니다. `AGENTS.md`, `CURRENT_HANDOFF.md`, `DOCUMENTATION_GUIDE.md`, `WORKFLOW.md`, `CHAT_START_GUIDE.md`, `docs/workstreams/*/README.md` 같은 에이전트 행동 규칙 문서가 main에 새로 들어왔으면 먼저 main을 병합합니다.
 
 빈 채팅에서 `뭐 해야 해?`, `다음 뭐하지?`처럼 범위 없이 물으면 바로 구현하지 않고 `docs/CHAT_START_GUIDE.md` 기준으로 트랙 선택을 돕습니다.
+
+## 에이전트 규칙 전파
+
+ops는 에이전트 행동 규칙 PR을 main에 머지한 뒤 열린 worktree 전파 상태를 확인합니다.
+
+1. `git worktree list`와 `git rev-list --left-right --count HEAD...origin/main`으로 열린 브랜치의 ahead/behind를 봅니다.
+2. clean 상태인 활성 브랜치는 `origin/main` 병합을 진행할 수 있습니다.
+3. dirty 상태인 브랜치는 임의 병합하지 않고, 브랜치명과 필요한 조치를 사용자 또는 해당 트랙 에이전트에게 남깁니다.
+4. 규칙 전파 대상은 우선 front/crawl/data/market/trade/agent 같은 장기 작업 브랜치입니다. 이미 머지되었거나 폐기 예정인 ops 보조 브랜치는 정리 후보로 둡니다.
+5. 전파 결과는 완료 보고나 PR 본문에 남깁니다.
 
 ## 구현 중
 
