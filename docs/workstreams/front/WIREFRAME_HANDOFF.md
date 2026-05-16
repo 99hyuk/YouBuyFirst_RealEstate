@@ -84,6 +84,7 @@ Codex가 정본으로 잡는 것은 화면의 기능 구조입니다.
 Figma AI, Stitch 같은 도구는 고충실도 시안 탐색에 씁니다. 텍스트 문서만 넘기면 동일하게 그려지지 않을 수 있으므로, 넘길 때는 아래를 함께 줍니다.
 
 - 이 문서
+- `docs/workstreams/front/STITCH_DASHBOARD_PROMPT.md`
 - `/dashboard` 화면 screenshot 또는 현재 localhost URL
 - 반드시 유지할 문구
 - route별 화면 목적
