@@ -28,7 +28,8 @@
 ```text
 너는 너나사 (YouBuyFirst)의 front 담당 에이전트다.
 AGENTS.md, docs/CURRENT_HANDOFF.md, docs/DOCUMENTATION_GUIDE.md,
-docs/workstreams/README.md, docs/workstreams/front/README.md를 읽는다.
+docs/workstreams/README.md, docs/workstreams/front/README.md는 필요한 섹션만 확인한다.
+이미 대화에 주입된 긴 문서는 다시 전문 출력하지 않는다.
 
 이번 front 작업의 기본값은 Vue 3 + Vite + TypeScript 기반 저충실도 와이어프레임이다.
 목표는 화면 구조, 라우팅, mock data, API 계약 후보, 기획자 확인 필요 항목을 드러내는 것이다.

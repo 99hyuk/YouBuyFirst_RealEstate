@@ -1,176 +1,77 @@
-﻿# 현재 작업 인수인계
+# 현재 작업 인수인계
 
-마지막 갱신: 2026-05-15
+마지막 갱신: 2026-05-16
 
-이 문서는 새 채팅, 병렬 에이전트, 또는 다음 작업자가 가장 먼저 읽는 요약입니다. 문서 읽기 우선순위는 `docs/DOCUMENTATION_GUIDE.md`를 기준으로 봅니다. 자세한 제품 방향은 `docs/FINAL_PRODUCT_PLAN.md`, 현재 MVP 범위는 `docs/PROJECT_BRIEF.md`, 작업 방식은 `docs/WORKFLOW.md`, 채팅 시작 방식은 `docs/CHAT_START_GUIDE.md`, Git/PR 규칙은 `docs/GIT_CONVENTION.md`를 기준으로 봅니다. 크롤링/공개 배포 리스크는 `docs/LEGAL_RISK_CASES.md`, 병렬 작업 트랙은 `docs/workstreams/README.md`를 기준으로 봅니다.
+이 문서는 새 채팅이 방향을 잡는 짧은 요약입니다. 전문 읽기를 기본값으로 두지 말고, 필요한 섹션만 확인합니다. 자세한 규칙은 `docs/DOCUMENTATION_GUIDE.md`, 작업 방식은 `docs/WORKFLOW.md`, PR 규칙은 `docs/GIT_CONVENTION.md`, 트랙 경계는 `docs/workstreams/`를 봅니다.
 
-## 지금까지 한 일
-
-- 너나사 (YouBuyFirst) MVP 저장소를 초기 구성했습니다.
-- Spring Boot 백엔드, Python pipeline, MySQL, Docker Compose 기반 로컬 실행 구성을 만들었습니다.
-- 네이버 종토방과 에펨코리아 게시글 수집, 종목 매칭, LLM provider 추상화, mock 반응 분석 fallback, ingestion API, admin 조회 API를 구현했습니다.
-- 제한 원문 저장 정책을 반영했습니다: 제목, 본문 일부, URL, 작성 시각, 작성자 표시명 해시, 원문 해시만 저장합니다.
-- Swagger에서 crawl run, posts, stock metrics를 확인할 수 있게 했습니다.
-- GitHub Actions CI와 PR 템플릿을 추가했습니다.
-- 최종 기획안, MVP 범위, 작업 목록, 에이전트 인수인계 문서를 추가했습니다.
-- 문서의 제품명은 `너나사 (YouBuyFirst)`로 정리했고, 런타임 식별자도 `com.youbuyfirst`, `youbuyfirst-pipeline`, `youbuyfirst` DB 이름 기준으로 맞췄습니다.
-- 최종 기획에 커뮤니티별 수익률 비교 에이전트, 시세/호가 중심 투자 참고 화면, 소스별 수집 활성화 정책을 반영했습니다.
-- 소스별 활성화 상태 계약을 `docs/superpowers/specs/2026-05-15-source-activation-state-design.md`에 정리했습니다.
-- pipeline에 source policy registry와 scheduler gate를 구현했습니다. 로컬 Compose는 `CRAWL_RUNTIME_ENV=local`로 실행하고, 기본 MVP 소스는 local research 범위에서 실행됩니다.
-- source policy로 skip된 수집 실행도 backend `crawl_runs`에 `SKIPPED` 상태로 기록되도록 연결했습니다. `/admin/crawl-runs`에서 source, runId, status, errorMessage로 skip 사유를 확인합니다.
-- pipeline에 in-memory crawl backoff 정책을 추가했습니다. 차단/레이트 리밋 신호는 6시간, 일시적 네트워크/서버 오류는 15분, 알 수 없는 crawler 오류는 60분 동안 같은 프로세스에서 외부 fetch를 쉬게 합니다.
-- persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계를 추가했습니다. source policy는 소스 실행 가능 여부를 정하는 상위 게이트로 두고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/종목을 언제 다시 수집할지 정하는 실행 단위로 분리합니다.
-- backend에 `crawl_targets` migration, admin target 조회, worker claim/complete API를 추가했습니다. 이제 관리자는 어떤 수집 대상이 활성/대기/backoff 상태인지 구조화된 필드로 볼 수 있고, pipeline은 다음 PR에서 이 API를 호출해 DB 기반 큐를 사용할 수 있습니다.
-- `crawl_runs`에 `targetId`, `targetKind`, `backoffCategory`, `backoffUntil`, `backoffReason`, `skipReason` 구조화 필드를 추가했습니다. skip/backoff 이유를 더 이상 `errorMessage` 문자열만 파싱하지 않아도 됩니다.
-- data 트랙에서 별칭 중첩 매칭을 보강하고, AI mention resolver 계약과 pipeline filtering을 구현했습니다. `OPENAI_API_KEY`가 없으면 mock provider가 테스트/데모용 판단을 수행합니다.
-- front 트랙에서 화면 라우팅 인벤토리 설계와 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell을 추가했습니다.
-- 병렬 작업은 루트 checkout을 공유하지 않고 프로젝트 하위 `.worktrees/<task>`에서 진행하도록 정리했습니다.
-- 제품 용어는 `감성` 대신 사용자 화면에서는 `커뮤니티 반응`, 문서/기술 설명에서는 `커뮤니티 반응 데이터`를 기준으로 씁니다. 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`입니다.
-- 크롤링 분쟁 사례와 공개 배포 리스크를 별도 문서로 정리했습니다.
-- 여러 채팅이 동시에 일할 수 있도록 일곱 개의 병렬 작업 트랙 문서를 추가했습니다.
-- GitHub 라벨 체계를 `track:*`, `type:*`, `part:*`, `size:*`로 정리했습니다.
-- Python 실행 단위 이름을 `worker`에서 `pipeline`으로 정리했습니다.
-- 트랙 이름은 작업 관리 단위로 유지하고, 코드 패키지는 도메인 단위로 정리하기로 했습니다. 목표 도메인 패키지 이름은 `stock`, `analysis`, `indicator`, `market`, `trade`, `agent`입니다.
-
-## 최근 결정
-
-- 사용자용 PowerShell 스크립트는 두지 않습니다.
-- 최우선 협업 원칙은 "무조건 수용하지 않기"입니다. Codex는 사용자의 요구가 제품 목표, 법적/운영 리스크, 트랙 경계, 검증 가능성, 문서 보존 원칙과 충돌하면 먼저 질문하거나 반박합니다.
-- PR 생성, 라벨 지정, CI 확인, merge는 Codex/에이전트가 `git`과 `gh`로 직접 처리합니다.
-- PR 설명과 커밋 본문은 한국어로 작성합니다.
-- PR 제목은 `[트랙][타입] 명사형 요약` 형식을 사용합니다. 예: `[ops][docs] 에이전트 가이드와 PR 문장 정리`. `~한다`, `~했다`, `~함`처럼 동사형이나 축약형으로 끝내지 않습니다.
-- PR 본문은 PR #7처럼 카드형 구조로 씁니다. 검증 섹션에는 명령어 나열보다 사람이 읽을 수 있는 통과 결과와 확인 사실을 먼저 적습니다.
-- 사용자에게 완료 보고를 할 때는 파일명이나 내부 상태값보다 “이제 무엇을 판단할 수 있게 됐는지”를 먼저 설명합니다. 기술 용어는 쓰되 처음 등장할 때 바로 쉬운 설명을 붙입니다. 예: `source policy`, 즉 “어떤 커뮤니티를 지금 수집해도 되는지 정한 설정”; `crawl_runs`, 즉 “수집 시도 기록”; `SKIPPED`, 즉 “조건 때문에 실행하지 않고 건너뜀”.
-- 완료 보고에는 Superpowers/gstack 사용 여부와 이유를 짧게 적습니다. Superpowers는 작업 절차와 검증 게이트, gstack은 실제 브라우저 화면/콘솔/반응형 확인에 쓴 경우를 말합니다. 쓰지 않은 경우도 `gstack 미사용: 문서 전용 작업이라 브라우저 확인 대상 없음`처럼 이유를 남깁니다.
-- 한국어 PR 본문은 PowerShell pipeline/stdin으로 `gh`에 넘기지 않습니다. UTF-8 no BOM 파일을 만들고 `gh --body-file <path>`를 사용한 뒤 저장된 본문을 확인합니다.
-- PR 본문과 Notion 작업일지는 같은 카드 구조를 씁니다: 한눈에 보기, 변경 내용, PR 범위, 검증 결과, 리스크, 다음 에이전트 메모, 라벨/태그 참고.
-- GitHub 라벨과 Notion 태그 의미는 `docs/LABEL_GUIDE.md`를 기준으로 봅니다.
-- Notion 허브는 B + A 하이브리드 구조를 씁니다: 첫 화면은 command center, 세부 기록은 PR 카드 로그입니다.
-- 문서는 길게 누적하지 않고 계층화합니다. 매번 읽는 문서와 검색용 기록은 `docs/DOCUMENTATION_GUIDE.md`를 기준으로 구분합니다.
-- 개발자 기술 경험은 작업일지보다 자세히 기록합니다. 반복 가능성이 있는 제품 개발/운영 문제는 `docs/TROUBLESHOOTING_GUIDE.md` 구조로 Notion 개발자 기술 경험 DB의 `문제해결` 유형에 남깁니다. Codex/Notion/GitHub PR/문서 운영 사고는 에이전트 운영 로그 DB에 분리합니다.
-- 너무 큰 PR을 피하기 위해 5개 파일 이하를 선호하고, 10개 파일을 넘으면 분리 가능성을 먼저 검토합니다.
-- 30분 커뮤니티 집계는 제품 핵심으로 유지합니다.
-- 공개 배포 시 원문 재게시, 작성자 추적, 닉네임 랭킹은 하지 않고 집계 지표와 AI 재서술 근거 중심으로 표시합니다.
-- 소스별 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다.
-- 새 소스는 기본적으로 `disabled`에서 시작합니다. 현재 MVP 소스도 공개 배포 전에는 별도 검토 없이 `enabled`로 올리지 않습니다.
-- 네이버/에펨코리아/디시/토스는 약관과 robots 정책 리스크가 있으므로 공개 운영 전에 소스별 검토가 필요합니다.
-- 병렬 작업은 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops` 일곱 트랙으로 나눕니다.
-- 루트 `C:\agents\YouBuyFirst` checkout은 main/조율용으로 둡니다. 병렬 작업자는 `C:\agents\YouBuyFirst\.worktrees\<task>` 아래 worktree에서만 브랜치를 전환하고 작업합니다.
-- 사용자가 `crawl 작업`, `front 작업`, `ops로 Notion 정리`처럼 짧게 말해도 에이전트가 긴 역할 프롬프트를 자동 확장합니다. 사용자가 매번 읽을 문서, 범위 제한, PR 규칙을 반복해서 말할 필요는 없습니다.
-- 작업 시작 시 에이전트는 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 스스로 짧게 선언합니다. 예: `작업 트랙: ops / 수정 대상: Notion / 기록 위치: 작업 로그 + 필요 시 에이전트 운영 로그 / 위험: child DB 보존`.
-- 빈 채팅에서 사용자가 `뭐 해야 해?`, `다음 뭐하지?`처럼 물으면 바로 구현하지 않고 `docs/CHAT_START_GUIDE.md` 기준으로 트랙 설명과 가까운 다음 작업 후보를 보여준 뒤 트랙 선택을 돕습니다.
-- 각 트랙 에이전트는 자기 PR과 작업 로그를 갱신합니다. `ops` 기획 에이전트는 루트 대시보드, 트랙별 진행판, 제품 기획과 작업 맥락을 주기적으로 점검하고 정리합니다.
-- 병렬 작업 PR에는 `track:crawl`, `track:data`, `track:market`, `track:trade`, `track:agent`, `track:front`, `track:ops` 중 하나를 붙이고, Notion 작업 카드의 `트랙` 속성도 채웁니다.
-- `type:*`는 작업 타입, `track:*`는 작업 트랙, `part:*`는 변경 파트입니다. `part:*`는 실제 파일이나 리뷰 경로를 드러낼 때만 붙이는 보조 라벨입니다.
-- Notion 작업 로그와 다음 작업 DB에서는 같은 의미를 `변경 파트` 컬럼으로 기록합니다.
-- 프론트 작업은 `front` 트랙으로 시작하고 `track:front` 라벨을 붙입니다. 화면 파일을 직접 바꾸면 `part:front`도 함께 붙입니다.
-- `front` 트랙의 초기 기본값은 `Vue 3 + Vite + TypeScript` 기반 저충실도 와이어프레임입니다. 목적은 최종 디자인 확정이 아니라 화면 구조, 라우팅, mock data, API 계약 후보, `기획자 확인 필요` 항목을 드러내는 것입니다.
-- Figma AI, Stitch 같은 디자인 도구는 시안 탐색용으로만 쓰고, 초기 front 작업의 정본은 repo 코드와 문서입니다. 브랜드 컬러, 고충실도 UI, 일러스트, 최종 디자인 시스템은 후순위로 둡니다.
-- 기획/조율/문서/Notion/PR 운영은 `ops` 트랙이 맡습니다.
-- 시세 수집은 `market`, 모의 체결은 `trade`, AI 에이전트 판단은 `agent`가 맡습니다. 세 작업을 같은 PR에 섞지 않습니다.
-- 의존이 적은 작업은 단위 테스트 후 `main`으로 바로 PR을 보냅니다. 결합이 강한 작업만 짧은 수명의 `track/*` 브랜치에서 통합 테스트 후 `main`으로 보냅니다.
-- Notion의 현재 정본 기록 구조는 `개발자 기술 경험 DB`와 `에이전트 운영 로그 DB`로 분리합니다.
-- 개발자 기술 경험은 `문제해결`, `성능개선`, `품질개선`, `기술결정`으로 구분합니다.
-- 포트폴리오 후보는 `대표`, `보조`, `기록`으로 나누며, 단순 에이전트/도구 운영 이슈는 포트폴리오 경험처럼 쓰지 않고 에이전트 운영 로그에 둡니다.
-- Notion 루트는 전체 DB를 inline으로 펼치지 않고, 최근 요약과 이동 링크만 둡니다.
-- Notion 루트/Archive를 수정할 때 `allow_deleting_content`는 피합니다. child page/database 링크 블록을 삭제할 수 있어, 레이아웃 정리는 `update_content` 중심으로 합니다.
-- Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기술 경험 기록, 에이전트 운영 로그, Archive 변경은 사용자용 정보 구조 변경으로 취급합니다. 변경 전 fetch와 child link 확인, 사용자 UI와 운영 규칙 분리, 후보안 또는 작은 섹션 단위 변경, 변경 후 루트/핵심 카드 재확인을 거칩니다.
-- 문서에 이미 있는 원칙을 따르지 않았거나 사용자가 그런 가능성을 지적하면 `docs/WORKFLOW.md`의 문서 미준수 사고 분석 게이트를 먼저 적용합니다. 어떤 문서를 놓쳤는지, 왜 놓쳤는지, 무엇이 손상됐는지, 어떻게 복구하고 재발 방지할지 확인한 뒤 에이전트 운영 로그에 남깁니다.
-- 기존 Notion 원본 DB parent가 삭제 표시되어 새 Archive 아래에 작업 로그/기술 경험 기록/다음 작업 DB를 다시 만들었습니다. 새 작업은 현재 Notion 상태의 data source id만 사용합니다.
-
-## 현재 GitHub 상태
+## 현재 상태
 
 - Repository: `99hyuk/YouBuyFirst`
 - Default branch: `main`
-- 최근 merge: PR #46 `[ops][docs] 사용자 이해 중심 완료 보고 규칙`
-- 최근 merge: PR #45 `[crawl][feat] 실패 원인별 backoff 정책`
-- 최근 merge: PR #39 `[front][feat] Vue 와이어프레임 shell`
-- 최근 merge: PR #38 `[crawl][feat] 소스 정책 실행 게이트`
-- 최근 merge: PR #37 `[ops][docs] 소스 활성화 상태 계약`
-- 최근 merge: PR #36 `[front][docs] 화면 라우팅 인벤토리 설계`
-- 최근 merge: PR #35 `[data][feat] AI 종목 언급 검증 계약`
-- 최근 merge: PR #34 `[ops][chore] 프로젝트 worktree 디렉터리 제외`
-- 최근 merge: PR #33 `[crawl][fix] 게시판 parser 견고화`
-- 현재 Draft PR: PR #43 `[front][feat] 대시보드 콘텐츠 구조 보강`
-- Bootstrap PR: https://github.com/99hyuk/YouBuyFirst/pull/1
-- PR #1 상태: CI 통과 후 squash merge 완료
-- GitHub labels: `track:*`, `type:*`, `size:*`, `part:*` 라벨 생성 완료
-- 현재 작업 타입 라벨은 `feat`, `fix`, `docs`, `refactor`, `perf`, `chore`만 씁니다.
-- 현재 checkout은 작업자별로 달라질 수 있으므로 `git status --short --branch`로 확인합니다.
+- 루트 checkout: `C:\agents\YouBuyFirst`는 main/조율용
+- 병렬 작업 위치: `C:\agents\YouBuyFirst\.worktrees\<task>`
+- 현재 열려 있는 최적화 PR: PR #52 `[ops][docs] 채팅 안정성 규칙`
+- 최근 핵심 기반: Spring Boot backend, Python pipeline, MySQL, Docker Compose, Vue 3 front mock shell
 
-## 현재 Notion 상태
+## 제품/구현 스냅샷
+
+- MVP는 네이버 종토방과 에펨코리아 주식 게시판 글을 수집하고, 종목 언급과 반응 방향을 분석해 backend에 저장합니다.
+- backend에는 ingestion/admin API, crawl run 조회, posts 조회, stock metrics 조회가 있습니다.
+- pipeline에는 source policy gate, skip run 기록, crawl backoff 정책, AI mention resolver/mock provider 흐름이 있습니다.
+- backend에는 `CrawlTarget` queue API와 구조화된 skip/backoff 필드가 들어갔고, pipeline 연결은 후속 작업입니다.
+- front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell 상태입니다. 실제 backend API 연결은 후속 작업입니다.
+
+## 최근 결정
+
+- 문서는 길게 누적하지 않습니다. `AGENTS.md`, 이 문서, 스킬 문서, Notion, 세션 로그는 필요한 섹션만 봅니다.
+- 채팅이 `앗, 오류가 발생했습니다`로 막히면 제품 코드보다 대화 컨텍스트/도구 출력 과다를 먼저 의심합니다.
+- 스킬 문서, gstack, Notion fetch, 세션 로그 검색은 시작 루틴이 아닙니다.
+- gstack은 front/UI 변경처럼 실제 브라우저 확인 가치가 있을 때 사용하고, 콘솔/DOM 전문은 대화에 누적하지 않습니다.
+- 시작 문서나 트랙 문서를 바꾸는 PR은 컨텍스트 예산을 점검하되, 미완료 작업과 필수 검증은 줄이지 않습니다.
+- 제품 용어는 사용자 화면에서 `커뮤니티 반응`, 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`을 씁니다.
+- 소스 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나눕니다. 새 소스는 기본 `disabled`입니다.
+- 공개 배포 전에는 원문 재게시, 작성자 추적, 닉네임 랭킹을 하지 않습니다.
+- PR 제목은 `[트랙][타입] 명사형 요약`, 브랜치는 `codex/<task>`를 씁니다.
+- 한국어 PR 본문은 UTF-8 no BOM 파일과 `gh --body-file`을 사용합니다.
+
+## 트랙별 바로 보기
+
+- `crawl`: source policy, crawl target queue, backoff, source adapter
+- `data`: stock alias, mention resolver, reaction direction, 30분 집계
+- `market`: quote snapshot/cache/WebSocket 계약
+- `trade`: 가상 계좌, 주문, 체결, 포트폴리오
+- `agent`: AI 매매 판단, 커뮤니티별 성과 비교, 결정 로그
+- `front`: dashboard shell, mock/API 연결, 브라우저 QA
+- `ops`: 문서, Notion, PR/CI, 배포 정책, 작업 조율
+
+## 현재 Notion 정본
 
 - Project hub: https://www.notion.so/35fdf321bd89809b87e4fc8eae4c2e77
 - Archive & Admin: https://www.notion.so/360df321bd8981a6a60df71bca8bad5d
 - 제품 기획과 작업 맥락: https://www.notion.so/360df321bd89815c9767e703058990db
-- 작업 로그 DB data source: `collection://be609137-1bd8-4b22-989e-a987a8185135`
-- 개발자 기술 경험: https://www.notion.so/360df321bd89819aa871fe52c1a5cc56
-- 개발자 기술 경험 DB data source: `collection://7f052514-c585-4621-ad28-b54bb2eac5a8`
-- 에이전트 운영 로그: https://www.notion.so/360df321bd89818989d4f2de0d77da06
-- 에이전트 운영 로그 DB data source: `collection://8646042e-8ea0-4dd5-a056-c01a8ec096ec`
-- Legacy 기술 경험 기록 DB data source: `collection://95866ee7-17cb-412b-a9c8-80b1fde414dc`는 이전 구조 기록 확인용입니다. 새 기록의 정본으로 쓰지 않습니다.
-- 다음 작업 DB data source: `collection://ecdda994-6376-489d-bd83-4cfbadb6de70`
-- GitHub PR 운영 메모: https://www.notion.so/35fdf321bd89815c9808ff01a683f4bc
-- 작업일지는 작업 로그 DB에 남기는 PR별 카드형 기록을 뜻합니다.
-- 작업 로그 DB와 다음 작업 DB는 `변경 파트` 컬럼을 사용합니다.
-- 작업이 끝나면 핵심 변경, 검증 결과, PR 링크, 다음 작업자 메모를 Notion 작업일지에 남깁니다.
-- 제품 개발/운영 트러블슈팅은 개발자 기술 경험 DB의 `문제해결` 유형으로 남깁니다. 성능 개선, 품질 개선, 기술 결정은 `docs/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 종류와 포트폴리오 후보를 선택합니다. 에이전트/도구 운영 사고는 에이전트 운영 로그 DB에 남깁니다.
-- 도메인 패키지 이름 기준은 `docs/DOMAIN_PACKAGE_GUIDE.md`를 봅니다. 현재 코드에 남아 있는 `instrument`, `sentiment`, `metrics` 패키지 리네임은 후속 PR로 분리합니다.
-- 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/COMMUNITY_REACTION_GUIDE.md`를 봅니다.
-- 프론트 와이어프레임 전략과 front 에이전트 시작 지시는 `docs/workstreams/front/README.md`를 봅니다.
-- front 앱은 `front/` 디렉터리에 있습니다. 현재는 mock fixture 기반 와이어프레임 shell이며 실제 backend API 연결은 후속 PR입니다.
+- 작업 로그 DB: `collection://be609137-1bd8-4b22-989e-a987a8185135`
+- 개발자 기술 경험 DB: `collection://7f052514-c585-4621-ad28-b54bb2eac5a8`
+- 에이전트 운영 로그 DB: `collection://8646042e-8ea0-4dd5-a056-c01a8ec096ec`
+- 다음 작업 DB: `collection://ecdda994-6376-489d-bd83-4cfbadb6de70`
 
-## 마지막 검증 기록
+Notion 구조 변경은 전체 fetch가 아니라 대상 page/database 하나씩 확인합니다. 루트/Archive/주요 DB를 바꾸면 child link 보존 여부를 먼저 봅니다.
 
-- CrawlTarget backend API branch: Backend Docker test 통과, 8 tests
-- CrawlTarget backend API branch: `git diff --check` 통과
-- CrawlTarget backend API branch: placeholder scan 통과
-- Crawl target queue design branch: `git diff --check` 통과
-- Crawl target queue design branch: 새 설계 문서 placeholder scan 통과
-- Crawl backoff policy branch: Pipeline Docker test 통과, 30 tests
-- Crawl backoff policy branch: `git diff --check` 통과
-- Crawl skip run record branch: Backend Docker test 통과, 3 tests
-- Crawl skip run record branch: Pipeline Docker test 통과, 24 tests
-- Crawl skip run record branch: `git diff --check` 통과
-- Front Vue shell branch: `npm test --prefix front` 통과, `npm run build --prefix front` 통과
-- Crawl source policy gate branch: pipeline pytest 통과, source policy skip 테스트 통과
-- Data AI mention resolver branch: pipeline pytest 통과, mock/OpenAI provider 계약 테스트 통과
-- Data alias matcher branch: pipeline pytest 통과
-- Ops worktree branch: Backend/Pipeline GitHub Actions 통과, `.worktrees/` ignore 확인
-- Label/part/pipeline branch: Pipeline Docker test 통과, 4 tests
-- Label/part/pipeline branch: Docker Compose config service가 `mysql`, `backend`, `pipeline`으로 출력됨
-- Label/part/pipeline branch: GitHub labels가 `track:*`, `type:*`, `part:*`, `size:*` 체계로 정리됨
-- Label/part/pipeline branch: Notion 라벨/태그 사전과 DB `변경 파트` schema 확인
-- Label/part/pipeline branch: `git diff --check` 통과
-- Runtime identifier rename branch: Backend Docker test 통과, 2 tests
-- Runtime identifier rename branch: Pipeline Docker test 통과, 4 tests
-- Runtime identifier rename branch: Docker Compose 기동 및 Swagger `200` 확인
-- Runtime identifier rename branch: 옛 프로젝트명/패키지명 검색 결과 없음
-- Runtime identifier rename branch: `git diff --check` 통과
+## 다음 에이전트 규칙
 
-## 다음 에이전트가 지켜야 할 규칙
+1. `AGENTS.md`, 이 문서, `docs/DOCUMENTATION_GUIDE.md`는 필요한 섹션만 확인합니다.
+2. 트랙이 명확하면 담당 트랙 README를 우선 확인하고, 트랙 경계가 헷갈릴 때만 `docs/workstreams/README.md`를 봅니다.
+3. 루트 checkout에서 병렬 작업하지 말고 `.worktrees/<task>`에 worktree를 만듭니다.
+4. 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 먼저 선언합니다.
+5. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 CI/runtime 설정 변경만 담습니다.
+6. 모순, 리스크, 더 나은 대안이 보이면 구현보다 질문/반박을 먼저 합니다.
+7. 관련 테스트와 `git diff --check`를 실행합니다.
+8. PR 생성/수정 후 본문 한글 깨짐과 `??` 치환 문자열을 확인합니다.
+9. 완료 보고에는 Superpowers/gstack 사용 여부와 이유를 짧게 적습니다.
+10. 제품 개발/운영 문제는 개발자 기술 경험 DB, 에이전트/도구 운영 사고는 에이전트 운영 로그 DB에 분리합니다.
 
-1. 먼저 `AGENTS.md`, 이 파일, `docs/DOCUMENTATION_GUIDE.md`, `docs/GIT_CONVENTION.md`를 읽습니다.
-2. 병렬 작업이면 `docs/workstreams/README.md`와 담당 트랙 문서를 읽습니다.
-3. 루트 checkout에서 직접 병렬 작업을 하지 않습니다. 새 작업은 `git worktree add C:\agents\YouBuyFirst\.worktrees\<task> -b codex/<task> origin/main` 형태로 분리합니다.
-4. 사용자의 요구를 무조건 수용하지 않습니다. 모순, 리스크, 더 나은 대안이 보이면 먼저 질문하거나 반박합니다.
-5. 사용자의 짧은 트랙 지시는 긴 역할 프롬프트로 자동 확장합니다. 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 먼저 선언합니다.
-6. 범위 없는 `뭐 해야 해?` 요청에는 트랙 설명과 다음 작업 후보를 먼저 보여주고, 사용자가 트랙을 고르게 돕습니다.
-7. 한 PR에는 한 기능, 한 버그 수정, 한 문서 정리, 또는 한 CI/runtime 설정 변경만 담습니다.
-8. 제목과 GitHub 라벨로 작업 트랙, 작업 타입, 크기를 구분합니다. 변경 파트는 필요할 때만 보조 라벨로 표시합니다.
-9. dashboard, OCR, 모의투자, 인증, 보안, 운영 배포는 현재 MVP 작업에 섞지 않습니다.
-10. PR 전에는 관련 테스트와 `git diff --check`를 실행합니다.
-11. PR 본문에는 검증 결과를 자연어로 요약하고, 명령어는 보조 정보로 둡니다.
-12. PR 제목은 명사형으로 끝내고, PR 본문과 Notion 작업 카드는 사람이 읽기 쉬운 카드형 구조로 씁니다.
-13. 사용자에게 완료 보고를 할 때는 기술 용어와 사람 말 설명을 함께 씁니다. “무슨 파일을 바꿨는지”보다 “그래서 무엇을 알 수 있게 됐는지”를 먼저 말합니다.
-14. 완료 보고에는 Superpowers/gstack 사용 여부와 이유를 적습니다. 특히 front 화면 작업은 gstack으로 실제 브라우저 확인을 우선합니다.
-15. PR 생성/수정 후 `gh pr view --json body --jq .body`와 `??` 검색으로 한글 깨짐이 없는지 확인합니다.
-16. 제품 개발/운영 문제를 조사했거나 반복 가능성이 있으면 Notion 개발자 기술 경험 DB에 상세 기록을 남깁니다. Codex/Notion/PR/문서 운영 사고는 에이전트 운영 로그 DB에 남깁니다.
-17. CI가 통과하면 squash merge하고 브랜치와 worktree를 정리합니다.
+## 가까운 다음 작업 후보
 
-## 가장 가까운 다음 작업 후보
-
-- pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
+- pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback 유지
 - admin target pause/resume/clear-backoff API와 화면 액션 연결
 - front shell 브라우저 QA와 기획자 확인 필요 항목 정리
 - market quote snapshot 계약 설계

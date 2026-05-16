@@ -1,58 +1,14 @@
-﻿# 너나사 (YouBuyFirst) 작업 목록
+# 너나사 (YouBuyFirst) 작업 목록
 
-## 완료된 초기 MVP 작업
+이 문서는 다음 행동을 고르기 위한 짧은 목록입니다. 완료 상세 이력은 PR, Notion 작업 로그, `docs/work-units/`에서 찾습니다.
 
-- [x] Spring Boot ingestion API 추가
-- [x] MySQL/Flyway schema 추가
-- [x] Swagger admin 조회 API 추가
-- [x] Python pipeline skeleton 추가
-- [x] 네이버 종토방 crawler adapter 추가
-- [x] 에펨코리아 crawler adapter 추가
-- [x] crawler fixture test 추가
-- [x] 종목 별칭 matcher 추가
-- [x] LLM provider abstraction 추가
-- [x] Docker Compose 로컬 실행 구성
-- [x] 프로젝트 공통 기획/에이전트 문서 추가
-- [x] GitHub Actions CI 추가
-- [x] 작업 단위 문서 체계 추가
-- [x] 최종 제품 기획안 문서 추가
-- [x] 프로젝트명/런타임 식별자를 너나사 (YouBuyFirst) 기준으로 정리
-- [x] PR 본문을 사람이 읽기 쉬운 결과 중심 형식으로 개선
-- [x] Notion 작업일지/트러블슈팅 허브 생성
-- [x] Notion 허브와 PR 템플릿을 B + A 하이브리드 UI 구조로 개선
-- [x] 최종 기획에 커뮤니티별 수익률 비교 에이전트 반영
-- [x] 크롤링 리스크 사례와 공개 배포 정책 문서화
-- [x] 병렬 작업 트랙 문서 추가
-- [x] GitHub/PR/Notion 병렬 작업 트랙 표시 기준 추가
-- [x] 프론트 lane과 market 내부 lane 기준 추가
-- [x] 프론트를 별도 화면 트랙으로 분리하고 이후 `front`로 단축
-- [x] 의존도에 따른 `main`/`track/*` 하이브리드 브랜치 전략 정리
-- [x] PR/Notion 카드형 기록과 라벨/태그 사전 정리
-- [x] AGENTS 범위 설명과 PR 라벨/문장 체계 정리
-- [x] 라벨 설명을 작업 트랙/작업 타입/변경 파트로 명확화
-- [x] 문서 구조와 트러블슈팅 기록 기준 정리
-- [x] 병렬 트랙을 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops`로 재정리
-- [x] GitHub/Notion 라벨 체계를 `area:*`에서 `part:*`와 `변경 파트`로 정리
-- [x] Python 실행 단위와 패키지를 `worker`에서 `pipeline`으로 정리
-- [x] PR 본문 한글 깨짐 방지를 위한 `gh --body-file` UTF-8 규칙 추가
-- [x] GitHub CLI 인증 확인
-- [x] GitHub remote 연결
-- [x] 첫 bootstrap PR 생성
-- [x] 첫 bootstrap PR merge
-- [x] Notion 기술 경험 기록 체계 설계
-- [x] 기술 경험 기록 체계 repo 문서 반영
-- [x] 기술 경험 기록 DB의 기존 주요 카드 분류 보정
-- [x] 개발자 기술 경험 DB와 에이전트 운영 로그 DB의 정본 역할 분리
-- [x] 프로젝트 하위 `.worktrees/` 기반 병렬 작업 기준 반영
-- [x] data 별칭 중첩 매칭 보강
-- [x] data AI 종목 언급 검증 계약과 pipeline filtering 구현
-- [x] crawl source policy registry와 scheduler gate 구현
-- [x] crawl source policy skip 상태를 crawl run 기록에 표시
-- [x] crawl run 실패/차단 원인별 in-memory backoff 정책 추가
-- [x] crawl persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계
-- [x] crawl `CrawlTarget` backend migration과 claim/complete API 구현
-- [x] front 화면 라우팅 인벤토리 설계
-- [x] front Vue 3 + Vite + TypeScript 와이어프레임 shell 구현
+## 완료 요약
+
+- ingestion MVP: Spring Boot backend, MySQL/Flyway, Swagger admin API, Python pipeline, 네이버/에펨코리아 crawler, fixture test, 별칭 matcher, LLM provider abstraction, Docker Compose.
+- 협업 기반: 공통 기획/에이전트 문서, GitHub Actions CI, 작업 단위 문서, 최종 제품 기획, GitHub remote/CLI 인증, bootstrap PR merge.
+- 운영 체계: PR 카드형 본문, UTF-8 body-file 규칙, Notion 작업일지/트러블슈팅 허브, 개발자 기술 경험 DB와 에이전트 운영 로그 DB 분리.
+- 트랙 체계: `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops` 분리, `track:*`/`type:*`/`part:*`/`size:*` 라벨 기준, `.worktrees/` 병렬 작업 기준.
+- 최근 기능 기반: data 별칭 중첩 매칭, AI 종목 언급 검증 계약과 filtering, crawl source policy registry와 scheduler gate, crawl run skip/backoff 기록, persistent `CrawlTarget` 설계와 backend API, front Vue 3 + Vite + TypeScript shell.
 
 ## 지금 가장 가까운 작업
 
@@ -68,7 +24,7 @@
 - [ ] pipeline이 backend readiness를 기다린 뒤 첫 배치를 실행하도록 개선
 - [ ] `POST /internal/ingestions/community-posts` payload 예시를 Swagger에 추가
 
-## 다음 MVP 작업 후보
+## 다음 MVP 후보
 
 - [ ] 종목 마스터 CSV를 국내 전체 + 미국 주식/ETF 데이터로 확장
 - [ ] retention cleanup 테스트 추가
@@ -79,7 +35,7 @@
 - [ ] 공개 배포 가능한 시세 provider 조사
 - [ ] Docker Compose smoke test 정리
 
-## 최종 제품 후순위 작업
+## 후순위 제품 작업
 
 - [ ] 커뮤니티 반응 대시보드 UI
 - [ ] 반응 지표와 시세를 함께 보여주는 투자 참고 화면
@@ -94,10 +50,10 @@
 - [ ] Spring Security 인증/인가
 - [ ] 운영 배포와 모니터링
 
-## Agent Notes
+## 작업 메모
 
 - 작업 단위는 하나의 체크박스 또는 강하게 묶인 2-3개 체크박스로 제한합니다.
 - 작업을 시작하면 `codex/<task-name>` 브랜치에서 진행합니다.
 - 구현 전에 관련 테스트를 먼저 추가하거나 기존 테스트를 확장합니다.
 - PR 설명에는 변경 범위, 사람이 읽기 쉬운 검증 결과, 남은 리스크를 포함합니다.
-- 여러 채팅으로 병렬 작업할 때는 `docs/workstreams/README.md`와 해당 트랙 문서를 먼저 읽고 서로 다른 파일/모듈을 소유하도록 나눕니다.
+- 병렬 작업은 담당 트랙 문서의 관련 섹션을 먼저 확인하고, 트랙 경계가 헷갈릴 때만 `docs/workstreams/README.md`를 봅니다.
