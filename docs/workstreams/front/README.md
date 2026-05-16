@@ -32,6 +32,8 @@
 AGENTS.md, docs/CURRENT_HANDOFF.md, docs/DOCUMENTATION_GUIDE.md,
 docs/workstreams/README.md, docs/workstreams/front/README.md는 필요한 섹션만 확인한다.
 이미 대화에 주입된 긴 문서는 다시 전문 출력하지 않는다.
+docs/superpowers/specs, docs/superpowers/plans는 과거 archive이므로 현재 handoff가 부족할 때만 파일 1개와 키워드 1개로 좁혀 본다.
+Browser/gstack 검증은 구현 후 화면 확인 가치가 있을 때 한 번에 모아 실행하고, 스킬 문서/콘솔/DOM 전문은 출력하지 않는다.
 
 이번 front 작업의 기본값은 Vue 3 + Vite + TypeScript 기반 저충실도 와이어프레임이다.
 목표는 화면 구조, 라우팅, mock data, API 계약 후보, 기획자 확인 필요 항목을 드러내는 것이다.
