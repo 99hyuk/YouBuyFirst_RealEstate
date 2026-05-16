@@ -18,6 +18,8 @@
 - backend에는 ingestion/admin API, crawl run/posts/stock metrics 조회, `CrawlTarget` queue API가 있습니다.
 - pipeline에는 source policy gate, skip run 기록, crawl backoff, AI mention resolver/mock provider 흐름이 있습니다.
 - front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드 정본은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`, Stitch 프롬프트는 `docs/workstreams/front/STITCH_DASHBOARD_PROMPT.md`입니다.
+- 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
+- 기획 정리 구간은 front-first discovery로 갑니다. mock 화면을 먼저 세우고, API/데이터 계약은 화면에서 필요한 항목을 역으로 도출합니다.
 
 ## 최근 결정
 
@@ -43,9 +45,12 @@
 
 ## 다음 작업 후보
 
+- front shell 브라우저 QA와 기획자 확인 필요 항목 정리
+- front 메인 대시보드 와이어프레임 보강
+- front 관심종목 브리핑과 종목 이벤트 타임라인 와이어프레임 설계
+- 관심종목, 최신 기사/공시, 신호 신뢰도 API 후보 설계
 - pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback 유지
 - admin target pause/resume/clear-backoff API와 화면 액션 연결
-- front shell 브라우저 QA와 기획자 확인 필요 항목 정리
 - market quote snapshot 계약 설계
 - 실제 `OPENAI_API_KEY` 기반 AI mention resolver 샘플 품질 확인
 - pipeline이 backend readiness를 기다리도록 개선

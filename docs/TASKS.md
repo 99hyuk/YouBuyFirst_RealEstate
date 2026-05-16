@@ -12,9 +12,12 @@
 
 ## 지금 가장 가까운 작업
 
+- [ ] front shell 브라우저 QA와 기획자 확인 필요 항목 정리
+- [ ] front 메인 대시보드 와이어프레임 보강
+- [ ] front 관심종목 브리핑과 종목 이벤트 타임라인 와이어프레임 설계
+- [ ] 관심종목, 최신 기사/공시, 신호 신뢰도 API 후보 설계
 - [ ] pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
 - [ ] admin target pause/resume/clear-backoff API와 화면 액션 연결
-- [ ] front shell 브라우저 QA와 기획자 확인 필요 항목 정리
 - [ ] `market` 트랙에서 quote snapshot 계약 설계
 - [ ] `trade` 트랙에서 모의 계좌와 주문/체결 최소 도메인 설계
 - [ ] `agent` 트랙에서 역발상 페르소나 입력 contract 설계
@@ -29,6 +32,9 @@
 - [ ] 종목 마스터 CSV를 국내 전체 + 미국 주식/ETF 데이터로 확장
 - [ ] retention cleanup 테스트 추가
 - [ ] 사용자용 analysis ranking/indicator API 추가
+- [ ] 관심종목 브리핑 API와 종목 이벤트 타임라인 API 설계
+- [ ] 최신 기사/공시 메타데이터 수집 정책과 링크 표시 기준 정리
+- [ ] 신호 신뢰도/주의 배지 산정 기준 정리
 - [ ] 30분 집계 산식 검증 테스트 추가
 - [ ] 실제 `OPENAI_API_KEY` 기반 AI mention resolver 샘플 품질 확인
 - [ ] 커뮤니티별 성과 비교 snapshot 모델 설계
@@ -38,6 +44,9 @@
 ## 후순위 제품 작업
 
 - [ ] 커뮤니티 반응 대시보드 UI
+- [ ] 관심종목 브리핑
+- [ ] 종목별 최신 기사/공시 리스트와 이벤트 타임라인
+- [ ] 신호 신뢰도/주의 배지
 - [ ] 반응 지표와 시세를 함께 보여주는 투자 참고 화면
 - [ ] AI 3줄 요약
 - [ ] 커뮤니티별 수익률 비교 에이전트
