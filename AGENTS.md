@@ -52,7 +52,9 @@ Codex는 사용자의 요구를 무조건 수용하는 실행기가 아닙니다
 - Superpowers는 기획, 설계, 구현 계획, 검증, 디버깅 게이트로 씁니다.
 - gstack은 front/UI 변경처럼 실제 브라우저 확인 가치가 있을 때 씁니다.
 - 스킬 문서는 필요한 상황에서만 읽고, 긴 스킬은 필요한 절차만 확인합니다.
+- Browser, Figma, Stitch, gstack, Superpowers 같은 큰 스킬 문서는 전문 출력하지 않습니다. 필요한 경우 `-TotalCount 120` 안팎이나 관련 섹션 검색으로 시작하고, 같은 스킬을 한 세션에서 반복해서 읽지 않습니다.
 - `docs/work-units/`, `docs/superpowers/`, Notion 작업 로그, 세션 로그, 브라우저 콘솔 전체는 시작 루틴이 아닙니다.
+- `docs/superpowers/specs/`, `docs/superpowers/plans/`는 과거 설계/실행 archive입니다. front 복구나 현재 작업은 담당 트랙 handoff를 우선하고, 과거 근거가 필요할 때만 파일 1개와 키워드 1개로 좁혀 봅니다.
 - 넓은 `rg`, 전체 로그/JSONL 출력, 전체 Notion page/database fetch, 콘솔/DOM 전문 출력은 금지합니다. 경로, 키워드, 출력량을 먼저 좁힙니다.
 - 토큰 최적화는 필수 검증, PR/라벨, Notion/gstack 필요성 판단을 없애는 근거가 아닙니다.
 

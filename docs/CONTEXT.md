@@ -44,13 +44,14 @@
 - Docker Compose: MySQL, backend, pipeline start 확인
 - Manual pipeline batch: Naver와 FM Korea crawl run 저장 확인
 
-## Read First
+## 시작 시 확인
 
-1. `AGENTS.md`
-2. `docs/CURRENT_HANDOFF.md`
-3. `docs/DOCUMENTATION_GUIDE.md`
-4. `docs/WORKFLOW.md`
-5. `docs/GIT_CONVENTION.md`
-6. `docs/workstreams/README.md`
+새 채팅은 전문 읽기가 아니라 작업에 필요한 섹션 확인으로 시작합니다.
+
+1. `AGENTS.md`와 `docs/CURRENT_HANDOFF.md`의 관련 줄만 확인합니다.
+2. 트랙이 명확하면 담당 트랙 README를 봅니다.
+3. 트랙 경계가 헷갈릴 때만 `docs/workstreams/README.md`를 봅니다.
+4. 문서/컨텍스트/Notion 규칙을 바꿀 때만 `docs/DOCUMENTATION_GUIDE.md`와 `docs/WORKFLOW.md`의 관련 섹션을 봅니다.
+5. PR 직전에만 `docs/GIT_CONVENTION.md`와 `docs/LABEL_GUIDE.md`의 필요한 섹션을 봅니다.
 
 필요할 때만 `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/LEGAL_RISK_CASES.md`, `docs/TROUBLESHOOTING_GUIDE.md`, `docs/work-units/`를 검색해서 봅니다.
