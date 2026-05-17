@@ -8,6 +8,8 @@
 
 ## 현재 프론트 전략
 
+새 front 세션에서 현재 dashboard 작업을 이어갈 때는 이 README보다 먼저 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 확인합니다. 해당 파일이 현재 작업 worktree, 브랜치, 확인 URL, 유지/종료할 dev server, 다음 작업을 짧게 정리합니다.
+
 초기 프론트는 최종 디자인이 아니라 `저충실도 와이어프레임`으로 시작합니다. 목표는 예쁜 화면을 먼저 만드는 것이 아니라, 사용자가 실제로 볼 정보 구조와 라우팅, mock data, API 계약 후보, 빠진 기획 질문을 드러내는 것입니다.
 
 기획 정리 구간의 기본 운영은 `front-first discovery`입니다. backend/API 구현을 기다리지 않고 관심종목 브리핑, 종목 이벤트 타임라인, 신호 신뢰도 배지 같은 핵심 사용자 흐름을 mock으로 먼저 세우고, 필요한 API 계약을 역으로 도출합니다.

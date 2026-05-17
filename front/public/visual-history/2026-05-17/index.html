@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouBuyFirst Front Visual History - 2026-05-17</title>
+    <style>
+      :root {
+        color: #17212b;
+        background: #f3f6f8;
+        font-family:
+          Pretendard,
+          "Pretendard Variable",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 36px 0 64px;
+      }
+
+      header {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 28px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 0;
+        color: #627084;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 28px;
+      }
+
+      article {
+        overflow: hidden;
+        border: 1px solid #dfe5ec;
+        border-radius: 10px;
+        background: #ffffff;
+        box-shadow: 0 14px 36px rgba(39, 51, 67, 0.08);
+      }
+
+      article img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        object-position: top left;
+        border-bottom: 1px solid #dfe5ec;
+      }
+
+      .copy {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.35;
+      }
+
+      a {
+        color: #2f6fed;
+        font-size: 13px;
+        font-weight: 760;
+        text-decoration: none;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+      }
+
+      .actions a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid #d8e1ec;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #26384f;
+        box-shadow: 0 8px 20px rgba(39, 51, 67, 0.06);
+      }
+
+      code {
+        color: #526071;
+        font-size: 12px;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100% - 24px, 1180px);
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Front Visual History · 2026-05-17</h1>
+        <p>2026-05-17에 남긴 대표 프론트 화면 캡처입니다.</p>
+        <p>이 날짜 폴더에는 비교할 대표 버전만 모읍니다. 모든 시도 캡처는 <code>artifacts/</code> archive 쪽을 기준으로 봅니다.</p>
+        <div class="actions" aria-label="로컬 갤러리 링크">
+          <a href="../index.html">날짜 목록으로</a>
+          <a href="http://127.0.0.1:5174/visual-history/2026-05-17/index.html">서버 2026-05-17</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-content/front/public/visual-history/2026-05-17/index.html">로컬 2026-05-17</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-content/front/public/visual-history/2026-05-17/">이미지 폴더 열기</a>
+        </div>
+      </header>
+
+      <section class="grid" aria-label="프론트 UI 버전 캡처">
+        <article>
+          <img src="./FV-20260517-1938-compact-feed-cards-dashboard.png" alt="FV-20260517-1938 dashboard" />
+          <div class="copy">
+            <h2>FV-20260517-1938 · 피드 카드 타이트 정리 + 동일 높이</h2>
+            <p>뉴스, 리포트, 증권 영상, 블로그 링크 카드를 4행 동일 높이로 맞추고 각 행에 전문/보기 링크를 둔 버전.</p>
+            <a href="./FV-20260517-1938-compact-feed-cards-dashboard.png">원본 이미지 열기</a>
+            <code>artifacts/front-visual-history/FV-20260517-1938-compact-feed-cards-dashboard.png</code>
+          </div>
+        </article>
+
+        <article>
+          <img src="./FV-20260517-1742-subtle-breaking-ticker-unboxed-reactions-dashboard.png" alt="FV-20260517-1742 dashboard" />
+          <div class="copy">
+            <h2>FV-20260517-1742 · 속보 띠 톤 다운 + 반응 outer box 제거</h2>
+            <p>상단 속보 띠를 흰색 기반으로 낮추고, 종목 반응 outer box를 제거한 최신 기준.</p>
+            <a href="./FV-20260517-1742-subtle-breaking-ticker-unboxed-reactions-dashboard.png">원본 이미지 열기</a>
+            <code>artifacts/front-visual-history/FV-20260517-1742-subtle-breaking-ticker-unboxed-reactions-dashboard.png</code>
+          </div>
+        </article>
+
+        <article>
+          <img src="./front-dashboard-alert-topics-square-reactions-full-feed.png" alt="FV-20260517-1558 dashboard" />
+          <div class="copy">
+            <h2>FV-20260517-1558 · 속보형 ticker + 정사각형 반응 카드</h2>
+            <p>속보형 ticker, 3+3 정사각형 반응 카드, feed full width 기준.</p>
+            <a href="./front-dashboard-alert-topics-square-reactions-full-feed.png">원본 이미지 열기</a>
+            <code>artifacts/front-dashboard-alert-topics-square-reactions-full-feed.png</code>
+          </div>
+        </article>
+
+        <article>
+          <img src="./front-dashboard-search-feed-reaction-ticker-refine-2.png" alt="FV-20260517-1547 dashboard" />
+          <div class="copy">
+            <h2>FV-20260517-1547 · 큰 검색 pill + dark reaction panel</h2>
+            <p>큰 검색 pill과 큰 어두운 반응 panel을 사용하던 비교용 버전.</p>
+            <a href="./front-dashboard-search-feed-reaction-ticker-refine-2.png">원본 이미지 열기</a>
+            <code>artifacts/front-dashboard-search-feed-reaction-ticker-refine-2.png</code>
+          </div>
+        </article>
+
+        <article>
+          <img src="./front-dashboard-search-natural-chart-balanced.png" alt="FV-20260517-1533 dashboard" />
+          <div class="copy">
+            <h2>FV-20260517-1533 · 검색 keycap + 차트 비율 확대</h2>
+            <p>검색 keycap, 커뮤니티 지표 차트 비율 유지 확대, feed header contrast 기준.</p>
+            <a href="./front-dashboard-search-natural-chart-balanced.png">원본 이미지 열기</a>
+            <code>artifacts/front-dashboard-search-natural-chart-balanced.png</code>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

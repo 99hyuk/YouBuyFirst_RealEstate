@@ -1,6 +1,31 @@
 {
-  "title": "모의 포트폴리오",
-  "description": "trade 트랙의 계좌와 주문 도메인이 준비되기 전까지는 비활성 shell로 둡니다.",
-  "message": "모의투자 기능은 아직 준비 중입니다.",
-  "futureWidgets": ["가상 예수금", "보유 종목", "주문 내역", "평가 손익"]
+  "title": "내 포트폴리오",
+  "description": "실거래가 아니라 커뮤니티 반응 관찰과 연결한 모의 포트폴리오 화면입니다.",
+  "message": "관심 종목과 모의 보유 현황을 한 화면에서 봅니다.",
+  "cashLabel": "가상 예수금",
+  "cashValue": "10,000,000원",
+  "totalReturnPct": 2.4,
+  "holdings": [
+    {
+      "symbol": "005930",
+      "name": "삼성전자",
+      "weightPct": 38,
+      "mockReturnPct": 1.8,
+      "reactionLabel": "긍정 반응 우세"
+    },
+    {
+      "symbol": "042700",
+      "name": "한미반도체",
+      "weightPct": 24,
+      "mockReturnPct": 5.6,
+      "reactionLabel": "언급 급상승"
+    },
+    {
+      "symbol": "035420",
+      "name": "NAVER",
+      "weightPct": 18,
+      "mockReturnPct": -0.7,
+      "reactionLabel": "관망 반응"
+    }
+  ]
 }
