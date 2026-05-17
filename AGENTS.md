@@ -72,6 +72,9 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 
 - 작업 하나는 브랜치 하나와 PR 하나로 처리합니다.
 - 브랜치 이름은 기본 `codex/<short-task-name>`이고, 병렬 작업은 `.worktrees/<task>`에서 진행합니다.
+- 브랜치는 실제 수정/PR 후보가 생겼을 때 열고, 조사만 하는 작업에는 불필요하게 새 브랜치를 만들지 않습니다.
+- PR이 머지, 폐기, 대체되면 관련 브랜치와 worktree를 정리 후보로 둡니다. 장기 브랜치는 main보다 뒤처졌는지 먼저 확인합니다.
+- 브랜치/worktree 정리의 1차 책임자는 해당 작업을 끝낸 에이전트입니다. ops는 주기적으로 누락된 정리 후보를 점검하는 안전망입니다.
 - PR 제목은 `[트랙][타입] 명사형 요약`으로 씁니다.
 - PR에는 `track:*`, `type:*`, `size:*` 라벨을 붙이고, 필요한 경우에만 `part:*`를 붙입니다.
 - 한국어 PR 본문은 UTF-8 no BOM 파일과 `gh --body-file <path>`를 사용합니다.
@@ -81,12 +84,20 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 
 검증 명령은 `docs/WORKFLOW.md`의 관련 섹션을 봅니다.
 
+## 사용자 보고 방식
+
+- 답변은 파일명, 폴더명, 명령어 나열보다 사용자가 이해할 변화와 판단 포인트를 먼저 말합니다.
+- 기술 세부사항은 필요할 때만 붙이고, 왜 중요한지 한 문장으로 설명합니다.
+- 완료 보고에는 `무엇이 해결됐는지`, `남은 리스크`, `다음 행동`을 짧게 포함합니다.
+
 ## 기록 기준
 
 - PR 본문과 Notion 작업 카드는 같은 카드형 흐름을 씁니다.
+- Notion 작업 카드는 `한눈에 보기`, `바뀐 내용`, `리뷰 가이드`, `범위`, `검증`, `리스크`, `링크`, `라벨` 흐름으로 짧게 작성합니다.
 - Notion 작업일지는 PR별 요약 기록입니다.
 - 제품 개발/운영 문제, 성능 개선, 품질 개선, 기술 결정은 개발자 기술 경험 DB에 남깁니다.
 - Codex, Notion, GitHub PR, 문서 운영 사고는 에이전트 운영 로그 DB에 분리합니다.
+- 최종 기획상 생길 수 있는 기술/제품/운영 리스크 후보는 `docs/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
 
 ## 참고 문서
 
@@ -94,6 +105,7 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 - 문서 구조와 읽기 게이트: `docs/DOCUMENTATION_GUIDE.md`
 - 채팅 시작: `docs/CHAT_START_GUIDE.md`
 - 작업 방식: `docs/WORKFLOW.md`
+- 기술 리스크 목록: `docs/TECHNICAL_RISK_REGISTER.md`
 - 병렬 트랙: `docs/workstreams/`
 - Git/PR 컨벤션: `docs/GIT_CONVENTION.md`
 - 라벨 사전: `docs/LABEL_GUIDE.md`

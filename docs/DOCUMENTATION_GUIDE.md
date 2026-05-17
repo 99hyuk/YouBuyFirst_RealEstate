@@ -25,6 +25,7 @@
 | `docs/DOMAIN_PACKAGE_GUIDE.md` | 트랙과 코드 패키지 경계가 헷갈릴 때 |
 | `docs/COMMUNITY_REACTION_GUIDE.md` | 커뮤니티 반응 용어와 수집 전략 확인 |
 | `docs/LEGAL_RISK_CASES.md` | 크롤링/공개 배포 리스크 확인 |
+| `docs/TECHNICAL_RISK_REGISTER.md` | 최종 기획상 생길 수 있는 기술/제품/운영 이슈 확인 |
 | `docs/ENGINEERING_EVIDENCE_GUIDE.md` | 문제 해결, 개선, 기술 결정 기록 기준 확인 |
 | `docs/TROUBLESHOOTING_GUIDE.md` | 버그, 장애, 반복 이슈 기록 |
 
@@ -73,6 +74,7 @@
 - `AGENTS.md`, `CURRENT_HANDOFF.md`, `DOCUMENTATION_GUIDE.md`, `CHAT_START_GUIDE.md`, `TASKS.md`, `docs/workstreams/`를 바꾸는 PR
 - 채팅이 일반 오류로 끊겼거나 한 작업에서 로그/Notion/gstack 출력이 크게 늘어난 경우
 - ops 문서 PR 3개가 쌓였거나, 일주일 이상 문서 정리를 하지 않은 경우
+- 열린 브랜치/worktree가 5개 이상이거나, close-candidate 브랜치가 생긴 경우
 
 목표 예산:
 
@@ -104,7 +106,9 @@
 | --- | --- |
 | 제품 방향이나 범위 변경 | `FINAL_PRODUCT_PLAN.md`, `CURRENT_HANDOFF.md` |
 | 커뮤니티 분석 용어/수집 전략 변경 | `COMMUNITY_REACTION_GUIDE.md`, `FINAL_PRODUCT_PLAN.md`, `PROJECT_BRIEF.md` |
+| 최종 기획상 새 기술/제품/운영 리스크 발견 | `TECHNICAL_RISK_REGISTER.md`, 필요 시 관련 트랙 README |
 | 작업 방식이나 라벨 기준 변경 | `WORKFLOW.md`, `GIT_CONVENTION.md`, `LABEL_GUIDE.md` |
+| 브랜치 생명주기나 worktree 정리 기준 변경 | `GIT_CONVENTION.md`, `WORKFLOW.md`, `CURRENT_HANDOFF.md` |
 | 다음 작업 후보 변경 | `TASKS.md`, `CURRENT_HANDOFF.md` |
 | 새 트랙 경계 | `docs/workstreams/` |
 | 제품 개발/운영 문제, 개선, 기술 결정 | Notion 개발자 기술 경험 DB, 필요 시 관련 가이드 |

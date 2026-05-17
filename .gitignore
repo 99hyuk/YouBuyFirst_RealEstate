@@ -14,3 +14,9 @@ front/dist/
 *.egg-info/
 *.pyc
 *.log
+
+# Local Netlify folder
+.netlify
+
+# Local QA/artifact output
+artifacts/

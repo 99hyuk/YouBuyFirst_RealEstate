@@ -22,8 +22,8 @@
 | `crawl` | 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃, 수집 정책 | `codex/crawl-naver-targets` |
 | `data` | 종목 인식, 별칭 매칭, 반응 방향, 열기 지수, 30분 집계 | `codex/data-alias-matcher` |
 | `market` | 실시간/지연 시세, 호가, quote cache, WebSocket | `codex/market-quote-cache` |
-| `trade` | 가상 계좌, 주문, 체결, 포트폴리오, 수익률 | `codex/trade-order-domain` |
-| `agent` | AI 매매 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그 | `codex/agent-contrarian-log` |
+| `trade` | 가상 계좌, 주문, 체결, 거래 원장, 포트폴리오, 수익률 | `codex/trade-order-domain` |
+| `agent` | 통계 윈도우 기반 paper trading 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그 | `codex/agent-contrarian-log` |
 | `front` | 대시보드, 차트, 관리자 화면, mock/API 연동 | `codex/front-dashboard-shell` |
 | `ops` | 기획, 문서, Notion, PR/CI, 배포 정책, 트랙 조율 | `codex/ops-track-names` |
 
@@ -31,7 +31,7 @@
 
 - `crawl`은 외부 커뮤니티 입력 파이프라인입니다.
 - `data`는 글을 분석 데이터로 바꿉니다. 매수/매도 판단은 `agent`입니다.
-- `market`은 시세/호가만 소유합니다. 주문/체결은 `trade`입니다.
+- `market`은 시세/호가만 소유합니다. 주문/체결/원장은 `trade`입니다.
 - `front`는 fixture/mock 기반 화면 골격을 일찍 만들고 API 계약이 생길 때 연결합니다.
 - `ops`는 문서, 자동화, CI, Notion, 배포 정책, 작업 조율에 한정합니다.
 

@@ -75,6 +75,14 @@ Last update: 2026-05-17 20:24 KST
 - 새 세션은 `WIREFRAME_HANDOFF.md` 상단과 최신 항목 1-2개만 보고, 과거 맥락은 `rg`로 좁혀 찾습니다.
 - 오래된 캡처는 Notion에 복사하지 않고 `VISUAL_CHANGELOG.md`와 `artifacts/` 경로로 추적합니다.
 
+## Codex 디자인/구현 기준
+
+프론트 디자인과 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다. 정본은 외부 디자인 파일이 아니라 merge된 코드, fixture, 화면 문구, API 후보, 검증 기록입니다.
+
+Figma AI, Stitch 같은 외부 디자인 도구는 기본 작업 흐름이 아닙니다. 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 쓰고, 선택한 방향은 Codex가 작은 front PR로 다시 코드에 반영합니다. 외부 도구 산출물은 정본이 아니며, 그대로 구현하지 않습니다.
+
+Codex가 디자인을 다듬을 때는 먼저 현재 `/dashboard` 화면과 fixture를 보고, 화면 밀도, 정보 우선순위, 색/타이포/간격, 카드/차트 형태를 코드에서 조정합니다. 디자인 변경은 가능한 한 한 화면 또는 한 컴포넌트 단위의 작은 PR로 끊습니다.
+
 ## 2026-05-17 15:20 KST - 검색창 결합감, 비율 보존 그래프, 다크 글래스 카드, 풀폭 피드 헤더 보정
 
 - 작업 브랜치/worktree: `codex/front-dashboard-content` / `C:\agents\YouBuyFirst\.worktrees\front-dashboard-content`

@@ -1,6 +1,6 @@
 # 현재 작업 인수인계
 
-마지막 갱신: 2026-05-16
+마지막 갱신: 2026-05-17
 
 새 채팅이 방향을 잡는 짧은 요약입니다. 전문 읽기를 기본값으로 두지 말고 필요한 섹션만 확인합니다.
 
@@ -17,7 +17,7 @@
 - MVP는 커뮤니티 글 수집, 종목 언급 인식, 반응 방향 분석, backend 저장까지 연결된 ingestion 기반입니다.
 - backend에는 ingestion/admin API, crawl run/posts/stock metrics 조회, `CrawlTarget` queue API가 있습니다.
 - pipeline에는 source policy gate, skip run 기록, crawl backoff, AI mention resolver/mock provider 흐름이 있습니다.
-- front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드 정본은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`, Stitch 프롬프트는 `docs/workstreams/front/STITCH_DASHBOARD_PROMPT.md`입니다.
+- front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드와 디자인/구현 정본은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`와 현재 `front/` 코드입니다.
 - 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
 - 기획 정리 구간은 front-first discovery로 갑니다. mock 화면을 먼저 세우고, API/데이터 계약은 화면에서 필요한 항목을 역으로 도출합니다.
 
@@ -28,16 +28,27 @@
 - 스킬 문서, gstack, Notion fetch, 세션 로그 검색은 시작 루틴이 아닙니다.
 - 큰 스킬 문서와 `docs/superpowers/` archive는 전문 출력하지 않습니다. Browser/gstack 검증은 필요할 때 한 번에 모아 실행합니다.
 - 에이전트 행동 규칙 PR이 main에 머지되면 ops가 열린 장기 브랜치의 main 반영 여부를 확인합니다.
+- 브랜치는 실제 PR 후보가 있을 때 열고, merge/close/대체 후에는 worktree와 함께 정리합니다. 열린 브랜치는 active, review, blocked, stale, close-candidate 중 하나로 설명할 수 있어야 합니다.
+- 사용자 보고는 파일명/폴더명 나열보다 무엇이 해결됐고 이제 무엇을 판단하면 되는지 먼저 말합니다.
 - gstack은 front/UI 변경처럼 실제 브라우저 확인 가치가 있을 때 사용하고, 콘솔/DOM 전문은 대화에 누적하지 않습니다.
 - 로그/세션 분석은 JSONL 전문 검색이 아니라 `token_count` 같은 필요한 이벤트만 파싱해 수치로 요약합니다.
 - 제품 용어는 사용자 화면에서 `커뮤니티 반응`, 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`을 씁니다.
+- 제품명은 문서/화면/PR에서 붙여 쓴 `너나사`를 기본 브랜드명으로 씁니다. 풀어서 설명할 때만 `너나 사` 말장난을 제한적으로 씁니다.
+- 제품 핵심은 관심종목 앱이 아니라 커뮤니티 반응 지표입니다. 관심종목은 커뮤니티 지표를 매일 쓰게 만드는 필터/개인화 레이어로 둡니다.
+- 디자인과 프론트 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다. Figma AI/Stitch는 기본 흐름이 아니며, 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 씁니다.
 - 소스 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나누며 새 소스는 기본 `disabled`입니다.
+- 소스 후보에는 네이버 종토방, 에펨코리아 주식, 뽐뿌 증권포럼, 디시 미국 주식 갤러리, 디시 주식갤러리/국내주식 계열을 포함합니다. 디시 계열은 이름 하드코딩 대신 source/board registry로 관리합니다.
+- 블로그는 전체 검색 결과보다 신뢰 블로그 whitelist를 추적하고, 인기글/개념글/추천글/조회수 상위글은 초기 감지가 아니라 이슈 확산 확인 레이어로 둡니다.
 - 공개 배포 전에는 원문 재게시, 작성자 추적, 닉네임 랭킹을 하지 않습니다.
+- `trade`는 실제 결제나 실거래가 아니라 가상 주문, 체결, 정산, 원장, 포지션의 트랜잭션 정합성을 보여주는 트랙입니다. 동시 클릭 경쟁보다 에이전트 판단/주문/체결 idempotency와 원장 기반 손익 재계산을 우선합니다.
+- `agent`는 통계 윈도우를 보고 paper trading 결정을 남기며, `agentId + windowStart + symbol + strategyVersion` 같은 판단 key로 중복 판단을 막습니다. 체결 장부 수정은 `trade` contract를 통합니다.
+- 최종 기획상 생길 수 있는 기술/제품/운영 이슈는 `docs/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
 
 ## 바로 가기
 
 - 트랙 경계: `docs/workstreams/`
 - 문서/컨텍스트 예산: `docs/DOCUMENTATION_GUIDE.md`
+- 기술 리스크 목록: `docs/TECHNICAL_RISK_REGISTER.md`
 - 작업 방식: `docs/WORKFLOW.md`
 - Git/PR 규칙: `docs/GIT_CONVENTION.md`
 - 라벨: `docs/LABEL_GUIDE.md`
@@ -49,9 +60,15 @@
 - front 메인 대시보드 와이어프레임 보강
 - front 관심종목 브리핑과 종목 이벤트 타임라인 와이어프레임 설계
 - 관심종목, 최신 기사/공시, 신호 신뢰도 API 후보 설계
+- 유튜브/신뢰 블로그/인기글 링크 카드와 종목 이벤트 타임라인 field 후보 설계
 - pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback 유지
 - admin target pause/resume/clear-backoff API와 화면 액션 연결
+- 열린 브랜치/worktree 정리 후보 점검
 - market quote snapshot 계약 설계
+- trade 모의 계좌/주문/체결/원장 트랜잭션 설계
+- agent paper trading 판단 key와 중복 실행 방지 설계
+- crawl source registry에 뽐뿌/디시 미주갤/주식갤/국내주식 계열 후보 정리
+- crawl 인기글/개념글 확산 레이어와 신뢰 블로그 whitelist 후보 정리
 - 실제 `OPENAI_API_KEY` 기반 AI mention resolver 샘플 품질 확인
 - pipeline이 backend readiness를 기다리도록 개선
 - admin API Swagger 예시와 validation 오류 응답 정리

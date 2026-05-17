@@ -54,4 +54,4 @@
 4. 문서/컨텍스트/Notion 규칙을 바꿀 때만 `docs/DOCUMENTATION_GUIDE.md`와 `docs/WORKFLOW.md`의 관련 섹션을 봅니다.
 5. PR 직전에만 `docs/GIT_CONVENTION.md`와 `docs/LABEL_GUIDE.md`의 필요한 섹션을 봅니다.
 
-필요할 때만 `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/LEGAL_RISK_CASES.md`, `docs/TROUBLESHOOTING_GUIDE.md`, `docs/work-units/`를 검색해서 봅니다.
+필요할 때만 `docs/FINAL_PRODUCT_PLAN.md`, `docs/PROJECT_BRIEF.md`, `docs/TASKS.md`, `docs/LEGAL_RISK_CASES.md`, `docs/TECHNICAL_RISK_REGISTER.md`, `docs/TROUBLESHOOTING_GUIDE.md`, `docs/work-units/`를 검색해서 봅니다.

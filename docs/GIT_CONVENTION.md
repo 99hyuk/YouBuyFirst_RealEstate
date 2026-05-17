@@ -14,6 +14,7 @@ PR 전후에 아래는 생략하지 않습니다.
 6. 본문 확인: `gh pr view --json body --jq .body`
 7. 한글 깨짐 확인: `??` 검색
 8. 기록: Notion 기록 여부와 이유 명시
+9. 종료: merge/close 후 브랜치와 worktree 정리 여부 확인
 
 ## 브랜치
 
@@ -31,6 +32,47 @@ codex/<track>-<task>
 - `codex/ops-chat-stability`
 
 루트 checkout은 main/조율용입니다. 병렬 작업은 `.worktrees/<task>` 아래에서 진행합니다.
+
+### 브랜치 생명주기
+
+브랜치는 작업 단위가 실제로 생겼을 때 엽니다.
+
+- 엽니다: 코드/문서 수정이 필요하고 PR 후보가 분명할 때
+- 엽니다: 병렬 front/crawl/data/market/trade/agent 작업처럼 파일 소유권을 분리해야 할 때
+- 열지 않습니다: 단순 조사, PR/로그 확인, 사용자 질문 답변처럼 변경이 없는 작업
+- 열지 않습니다: 이미 같은 트랙/같은 목적의 활성 브랜치가 있고 그 브랜치에서 이어가는 편이 자연스러울 때
+
+작업 중인 브랜치는 아래 상태 중 하나여야 합니다.
+
+- active: 현재 작업 중이고 다음 행동이 명확함
+- review: PR이 열려 있고 리뷰/CI/사용자 확인을 기다림
+- blocked: 외부 결정이나 다른 트랙 계약을 기다림
+- stale: main보다 오래 뒤처졌거나 대체 PR이 생김
+- close-candidate: merge, 폐기, 대체 중 하나로 정리할 수 있음
+
+닫는 기준:
+
+- PR이 merge되면 원격 브랜치와 worktree를 삭제합니다.
+- PR이 close되고 되살릴 조각이 없으면 브랜치와 worktree를 정리합니다.
+- PR이 close됐지만 살릴 조각이 있으면 새 작은 브랜치/PR로 옮기고 기존 브랜치는 닫습니다.
+- main에 이미 같은 내용이 들어갔거나 더 최신 PR이 대체했으면 stale 브랜치로 두지 않습니다.
+- 1일 이상 진행이 없고 다음 행동이 불명확하면 ops가 close-candidate로 보고합니다.
+
+정리 책임:
+
+- 작업을 끝낸 에이전트가 자기 PR의 merge/close 직후 브랜치와 worktree 정리 여부를 확인합니다.
+- clean worktree이고 main에 반영됐거나 폐기 확정이면 작업 에이전트가 정리합니다.
+- dirty worktree, 미반영 커밋, 살릴 조각, 실행 중인 dev server가 있으면 삭제하지 않고 상태와 다음 조치를 남깁니다.
+- ops는 열린 브랜치/worktree가 누적되거나 close-candidate가 생겼을 때 주기적으로 누락분을 점검합니다.
+
+남겨둘 수 있는 경우:
+
+- PR review/CI/user 확인을 기다리는 review 상태
+- 다른 트랙 계약이나 사용자 결정이 필요한 blocked 상태
+- 실제로 이어서 작업할 active 상태
+- 데모 서버나 화면 확인이 그 worktree에 묶여 있고 대체 URL을 아직 못 정한 경우
+
+브랜치 정리는 넓은 diff 출력 대신 요약으로 봅니다. 우선 `git branch -vv --sort=-committerdate`, `git worktree list`, `gh pr list --state open`으로 상태를 보고, 필요한 브랜치만 diff를 확인합니다.
 
 ## PR 제목
 
@@ -136,14 +178,14 @@ gh pr view <number> --json body --jq .body | Select-String -Pattern "\?\?"
 
 사용자에게는 PR 본문보다 쉽게 보고합니다.
 
-1. 이제 무엇을 판단할 수 있게 됐는지
-2. 핵심 변경
+1. 무엇이 해결됐고 이제 무엇을 판단할 수 있는지
+2. 핵심 변경을 사람이 이해할 말로 설명
 3. 포함 범위와 제외 범위
 4. 검증 결과
 5. Superpowers/gstack 사용 여부와 이유
 6. PR, Notion, 브랜치, worktree 상태
 
-문서/backend 작업이라 브라우저 확인 대상이 없으면 `gstack 미사용` 이유를 적습니다. front/UI 작업이면 가능하면 gstack/browser 확인 결과를 적습니다.
+파일명, 폴더명, 명령어만 나열하지 않습니다. 파일 경로는 사용자가 직접 확인해야 할 때 보조 정보로 붙입니다. 문서/backend 작업이라 브라우저 확인 대상이 없으면 `gstack 미사용` 이유를 적습니다. front/UI 작업이면 가능하면 gstack/browser 확인 결과를 적습니다.
 
 ## Merge
 
