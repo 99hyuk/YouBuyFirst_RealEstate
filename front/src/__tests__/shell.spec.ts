@@ -28,6 +28,13 @@ describe('front dashboard shell', () => {
     expect(routes[0]).toMatchObject({ redirect: '/dashboard' });
   });
 
+  it('declares an inline favicon so browser checks do not request /favicon.ico', () => {
+    const indexHtml = readFileSync(resolve(testDir, '../../index.html'), 'utf8');
+
+    expect(indexHtml).toContain('rel="icon"');
+    expect(indexHtml).toContain('data:image/svg+xml');
+  });
+
   it('keeps dashboard mock data explicit and reviewable', () => {
     const firstRiser = dashboardSummary.risingStars[0]!;
     const reactionDrivers = firstRiser.reactionDrivers!;
