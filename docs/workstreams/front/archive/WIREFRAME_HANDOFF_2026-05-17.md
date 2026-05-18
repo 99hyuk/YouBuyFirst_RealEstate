@@ -5,9 +5,9 @@
 
 권장 검색 예시:
 
-`powershell
+```powershell
 rg -n -m 20 "검색어" docs\workstreams\front\archive\WIREFRAME_HANDOFF_2026-05-17.md
-`
+```
 
 ---
 
