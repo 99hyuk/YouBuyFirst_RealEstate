@@ -38,6 +38,7 @@
 | `docs/work-units/` | PR 단위 작업 이력 |
 | `docs/superpowers/README.md` | 큰 spec/plan 기록을 읽기 전 안내 |
 | `docs/superpowers/specs/`, `docs/superpowers/plans/` | 승인된 설계와 상세 실행 계획 |
+| `docs/workstreams/front/archive/` | 과거 front 와이어프레임 세부 로그 |
 | Notion 작업일지 | 사람이 보는 PR 카드 로그 |
 | Notion 개발자 기술 경험 DB | 제품 개발/운영 문제, 개선 근거, 기술 결정 |
 | Notion 에이전트 운영 로그 DB | Codex, Notion, GitHub PR, 문서 운영 사고 |
@@ -49,7 +50,7 @@
 - `CURRENT_HANDOFF.md` 전문 읽기는 기본값이 아닙니다. 현재 상태, 다음 후보, 해당 트랙 관련 줄만 확인합니다.
 - 스킬 문서는 적용할 스킬이 정해진 뒤 설명, 체크리스트, 이번 절차만 읽습니다.
 - 큰 스킬 문서는 전문 출력하지 않습니다. Browser/Figma/Stitch/gstack/Superpowers는 `-TotalCount 120` 안팎이나 관련 섹션 검색으로 시작하고, 같은 세션에서 반복해서 읽지 않습니다.
-- `docs/superpowers/specs/`, `docs/superpowers/plans/`는 현재 작업 시작 문서가 아니라 archive입니다. 현재 handoff가 부족할 때만 `rg -n -m 20 <키워드> <파일>`처럼 제한해 확인합니다.
+- `docs/superpowers/specs/`, `docs/superpowers/plans/`, `docs/workstreams/front/archive/`는 현재 작업 시작 문서가 아니라 archive입니다. 현재 handoff가 부족할 때만 `rg -n -m 20 <키워드> <파일>`처럼 제한해 확인합니다.
 - 세션 로그는 파일 하나와 키워드 하나로 좁혀 검색합니다. `C:\Users\JYH\.codex` 전체에 넓은 `rg`를 돌리지 않습니다.
 - 로그/JSONL은 본문 출력 대신 parser로 필요한 필드만 집계합니다. 예: `token_count`의 `last_token_usage.input_tokens` 최대/평균.
 - Notion은 필요한 page/database 하나씩 fetch합니다. 루트, Archive, 전체 DB를 연달아 전문 fetch하지 않습니다.
@@ -94,6 +95,7 @@
 | PR/라벨 문서 | PR 직전 필요한 섹션 |
 | 스킬 문서 | 실제 적용 절차만 |
 | `docs/superpowers/` archive | 현재 handoff가 부족할 때만 파일 1개, 키워드 1개 |
+| front archive | 현재 front handoff가 부족할 때만 파일 1개, 키워드 1개 |
 | gstack/browse 출력 | 결과 요약, 핵심 오류 |
 | 세션/로그 JSONL | 파일명, 날짜, 키워드 제한 |
 | Notion page/database | 대상 하나씩, 바꿀 섹션 중심 |

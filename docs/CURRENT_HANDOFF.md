@@ -9,7 +9,7 @@
 - Repository: `99hyuk/YouBuyFirst`
 - Default branch: `main`
 - 루트 checkout: `C:\agents\YouBuyFirst`는 main/조율용, 병렬 작업은 `.worktrees/<task>`에서 진행합니다.
-- 최근 머지된 ops 규칙 PR: PR #53 `[ops][docs] 프론트 와이어프레임 복구 정리`
+- 최근 머지된 ops 규칙 PR: PR #60 `[ops][docs] PR 템플릿 적용 규칙 보강`
 - 기반: Spring Boot backend, Python pipeline, MySQL, Docker Compose, Vue 3 front mock shell
 
 ## 구현 스냅샷
@@ -17,7 +17,7 @@
 - MVP는 커뮤니티 글 수집, 종목 언급 인식, 반응 방향 분석, backend 저장까지 연결된 ingestion 기반입니다.
 - backend에는 ingestion/admin API, crawl run/posts/stock metrics 조회, `CrawlTarget` queue API가 있습니다.
 - pipeline에는 source policy gate, skip run 기록, crawl backoff, AI mention resolver/mock provider 흐름이 있습니다.
-- front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드와 디자인/구현 정본은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`와 현재 `front/` 코드입니다.
+- front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드와 디자인/구현 정본은 현재 `front/` 코드와 짧은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`입니다. 과거 세부 로그는 `docs/workstreams/front/archive/`에서 필요할 때만 검색합니다.
 - 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
 - 기획 정리 구간은 front-first discovery로 갑니다. mock 화면을 먼저 세우고, API/데이터 계약은 화면에서 필요한 항목을 역으로 도출합니다.
 

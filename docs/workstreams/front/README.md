@@ -8,7 +8,7 @@
 
 ## 현재 프론트 전략
 
-새 front 세션에서 현재 dashboard 작업을 이어갈 때는 이 README보다 먼저 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 확인합니다. 해당 파일이 현재 작업 worktree, 브랜치, 확인 URL, 유지/종료할 dev server, 다음 작업을 짧게 정리합니다.
+새 front 세션에서 현재 dashboard 작업을 이어갈 때는 이 README보다 먼저 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 확인합니다. 해당 파일은 현재 기준만 짧게 담습니다. 과거 디자인 조정 로그는 `docs/workstreams/front/archive/`에서 필요한 키워드로만 검색합니다.
 
 초기 프론트는 최종 디자인이 아니라 `저충실도 와이어프레임`으로 시작합니다. 목표는 예쁜 화면을 먼저 만드는 것이 아니라, 사용자가 실제로 볼 정보 구조와 라우팅, mock data, API 계약 후보, 빠진 기획 질문을 드러내는 것입니다.
 
@@ -26,7 +26,7 @@
 
 현재 `front/`에는 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell이 있습니다. 실제 backend API 연결, 차트 라이브러리 확정, 고충실도 디자인은 아직 하지 않았습니다.
 
-현재 화면과 Codex 디자인/구현 기준은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 먼저 봅니다.
+현재 화면과 Codex 디자인/구현 기준은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 먼저 봅니다. 오래된 세부 로그는 archive 기록이므로 현재 `main` 코드와 브랜치 상태를 확인한 뒤 참고합니다.
 
 ## 프론트 에이전트 시작 지시
 
@@ -37,7 +37,7 @@
 AGENTS.md, docs/CURRENT_HANDOFF.md, docs/DOCUMENTATION_GUIDE.md,
 docs/workstreams/README.md, docs/workstreams/front/README.md는 필요한 섹션만 확인한다.
 이미 대화에 주입된 긴 문서는 다시 전문 출력하지 않는다.
-docs/superpowers/specs, docs/superpowers/plans는 과거 archive이므로 현재 handoff가 부족할 때만 파일 1개와 키워드 1개로 좁혀 본다.
+docs/superpowers/specs, docs/superpowers/plans, docs/workstreams/front/archive는 과거 archive이므로 현재 handoff가 부족할 때만 파일 1개와 키워드 1개로 좁혀 본다.
 Browser/gstack 검증은 구현 후 화면 확인 가치가 있을 때 한 번에 모아 실행하고, 스킬 문서/콘솔/DOM 전문은 출력하지 않는다.
 
 이번 front 작업의 기본값은 Vue 3 + Vite + TypeScript 기반 저충실도 와이어프레임이다.
