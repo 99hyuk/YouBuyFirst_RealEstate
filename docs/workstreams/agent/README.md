@@ -18,6 +18,7 @@ AI 전략 에이전트를 담당합니다. `data`의 커뮤니티 신호, `marke
 - 사용자용 결정 근거 로그
 - 에이전트별 성과 리더보드 입력
 - 판단 실패 fallback과 disabled default 정책
+- 종목 상세 팩트폭격 헤드라인의 `headlineTone`, `headline`, `subtitle` 생성 또는 선택 규칙
 
 추천 브랜치 예시:
 
@@ -40,6 +41,7 @@ AI 전략 에이전트를 담당합니다. `data`의 커뮤니티 신호, `marke
 - analysis/indicator schema
 - community performance snapshot schema
 - quote snapshot contract
+- stock detail roast headline API contract
 - trade order request contract
 - dashboard API contract
 
@@ -50,6 +52,7 @@ AI 전략 에이전트를 담당합니다. `data`의 커뮤니티 신호, `marke
 3. 역발상 페르소나 최소 판단 규칙 문서화
 4. 커뮤니티별 성과 비교 에이전트의 데이터 의존성 분리
 5. 결정 근거 로그 schema 설계
+6. 종목 상세 팩트폭격 헤드라인의 evidence 기반 tone 선택 규칙 설계
 
 ## 하지 않는 일
 

@@ -24,6 +24,8 @@
 | `docs/LABEL_GUIDE.md` | GitHub/Notion 라벨 의미가 헷갈릴 때 |
 | `docs/DOMAIN_PACKAGE_GUIDE.md` | 트랙과 코드 패키지 경계가 헷갈릴 때 |
 | `docs/COMMUNITY_REACTION_GUIDE.md` | 커뮤니티 반응 용어와 수집 전략 확인 |
+| `docs/STOCK_DETAIL_COPY_GUIDE.md` | 종목 상세 상단의 시황/기술지표/재무 기반 팩트폭격 한줄평 기준 확인 |
+| `docs/workstreams/front/screens/` | 화면별 기획, route, child screen, API 후보 확인 |
 | `docs/LEGAL_RISK_CASES.md` | 크롤링/공개 배포 리스크 확인 |
 | `docs/TECHNICAL_RISK_REGISTER.md` | 최종 기획상 생길 수 있는 기술/제품/운영 이슈 확인 |
 | `docs/ENGINEERING_EVIDENCE_GUIDE.md` | 문제 해결, 개선, 기술 결정 기록 기준 확인 |
@@ -83,6 +85,7 @@
 - 항상 후보가 되는 시작 문서는 파일당 1.5k 토큰 아래를 목표로 합니다.
 - `CURRENT_HANDOFF.md`는 1.2k 토큰 안팎을 유지합니다.
 - `TASKS.md`는 미완료 체크박스를 보존하고, 완료 상세 이력만 요약합니다.
+- front Screen Brief는 일반 화면 150줄 이하, 복잡한 부모 화면 220줄 이하를 목표로 하고 변경 로그는 최근 5개만 유지합니다.
 
 초과하면 전체 삭제가 아니라 `rg` 검색, 섹션 읽기, 완료 이력 요약, 출력 요약으로 줄입니다.
 
@@ -107,6 +110,7 @@
 | 상황 | 갱신할 곳 |
 | --- | --- |
 | 제품 방향이나 범위 변경 | `FINAL_PRODUCT_PLAN.md`, `CURRENT_HANDOFF.md` |
+| front 화면 구조, route, child detail, 화면별 API 후보 변경 | `docs/workstreams/front/screens/` |
 | 커뮤니티 분석 용어/수집 전략 변경 | `COMMUNITY_REACTION_GUIDE.md`, `FINAL_PRODUCT_PLAN.md`, `PROJECT_BRIEF.md` |
 | 최종 기획상 새 기술/제품/운영 리스크 발견 | `TECHNICAL_RISK_REGISTER.md`, 필요 시 관련 트랙 README |
 | 작업 방식이나 라벨 기준 변경 | `WORKFLOW.md`, `GIT_CONVENTION.md`, `LABEL_GUIDE.md` |
@@ -117,3 +121,5 @@
 | Codex/Notion/PR/문서 운영 사고 | Notion 에이전트 운영 로그 DB |
 | PR 종료 | Notion 작업일지, 필요 시 `docs/work-units/` |
 | 채팅 시작 방식 변경 | `CHAT_START_GUIDE.md`, `WORKFLOW.md`, `CURRENT_HANDOFF.md` |
+
+front 화면 작업은 사용자가 별도로 기록을 지시하지 않아도 Screen Brief를 갱신합니다. 다만 Screen Brief는 현재 기준 문서이므로 긴 작업 과정, 폐기된 시안, 전체 피드백 전문을 누적하지 않고 최신 결론과 열린 질문만 남깁니다.

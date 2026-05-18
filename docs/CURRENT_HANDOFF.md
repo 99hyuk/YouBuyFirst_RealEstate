@@ -18,6 +18,7 @@
 - backend에는 ingestion/admin API, crawl run/posts/stock metrics 조회, `CrawlTarget` queue API가 있습니다.
 - pipeline에는 source policy gate, skip run 기록, crawl backoff, AI mention resolver/mock provider 흐름이 있습니다.
 - front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드와 디자인/구현 정본은 현재 `front/` 코드와 짧은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`입니다. 과거 세부 로그는 `docs/workstreams/front/archive/`에서 필요할 때만 검색합니다.
+- 화면별 기획, route, 하위 상세 화면, API 후보는 `docs/workstreams/front/screens/`를 봅니다.
 - 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
 - 기획 정리 구간은 front-first discovery로 갑니다. mock 화면을 먼저 세우고, API/데이터 계약은 화면에서 필요한 항목을 역으로 도출합니다.
 
@@ -35,6 +36,8 @@
 - 제품 용어는 사용자 화면에서 `커뮤니티 반응`, 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`을 씁니다.
 - 제품명은 문서/화면/PR에서 붙여 쓴 `너나사`를 기본 브랜드명으로 씁니다. 풀어서 설명할 때만 `너나 사` 말장난을 제한적으로 씁니다.
 - 제품 핵심은 관심종목 앱이 아니라 커뮤니티 반응 지표입니다. 관심종목은 커뮤니티 지표를 매일 쓰게 만드는 필터/개인화 레이어로 둡니다.
+- 부동산은 주식 MVP에 섞지 않고 후순위 별도 버티컬로만 검토합니다. SSAFY 관통프로젝트 주제와 병행할 수는 있지만, 너나사 주식 서비스의 핵심 범위는 주식/ETF 커뮤니티 반응 분석입니다.
+- 종목 상세 상단의 강한 한줄평은 커뮤니티 요약이 아니라 시황/기술지표/재무 기반 `종목 상태 팩트폭격 헤드라인`입니다. 프론트 배너뿐 아니라 backend/API 계약 후보이며, `headlineTone`, `headline`, `subtitle`, `evidence`, `asOf`, `dataQuality`, `personalizedSafe` 기준은 `docs/STOCK_DETAIL_COPY_GUIDE.md`를 봅니다.
 - 디자인과 프론트 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다. Figma AI/Stitch는 기본 흐름이 아니며, 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 씁니다.
 - 현재 디자인 판단 기준은 `docs/workstreams/front/README.md`의 `현재 디자인 우선순위` 섹션입니다. 가독성, 정보 밀도, 전문적인 차트 느낌, 토스증권/야선식 직관성을 우선하고, 다크/라이트 테마는 후속 작업으로 둡니다.
 - 사용자 화면에서 `추천`, `매수`, `매도`, `수익 보장`, `진입`, `시그널 확정`처럼 투자 행동을 지시하는 표현은 서비스 판단이나 CTA로 쓰지 않습니다.
@@ -51,6 +54,7 @@
 - 트랙 경계: `docs/workstreams/`
 - 문서/컨텍스트 예산: `docs/DOCUMENTATION_GUIDE.md`
 - 기술 리스크 목록: `docs/TECHNICAL_RISK_REGISTER.md`
+- 제품/기술 고민 메모: `docs/PRODUCT_DECISION_NOTES.md`
 - 작업 방식: `docs/WORKFLOW.md`
 - Git/PR 규칙: `docs/GIT_CONVENTION.md`
 - 라벨: `docs/LABEL_GUIDE.md`

@@ -28,6 +28,8 @@
 
 현재 화면과 Codex 디자인/구현 기준은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 먼저 봅니다. 오래된 세부 로그는 archive 기록이므로 현재 `main` 코드와 브랜치 상태를 확인한 뒤 참고합니다.
 
+화면별 기획, route, child screen, API 후보는 `docs/workstreams/front/screens/`에서 관리합니다. 탭 안에서 다시 상세 화면으로 들어가는 경우도 별도 Screen Brief 후보로 보며, 프론트 PR이 화면 구조를 바꾸면 사용자가 따로 지시하지 않아도 해당 Screen Brief를 함께 갱신합니다. Screen Brief는 최신 기준만 유지하고, 긴 시행착오와 오래된 변경 로그를 누적하지 않습니다.
+
 ## 현재 디자인 우선순위
 
 다음 front 작업에서 디자인 판단이 필요하면 이 순서를 우선합니다. 과거 `Balanced Dark Toss` 같은 별도 다크 테마 제안은 현재 정본이 아니며, 다크/라이트 테마 구현은 후속 작업으로 둡니다.
@@ -38,8 +40,9 @@
 4. 토스증권과 야선식 직관성: 긴 설명보다 숫자, 순위, 상태, 링크, 작은 태그로 바로 이해되게 합니다. 검색, 오른쪽 탭, 지표, 뉴스/리포트 목록은 실제 기능처럼 보여야 합니다.
 5. AI스러운 네모 박스 반복 줄이기: 카드 남발 대신 간격, 선, 헤더, 배경 톤, 정보 밀도 차이로 영역을 구분합니다.
 6. 커뮤니티 반응 서비스의 차별점: 단순 주식 대시보드가 아니라 기사, 공시, 커뮤니티 키워드, 가격 변동이 왜 반응을 움직였는지 짧게 연결합니다.
-7. 투자 자문처럼 보이지 않기: 서비스의 판단, CTA, 제목, 요약 문구에서 `추천`, `매수`, `매도`, `수익 보장`, `진입`, `시그널 확정`처럼 투자 행동을 지시하는 표현을 쓰지 않습니다. 커뮤니티 원문이나 외부 링크 제목에 이런 단어가 포함될 때도 출처가 있는 반응 데이터로만 다루고 서비스의 결론처럼 보이게 만들지 않습니다.
-8. 변경 기록 유지: 디자인 변경은 PR preview와 visual history로 비교 가능하게 남깁니다. 운영 주소는 Netlify main 배포본, 작업 중 확인은 로컬 서버 또는 PR preview를 사용합니다.
+7. 종목 상세 팩트폭격 헤드라인: 특정 종목 화면 상단의 큰 한줄평은 커뮤니티 요약이 아니라 시황, 기술 지표, 재무, 뉴스/공시, 컨센서스 기반 종목 상태 카피입니다. 검은 네모 배너 UI, 사용자 제공 레퍼런스 이미지, tone/API 계약 후보는 `docs/STOCK_DETAIL_COPY_GUIDE.md`를 따릅니다.
+8. 투자 자문처럼 보이지 않기: 서비스의 판단, CTA, 제목, 요약 문구에서 `추천`, `매수`, `매도`, `수익 보장`, `진입`, `시그널 확정`처럼 투자 행동을 지시하는 표현을 쓰지 않습니다. 단, `매수 언급`, `매도 언급`, `순매수`, `호가 잔량` 같은 관찰 데이터 라벨은 사용할 수 있습니다. 커뮤니티 원문이나 외부 링크 제목에 이런 단어가 포함될 때도 출처가 있는 반응 데이터로만 다루고 서비스의 결론처럼 보이게 만들지 않습니다.
+9. 변경 기록 유지: 디자인 변경은 PR preview와 visual history로 비교 가능하게 남깁니다. 운영 주소는 Netlify main 배포본, 작업 중 확인은 로컬 서버 또는 PR preview를 사용합니다.
 
 ## 프론트 에이전트 시작 지시
 
@@ -51,6 +54,7 @@ AGENTS.md, docs/CURRENT_HANDOFF.md, docs/DOCUMENTATION_GUIDE.md,
 docs/workstreams/README.md, docs/workstreams/front/README.md는 필요한 섹션만 확인한다.
 이미 대화에 주입된 긴 문서는 다시 전문 출력하지 않는다.
 docs/superpowers/specs, docs/superpowers/plans, docs/workstreams/front/archive는 과거 archive이므로 현재 handoff가 부족할 때만 파일 1개와 키워드 1개로 좁혀 본다.
+화면별 기획과 child screen/API 후보는 docs/workstreams/front/screens/README.md와 해당 화면 brief를 확인한다.
 Browser/gstack 검증은 구현 후 화면 확인 가치가 있을 때 한 번에 모아 실행하고, 스킬 문서/콘솔/DOM 전문은 출력하지 않는다.
 
 이번 front 작업의 기본값은 Vue 3 + Vite + TypeScript 기반 저충실도 와이어프레임이다.
@@ -120,6 +124,8 @@ Figma AI, Stitch 같은 외부 디자인 도구 산출물을 정본처럼 고정
 - 실제 API가 없으면 fixture/mock data를 명시합니다.
 - dashboard shell, component system, chart view, real API integration을 한 PR에 섞지 않습니다.
 - PR 본문에는 `기획자 확인 필요` 항목을 별도로 두고, 임의 확정한 부분이 없었는지 적습니다.
+- 화면 구조, route, child detail, fixture/API 후보가 바뀌면 `docs/workstreams/front/screens/`의 해당 Screen Brief를 갱신합니다.
+- Screen Brief를 갱신할 때는 최신 기준만 남기고 변경 로그는 최근 5개를 넘기지 않습니다.
 - UI 구현 PR은 가능하면 스크린샷 또는 브라우저 검증 결과를 PR 본문에 남깁니다.
 
 ## 하지 않는 일

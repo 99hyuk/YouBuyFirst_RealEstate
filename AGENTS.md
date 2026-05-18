@@ -46,7 +46,7 @@ Codex는 사용자의 요구를 무조건 수용하는 실행기가 아닙니다
 - 공개 HTTP 수집을 우선하고, Playwright는 렌더링 fallback으로만 사용합니다.
 - 저장 원문은 제목, 본문 일부, URL, 작성자 해시, 작성 시각, 원문 해시로 제한합니다.
 - 사용자 화면에서는 `커뮤니티 반응`을 우선합니다. 단일 분석값은 `반응 방향`, 내부 후보 필드는 `reactionDirection`입니다.
-- 사용자에게 행동을 지시하는 `추천`, `매수`, `매도`, `수익 보장`, `진입`, `시그널 확정` 같은 투자 자문형 표현은 서비스 판단, CTA, 제목, 요약 문구에 쓰지 않습니다. 외부 글 제목이나 커뮤니티 원문에 들어간 단어는 출처가 있는 반응 데이터로만 다루고 서비스의 결론처럼 보이게 만들지 않습니다.
+- 사용자에게 행동을 지시하는 `추천`, `사라`, `팔아라`, `수익 보장`, `진입`, `시그널 확정` 같은 투자 자문형 표현은 서비스 판단, CTA, 제목, 요약 문구에 쓰지 않습니다. `매수 언급`, `매도 언급`, `순매수`, `호가 잔량` 같은 출처가 있는 관찰 데이터 라벨은 사용할 수 있습니다. 외부 글 제목이나 커뮤니티 원문에 들어간 단어는 출처가 있는 반응 데이터로만 다루고 서비스의 결론처럼 보이게 만들지 않습니다.
 
 ## 도구와 컨텍스트 예산
 
@@ -100,12 +100,16 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 - 제품 개발/운영 문제, 성능 개선, 품질 개선, 기술 결정은 개발자 기술 경험 DB에 남깁니다.
 - Codex, Notion, GitHub PR, 문서 운영 사고는 에이전트 운영 로그 DB에 분리합니다.
 - 최종 기획상 생길 수 있는 기술/제품/운영 리스크 후보는 `docs/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
+- 사용자가 작업 중 던진 제품/기술 고민을 나중에 다시 보고 싶다고 하면 `docs/PRODUCT_DECISION_NOTES.md`에 짧게 누적합니다. 확정된 결정은 최종 기획, 현재 handoff, 리스크 문서, Notion 기술 경험 DB 중 맞는 위치로 승격합니다.
+- front 화면 구조, route, child detail, fixture/API 후보, 화면 문구 기준이 바뀌면 사용자의 별도 기록 지시 없이 `docs/workstreams/front/screens/`의 해당 Screen Brief를 갱신합니다. Screen Brief는 최신 기준만 유지하고 긴 변경 이력은 누적하지 않습니다.
 
 ## 참고 문서
 
 - 현재 인수인계: `docs/CURRENT_HANDOFF.md`
 - 문서 구조와 읽기 게이트: `docs/DOCUMENTATION_GUIDE.md`
 - 채팅 시작: `docs/CHAT_START_GUIDE.md`
+- 프론트 화면별 기준: `docs/workstreams/front/screens/`
+- 종목 상세 팩트폭격 카피: `docs/STOCK_DETAIL_COPY_GUIDE.md`
 - 작업 방식: `docs/WORKFLOW.md`
 - 기술 리스크 목록: `docs/TECHNICAL_RISK_REGISTER.md`
 - 병렬 트랙: `docs/workstreams/`

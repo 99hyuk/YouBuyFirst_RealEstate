@@ -15,6 +15,7 @@
 - AI 3줄 요약 입력 데이터
 - 커뮤니티별 신호와 이후 수익률 비교용 원천 지표
 - `CommunitySignal`, `ForwardReturn`, `CommunityPerformanceSnapshot`
+- 종목 상세 팩트폭격 헤드라인의 기술/재무/밸류에이션 근거와 `stockHealthScore` 후보
 
 ## 파일 소유권
 
@@ -31,6 +32,7 @@
 - crawler raw payload
 - quote provider contract
 - dashboard API contract
+- stock detail roast headline API contract
 - agent decision input contract
 - simulation order/portfolio schema
 
@@ -40,6 +42,7 @@
 2. 30분 집계 산식 검증 테스트 추가
 3. 열기 지수 산식 문서화
 4. 커뮤니티별 성과 비교용 snapshot 모델 설계
+5. 종목 상세 팩트폭격 헤드라인에 넣을 기술/재무/밸류에이션 evidence schema 후보 정리
 
 ## 하지 않는 일
 

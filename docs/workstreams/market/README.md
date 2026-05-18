@@ -14,6 +14,7 @@
 - WebSocket/STOMP 가격 브로드캐스트
 - stale quote fallback
 - 시세 provider 이용 조건과 공개 노출 정책
+- 종목 상세 팩트폭격 헤드라인의 가격/추세/거래량/호가 근거 필드
 
 추천 브랜치 예시:
 
@@ -33,6 +34,7 @@
 - analysis/indicator schema
 - community signal schema
 - dashboard API contract
+- stock detail roast headline API contract
 - external quote provider 이용 조건 문서
 - trade execution price contract
 - agent market input contract
@@ -43,6 +45,7 @@
 2. quote snapshot 최소 모델 설계
 3. Redis quote cache와 stale quote 정책 설계
 4. WebSocket/STOMP 가격 브로드캐스트 경계 설계
+5. 종목 상세 팩트폭격 헤드라인에 필요한 가격/추세 evidence 필드 후보 정리
 
 ## 하지 않는 일
 
