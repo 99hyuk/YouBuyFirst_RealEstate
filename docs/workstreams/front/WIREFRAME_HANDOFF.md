@@ -1,6 +1,6 @@
 # Front Wireframe Handoff
 
-Last update: 2026-05-18 09:21 KST
+Last update: 2026-05-18 09:28 KST
 
 이 문서는 새 front 세션이 처음 보는 짧은 현재 기준입니다. 상세 변경 이력은 archive로 분리했습니다.
 전문을 길게 읽지 말고, 필요한 경우에만 키워드로 archive를 검색합니다.
@@ -19,7 +19,7 @@ Last update: 2026-05-18 09:21 KST
 - 새 front 작업을 시작할 때는 먼저 `gh pr list --state open`, `git worktree list`, `git branch -vv --sort=-committerdate`로 현재 열린 작업을 확인합니다.
 - 이미 같은 목적의 front worktree가 있으면 새로 만들기보다 그 작업을 이어갈지 먼저 판단합니다.
 - 이전 `codex/front-dashboard-content` 작업은 정리되었으므로, 예전 `http://127.0.0.1:5174/dashboard` 서버가 떠 있다는 가정으로 시작하지 않습니다.
-- `codex/front-dark-dashboard-design` 브랜치는 아직 로컬/원격에 남아 있습니다. main에 없는 디자인 설계 조각이 있을 수 있으므로 삭제 전 front 트랙이 살릴 내용을 확인합니다.
+- `codex/front-dark-dashboard-design` 브랜치는 검토 후 정리되었습니다. 현재 디자인 기준은 `docs/workstreams/front/README.md`의 `현재 디자인 우선순위`를 따릅니다.
 
 ## 현재 화면 방향
 
@@ -69,7 +69,6 @@ front/UI를 바꾸면 가능하면 아래를 확인합니다.
 ## 다음 front 후보
 
 - 현재 `main`의 `/dashboard`를 다시 띄워 실제 최신 화면을 확인합니다.
-- `codex/front-dark-dashboard-design`에서 main에 없는 디자인 결정이나 문서 조각이 있는지 확인합니다.
 - 메인 대시보드 와이어프레임을 커뮤니티 반응 중심으로 계속 다듬습니다.
 - 관심종목 브리핑과 종목 이벤트 타임라인 화면 후보를 mock으로 추가합니다.
 - 최신 기사/공시/유튜브/신뢰 블로그/인기 커뮤니티 글 카드의 API field 후보를 정리합니다.
