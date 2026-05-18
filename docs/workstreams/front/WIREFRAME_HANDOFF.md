@@ -1,6 +1,6 @@
 # Front Wireframe Handoff
 
-Last update: 2026-05-18 09:15 KST
+Last update: 2026-05-18 09:21 KST
 
 이 문서는 새 front 세션이 처음 보는 짧은 현재 기준입니다. 상세 변경 이력은 archive로 분리했습니다.
 전문을 길게 읽지 말고, 필요한 경우에만 키워드로 archive를 검색합니다.
@@ -13,10 +13,11 @@ Last update: 2026-05-18 09:15 KST
 - 현재 정본은 `main`의 `front/` 코드와 이 문서입니다.
 - 오래된 dev server나 예전 worktree 경로를 그대로 믿지 않습니다. 새 front 작업은 최신 `main`에서 새 worktree를 열어 시작합니다.
 
-## 현재 작업 상태
+## 시작 상태 확인
 
-- 열린 GitHub PR은 없습니다.
-- 현재 활성 front worktree는 없습니다.
+- 이 문서는 특정 worktree나 dev server가 계속 살아 있다고 보장하지 않습니다.
+- 새 front 작업을 시작할 때는 먼저 `gh pr list --state open`, `git worktree list`, `git branch -vv --sort=-committerdate`로 현재 열린 작업을 확인합니다.
+- 이미 같은 목적의 front worktree가 있으면 새로 만들기보다 그 작업을 이어갈지 먼저 판단합니다.
 - 이전 `codex/front-dashboard-content` 작업은 정리되었으므로, 예전 `http://127.0.0.1:5174/dashboard` 서버가 떠 있다는 가정으로 시작하지 않습니다.
 - `codex/front-dark-dashboard-design` 브랜치는 아직 로컬/원격에 남아 있습니다. main에 없는 디자인 설계 조각이 있을 수 있으므로 삭제 전 front 트랙이 살릴 내용을 확인합니다.
 
