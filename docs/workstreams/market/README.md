@@ -49,10 +49,12 @@
 
 ## 공개 시세 표시 정책
 
-- 공개 화면은 종목별 현재가, 등락률, 거래량 일부 같은 제한된 quote snapshot을 직접 표시할 수 있습니다.
-- 직접 표시하는 quote에는 `30분 지연`, provider, `asOf`, `stale` 상태를 함께 내려야 합니다.
-- 차트 전체는 우선 TradingView 같은 외부 위젯을 사용하고, 내부 에이전트/모의투자 계산은 별도 quote snapshot을 참조합니다.
+- MVP와 포트폴리오 단계에서는 `yfinance` 계열 provider를 국내/미국 시세 후보로 두고, 국내 투자자별 수급은 `pykrx` 또는 FinanceDataReader 같은 네이버/거래소 계열 오픈소스 provider를 실험 후보로 둡니다.
+- 공개 화면은 종목별 현재가, 등락률, 거래량 일부 같은 제한된 quote snapshot만 직접 표시할 수 있습니다.
+- 직접 표시하는 quote에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 상태를 함께 내려야 합니다.
+- 차트 전체는 우선 TradingView 같은 외부 위젯을 사용하거나, 자체 차트는 내부 quote snapshot 기반으로 제한된 범위에서 구성합니다.
 - 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약이나 명확한 허용 조건 전까지 만들지 않습니다.
+- 서비스 트래픽이 커지거나 수익화/상용화 단계로 넘어가면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 다시 검토합니다.
 
 ## 하지 않는 일
 
