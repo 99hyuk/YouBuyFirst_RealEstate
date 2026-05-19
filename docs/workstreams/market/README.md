@@ -9,7 +9,7 @@
 ## 담당 범위
 
 - quote provider adapter
-- 실시간 또는 지연 시세 수집
+- 지연 시세 수집과 실시간 전환 가능성 검토
 - Redis latest quote cache
 - WebSocket/STOMP 가격 브로드캐스트
 - stale quote fallback
@@ -41,7 +41,7 @@
 
 ## 현재 우선순위
 
-1. 30분 지연 quote snapshot 직접 표시 정책과 provider 이용 조건 정리
+1. `yfinance` + FinanceDataReader 기반 quote snapshot 정책과 provider 이용 조건 정리
 2. quote snapshot 최소 모델 설계
 3. Redis quote cache와 stale quote 정책 설계
 4. WebSocket/STOMP 가격 브로드캐스트 경계 설계
@@ -49,7 +49,10 @@
 
 ## 공개 시세 표시 정책
 
-- MVP와 포트폴리오 단계에서는 `yfinance` 계열 provider를 국내/미국 시세 후보로 두고, 국내 투자자별 수급은 `pykrx` 또는 FinanceDataReader 같은 네이버/거래소 계열 오픈소스 provider를 실험 후보로 둡니다.
+- MVP와 포트폴리오 단계의 기본 조합은 `yfinance` + FinanceDataReader입니다.
+- `yfinance`는 국내/미국 시세와 거래량의 1차 provider로 둡니다.
+- FinanceDataReader는 국내 종목 메타데이터, 일봉/스냅샷 보강, 국내 투자자별 수급 후보 provider로 둡니다.
+- `pykrx`는 기본 조합에서 빼고, FinanceDataReader로 부족한 KRX 수급 검증이 필요할 때만 보조 후보로 남깁니다.
 - 공개 화면은 종목별 현재가, 등락률, 거래량 일부 같은 제한된 quote snapshot만 직접 표시할 수 있습니다.
 - 직접 표시하는 quote에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 상태를 함께 내려야 합니다.
 - 차트 전체는 우선 TradingView 같은 외부 위젯을 사용하거나, 자체 차트는 내부 quote snapshot 기반으로 제한된 범위에서 구성합니다.

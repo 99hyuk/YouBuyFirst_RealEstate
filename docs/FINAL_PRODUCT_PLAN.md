@@ -76,18 +76,19 @@
 
 ### 3. 시장 시세와 호가
 
-투자 참고 사이트로서 커뮤니티 반응 지표만으로는 부족하므로, 종목별 가격, 등락률, 거래량, 호가 또는 지연 시세를 반응 지표와 함께 보여줍니다. 공개 화면은 차트 전체를 외부 위젯으로 처리하되, 종목 카드와 상세 화면에는 30분 지연 quote snapshot을 제한적으로 직접 표시합니다.
+투자 참고 사이트로서 커뮤니티 반응 지표만으로는 부족하므로, 종목별 가격, 등락률, 거래량, 호가 또는 지연 시세를 반응 지표와 함께 보여줍니다. MVP 기본 데이터 조합은 `yfinance` + FinanceDataReader입니다. `yfinance`는 국내/미국 시세와 거래량, FinanceDataReader는 국내 종목 메타데이터와 일봉/스냅샷 보강, 국내 수급 후보를 담당합니다. 공개 화면은 차트 전체를 외부 위젯으로 처리하되, 종목 카드와 상세 화면에는 provider 기준 지연 quote snapshot을 제한적으로 직접 표시합니다.
 
 최종 구조:
 
-- 외부 quote provider adapter
+- `yfinance` quote provider adapter
+- FinanceDataReader 국내 보강 provider adapter
 - Redis latest quote cache
 - Spring WebSocket/STOMP gateway
 - UI price ticker
 - API 장애 시 stale quote 표시와 fallback
-- `30분 지연`, provider, `asOf`, `stale` 상태를 포함한 quote 표시 계약
+- provider 기준 지연 시간, provider, `asOf`, `stale` 상태를 포함한 quote 표시 계약
 
-운영 단계에서는 시세 제공자의 이용 조건을 확인합니다. 실시간 시세 재배포가 제한되는 경우 30분 지연 시세, 사용자 개인 API 연결, 허용된 provider, 또는 모의 데이터로 대체합니다. 별도 계약 전에는 원시 분봉, 호가, 대량 OHLC를 공개 데이터 서비스처럼 제공하지 않습니다.
+운영 단계에서는 시세 제공자의 이용 조건을 확인합니다. 실시간 시세 재배포가 제한되는 경우 provider 기준 지연 시세, 사용자 개인 API 연결, 허용된 provider, 또는 모의 데이터로 대체합니다. `pykrx`는 기본 조합이 아니라 FinanceDataReader로 부족한 KRX 수급 검증이 필요할 때만 보조 후보로 둡니다. 별도 계약 전에는 원시 분봉, 호가, 대량 OHLC를 공개 데이터 서비스처럼 제공하지 않습니다.
 
 ### 4. AI 3줄 요약과 이슈 설명
 

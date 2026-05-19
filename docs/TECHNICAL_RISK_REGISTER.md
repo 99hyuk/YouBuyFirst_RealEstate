@@ -108,10 +108,10 @@
 
 - 트랙: market/front/ops
 - 상태: 후보
-- 증상: 30분 지연 시세나 mock data를 `실시간`처럼 보여줍니다.
+- 증상: provider 기준 지연 시세나 mock data를 `실시간`처럼 보여줍니다.
 - 영향: 데이터 제공자 약관, 사용자 신뢰, 투자 자문 오해가 생깁니다.
-- 방어: MVP 단계에서는 `yfinance` 계열 provider와 국내 수급용 `pykrx`/FinanceDataReader 계열 provider를 교체 가능한 adapter로만 사용합니다. 공개 화면에는 제한된 quote snapshot만 직접 표시하고, 직접 표시하는 시세에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 상태를 항상 붙입니다. 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약 전까지 만들지 않습니다. 서비스 트래픽이나 수익화 가능성이 커지면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 재검토합니다.
-- 확인: 모든 market UI에 `asOf`, 지연 시간, 출처, stale 상태가 있는지 화면 QA로 확인합니다. provider 변경 전에는 공개 표출 가능 범위와 교체 경로를 문서화합니다.
+- 방어: MVP 단계에서는 `yfinance` + FinanceDataReader 조합을 기본 provider 전략으로 둡니다. `yfinance`는 국내/미국 시세와 거래량의 1차 adapter, FinanceDataReader는 국내 종목 메타데이터, 일봉/스냅샷 보강, 국내 수급 후보 adapter로 사용합니다. `pykrx`는 기본 조합에서 빼고, FinanceDataReader로 부족한 KRX 수급 검증이 필요할 때만 보조 후보로 둡니다. 공개 화면에는 제한된 quote snapshot만 직접 표시하고, 직접 표시하는 시세에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 상태를 항상 붙입니다. 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약 전까지 만들지 않습니다. 서비스 트래픽이나 수익화 가능성이 커지면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 재검토합니다.
+- 확인: 모든 market UI에 `asOf`, 지연 시간, 출처, stale 상태가 있는지 화면 QA로 확인합니다. provider 구현 전에는 `YFinanceQuoteProvider`, `FinanceDataReaderKoreaProvider`처럼 adapter 경계를 분리하고, 공개 표출 가능 범위와 교체 경로를 문서화합니다.
 
 ### RISK-010. 커뮤니티 원문/작성자 노출 과다
 
