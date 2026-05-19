@@ -41,11 +41,18 @@
 
 ## 현재 우선순위
 
-1. 공개 배포 가능한 시세 제공 방식 조사
+1. 30분 지연 quote snapshot 직접 표시 정책과 provider 이용 조건 정리
 2. quote snapshot 최소 모델 설계
 3. Redis quote cache와 stale quote 정책 설계
 4. WebSocket/STOMP 가격 브로드캐스트 경계 설계
 5. 종목 상세 팩트폭격 헤드라인에 필요한 가격/추세 evidence 필드 후보 정리
+
+## 공개 시세 표시 정책
+
+- 공개 화면은 종목별 현재가, 등락률, 거래량 일부 같은 제한된 quote snapshot을 직접 표시할 수 있습니다.
+- 직접 표시하는 quote에는 `30분 지연`, provider, `asOf`, `stale` 상태를 함께 내려야 합니다.
+- 차트 전체는 우선 TradingView 같은 외부 위젯을 사용하고, 내부 에이전트/모의투자 계산은 별도 quote snapshot을 참조합니다.
+- 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약이나 명확한 허용 조건 전까지 만들지 않습니다.
 
 ## 하지 않는 일
 
