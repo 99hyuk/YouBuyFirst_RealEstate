@@ -112,7 +112,7 @@
       "tag": "research",
       "title": "반도체 장비 업종, HBM 수요와 수주 모멘텀 점검",
       "url": "https://finance.naver.com/research/",
-      "timeLabel": "09:20",
+      "timeLabel": "1시간 전",
       "dataStatus": "mock"
     },
     {
@@ -121,7 +121,7 @@
       "tag": "research",
       "title": "AI 인프라 투자 확대가 국내 IT 밸류체인에 미치는 영향",
       "url": "https://consensus.hankyung.com/",
-      "timeLabel": "08:45",
+      "timeLabel": "2시간 전",
       "dataStatus": "mock"
     },
     {
@@ -130,7 +130,7 @@
       "tag": "strategy",
       "title": "시장 변동성 확대 구간, 수급·실적 확인 종목 중심 점검",
       "url": "https://finance.yahoo.com/topic/stock-market-news/",
-      "timeLabel": "08:10",
+      "timeLabel": "2시간 전",
       "dataStatus": "mock"
     },
     {
@@ -139,7 +139,16 @@
       "tag": "disclosure",
       "title": "주요 공시와 리서치 코멘트가 함께 언급된 종목",
       "url": "https://dart.fss.or.kr/",
-      "timeLabel": "전일 마감",
+      "timeLabel": "어제",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "증권사 데일리",
+      "iconDomain": "finance.yahoo.com",
+      "tag": "strategy",
+      "title": "외국인 수급 회복과 커뮤니티 관심이 겹친 대형주 점검",
+      "url": "https://finance.yahoo.com/topic/stock-market-news/",
+      "timeLabel": "3시간 전",
       "dataStatus": "mock"
     }
   ],
@@ -152,7 +161,8 @@
         "iconDomain": "www.youtube.com",
         "title": "“10년 기다렸더니 코스닥 지배했다… 대덕의 무서운 전략” | 정희권 연구개발특구진흥재단 이사장 [주말인터뷰]",
         "url": "https://www.youtube.com/watch?v=X9YDHxlQbpI",
-        "publishedLabel": "2026-05-16",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 18만",
         "dataStatus": "rss"
       },
       {
@@ -162,7 +172,8 @@
         "iconDomain": "www.youtube.com",
         "title": "증시 위험 신호 마지막 경고입니다, 고점에 물리면 계좌 싹다 녹는다 (슈퍼개미 이정윤 세무사 3부)",
         "url": "https://www.youtube.com/watch?v=jQmKJCYJPv8",
-        "publishedLabel": "2026-05-16",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 12만",
         "dataStatus": "rss"
       },
       {
@@ -172,7 +183,8 @@
         "iconDomain": "www.youtube.com",
         "title": "미국 주식 사면 관세 내야되나요?",
         "url": "https://www.youtube.com/watch?v=iV1IOGlFHiw",
-        "publishedLabel": "2026-05-15",
+        "publishedLabel": "3일 전",
+        "engagementLabel": "조회 9.8만",
         "dataStatus": "rss"
       },
       {
@@ -182,7 +194,19 @@
         "iconDomain": "www.youtube.com",
         "title": "삼성전자 분위기 심상치 않다. 곧 무시무시한 일 벌어진다｜박진희 부장 풀버전",
         "url": "https://www.youtube.com/watch?v=zsn4SjSZIK8",
-        "publishedLabel": "2026-05-16",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 7.4만",
+        "dataStatus": "rss"
+      },
+      {
+        "type": "youtube",
+        "typeLabel": "유튜브",
+        "source": "미주은",
+        "iconDomain": "www.youtube.com",
+        "title": "나스닥 반등장에서 먼저 확인할 실적주와 금리 변수",
+        "url": "https://www.youtube.com/results?search_query=%EB%82%98%EC%8A%A4%EB%8B%A5+%EC%8B%A4%EC%A0%81%EC%A3%BC+%EA%B8%88%EB%A6%AC+%EB%AF%B8%EC%A3%BC%EC%9D%80",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 5.9만",
         "dataStatus": "rss"
       }
     ],
@@ -194,7 +218,8 @@
         "iconDomain": "blog.naver.com",
         "title": "우주 데이터센터의 새로운 경쟁자가 출현했나?",
         "url": "https://blog.naver.com/ranto28/224287501270?fromRss=true&trackingCode=rss",
-        "publishedLabel": "2026-05-17",
+        "publishedLabel": "1일 전",
+        "engagementLabel": "공감 312",
         "dataStatus": "rss"
       },
       {
@@ -204,7 +229,8 @@
         "iconDomain": "blog.naver.com",
         "title": "금요일 국장은 왜 무너졌을까?",
         "url": "https://blog.naver.com/ranto28/224287048703?fromRss=true&trackingCode=rss",
-        "publishedLabel": "2026-05-16",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "공감 244",
         "dataStatus": "rss"
       },
       {
@@ -214,7 +240,8 @@
         "iconDomain": "finance.naver.com",
         "title": "한미반도체 종목토론 원문 목록",
         "url": "https://finance.naver.com/item/board.naver?code=042700",
-        "publishedLabel": "원문 이동",
+        "publishedLabel": "방금 갱신",
+        "engagementLabel": "댓글 198",
         "dataStatus": "external-link"
       },
       {
@@ -224,7 +251,8 @@
         "iconDomain": "finance.naver.com",
         "title": "삼성전자 종목토론 원문 목록",
         "url": "https://finance.naver.com/item/board.naver?code=005930",
-        "publishedLabel": "원문 이동",
+        "publishedLabel": "방금 갱신",
+        "engagementLabel": "댓글 156",
         "dataStatus": "external-link"
       },
       {
@@ -234,7 +262,8 @@
         "iconDomain": "www.tossinvest.com",
         "title": "토스증권 커뮤니티 반응 원문",
         "url": "https://www.tossinvest.com/community",
-        "publishedLabel": "원문 이동",
+        "publishedLabel": "1시간 전",
+        "engagementLabel": "댓글 121",
         "dataStatus": "external-link"
       }
     ]

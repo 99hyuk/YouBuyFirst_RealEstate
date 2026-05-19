@@ -325,13 +325,12 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                 <h3 id="news-title">실시간 뉴스</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill warning">mock feed</span>
-                <RouterLink class="detail-link" to="/communities">자세히 보기 →</RouterLink>
+                <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'news' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
               <a
-                v-for="news in dashboardSummary.liveNews.slice(0, 4)"
+                v-for="news in dashboardSummary.liveNews.slice(0, 5)"
                 :key="news.title"
                 class="feed-row"
                 :href="news.url"
@@ -349,7 +348,6 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                   <strong :title="news.title">{{ news.title }}</strong>
                   <em>{{ news.source }} · {{ news.timeLabel }}</em>
                 </span>
-                <span class="feed-open">전문 →</span>
               </a>
             </div>
           </article>
@@ -361,15 +359,12 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                 <h3 id="analyst-title">애널리스트 리포트</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill warning">제목 피드</span>
-                <a class="detail-link" href="https://finance.naver.com/research/" target="_blank" rel="noreferrer noopener">
-                  자세히 보기 →
-                </a>
+                <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'reports' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
               <a
-                v-for="report in dashboardSummary.analystReports.slice(0, 4)"
+                v-for="report in dashboardSummary.analystReports.slice(0, 5)"
                 :key="report.title"
                 class="feed-row"
                 :href="report.url"
@@ -387,7 +382,6 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                   <strong :title="report.title">{{ report.title }}</strong>
                   <em>{{ report.source }} · {{ report.timeLabel }}</em>
                 </span>
-                <span class="feed-open">전문 →</span>
               </a>
             </div>
           </article>
@@ -399,26 +393,19 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                 <h3 id="external-video-title">증권 영상 새 글</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill warning">제목 링크만</span>
-                <a
-                  class="detail-link"
-                  href="https://www.youtube.com/results?search_query=%EC%A6%9D%EA%B6%8C+%EC%A3%BC%EC%8B%9D"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                >
-                  자세히 보기 →
-                </a>
+                <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'videos' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
               <a
-                v-for="video in dashboardSummary.externalContent.videos.slice(0, 4)"
+                v-for="(video, index) in dashboardSummary.externalContent.videos.slice(0, 5)"
                 :key="video.url"
-                class="feed-row"
+                class="feed-row ranked-feed-row"
                 :href="video.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
+                <span class="feed-rank">{{ index + 1 }}위</span>
                 <span
                   :class="['site-icon', 'real-icon', 'source-badge', externalIconClass(video)]"
                   :aria-label="`${video.source} ${video.typeLabel}`"
@@ -428,9 +415,8 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                 </span>
                 <span class="feed-copy">
                   <strong :title="video.title">{{ video.title }}</strong>
-                  <em>{{ video.source }} · {{ video.publishedLabel }}</em>
+                  <em>{{ video.source }} · {{ video.publishedLabel }} · {{ video.engagementLabel }}</em>
                 </span>
-                <span class="feed-open">보기 →</span>
               </a>
             </div>
           </article>
@@ -442,21 +428,19 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                 <h3 id="external-link-title">블로그와 커뮤니티 링크</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill warning">원문 이동</span>
-                <a class="detail-link" href="https://finance.naver.com/" target="_blank" rel="noreferrer noopener">
-                  자세히 보기 →
-                </a>
+                <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'links' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
               <a
-                v-for="link in dashboardSummary.externalContent.links.slice(0, 4)"
+                v-for="(link, index) in dashboardSummary.externalContent.links.slice(0, 5)"
                 :key="link.url"
-                class="feed-row"
+                class="feed-row ranked-feed-row"
                 :href="link.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
+                <span class="feed-rank">{{ index + 1 }}위</span>
                 <span
                   :class="['site-icon', 'real-icon', 'source-badge', externalIconClass(link)]"
                   :aria-label="`${link.source} ${link.typeLabel}`"
@@ -466,9 +450,8 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
                 </span>
                 <span class="feed-copy">
                   <strong :title="link.title">{{ link.title }}</strong>
-                  <em>{{ link.source }} · {{ link.publishedLabel }}</em>
+                  <em>{{ link.source }} · {{ link.publishedLabel }} · {{ link.engagementLabel }}</em>
                 </span>
-                <span class="feed-open">보기 →</span>
               </a>
             </div>
           </article>

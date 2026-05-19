@@ -32,31 +32,37 @@
         padding: 36px 0 64px;
       }
 
-      header {
+      header,
+      .date-list,
+      article {
         display: grid;
-        gap: 10px;
+        gap: 14px;
+      }
+
+      header {
         margin-bottom: 28px;
       }
 
-      h1 {
+      h1,
+      h2,
+      p {
         margin: 0;
+      }
+
+      h1 {
         font-size: 28px;
         line-height: 1.2;
       }
 
+      h2 {
+        font-size: 20px;
+        line-height: 1.3;
+      }
+
       p {
-        margin: 0;
         color: #627084;
         font-size: 14px;
         line-height: 1.55;
-      }
-
-      .actions,
-      .date-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 6px;
       }
 
       a {
@@ -64,6 +70,13 @@
         font-size: 13px;
         font-weight: 760;
         text-decoration: none;
+      }
+
+      .actions,
+      .date-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
       }
 
       .actions a,
@@ -79,14 +92,7 @@
         box-shadow: 0 8px 20px rgba(39, 51, 67, 0.06);
       }
 
-      .date-list {
-        display: grid;
-        gap: 16px;
-      }
-
       article {
-        display: grid;
-        gap: 12px;
         padding: 18px;
         border: 1px solid #dfe5ec;
         border-radius: 12px;
@@ -102,21 +108,21 @@
         gap: 8px 16px;
       }
 
-      h2 {
-        margin: 0;
-        font-size: 20px;
-        line-height: 1.3;
-      }
-
-      .meta {
+      .meta,
+      code {
         color: #8491a3;
         font-size: 12px;
         font-weight: 700;
       }
 
-      code {
-        color: #526071;
-        font-size: 12px;
+      .thumb {
+        display: block;
+        width: min(360px, 100%);
+        height: 150px;
+        object-fit: cover;
+        object-position: top left;
+        border: 1px solid #dfe5ec;
+        border-radius: 10px;
       }
 
       @media (max-width: 760px) {
@@ -130,25 +136,54 @@
     <main>
       <header>
         <h1>Front Visual History</h1>
-        <p>날짜별로 프론트 화면 캡처를 나눠 보는 로컬 갤러리입니다.</p>
-        <p>루트 페이지에는 날짜 목록만 두고, 실제 이미지는 날짜별 폴더 안에 모읍니다.</p>
+        <p>날짜별로 프론트 화면 캡처를 모아 보는 작은 로컬 갤러리입니다.</p>
+        <p>루트 페이지에는 날짜 카드만 두고, 실제 버전별 화면과 탭별 이미지는 날짜별 페이지에서 확인합니다.</p>
         <div class="actions" aria-label="로컬 갤러리 링크">
           <a href="http://127.0.0.1:5174/visual-history/index.html">서버 index.html</a>
-          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-content/front/public/visual-history/index.html">로컬 index.html</a>
-          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-content/front/public/visual-history/">날짜 폴더 열기</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-design-polish/front/public/visual-history/index.html">로컬 index.html</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-design-polish/front/public/visual-history/">이미지 폴더 열기</a>
+          <a href="./references/index.html">자료 모음집</a>
         </div>
       </header>
 
       <section class="date-list" aria-label="날짜별 프론트 UI 캡처">
         <article>
           <div class="date-title">
+            <h2>2026-05-19</h2>
+            <span class="meta">1 version · 1 screenshot</span>
+          </div>
+          <img class="thumb" src="./2026-05-19/FV-20260519-1729-tradingview-widget-comparison-stock-detail-1440.png" alt="2026-05-19 TradingView widget comparison thumbnail" />
+          <p>종목 상세에 국내/해외 TradingView 공개 위젯을 나란히 넣고, KRX 삼성전자와 NASDAQ NVDA가 실제로 어떻게 뜨는지 확인한 기록입니다.</p>
+          <div class="date-actions">
+            <a href="./2026-05-19/index.html">이 날짜 갤러리 보기</a>
+            <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-design-polish/front/public/visual-history/2026-05-19/">이미지 폴더 열기</a>
+          </div>
+          <code>front/public/visual-history/2026-05-19/</code>
+        </article>
+
+        <article>
+          <div class="date-title">
+            <h2>2026-05-18</h2>
+            <span class="meta">36 versions · 74 screenshots</span>
+          </div>
+          <img class="thumb" src="./2026-05-18/FV-20260518-2108-newsroom-four-feed-overview-newsroom-1920.png" alt="2026-05-18 newsroom four feed overview thumbnail" />
+          <p>대시보드, 뉴스룸, 오른쪽 rail, 탭 보강 화면을 계속 비교 캡처로 보존한 날짜입니다.</p>
+          <div class="date-actions">
+            <a href="./2026-05-18/index.html">이 날짜 갤러리 보기</a>
+            <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-design-polish/front/public/visual-history/2026-05-18/">이미지 폴더 열기</a>
+          </div>
+          <code>front/public/visual-history/2026-05-18/</code>
+        </article>
+
+        <article>
+          <div class="date-title">
             <h2>2026-05-17</h2>
             <span class="meta">5 screenshots</span>
           </div>
-          <p>검색/피드/종목 반응/속보 띠를 집중적으로 다듬은 날짜입니다.</p>
+          <p>검색 필드, 종목 반응, 속보 티커, 외부 링크 카드 등을 조정하던 날짜입니다.</p>
           <div class="date-actions">
             <a href="./2026-05-17/index.html">이 날짜 갤러리 보기</a>
-            <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-content/front/public/visual-history/2026-05-17/">이미지 폴더 열기</a>
+            <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-design-polish/front/public/visual-history/2026-05-17/">이미지 폴더 열기</a>
           </div>
           <code>front/public/visual-history/2026-05-17/</code>
         </article>

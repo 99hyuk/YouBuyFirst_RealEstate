@@ -2,6 +2,8 @@
 
 프론트 작업 중 기획과 디자인이 함께 바뀌는 화면은 이 폴더에서 화면별로 관리합니다. 목적은 화면을 예쁘게 설명하는 것이 아니라, route, 화면 목적, 섹션, mock data, API 후보, 기획자 확인 필요 항목을 잃어버리지 않는 것입니다.
 
+반복 UI 기준은 `../DESIGN_SYSTEM.md`를 먼저 따릅니다. Screen Brief에는 화면별 구조와 계약만 두고, 공통 색상/타이포/컴포넌트 설명을 중복해서 붙이지 않습니다.
+
 ## 원칙
 
 - 탭 하나만 기준으로 보지 않고, 사용자가 실제로 이동하는 화면 트리 기준으로 정리합니다.
@@ -31,15 +33,18 @@ Screen Brief가 커지면 새 채팅이 느려지고, 화면 기준도 흐려집
 
 | Screen ID | Route 후보 | Brief | 상태 | 비고 |
 | --- | --- | --- | --- | --- |
-| `dashboard` | `/dashboard` | 예정 | active | 메인 대시보드, 종목/커뮤니티/뉴스 요약 |
-| `stock-detail` | `/stocks/:symbol` | `stock-detail.md` | active | 종목 상세, 팩트폭격 배너, 차트, 지표, 근거 |
+| `dashboard` | `/dashboard` | `dashboard.md` | active | 메인 대시보드, 종목/커뮤니티/뉴스 요약 |
+| `newsroom` | `/newsroom?feed=&page=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그/커뮤니티 링크 |
+| `stocks` | `/stocks` | `stocks.md` | active | 종목 반응 랭킹, 검색/필터, 상세 진입 |
+| `stock-detail` | `/stocks/:symbol` | `stock-detail.md` | active | 종목 상세, 팩트폭격 배너, 반응, 근거, 신뢰도 |
 | `stock-news-detail` | `/stocks/:symbol/news/:newsId` 또는 drawer | 예정 | candidate | 뉴스/공시 상세 링크와 원문 이동 전 요약 |
 | `stock-filing-detail` | `/stocks/:symbol/filings/:filingId` 또는 drawer | 예정 | candidate | 공시 상세, 관련 지표 영향 |
 | `stock-community-post` | `/stocks/:symbol/community/:postId` 또는 drawer | 예정 | candidate | 커뮤니티 원문 snippet, 출처, 관련 종목 |
 | `stock-indicator-detail` | `/stocks/:symbol/indicators/:indicatorId` 또는 panel | 예정 | candidate | RSI, VWAP, PER 등 개별 지표 설명 |
-| `community` | `/community` | 예정 | candidate | 커뮤니티별 반응/성과 비교 |
-| `agents` | `/agents` | 예정 | candidate | 에이전트 판단 로그와 리더보드 |
-| `portfolio` | `/portfolio` | 예정 | candidate | 모의 포트폴리오와 원장 기반 손익 |
+| `human-indicator` | `/communities?view=` | `human-indicator.md` | active | 커뮤니티별 반응/성과 비교와 모의 에이전트 판단 |
+| `indicators` | `/indicators` | `indicators.md` | active | 시장 지표와 커뮤니티 반응 괴리 |
+| `agents` | `/agents` -> `/communities?view=agents` | `agents.md` | redirect | 인간 지표 하위 모의 에이전트 섹션 |
+| `portfolio` | `/portfolio` | `portfolio.md` | active | 모의 포트폴리오와 원장 기반 손익 |
 
 ## Screen Brief 템플릿
 

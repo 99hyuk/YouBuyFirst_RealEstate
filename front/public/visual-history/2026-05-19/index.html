@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026-05-19 Front Visual History</title>
+    <style>
+      :root {
+        color: #17212b;
+        background: #eef3f8;
+        font-family:
+          Pretendard,
+          "Pretendard Variable",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 34px 0 64px;
+      }
+
+      header,
+      .version-list,
+      article,
+      .version-copy {
+        display: grid;
+        gap: 14px;
+      }
+
+      header {
+        margin-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 28px;
+        line-height: 1.2;
+      }
+
+      h2 {
+        font-size: 18px;
+        line-height: 1.35;
+      }
+
+      p {
+        color: #627084;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      a {
+        color: #2f6fed;
+        font-size: 13px;
+        font-weight: 760;
+        text-decoration: none;
+      }
+
+      .actions,
+      .shot-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .actions a,
+      .shot-links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid #d8e1ec;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #26384f;
+      }
+
+      article {
+        grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+        align-items: start;
+        padding: 16px;
+        border: 1px solid #dfe5ec;
+        border-radius: 12px;
+        background: #ffffff;
+        box-shadow: 0 14px 36px rgba(39, 51, 67, 0.08);
+      }
+
+      .thumb {
+        display: block;
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+        object-position: top left;
+        border: 1px solid #dfe5ec;
+        border-radius: 10px;
+      }
+
+      .meta {
+        color: #8491a3;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .capture-note {
+        display: inline-flex;
+        width: fit-content;
+        min-height: 26px;
+        align-items: center;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: #eef5ff;
+        color: #2f6fed;
+        font-size: 12px;
+        font-weight: 820;
+      }
+
+      @media (max-width: 760px) {
+        main {
+          width: min(100% - 24px, 1120px);
+        }
+
+        article {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>2026-05-19</h1>
+        <p>오늘 대표 기록은 종목 상세의 TradingView 공개 위젯 비교입니다. 국내 KRX 심볼과 해외 NASDAQ 심볼을 같은 화면에 둬서 위젯 지원 상태를 바로 비교합니다.</p>
+        <div class="actions">
+          <a href="../index.html">전체 날짜로 돌아가기</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-design-polish/front/public/visual-history/2026-05-19/">로컬 이미지 폴더 열기</a>
+        </div>
+      </header>
+
+      <section class="version-list">
+        <article>
+          <img class="thumb" src="./FV-20260519-1729-tradingview-widget-comparison-stock-detail-1440.png" alt="2026-05-19 stock detail TradingView widget comparison thumbnail" />
+          <div class="version-copy">
+            <span class="meta">FV-20260519-1729-tradingview-widget-comparison · current</span>
+            <h2>종목 상세에 국내/해외 TradingView 위젯 비교 추가</h2>
+            <span class="capture-note">Playwright viewport · 1440px wide · stock detail</span>
+            <p>종목 상세 메인 차트를 우리 재구성 차트가 아니라 TradingView 공개 embed 위젯으로 되돌리고, `KRX:005930`과 `NASDAQ:NVDA`를 나란히 배치했습니다. 확인 결과 해외 NVDA는 정상 렌더링되고, 국내 삼성전자는 위젯 내부에서 TradingView 전용 심볼 알림이 뜹니다.</p>
+            <div class="shot-links" aria-label="1729 version screenshots">
+              <a href="./FV-20260519-1729-tradingview-widget-comparison-stock-detail-1440.png">종목 상세 TradingView 비교</a>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

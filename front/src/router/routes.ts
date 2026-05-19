@@ -1,11 +1,12 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-import AgentsPage from '../pages/AgentsPage.vue';
 import CommunitiesPage from '../pages/CommunitiesPage.vue';
 import DashboardPage from '../pages/DashboardPage.vue';
 import IndicatorsPage from '../pages/IndicatorsPage.vue';
+import NewsroomPage from '../pages/NewsroomPage.vue';
 import PortfolioPage from '../pages/PortfolioPage.vue';
 import StockDetailPage from '../pages/StockDetailPage.vue';
+import StockListPage from '../pages/StockListPage.vue';
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -16,6 +17,16 @@ export const routes: RouteRecordRaw[] = [
     path: '/dashboard',
     name: 'dashboard',
     component: DashboardPage
+  },
+  {
+    path: '/newsroom',
+    name: 'newsroom',
+    component: NewsroomPage
+  },
+  {
+    path: '/stocks',
+    name: 'stocks',
+    component: StockListPage
   },
   {
     path: '/stocks/:symbol',
@@ -35,7 +46,10 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/agents',
     name: 'agents',
-    component: AgentsPage
+    redirect: {
+      path: '/communities',
+      query: { view: 'agents' }
+    }
   },
   {
     path: '/portfolio',

@@ -30,6 +30,8 @@
 
 화면별 기획, route, child screen, API 후보는 `docs/workstreams/front/screens/`에서 관리합니다. 탭 안에서 다시 상세 화면으로 들어가는 경우도 별도 Screen Brief 후보로 보며, 프론트 PR이 화면 구조를 바꾸면 사용자가 따로 지시하지 않아도 해당 Screen Brief를 함께 갱신합니다. Screen Brief는 최신 기준만 유지하고, 긴 시행착오와 오래된 변경 로그를 누적하지 않습니다.
 
+현재 반복 UI의 최소 디자인 시스템은 `docs/workstreams/front/DESIGN_SYSTEM.md`에서 관리합니다. 기준 화면은 현재 완성도가 가장 높은 대시보드(`/dashboard`)입니다. 새 화면을 만들 때는 대시보드의 정보 밀도와 UI 톤을 먼저 적용하고, 새 UI 패턴이 필요하면 페이지 안에만 임시로 두지 말고 디자인 시스템 후보로 남깁니다.
+
 ## 현재 디자인 우선순위
 
 다음 front 작업에서 디자인 판단이 필요하면 이 순서를 우선합니다. 과거 `Balanced Dark Toss` 같은 별도 다크 테마 제안은 현재 정본이 아니며, 다크/라이트 테마 구현은 후속 작업으로 둡니다.
