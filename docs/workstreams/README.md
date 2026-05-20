@@ -20,7 +20,7 @@
 | 트랙 | 역할 | 브랜치 예시 |
 | --- | --- | --- |
 | `crawl` | 커뮤니티 글 수집, 소스 어댑터, 종목별 게시판 타깃, 수집 정책 | `codex/crawl-naver-targets` |
-| `data` | 종목 인식, 별칭 매칭, 반응 방향, 열기 지수, 30분 집계 | `codex/data-alias-matcher` |
+| `data` | 종목 인식, 별칭 매칭, 반응 방향, 열기 지수, 개미 심리 지수, 30분 집계 | `codex/data-alias-matcher` |
 | `market` | 실시간/지연 시세, 호가, quote cache, WebSocket | `codex/market-quote-cache` |
 | `trade` | 가상 계좌, 주문, 체결, 거래 원장, 포트폴리오, 수익률 | `codex/trade-order-domain` |
 | `agent` | 통계 윈도우 기반 paper trading 판단, 커뮤니티별 성과 비교, 페르소나, 결정 로그 | `codex/agent-contrarian-log` |

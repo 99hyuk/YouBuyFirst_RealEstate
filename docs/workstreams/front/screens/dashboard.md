@@ -16,6 +16,7 @@
 - 독립 검색 영역과 반응 필터
 - 데이터 기준 strip: 수집 시각, 가격 기준, mock/stale 상태
 - 커뮤니티 지표 비교 그래프와 기간 버튼
+- 개미 심리 지수 요약: 전체 온도, 급변 종목, 과열/공포 구간
 - 종목 반응 한눈에: 긍정/부정 상위 종목 묶음
 - 실시간 주요 지표 row
 - 실시간 뉴스, 애널리스트 리포트, 증권 영상 새 글, 블로그/커뮤니티 링크
@@ -35,6 +36,7 @@
 | --- | --- | --- |
 | `dashboardSummary` | backend/data | 대시보드 요약, rising star, feed 묶음 |
 | `reactionRanking` | data | 종목 반응 순위와 기간별 반응 |
+| `retailSentimentIndex` | data | 개미 심리 지수 요약, 급변 종목, 표본 수와 신뢰도 |
 | `communityPerformance` | agent/data | 커뮤니티 지표 비교 그래프 |
 | `quoteSnapshots` | market | 가격 상태와 stale quote |
 | `marketIndicators` | market | 주요 지수, 환율, VIX, 금리 등 |
