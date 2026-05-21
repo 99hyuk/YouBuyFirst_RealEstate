@@ -1,8 +1,8 @@
-# Chart Candles API Candidate
+# Chart Candles API Contract
 
 ## Scope
 
-This candidate answers the stock-detail frontend request for a real price chart source. `GET /api/quotes` remains a quote snapshot API and must not be used to synthesize candles.
+This slice answers the stock-detail frontend request for a real price chart source. `GET /api/quotes` remains a quote snapshot API and must not be used to synthesize candles.
 
 The chart-candles API is display-only OHLC data for stock-detail charts. It is not a raw market-data download API, not an order-book API, and not a minute-bar API.
 
@@ -10,13 +10,13 @@ The chart-candles API is display-only OHLC data for stock-detail charts. It is n
 
 The frontend branch `codex/front-retail-sentiment-widget` blocks the stock-detail main chart because the current quote snapshot only has current/latest price, change, volume, provider, and freshness metadata. Rendering fixture candles or stretching them to the latest quote would make fake data look like a real Samsung Electronics/NVIDIA chart.
 
-Requested public endpoint:
+Public endpoint:
 
 ```http
 GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d
 ```
 
-## Public Endpoint Candidate
+## Public Endpoint
 
 `GET /api/market/chart-candles`
 
@@ -28,7 +28,7 @@ GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d
 | `range` | no | `1M`, `3M`, `6M`, `1Y` | `3M` | MVP display range. Do not add `2Y`, `5Y`, `MAX` until provider display and redistribution conditions are reviewed. |
 | `interval` | no | `1d`, `1wk`, `1mo` | `1d` | Public display candles only. No minute interval in this slice. |
 
-Unsupported values should return `400` with a small error body. Provider failures should return `503` or a `200` response with `dataStatus: "PROVIDER_ERROR"` only if a stale cached payload is still safe to show.
+Unsupported values return `400` with a small error body. If no cached candle set exists, the API returns `dataStatus: "INSUFFICIENT"` with empty `bars` so the frontend can keep the chart hidden.
 
 ### Response
 
@@ -92,14 +92,14 @@ MVP provider split:
 - FinanceDataReader: domestic metadata and possible daily fallback/enrichment after compatibility checks.
 - `pykrx`: fallback verification candidate only, not the default provider.
 
-Recommended architecture follows the quote snapshot pattern:
+The implemented architecture follows the quote snapshot pattern:
 
 1. Pipeline fetches candles from the provider.
 2. Pipeline pushes a bounded display payload to an internal Spring endpoint.
 3. Spring stores the latest bounded candle set.
 4. Frontend reads the public `GET /api/market/chart-candles` endpoint.
 
-Candidate internal endpoint:
+Internal endpoint:
 
 ```http
 POST /internal/market/chart-candles
@@ -107,11 +107,11 @@ POST /internal/market/chart-candles
 
 This keeps provider calls out of the frontend request path and lets Spring apply a stable public contract, stale rules, and display guardrails.
 
-## Storage Candidate
+## Storage
 
-Use MySQL as the first display cache because the project already has it and the MVP range is small.
+MySQL is the first display cache because the project already has it and the MVP range is small.
 
-Candidate model:
+Storage model:
 
 - `chart_candle_sets`: `symbol`, `range`, `interval`, `provider`, `delay_label`, `as_of`, `data_status`, `collected_at`.
 - `chart_candles`: `set_id`, `trade_date`, `open`, `high`, `low`, `close`, `volume`.
@@ -125,7 +125,7 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 
 ## Cache And Stale Rules
 
-- Pipeline refresh cadence candidate: every 10 minutes during MVP, matching quote snapshot refresh.
+- Pipeline refresh cadence candidate: every 10 minutes during MVP, matching quote snapshot refresh. The command exists, but runtime scheduling is a follow-up.
 - Public response max bars: `260`.
 - `1M`, `3M`, `6M`, `1Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.
 - Backend stale threshold candidate: 36 hours until a market-calendar slice exists. During holidays/weekends this prevents normal closed-market data from looking broken too quickly.
@@ -158,10 +158,30 @@ Not allowed in this slice:
 - Show `asOf`, `provider`, `delayLabel`, `stale`, and `dataStatus` in the chart shell.
 - The existing fixture fields `individual`, `foreign`, and `institution` should not be added to this candle response. Investor flow belongs to a separate previous-trading-day flow slice.
 
-## Implementation Order
+## Commands
 
-1. Add pipeline chart candle provider adapter around yfinance historical bars.
-2. Add Spring internal upsert endpoint and storage tables for bounded candle sets.
-3. Add public `GET /api/market/chart-candles` read endpoint.
-4. Add tests for allowed query values, unsupported intervals, stale handling, and empty bars.
-5. Let front replace the chart blocker only when this endpoint returns `bars` with `dataStatus: "OK"` or an explicitly accepted `PARTIAL`.
+Print provider candles:
+
+```bash
+python -m youbuyfirst_pipeline.main chart-candles --symbols 005930.KS AAPL NVDA --chart-range 3M --interval 1d
+```
+
+Push provider candles to Spring:
+
+```bash
+python -m youbuyfirst_pipeline.main chart-candles-push --symbols 005930.KS AAPL NVDA --chart-range 3M --interval 1d
+```
+
+Frontend read:
+
+```http
+GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d
+```
+
+## Implemented Flow
+
+1. Pipeline chart candle provider adapter wraps yfinance historical bars.
+2. Spring internal upsert endpoint stores bounded candle sets.
+3. Public `GET /api/market/chart-candles` reads the latest bounded set.
+4. Tests cover the frontend response contract, unsupported minute intervals, display policy, and absence of investor-flow fields.
+5. Front should replace the chart blocker only when this endpoint returns `bars` with `dataStatus: "OK"` or an explicitly accepted `PARTIAL`.

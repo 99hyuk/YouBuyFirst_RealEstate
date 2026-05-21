@@ -41,11 +41,11 @@
 
 ## 현재 우선순위
 
-1. 종목 상세 실제 차트용 chart candle display API 계약 정리
-2. 프론트 quote fixture를 `GET /api/quotes` 호출로 교체
-3. pipeline `quote-push`를 10분 주기 작업으로 연결
-4. KODEX 200 기준 전 거래일 개인/외국인/기관 수급 slice 설계
-5. Redis quote cache와 WebSocket/STOMP 가격 브로드캐스트 경계 설계
+1. 프론트 종목 상세에서 `GET /api/market/chart-candles` 차트 blocker 해제 확인
+2. pipeline `quote-push`와 `chart-candles-push`를 10분 주기 작업으로 연결
+3. KODEX 200 기준 전 거래일 개인/외국인/기관 수급 slice 설계
+4. Redis quote cache와 WebSocket/STOMP 가격 브로드캐스트 경계 설계
+5. provider 공개 표시 조건과 상용화 전 vendor 전환 기준 재검토
 
 ## 구현된 세로 슬라이스
 
@@ -54,6 +54,9 @@
 - 공개 응답에는 `symbol`, `name`, `market`, `currency`, `price`, `change`, `changePct`, `volume`, `asOf`, `provider`, `delayLabel`, `stale`, `dataStatus`가 포함됩니다.
 - 프론트 fixture는 같은 응답 shape로 맞춰져 있어 mock에서 API 호출로 교체할 수 있습니다.
 - 세부 계약과 예시 JSON은 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.
+- chart candle slice는 `POST /internal/market/chart-candles`로 bounded OHLC bars를 저장하고, `GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d`로 프론트 차트용 display-only 응답을 제공합니다.
+- chart candle 응답에는 `symbol`, `name`, `market`, `currency`, `range`, `interval`, `provider`, `delayLabel`, `asOf`, `stale`, `dataStatus`, `bars`, `displayPolicy`가 포함됩니다.
+- chart candle bars에는 `date`, `open`, `high`, `low`, `close`, `volume`만 포함하며 개인/외국인/기관 수급은 별도 전 거래일 수급 slice로 분리합니다.
 
 ## 공개 시세 표시 정책
 
@@ -70,7 +73,7 @@
 - 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약이나 명확한 허용 조건 전까지 만들지 않습니다.
 - 서비스 트래픽이 커지거나 수익화/상용화 단계로 넘어가면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 다시 검토합니다.
 - quote snapshot 세부 API 계약, 캐시/stale 기준, KODEX 200 수급 후보는 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.
-- 종목 상세 실제 차트용 display-only OHLC 후보 계약은 `docs/workstreams/market/chart-candles.md`를 기준으로 봅니다.
+- 종목 상세 실제 차트용 display-only OHLC API 계약은 `docs/workstreams/market/chart-candles.md`를 기준으로 봅니다.
 
 ## 하지 않는 일
 

@@ -2,9 +2,12 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 from youbuyfirst_pipeline.market_quotes import (
+    ChartCandleBar,
     InstrumentMetadata,
+    MarketChartCandleProvider,
     MarketQuoteProvider,
     QuoteBar,
+    YFinanceChartCandleClient,
     YFinanceHistoryClient,
 )
 
@@ -37,6 +40,32 @@ class _FakeMetadataProvider:
 class _FakeKoreaMetadataProvider:
     def resolve(self, symbol: str) -> InstrumentMetadata:
         return InstrumentMetadata(symbol=symbol, name="Samsung Electronics", market="KR", currency="KRW")
+
+
+class _FakeChartCandleClient:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, str]] = []
+
+    def candles(self, symbol: str, chart_range: str, interval: str) -> list[ChartCandleBar]:
+        self.calls.append((symbol, chart_range, interval))
+        return [
+            ChartCandleBar(
+                date="2026-05-20",
+                open=Decimal("280000"),
+                high=Decimal("301000"),
+                low=Decimal("279000"),
+                close=Decimal("295500"),
+                volume=24688716,
+            ),
+            ChartCandleBar(
+                date="2026-05-21",
+                open=Decimal("295500"),
+                high=Decimal("302000"),
+                low=Decimal("292000"),
+                close=Decimal("297750"),
+                volume=22059084,
+            ),
+        ]
 
 
 def test_market_quote_provider_builds_frontend_snapshot_and_uses_cache():
@@ -125,3 +154,76 @@ def test_yfinance_history_client_defaults_to_intraday_quote_bars():
 
     assert client.period == "1d"
     assert client.interval == "5m"
+
+
+def test_market_chart_candle_provider_builds_display_only_contract():
+    client = _FakeChartCandleClient()
+    provider = MarketChartCandleProvider(
+        candle_client=client,
+        metadata_provider=_FakeKoreaMetadataProvider(),
+    )
+
+    response = provider.chart("005930.KS", chart_range="3M", interval="1d").to_api_dict()
+
+    assert client.calls == [("005930.KS", "3M", "1d")]
+    assert response == {
+        "symbol": "005930.KS",
+        "name": "Samsung Electronics",
+        "market": "KR",
+        "currency": "KRW",
+        "range": "3M",
+        "interval": "1d",
+        "provider": "yfinance+FinanceDataReader",
+        "delayLabel": "Yahoo Finance delayed up to 30 min",
+        "asOf": "2026-05-21T00:00:00Z",
+        "stale": False,
+        "dataStatus": "OK",
+        "bars": [
+            {
+                "date": "2026-05-20",
+                "open": 280000,
+                "high": 301000,
+                "low": 279000,
+                "close": 295500,
+                "volume": 24688716,
+            },
+            {
+                "date": "2026-05-21",
+                "open": 295500,
+                "high": 302000,
+                "low": 292000,
+                "close": 297750,
+                "volume": 22059084,
+            },
+        ],
+        "displayPolicy": {
+            "displayOnly": True,
+            "rawMinute": False,
+            "downloadable": False,
+            "maxBars": 260,
+        },
+    }
+    assert "individual" not in str(response)
+    assert "foreign" not in str(response)
+    assert "institution" not in str(response)
+
+
+def test_market_chart_candle_provider_rejects_minute_interval():
+    provider = MarketChartCandleProvider(
+        candle_client=_FakeChartCandleClient(),
+        metadata_provider=_FakeKoreaMetadataProvider(),
+    )
+
+    try:
+        provider.chart("005930.KS", chart_range="3M", interval="5m")
+    except ValueError as exc:
+        assert "unsupported chart interval" in str(exc)
+    else:
+        raise AssertionError("minute interval should be rejected")
+
+
+def test_yfinance_chart_candle_client_maps_public_range_to_yfinance_period():
+    client = YFinanceChartCandleClient()
+
+    assert client.period_for("3M") == "3mo"
+    assert client.period_for("1Y") == "1y"

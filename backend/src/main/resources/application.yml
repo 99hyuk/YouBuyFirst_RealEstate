@@ -31,3 +31,4 @@ app:
     cleanup-cron: ${POST_RETENTION_CLEANUP_CRON:0 15 3 * * *}
   market:
     quote-stale-minutes: ${QUOTE_STALE_MINUTES:2160}
+    chart-candle-stale-minutes: ${CHART_CANDLE_STALE_MINUTES:2160}

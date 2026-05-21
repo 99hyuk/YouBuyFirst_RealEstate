@@ -64,8 +64,78 @@ class QuoteSnapshot:
         }
 
 
+@dataclass(frozen=True)
+class ChartCandleBar:
+    date: str
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: int
+
+    def to_api_dict(self) -> dict:
+        return {
+            "date": self.date,
+            "open": _decimal_number(self.open),
+            "high": _decimal_number(self.high),
+            "low": _decimal_number(self.low),
+            "close": _decimal_number(self.close),
+            "volume": self.volume,
+        }
+
+
+@dataclass(frozen=True)
+class ChartCandleSet:
+    symbol: str
+    name: str
+    market: str
+    currency: str
+    chart_range: str
+    interval: str
+    provider: str
+    delay_label: str
+    as_of: datetime
+    stale: bool
+    data_status: str
+    bars: list[ChartCandleBar]
+    max_bars: int = 260
+
+    def to_api_dict(self) -> dict:
+        return {
+            "symbol": self.symbol,
+            "name": self.name,
+            "market": self.market,
+            "currency": self.currency,
+            "range": self.chart_range,
+            "interval": self.interval,
+            "provider": self.provider,
+            "delayLabel": self.delay_label,
+            "asOf": _iso(self.as_of),
+            "stale": self.stale,
+            "dataStatus": self.data_status,
+            "bars": [bar.to_api_dict() for bar in self.bars],
+            "displayPolicy": {
+                "displayOnly": True,
+                "rawMinute": False,
+                "downloadable": False,
+                "maxBars": self.max_bars,
+            },
+        }
+
+    def to_request_dict(self) -> dict:
+        payload = self.to_api_dict()
+        payload.pop("displayPolicy")
+        payload.pop("stale")
+        return payload
+
+
 class QuoteHistoryClient(Protocol):
     def history(self, symbol: str) -> list[QuoteBar]:
+        ...
+
+
+class ChartCandleClient(Protocol):
+    def candles(self, symbol: str, chart_range: str, interval: str) -> list[ChartCandleBar]:
         ...
 
 
@@ -113,6 +183,59 @@ class YFinanceHistoryClient:
             QuoteBar(timestamp=latest_timestamp, close=previous_close, volume=0),
             QuoteBar(timestamp=latest_timestamp, close=close, volume=volume, previous_close=previous_close),
         ]
+
+
+class YFinanceChartCandleClient:
+    _PERIOD_BY_RANGE = {
+        "1M": "1mo",
+        "3M": "3mo",
+        "6M": "6mo",
+        "1Y": "1y",
+    }
+
+    def period_for(self, chart_range: str) -> str:
+        normalized = chart_range.strip().upper()
+        if normalized not in self._PERIOD_BY_RANGE:
+            raise ValueError(f"unsupported chart range: {chart_range}")
+        return self._PERIOD_BY_RANGE[normalized]
+
+    def candles(self, symbol: str, chart_range: str, interval: str) -> list[ChartCandleBar]:
+        normalized_interval = _normalize_chart_interval(interval)
+        if normalized_interval not in _ALLOWED_CHART_INTERVALS:
+            raise ValueError(f"unsupported chart interval: {interval}")
+        try:
+            import yfinance as yf
+        except ImportError as exc:
+            raise QuoteProviderError("yfinance is required for chart candles") from exc
+
+        ticker = yf.Ticker(symbol)
+        frame = ticker.history(
+            period=self.period_for(chart_range),
+            interval=normalized_interval,
+            auto_adjust=False,
+        )
+        if frame is None or frame.empty:
+            return []
+        required_columns = {"Open", "High", "Low", "Close", "Volume"}
+        missing = required_columns.difference(frame.columns)
+        if missing:
+            raise QuoteProviderError(f"yfinance candles for {symbol} missing columns: {sorted(missing)}")
+
+        frame = frame.dropna(subset=["Open", "High", "Low", "Close"])
+        candles: list[ChartCandleBar] = []
+        for index_value, row in frame.iterrows():
+            timestamp = _as_utc_datetime(index_value)
+            candles.append(
+                ChartCandleBar(
+                    date=timestamp.date().isoformat(),
+                    open=Decimal(str(row["Open"])),
+                    high=Decimal(str(row["High"])),
+                    low=Decimal(str(row["Low"])),
+                    close=Decimal(str(row["Close"])),
+                    volume=int(row.get("Volume", 0) or 0),
+                )
+            )
+        return candles
 
 
 class FinanceDataReaderMetadataProvider:
@@ -220,6 +343,79 @@ class MarketQuoteProvider:
         return [self.snapshot(symbol, now=now) for symbol in symbols]
 
 
+_ALLOWED_CHART_RANGES = {"1M", "3M", "6M", "1Y"}
+_ALLOWED_CHART_INTERVALS = {"1d", "1wk", "1mo"}
+
+
+class MarketChartCandleProvider:
+    def __init__(
+            self,
+            candle_client: ChartCandleClient | None = None,
+            metadata_provider: MetadataProvider | None = None,
+            cache_ttl_seconds: int = DEFAULT_QUOTE_CACHE_TTL_SECONDS,
+            stale_after_hours: int = 36,
+            max_bars: int = 260,
+    ) -> None:
+        self.candle_client = candle_client or YFinanceChartCandleClient()
+        self.metadata_provider = metadata_provider or FinanceDataReaderMetadataProvider()
+        self.cache_ttl = timedelta(seconds=cache_ttl_seconds)
+        self.stale_after = timedelta(hours=stale_after_hours)
+        self.max_bars = max_bars
+        self._cache: dict[tuple[str, str, str], tuple[datetime, ChartCandleSet]] = {}
+
+    def chart(
+            self,
+            symbol: str,
+            chart_range: str = "3M",
+            interval: str = "1d",
+            now: datetime | None = None,
+    ) -> ChartCandleSet:
+        current_time = _as_utc_datetime(now or datetime.now(timezone.utc))
+        normalized = symbol.strip().upper()
+        normalized_range = _normalize_chart_range(chart_range)
+        normalized_interval = _normalize_chart_interval(interval)
+        _validate_chart_request(normalized_range, normalized_interval)
+        cache_key = (normalized, normalized_range, normalized_interval)
+        cached = self._cache.get(cache_key)
+        if cached and current_time - cached[0] < self.cache_ttl:
+            return cached[1]
+
+        bars = sorted(
+            self.candle_client.candles(normalized, normalized_range, normalized_interval),
+            key=lambda bar: bar.date,
+        )[-self.max_bars:]
+        metadata = self.metadata_provider.resolve(normalized)
+        as_of = _chart_as_of(bars)
+        stale = current_time - as_of > self.stale_after
+        data_status = "INSUFFICIENT" if not bars else ("STALE" if stale else "OK")
+        chart = ChartCandleSet(
+            symbol=metadata.symbol,
+            name=metadata.name,
+            market=metadata.market,
+            currency=metadata.currency,
+            chart_range=normalized_range,
+            interval=normalized_interval,
+            provider=_provider_name(metadata.market),
+            delay_label=_delay_label(metadata.symbol, metadata.market),
+            as_of=as_of,
+            stale=stale,
+            data_status=data_status,
+            bars=bars,
+            max_bars=self.max_bars,
+        )
+        self._cache[cache_key] = (current_time, chart)
+        return chart
+
+    def charts(
+            self,
+            symbols: list[str],
+            chart_range: str = "3M",
+            interval: str = "1d",
+            now: datetime | None = None,
+    ) -> list[ChartCandleSet]:
+        return [self.chart(symbol, chart_range=chart_range, interval=interval, now=now) for symbol in symbols]
+
+
 def configured_quote_symbols(value: str | None) -> list[str]:
     if not value:
         return DEFAULT_SYMBOLS
@@ -246,6 +442,27 @@ def _delay_label(symbol: str, market: str) -> str:
     if symbol.endswith(".KS") or symbol.endswith(".KQ") or market == "KR":
         return "Yahoo Finance delayed up to 30 min"
     return "Yahoo Finance 10 min refresh snapshot"
+
+
+def _normalize_chart_range(chart_range: str) -> str:
+    return chart_range.strip().upper()
+
+
+def _normalize_chart_interval(interval: str) -> str:
+    return interval.strip().lower()
+
+
+def _validate_chart_request(chart_range: str, interval: str) -> None:
+    if chart_range not in _ALLOWED_CHART_RANGES:
+        raise ValueError(f"unsupported chart range: {chart_range}")
+    if interval not in _ALLOWED_CHART_INTERVALS:
+        raise ValueError(f"unsupported chart interval: {interval}")
+
+
+def _chart_as_of(bars: list[ChartCandleBar]) -> datetime:
+    if not bars:
+        return datetime.fromtimestamp(0, tz=timezone.utc)
+    return datetime.combine(date.fromisoformat(bars[-1].date), time.min, tzinfo=timezone.utc)
 
 
 def _usable_name(value: str) -> bool:

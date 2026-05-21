@@ -225,6 +225,90 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void exposesChartCandlesWithDisplayOnlyContract() {
+        Instant asOf = Instant.now().minusSeconds(60);
+
+        ResponseEntity<Void> upsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(
+                        Map.ofEntries(
+                                Map.entry("symbol", "005930.KS"),
+                                Map.entry("name", "Samsung Electronics"),
+                                Map.entry("market", "KR"),
+                                Map.entry("currency", "KRW"),
+                                Map.entry("range", "3M"),
+                                Map.entry("interval", "1d"),
+                                Map.entry("provider", "yfinance+FinanceDataReader"),
+                                Map.entry("delayLabel", "Yahoo Finance delayed up to 30 min"),
+                                Map.entry("asOf", asOf.toString()),
+                                Map.entry("dataStatus", "OK"),
+                                Map.entry("bars", List.of(
+                                        Map.of(
+                                                "date", "2026-05-20",
+                                                "open", "280000",
+                                                "high", "301000",
+                                                "low", "279000",
+                                                "close", "295500",
+                                                "volume", 24688716
+                                        ),
+                                        Map.of(
+                                                "date", "2026-05-21",
+                                                "open", "295500",
+                                                "high", "302000",
+                                                "low", "292000",
+                                                "close", "297750",
+                                                "volume", 22059084
+                                        )
+                                ))
+                        )
+                )),
+                Void.class
+        );
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d",
+                String.class
+        );
+
+        assertThat(upsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"symbol\":\"005930.KS\"")
+                .contains("\"name\":\"Samsung Electronics\"")
+                .contains("\"market\":\"KR\"")
+                .contains("\"currency\":\"KRW\"")
+                .contains("\"range\":\"3M\"")
+                .contains("\"interval\":\"1d\"")
+                .contains("\"provider\":\"yfinance+FinanceDataReader\"")
+                .contains("\"delayLabel\":\"Yahoo Finance delayed up to 30 min\"")
+                .contains("\"stale\":false")
+                .contains("\"dataStatus\":\"OK\"")
+                .contains("\"date\":\"2026-05-20\"")
+                .contains("\"open\":280000")
+                .contains("\"high\":301000")
+                .contains("\"low\":279000")
+                .contains("\"close\":295500")
+                .contains("\"volume\":24688716")
+                .contains("\"displayOnly\":true")
+                .contains("\"rawMinute\":false")
+                .contains("\"downloadable\":false")
+                .contains("\"maxBars\":260")
+                .doesNotContain("individual")
+                .doesNotContain("foreign")
+                .doesNotContain("institution");
+    }
+
+    @Test
+    void rejectsUnsupportedChartCandleInterval() {
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=005930.KS&range=3M&interval=5m",
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
     void claimsOnlyDueActiveTargetsFromAllowedSources() {
         resetCrawlTargets();
 

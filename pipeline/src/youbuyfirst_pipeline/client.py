@@ -5,7 +5,7 @@ from typing import Iterable
 
 import httpx
 
-from youbuyfirst_pipeline.market_quotes import QuoteSnapshot
+from youbuyfirst_pipeline.market_quotes import ChartCandleSet, QuoteSnapshot
 from youbuyfirst_pipeline.models import EnrichedPost
 
 
@@ -65,6 +65,14 @@ class SpringIngestionClient:
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
             response = client.post(f"{self.base_url}/internal/market/quote-snapshots", json=payload)
+            response.raise_for_status()
+
+    def publish_chart_candles(self, candle_sets: Iterable[ChartCandleSet]) -> None:
+        payload = {
+            "items": [candle_set.to_request_dict() for candle_set in candle_sets],
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(f"{self.base_url}/internal/market/chart-candles", json=payload)
             response.raise_for_status()
 
     @staticmethod
