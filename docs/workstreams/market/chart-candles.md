@@ -125,7 +125,7 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 
 ## Cache And Stale Rules
 
-- Pipeline refresh cadence candidate: every 10 minutes during MVP, matching quote snapshot refresh. The command exists, but runtime scheduling is a follow-up.
+- Pipeline refresh cadence: every 10 minutes by default through the market refresh job registered by `python -m youbuyfirst_pipeline.main serve`.
 - Public response max bars: `260`.
 - `1M`, `3M`, `6M`, `1Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.
 - Backend stale threshold candidate: 36 hours until a market-calendar slice exists. During holidays/weekends this prevents normal closed-market data from looking broken too quickly.
@@ -170,6 +170,12 @@ Push provider candles to Spring:
 
 ```bash
 python -m youbuyfirst_pipeline.main chart-candles-push --symbols 005930.KS AAPL NVDA --chart-range 3M --interval 1d
+```
+
+Run scheduled quote and chart refresh:
+
+```bash
+python -m youbuyfirst_pipeline.main serve --market-refresh-interval-minutes 10
 ```
 
 Frontend read:

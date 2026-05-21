@@ -16,6 +16,7 @@ from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
 from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
 from youbuyfirst_pipeline.instruments import load_instruments
 from youbuyfirst_pipeline.llm import build_llm_provider
+from youbuyfirst_pipeline.market_scheduler import build_market_refresh_job
 from youbuyfirst_pipeline.market_quotes import (
     DEFAULT_QUOTE_CACHE_TTL_SECONDS,
     MarketChartCandleProvider,
@@ -81,6 +82,7 @@ def _adapters_from_targets(targets: list[CrawlTarget], fetcher: BrowserCapableFe
 
 
 async def async_main() -> None:
+    load_dotenv()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "command",
@@ -95,6 +97,16 @@ async def async_main() -> None:
     )
     parser.add_argument("--chart-range", default=os.getenv("MARKET_CHART_RANGE", "3M"))
     parser.add_argument("--interval", default=os.getenv("MARKET_CHART_INTERVAL", "1d"))
+    parser.add_argument(
+        "--market-refresh-interval-minutes",
+        type=int,
+        default=int(os.getenv("MARKET_REFRESH_INTERVAL_MINUTES", "10")),
+    )
+    parser.add_argument(
+        "--disable-market-refresh",
+        action="store_true",
+        default=os.getenv("MARKET_REFRESH_ENABLED", "true").lower() in {"0", "false", "no"},
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -130,7 +142,25 @@ async def async_main() -> None:
         for result in results:
             print(result)
     else:
-        await serve(pipeline, interval_minutes=args.interval_minutes)
+        market_refresh_job = None
+        if not args.disable_market_refresh:
+            client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+            market_refresh_job = build_market_refresh_job(
+                client=client,
+                symbols=args.symbols,
+                chart_range=args.chart_range,
+                chart_interval=args.interval,
+                quote_cache_ttl_seconds=int(os.getenv("MARKET_QUOTE_CACHE_TTL_SECONDS", str(DEFAULT_QUOTE_CACHE_TTL_SECONDS))),
+                quote_stale_after_hours=int(os.getenv("MARKET_QUOTE_STALE_AFTER_HOURS", "36")),
+                chart_cache_ttl_seconds=int(os.getenv("MARKET_CHART_CACHE_TTL_SECONDS", str(DEFAULT_QUOTE_CACHE_TTL_SECONDS))),
+                chart_stale_after_hours=int(os.getenv("MARKET_CHART_STALE_AFTER_HOURS", "36")),
+            )
+        await serve(
+            pipeline,
+            interval_minutes=args.interval_minutes,
+            market_refresh_job=market_refresh_job,
+            market_interval_minutes=args.market_refresh_interval_minutes,
+        )
 
 
 def main() -> None:

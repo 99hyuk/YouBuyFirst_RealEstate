@@ -7,7 +7,7 @@ This slice gives the frontend a limited quote snapshot for public display. It do
 The MVP provider path is:
 
 - `yfinance`: first source for exchange-delayed quote price, previous-close change, percent change, and cumulative volume for KR/US symbols.
-- FinanceDataReader: domestic metadata and previous-trading-day domestic flow candidates.
+- FinanceDataReader: domestic metadata and limited snapshot enrichment candidates.
 - backend `quote_snapshots`: latest snapshot cache consumed by `/api/quotes`.
 
 For quote snapshots, `Close` means the close of the latest intraday bar from Yahoo data, not the final end-of-day close. The adapter combines that timestamp with `fast_info.lastPrice`, `fast_info.regularMarketPreviousClose`, and `fast_info.lastVolume` so the visible `change`/`changePct` are previous-close based.
@@ -73,14 +73,16 @@ Required frontend fields are exactly:
    `python -m youbuyfirst_pipeline.main quote-snapshot --symbols 005930.KS 000660.KS 069500.KS AAPL NVDA`
 2. Pipeline push:
    `python -m youbuyfirst_pipeline.main quote-push --symbols 005930.KS 000660.KS 069500.KS AAPL NVDA`
-3. Backend receives snapshots at:
+3. Runtime scheduler:
+   `python -m youbuyfirst_pipeline.main serve --market-refresh-interval-minutes 10`
+4. Backend receives snapshots at:
    `POST /internal/market/quote-snapshots`
-4. Frontend reads:
+5. Frontend reads:
    `GET /api/quotes?symbols=005930.KS,000660.KS,069500.KS,AAPL,NVDA`
 
 ## Cache And Stale Rules
 
-- Yahoo Finance lists `.KS` and `.KQ` Korea data as 20 minutes delayed. The pipeline refreshes every 10 minutes by default, so Korea quotes are displayed as "up to 30 min delayed" rather than real-time.
+- Yahoo Finance lists `.KS` and `.KQ` Korea data as 20 minutes delayed. The market scheduler refreshes every 10 minutes by default, so Korea quotes are displayed as "up to 30 min delayed" rather than real-time.
 - US exchange timing differs by exchange, so US quotes are labeled as a 10-minute refresh snapshot, not as a guaranteed 10-minute delayed feed.
 - Pipeline provider cache TTL: `MARKET_QUOTE_CACHE_TTL_SECONDS`, default `600` seconds. This is the app refresh cadence, not proof that the upstream data is exactly 10 minutes old for every exchange.
 - Backend latest-snapshot cache: one row per `symbol` in `quote_snapshots`; upsert replaces the public snapshot.
@@ -99,10 +101,11 @@ This API is intentionally snapshot-only:
 
 Domestic investor flow is separate from the quote snapshot response. It should be added as a previous-trading-day data slice, not intraday real-time flow.
 
-- Base instrument: KODEX 200 ETF, `069500.KS`.
+- Scope: all supported domestic stocks and ETFs, with a small first verification set such as `005930.KS`, `000660.KS`, and `069500.KS`.
 - Reference timing: previous trading day, not intraday real-time.
 - Candidate fields: personal/foreign/institution net buy/sell amount, volume, amount, reference date, provider, source URL/label.
 - Candidate providers/sources:
-  - FinanceDataReader `SnapDataReader("NAVER/INVESTORS/{code}")` for the Naver investor-flow path where it works. In the current package this path exposes institution/foreign net trading volume, but it must be compatibility-checked because Naver table shape can change.
-  - KRX public pages or data endpoints for personal/foreign/institution previous-day flow after confirming display and redistribution conditions.
-  - pykrx only as a fallback verification candidate, not the default MVP provider.
+  - FinanceDataReader `SnapDataReader("NAVER/INVESTORS/{code}")` exists as a candidate, but the current local package version failed compatibility checks and should not be treated as the first implementation provider.
+  - `pykrx` is the next open-source candidate to spike because it exposes investor trading value/volume by date with `개인`, `외국인합계`, and `기관합계` fields in its documented examples.
+  - KRX official/public data terms need review before public product use.
+  - Naver Finance direct HTML crawling fallback is out of scope.

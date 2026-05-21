@@ -42,8 +42,8 @@
 ## 현재 우선순위
 
 1. 프론트 종목 상세에서 `GET /api/market/chart-candles` 차트 blocker 해제 확인
-2. pipeline `quote-push`와 `chart-candles-push`를 10분 주기 작업으로 연결
-3. KODEX 200 기준 전 거래일 개인/외국인/기관 수급 slice 설계
+2. 국내 전체 종목 대상 전 거래일 개인/외국인/기관 수급 slice provider spike
+3. front 브랜치에 최신 market API와 scheduler 반영
 4. Redis quote cache와 WebSocket/STOMP 가격 브로드캐스트 경계 설계
 5. provider 공개 표시 조건과 상용화 전 vendor 전환 기준 재검토
 
@@ -57,13 +57,15 @@
 - chart candle slice는 `POST /internal/market/chart-candles`로 bounded OHLC bars를 저장하고, `GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d`로 프론트 차트용 display-only 응답을 제공합니다.
 - chart candle 응답에는 `symbol`, `name`, `market`, `currency`, `range`, `interval`, `provider`, `delayLabel`, `asOf`, `stale`, `dataStatus`, `bars`, `displayPolicy`가 포함됩니다.
 - chart candle bars에는 `date`, `open`, `high`, `low`, `close`, `volume`만 포함하며 개인/외국인/기관 수급은 별도 전 거래일 수급 slice로 분리합니다.
+- pipeline `serve` runtime은 market refresh job을 함께 등록해 `quote_snapshots`와 `chart_candle_sets` display cache를 기본 10분 주기로 갱신합니다.
 
 ## 공개 시세 표시 정책
 
 - MVP와 포트폴리오 단계의 기본 조합은 `yfinance` + FinanceDataReader입니다.
 - `yfinance`는 국내/미국 시세와 거래량의 1차 provider로 둡니다.
-- FinanceDataReader는 국내 종목 메타데이터, 일봉/스냅샷 보강, 국내 투자자별 수급 후보 provider로 둡니다.
-- `pykrx`는 기본 조합에서 빼고, FinanceDataReader로 부족한 KRX 수급 검증이 필요할 때만 보조 후보로 남깁니다.
+- FinanceDataReader는 국내 종목 메타데이터와 일부 스냅샷 보강 후보로 둡니다.
+- 국내 전체 종목 대상 전 거래일 수급은 별도 provider spike로 검증합니다. 현재 FinanceDataReader 수급 후보는 호환성 문제가 있어 1차 구현 provider로 확정하지 않고, `pykrx` 등 KRX 데이터 기반 오픈소스 후보를 검토합니다.
+- Naver Finance 직접 HTML 크롤링 fallback은 두지 않습니다.
 - 공개 화면은 종목별 현재가, 등락률, 거래량 일부 같은 제한된 quote snapshot만 직접 표시할 수 있습니다.
 - 직접 표시하는 quote에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 상태를 함께 내려야 합니다.
 - `.KS`/`.KQ` quote는 Yahoo Finance 원천 20분 지연과 pipeline 기본 10분 갱신 주기를 합쳐 공개 화면에서는 최대 30분 지연으로 표시합니다.
