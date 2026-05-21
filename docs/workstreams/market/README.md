@@ -41,7 +41,7 @@
 
 ## 현재 우선순위
 
-1. quote snapshot 세로 슬라이스 PR 정리
+1. 종목 상세 실제 차트용 chart candle display API 계약 정리
 2. 프론트 quote fixture를 `GET /api/quotes` 호출로 교체
 3. pipeline `quote-push`를 10분 주기 작업으로 연결
 4. KODEX 200 기준 전 거래일 개인/외국인/기관 수급 slice 설계
@@ -70,6 +70,7 @@
 - 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약이나 명확한 허용 조건 전까지 만들지 않습니다.
 - 서비스 트래픽이 커지거나 수익화/상용화 단계로 넘어가면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 다시 검토합니다.
 - quote snapshot 세부 API 계약, 캐시/stale 기준, KODEX 200 수급 후보는 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.
+- 종목 상세 실제 차트용 display-only OHLC 후보 계약은 `docs/workstreams/market/chart-candles.md`를 기준으로 봅니다.
 
 ## 하지 않는 일
 

@@ -20,12 +20,25 @@ Codex는 사용자의 요구를 무조건 수용하는 실행기가 아닙니다
 
 반박할 때는 전제나 위험, 그대로 진행할 때의 문제, 대안 1-2개, 사용자가 결정할 지점을 짧게 말합니다. 특히 공개 배포, 크롤링 정책, 약관/robots, Notion 구조 변경, DB/API 계약, 트랙 경계, PR/문서 보존, 투자 자문처럼 보이는 표현은 확인합니다.
 
+객관성은 긴 페르소나가 아니라 작업 방식으로 지킵니다. 확인된 사실, 추론, 결정, 남은 불확실성을 구분해 말하고, 근거가 부족하면 단정하지 않습니다. 다만 모든 작업마다 3가지 방법을 반복 검토하거나 재귀적으로 검색하지 않습니다. 최신성, 법적/약관, 외부 API, 보안처럼 틀릴 위험이 큰 경우에만 공식 문서나 1차 자료를 우선 확인합니다.
+
 ## 아키텍처와 트랙
 
 - `backend/`: Spring Boot 3.3, Java 21, JPA, Flyway, MySQL, Swagger
 - `pipeline/`: Python, APScheduler, HTTPX, BeautifulSoup, Playwright fallback, OpenAI provider abstraction
 - `front/`: Vue 3 + Vite + TypeScript mock 와이어프레임 shell
 - `docker-compose.yml`: local MySQL + backend + pipeline runtime
+
+빠른 경로 지도:
+
+| 찾는 것 | 먼저 볼 곳 |
+| --- | --- |
+| 백엔드 API/도메인 | `backend/` |
+| 수집/분석 worker | `pipeline/` |
+| 화면/fixture/API client | `front/` |
+| 트랙별 작업 기준 | `docs/workstreams/<track>/README.md` |
+| 화면별 최신 기획 | `docs/workstreams/front/screens/` |
+| 완료 이력/과거 설계 | `docs/work-units/`, `docs/superpowers/` archive |
 
 | 트랙 | 담당 |
 | --- | --- |
@@ -52,11 +65,14 @@ Codex는 사용자의 요구를 무조건 수용하는 실행기가 아닙니다
 
 - Superpowers는 기획, 설계, 구현 계획, 검증, 디버깅 게이트로 씁니다.
 - gstack은 front/UI 변경처럼 실제 브라우저 확인 가치가 있을 때 씁니다.
+- 작업은 작게 나누되, 사용자 승인이 꼭 필요한 결정이 아니면 바로 구현하고 검증합니다.
+- 구현 전 API 계약, 데이터 흐름, 실패 케이스를 짧게 정리하고, 작업 후에는 필요한 후속 작업만 `TASKS.md`나 handoff에 남깁니다.
 - 스킬 문서는 필요한 상황에서만 읽고, 긴 스킬은 필요한 절차만 확인합니다.
 - Browser, Figma, Stitch, gstack, Superpowers 같은 큰 스킬 문서는 전문 출력하지 않습니다. 필요한 경우 `-TotalCount 120` 안팎이나 관련 섹션 검색으로 시작하고, 같은 스킬을 한 세션에서 반복해서 읽지 않습니다.
 - `docs/work-units/`, `docs/superpowers/`, Notion 작업 로그, 세션 로그, 브라우저 콘솔 전체는 시작 루틴이 아닙니다.
 - `docs/superpowers/specs/`, `docs/superpowers/plans/`는 과거 설계/실행 archive입니다. front 복구나 현재 작업은 담당 트랙 handoff를 우선하고, 과거 근거가 필요할 때만 파일 1개와 키워드 1개로 좁혀 봅니다.
 - 넓은 `rg`, 전체 로그/JSONL 출력, 전체 Notion page/database fetch, 콘솔/DOM 전문 출력은 금지합니다. 경로, 키워드, 출력량을 먼저 좁힙니다.
+- 메모리나 이전 대화는 현재 판단을 돕는 색인으로만 씁니다. 최신 기준은 repo 문서와 현재 코드이고, 오래된 메모리/로그 전문을 새 채팅에 다시 붙이지 않습니다.
 - 토큰 최적화는 필수 검증, PR/라벨, Notion/gstack 필요성 판단을 없애는 근거가 아닙니다.
 
 ## Notion 구조 변경 게이트
@@ -102,6 +118,8 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 - Notion 작업일지는 PR별 요약 기록입니다.
 - 제품 개발/운영 문제, 성능 개선, 품질 개선, 기술 결정은 개발자 기술 경험 DB에 남깁니다.
 - Codex, Notion, GitHub PR, 문서 운영 사고는 에이전트 운영 로그 DB에 분리합니다.
+- 새 데이터/API/배치 흐름은 정본 위치, 식별자, 상태값, 출처/asOf, 완료 기준을 함께 정합니다. 예: `QuoteSnapshot`, `CommunityMetricSnapshot`, `AgentDecision`, `LedgerEntry`.
+- 확인할 수 없는 값은 추측으로 채우지 않고 `unknown`, `null`, `확인 필요`, `mock`처럼 구분합니다.
 - 최종 기획상 생길 수 있는 기술/제품/운영 리스크 후보는 `docs/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
 - 사용자가 작업 중 던진 제품/기술 고민을 나중에 다시 보고 싶다고 하면 `docs/PRODUCT_DECISION_NOTES.md`에 짧게 누적합니다. 확정된 결정은 최종 기획, 현재 handoff, 리스크 문서, Notion 기술 경험 DB 중 맞는 위치로 승격합니다.
 - front 화면 구조, route, child detail, fixture/API 후보, 화면 문구 기준이 바뀌면 사용자의 별도 기록 지시 없이 `docs/workstreams/front/screens/`의 해당 Screen Brief를 갱신합니다. Screen Brief는 최신 기준만 유지하고 긴 변경 이력은 누적하지 않습니다.

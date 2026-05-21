@@ -35,6 +35,8 @@
 - `front`는 fixture/mock 기반 화면 골격을 일찍 만들고 API 계약이 생길 때 연결합니다.
 - `ops`는 문서, 자동화, CI, Notion, 배포 정책, 작업 조율에 한정합니다.
 
+새 트랙 산출물은 채팅 기억에만 두지 않습니다. 각 트랙은 새 API, snapshot, batch, order, decision을 만들 때 정본 위치, ID/key, 상태값, source/asOf, 완료 기준을 담당 README나 contract에 짧게 남깁니다. 확인할 수 없는 값은 추측하지 않고 `unknown`, `mock`, `확인 필요`처럼 표시합니다.
+
 ## 패키지 기준
 
 | 트랙 | 주 소유 영역 |

@@ -45,11 +45,27 @@
 | Notion 개발자 기술 경험 DB | 제품 개발/운영 문제, 개선 근거, 기술 결정 |
 | Notion 에이전트 운영 로그 DB | Codex, Notion, GitHub PR, 문서 운영 사고 |
 
+## 정본과 인덱스 원칙
+
+정본은 현재 판단의 기준입니다. 채팅, 메모리, 과거 archive는 정본을 찾기 위한 색인일 뿐입니다.
+
+| 대상 | 정본 |
+| --- | --- |
+| 제품 범위와 결정 | `docs/FINAL_PRODUCT_PLAN.md`, `docs/PRODUCT_DECISION_NOTES.md` |
+| 현재 작업 상태 | `docs/CURRENT_HANDOFF.md`, `docs/TASKS.md` |
+| 화면 구조와 API 후보 | `docs/workstreams/front/screens/`, 현재 `front/` 코드 |
+| 시세/커뮤니티/에이전트/원장 데이터 | 해당 트랙 README, API contract, DB entity/snapshot |
+| 장애와 기술 결정 근거 | `docs/TECHNICAL_RISK_REGISTER.md`, Notion 개발자 기술 경험 DB |
+
+새 인덱스 문서는 같은 lookup을 여러 트랙이 반복할 때만 만듭니다. 인덱스는 상세 설명을 복제하지 않고 정본 위치, ID/key, 상태, source/asOf만 짧게 가리킵니다.
+
 ## 채팅 안정성 규칙
 
 - 이미 주입된 `AGENTS.md`나 긴 문서는 터미널로 다시 전문 출력하지 않습니다.
 - 트랙이 명확하면 담당 트랙 README와 `CURRENT_HANDOFF.md`의 관련 줄을 우선합니다.
 - `CURRENT_HANDOFF.md` 전문 읽기는 기본값이 아닙니다. 현재 상태, 다음 후보, 해당 트랙 관련 줄만 확인합니다.
+- 메모리와 과거 대화 요약은 색인으로만 사용합니다. 현재 결정은 repo 문서, 현재 코드, 필요한 경우 공식 문서로 재확인합니다.
+- 객관성은 확인된 사실, 추론, 결정, 남은 불확실성을 구분해 보고하는 방식으로 유지합니다. 근거 없는 낙관이나 과장된 포트폴리오 표현은 피합니다.
 - 스킬 문서는 적용할 스킬이 정해진 뒤 설명, 체크리스트, 이번 절차만 읽습니다.
 - 큰 스킬 문서는 전문 출력하지 않습니다. Browser/Figma/Stitch/gstack/Superpowers는 `-TotalCount 120` 안팎이나 관련 섹션 검색으로 시작하고, 같은 세션에서 반복해서 읽지 않습니다.
 - `docs/superpowers/specs/`, `docs/superpowers/plans/`, `docs/workstreams/front/archive/`는 현재 작업 시작 문서가 아니라 archive입니다. 현재 handoff가 부족할 때만 `rg -n -m 20 <키워드> <파일>`처럼 제한해 확인합니다.
@@ -68,7 +84,8 @@
 3. 도구 출력을 줄입니다. `Get-Content -TotalCount`, `Select-Object -First/-Skip`, `rg -n -m 20 <키워드> <좁은 경로>`처럼 출력량을 먼저 제한합니다.
 4. 로그는 집계합니다. 세션 JSONL, 브라우저 콘솔, DOM, Notion 페이지 전문은 대화에 붙이지 않고 오류명, 파일명, 수치만 남깁니다.
 5. 검증은 유지합니다. 테스트, `git diff --check`, PR 라벨/본문 확인, 필요한 브라우저 QA는 생략하지 않고 결과만 짧게 보고합니다.
-6. 수치로 확인합니다. 채팅 오류가 났거나 최적화 PR을 낸 뒤에는 이전/현재 세션의 `last input` 최대/평균을 비교합니다.
+6. 문서를 늘리지 않습니다. 새 규칙은 기존 시작 문서에 짧게 합치고, 세부 이력은 archive나 PR/Notion 기록으로 보냅니다.
+7. 수치로 확인합니다. 채팅 오류가 났거나 최적화 PR을 낸 뒤에는 이전/현재 세션의 `last input` 최대/평균을 비교합니다.
 
 ## 컨텍스트 예산 점검
 

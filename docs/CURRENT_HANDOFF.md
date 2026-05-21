@@ -72,7 +72,7 @@
 - pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback 유지
 - admin target pause/resume/clear-backoff API와 화면 액션 연결
 - 열린 브랜치/worktree 정리 후보 점검
-- market quote snapshot PR 정리
+- 종목 상세 실제 차트용 chart candle display API 구현
 - front quote fixture를 `GET /api/quotes` 호출로 교체
 - pipeline `quote-push` 10분 주기 실행 연결
 - KODEX 200 기준 전 거래일 개인/외국인/기관 수급 slice 설계
