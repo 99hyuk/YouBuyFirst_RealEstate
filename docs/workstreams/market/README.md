@@ -41,11 +41,19 @@
 
 ## 현재 우선순위
 
-1. `yfinance` + FinanceDataReader 기반 quote snapshot 정책과 provider 이용 조건 정리
-2. quote snapshot 최소 모델 설계
-3. Redis quote cache와 stale quote 정책 설계
-4. WebSocket/STOMP 가격 브로드캐스트 경계 설계
-5. 종목 상세 팩트폭격 헤드라인에 필요한 가격/추세 evidence 필드 후보 정리
+1. quote snapshot 세로 슬라이스 PR 정리
+2. 프론트 quote fixture를 `GET /api/quotes` 호출로 교체
+3. pipeline `quote-push`를 10분 주기 작업으로 연결
+4. KODEX 200 기준 전 거래일 개인/외국인/기관 수급 slice 설계
+5. Redis quote cache와 WebSocket/STOMP 가격 브로드캐스트 경계 설계
+
+## 구현된 세로 슬라이스
+
+- pipeline은 `yfinance`로 국내/미국 가격, 거래량, 전일 종가 기준 등락률을 조회하고 FinanceDataReader를 국내 종목 메타데이터 후보 provider로 사용합니다.
+- backend는 `POST /internal/market/quote-snapshots`로 snapshot을 upsert하고, `GET /api/quotes?symbols=...`로 프론트용 응답을 제공합니다.
+- 공개 응답에는 `symbol`, `name`, `market`, `currency`, `price`, `change`, `changePct`, `volume`, `asOf`, `provider`, `delayLabel`, `stale`, `dataStatus`가 포함됩니다.
+- 프론트 fixture는 같은 응답 shape로 맞춰져 있어 mock에서 API 호출로 교체할 수 있습니다.
+- 세부 계약과 예시 JSON은 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.
 
 ## 공개 시세 표시 정책
 
@@ -55,9 +63,13 @@
 - `pykrx`는 기본 조합에서 빼고, FinanceDataReader로 부족한 KRX 수급 검증이 필요할 때만 보조 후보로 남깁니다.
 - 공개 화면은 종목별 현재가, 등락률, 거래량 일부 같은 제한된 quote snapshot만 직접 표시할 수 있습니다.
 - 직접 표시하는 quote에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 상태를 함께 내려야 합니다.
+- `.KS`/`.KQ` quote는 Yahoo Finance 원천 20분 지연과 pipeline 기본 10분 갱신 주기를 합쳐 공개 화면에서는 최대 30분 지연으로 표시합니다.
+- 미국 quote는 지연 시간을 단정하지 않고 10분 주기 refresh snapshot으로 표시합니다.
+- 종목별 개인/외국인/기관 수급은 quote snapshot과 분리하고 전 거래일 기준 데이터로만 다룹니다.
 - 차트 전체는 우선 TradingView 같은 외부 위젯을 사용하거나, 자체 차트는 내부 quote snapshot 기반으로 제한된 범위에서 구성합니다.
 - 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약이나 명확한 허용 조건 전까지 만들지 않습니다.
 - 서비스 트래픽이 커지거나 수익화/상용화 단계로 넘어가면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 다시 검토합니다.
+- quote snapshot 세부 API 계약, 캐시/stale 기준, KODEX 200 수급 후보는 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.
 
 ## 하지 않는 일
 

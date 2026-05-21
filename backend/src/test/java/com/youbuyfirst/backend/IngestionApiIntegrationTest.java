@@ -159,6 +159,72 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void exposesQuoteSnapshotsWithFrontendContractAndStaleState() {
+        Instant freshAsOf = Instant.now().minusSeconds(60);
+        Instant staleAsOf = Instant.now().minusSeconds(60L * 60L * 48L);
+
+        ResponseEntity<Void> upsert = restTemplate.postForEntity(
+                "/internal/market/quote-snapshots",
+                Map.of("items", List.of(
+                        Map.ofEntries(
+                                Map.entry("symbol", "AAPL"),
+                                Map.entry("name", "Apple"),
+                                Map.entry("market", "US"),
+                                Map.entry("currency", "USD"),
+                                Map.entry("price", "198.12"),
+                                Map.entry("change", "1.25"),
+                                Map.entry("changePct", "0.64"),
+                                Map.entry("volume", 42123456),
+                                Map.entry("asOf", freshAsOf.toString()),
+                                Map.entry("provider", "yfinance"),
+                                Map.entry("delayLabel", "Provider-delayed snapshot"),
+                                Map.entry("dataStatus", "OK")
+                        ),
+                        Map.ofEntries(
+                                Map.entry("symbol", "005930.KS"),
+                                Map.entry("name", "Samsung Electronics"),
+                                Map.entry("market", "KR"),
+                                Map.entry("currency", "KRW"),
+                                Map.entry("price", "78200"),
+                                Map.entry("change", "600"),
+                                Map.entry("changePct", "0.77"),
+                                Map.entry("volume", 18400000),
+                                Map.entry("asOf", staleAsOf.toString()),
+                                Map.entry("provider", "yfinance+FinanceDataReader"),
+                                Map.entry("delayLabel", "Provider-delayed snapshot"),
+                                Map.entry("dataStatus", "OK")
+                        )
+                )),
+                Void.class
+        );
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/quotes?symbols=AAPL,005930.KS",
+                String.class
+        );
+
+        assertThat(upsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"symbol\":\"AAPL\"")
+                .contains("\"name\":\"Apple\"")
+                .contains("\"market\":\"US\"")
+                .contains("\"currency\":\"USD\"")
+                .contains("\"price\":198.12")
+                .contains("\"change\":1.25")
+                .contains("\"changePct\":0.64")
+                .contains("\"volume\":42123456")
+                .contains("\"provider\":\"yfinance\"")
+                .contains("\"delayLabel\":\"Provider-delayed snapshot\"")
+                .contains("\"stale\":false")
+                .contains("\"dataStatus\":\"OK\"")
+                .contains("\"symbol\":\"005930.KS\"")
+                .contains("\"provider\":\"yfinance+FinanceDataReader\"")
+                .contains("\"stale\":true")
+                .contains("\"dataStatus\":\"STALE\"");
+    }
+
+    @Test
     void claimsOnlyDueActiveTargetsFromAllowedSources() {
         resetCrawlTargets();
 

@@ -44,7 +44,7 @@
 | `providerSymbol` | market/front | TradingView 등 외부 차트 provider용 심볼. 예: `KRX:005930`, `NASDAQ:NVDA` |
 | `chartCandles` | market | OHLC, volume, currency, providerSymbol. 국장은 KRW 원화 candle을 우선 사용 |
 | `investorFlow` | market/data | 개인, 외국인, 기관 순매수/순매도 mock 또는 API 값 |
-| `quoteSnapshot.price`, `change`, `volume`, `asOf`, `stale`, `dataStatus` | market | 차트와 분리된 현재가/등락률/거래량/기준시각/신선도 |
+| `quoteSnapshot.symbol`, `name`, `market`, `currency`, `price`, `change`, `changePct`, `volume`, `asOf`, `provider`, `delayLabel`, `stale`, `dataStatus` | market | 차트와 분리된 quote snapshot 응답 shape. 공개 화면은 provider/asOf/stale/dataStatus를 가격 근처에 함께 표시한다. |
 | `headlineTone`, `headline`, `subtitle`, `scoreLine`, `riskNote` | agent/backend | 상단 팩트폭격 카피와 보조 문구 |
 | `headlineEvidence` | market/data/agent | 한줄평 근거 chip 배열 |
 | `quickStats` | data | 반응 점수, 언급 변화, 출처 수, 링크 수 |

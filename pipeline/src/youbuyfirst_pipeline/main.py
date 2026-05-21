@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import json
 import logging
 import os
 from pathlib import Path
@@ -15,6 +16,11 @@ from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
 from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
 from youbuyfirst_pipeline.instruments import load_instruments
 from youbuyfirst_pipeline.llm import build_llm_provider
+from youbuyfirst_pipeline.market_quotes import (
+    DEFAULT_QUOTE_CACHE_TTL_SECONDS,
+    MarketQuoteProvider,
+    configured_quote_symbols,
+)
 from youbuyfirst_pipeline.matcher import InstrumentMatcher
 from youbuyfirst_pipeline.pipeline import CommunityPipeline
 from youbuyfirst_pipeline.scheduler import serve
@@ -75,11 +81,30 @@ def _adapters_from_targets(targets: list[CrawlTarget], fetcher: BrowserCapableFe
 
 async def async_main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["run-once", "serve"])
+    parser.add_argument("command", choices=["run-once", "serve", "quote-snapshot", "quote-push"])
     parser.add_argument("--interval-minutes", type=int, default=int(os.getenv("CRAWL_INTERVAL_MINUTES", "30")))
+    parser.add_argument(
+        "--symbols",
+        nargs="+",
+        default=configured_quote_symbols(os.getenv("MARKET_QUOTE_SYMBOLS")),
+        help="Quote symbols such as 005930.KS AAPL NVDA",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+    if args.command in {"quote-snapshot", "quote-push"}:
+        provider = MarketQuoteProvider(
+            cache_ttl_seconds=int(os.getenv("MARKET_QUOTE_CACHE_TTL_SECONDS", str(DEFAULT_QUOTE_CACHE_TTL_SECONDS))),
+            stale_after_hours=int(os.getenv("MARKET_QUOTE_STALE_AFTER_HOURS", "36")),
+        )
+        snapshots = provider.snapshots(args.symbols)
+        if args.command == "quote-snapshot":
+            print(json.dumps({"items": [snapshot.to_api_dict() for snapshot in snapshots]}, ensure_ascii=False, indent=2))
+            return
+        client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+        client.publish_quote_snapshots(snapshots)
+        return
+
     pipeline = build_pipeline()
     if args.command == "run-once":
         results = await pipeline.run_once()

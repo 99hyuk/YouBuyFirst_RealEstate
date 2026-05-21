@@ -29,3 +29,5 @@ app:
   retention:
     post-days: ${POST_RETENTION_DAYS:30}
     cleanup-cron: ${POST_RETENTION_CLEANUP_CRON:0 15 3 * * *}
+  market:
+    quote-stale-minutes: ${QUOTE_STALE_MINUTES:2160}

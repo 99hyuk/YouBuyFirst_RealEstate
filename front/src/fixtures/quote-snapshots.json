@@ -1,20 +1,49 @@
 {
   "items": [
     {
-      "symbol": "005930",
-      "name": "삼성전자",
+      "symbol": "005930.KS",
+      "name": "Samsung Electronics",
+      "market": "KR",
+      "currency": "KRW",
       "price": 78200,
+      "change": 600,
       "changePct": 1.24,
+      "volume": 18400000,
+      "asOf": "2026-05-20T06:00:00Z",
+      "provider": "yfinance+FinanceDataReader",
+      "delayLabel": "Yahoo Finance delayed up to 30 min",
       "stale": false,
-      "dataStatus": "mock"
+      "dataStatus": "OK"
     },
     {
-      "symbol": "TSLA",
-      "name": "Tesla",
-      "price": 183,
-      "changePct": -0.82,
-      "stale": true,
-      "dataStatus": "mock"
+      "symbol": "000660.KS",
+      "name": "SK hynix",
+      "market": "KR",
+      "currency": "KRW",
+      "price": 184800,
+      "change": 3900,
+      "changePct": 2.18,
+      "volume": 9800000,
+      "asOf": "2026-05-20T06:00:00Z",
+      "provider": "yfinance+FinanceDataReader",
+      "delayLabel": "Yahoo Finance delayed up to 30 min",
+      "stale": false,
+      "dataStatus": "OK"
+    },
+    {
+      "symbol": "069500.KS",
+      "name": "KODEX 200",
+      "market": "KR",
+      "currency": "KRW",
+      "price": 38420,
+      "change": 160,
+      "changePct": 0.42,
+      "volume": 12800000,
+      "asOf": "2026-05-20T06:00:00Z",
+      "provider": "yfinance+FinanceDataReader",
+      "delayLabel": "Yahoo Finance delayed up to 30 min",
+      "stale": false,
+      "dataStatus": "OK"
     }
   ]
 }
