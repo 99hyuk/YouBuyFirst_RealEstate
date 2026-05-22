@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 public record InvestorFlowLegResponse(
         BigDecimal netAmount,
-        long netVolume
+        long netVolume,
+        boolean derived
 ) {
 }

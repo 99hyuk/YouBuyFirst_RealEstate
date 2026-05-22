@@ -5,27 +5,22 @@ import com.youbuyfirst.backend.market.dto.InvestorFlowLegResponse;
 import com.youbuyfirst.backend.market.dto.InvestorFlowSnapshotRequest;
 import com.youbuyfirst.backend.market.dto.InvestorFlowSnapshotResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 public class InvestorFlowSnapshotService {
 
-    private static final InvestorFlowLegResponse ZERO_LEG = new InvestorFlowLegResponse(BigDecimal.ZERO, 0);
+    private static final List<String> PUBLIC_HISTORY_STATUSES = List.of("OK", "STALE");
+    private static final int DEFAULT_LIMIT = 20;
+    private static final int MAX_LIMIT = 120;
 
     private final InvestorFlowSnapshotRepository repository;
     private final Duration staleAfter;
@@ -42,8 +37,12 @@ public class InvestorFlowSnapshotService {
     public void upsertAll(Collection<InvestorFlowSnapshotRequest> requests) {
         Instant collectedAt = Instant.now();
         for (InvestorFlowSnapshotRequest request : requests) {
+            String dataStatus = normalize(request.dataStatus());
+            if (!PUBLIC_HISTORY_STATUSES.contains(dataStatus)) {
+                continue;
+            }
             String symbol = normalize(request.symbol());
-            InvestorFlowSnapshot snapshot = repository.findBySymbolIgnoreCase(symbol)
+            InvestorFlowSnapshot snapshot = repository.findBySymbolIgnoreCaseAndTradeDate(symbol, request.tradeDate())
                     .orElseGet(() -> new InvestorFlowSnapshot(symbol));
             snapshot.update(
                     request.name().trim(),
@@ -54,7 +53,7 @@ public class InvestorFlowSnapshotService {
                     request.sourceLabel().trim(),
                     request.delayLabel().trim(),
                     request.asOf(),
-                    normalize(request.dataStatus()),
+                    dataStatus,
                     collectedAt,
                     request.individual(),
                     request.foreign(),
@@ -65,30 +64,14 @@ public class InvestorFlowSnapshotService {
     }
 
     @Transactional(readOnly = true)
-    public List<InvestorFlowSnapshotResponse> list(String symbols) {
-        List<String> requestedSymbols = parseSymbols(symbols);
-        if (requestedSymbols.isEmpty()) {
-            return repository.findAll(Sort.by("symbol")).stream()
-                    .map(this::toResponse)
-                    .toList();
-        }
-
-        List<String> lowerSymbols = requestedSymbols.stream()
-                .map(symbol -> symbol.toLowerCase(Locale.ROOT))
-                .toList();
-        Map<String, InvestorFlowSnapshot> snapshotsBySymbol = repository.findBySymbolsIgnoreCase(lowerSymbols).stream()
-                .collect(Collectors.toMap(
-                        snapshot -> snapshot.getSymbol().toLowerCase(Locale.ROOT),
-                        Function.identity(),
-                        (left, right) -> left,
-                        LinkedHashMap::new
-                ));
-
-        return requestedSymbols.stream()
-                .map(symbol -> snapshotsBySymbol.containsKey(symbol.toLowerCase(Locale.ROOT))
-                        ? toResponse(snapshotsBySymbol.get(symbol.toLowerCase(Locale.ROOT)))
-                        : insufficientResponse(symbol))
-                .sorted(Comparator.comparing(response -> requestedSymbols.indexOf(response.symbol())))
+    public List<InvestorFlowSnapshotResponse> history(String symbol, Integer limit) {
+        return repository.findBySymbolIgnoreCaseAndDataStatusInOrderByTradeDateDesc(
+                        normalize(symbol),
+                        PUBLIC_HISTORY_STATUSES,
+                        PageRequest.of(0, boundedLimit(limit))
+                ).stream()
+                .filter(snapshot -> PUBLIC_HISTORY_STATUSES.contains(normalize(snapshot.getDataStatus())))
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -106,29 +89,21 @@ public class InvestorFlowSnapshotService {
                 snapshot.getAsOf(),
                 stale,
                 stale ? "STALE" : snapshot.getDataStatus(),
-                new InvestorFlowLegResponse(snapshot.getIndividualNetAmount(), snapshot.getIndividualNetVolume()),
-                new InvestorFlowLegResponse(snapshot.getForeignNetAmount(), snapshot.getForeignNetVolume()),
-                new InvestorFlowLegResponse(snapshot.getInstitutionNetAmount(), snapshot.getInstitutionNetVolume())
-        );
-    }
-
-    private InvestorFlowSnapshotResponse insufficientResponse(String symbol) {
-        String market = inferMarket(symbol);
-        return new InvestorFlowSnapshotResponse(
-                symbol,
-                symbol,
-                market,
-                "KR".equals(market) ? "KRW" : "USD",
-                LocalDate.EPOCH,
-                "none",
-                "No investor flow data",
-                "Domestic previous trading day investor flow",
-                Instant.EPOCH,
-                true,
-                "INSUFFICIENT",
-                ZERO_LEG,
-                ZERO_LEG,
-                ZERO_LEG
+                new InvestorFlowLegResponse(
+                        snapshot.getIndividualNetAmount(),
+                        snapshot.getIndividualNetVolume(),
+                        snapshot.isIndividualDerived()
+                ),
+                new InvestorFlowLegResponse(
+                        snapshot.getForeignNetAmount(),
+                        snapshot.getForeignNetVolume(),
+                        snapshot.isForeignDerived()
+                ),
+                new InvestorFlowLegResponse(
+                        snapshot.getInstitutionNetAmount(),
+                        snapshot.getInstitutionNetVolume(),
+                        snapshot.isInstitutionDerived()
+                )
         );
     }
 
@@ -139,25 +114,14 @@ public class InvestorFlowSnapshotService {
         return snapshot.getAsOf().plus(staleAfter).isBefore(Instant.now());
     }
 
-    private static List<String> parseSymbols(String symbols) {
-        if (symbols == null || symbols.isBlank()) {
-            return List.of();
+    private static int boundedLimit(Integer limit) {
+        if (limit == null) {
+            return DEFAULT_LIMIT;
         }
-        return List.of(symbols.split(",")).stream()
-                .map(InvestorFlowSnapshotService::normalize)
-                .filter(symbol -> !symbol.isBlank())
-                .distinct()
-                .toList();
+        return Math.max(1, Math.min(limit, MAX_LIMIT));
     }
 
     private static String normalize(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
-    }
-
-    private static String inferMarket(String symbol) {
-        if (symbol.endsWith(".KS") || symbol.endsWith(".KQ") || symbol.replace(".", "").chars().allMatch(Character::isDigit)) {
-            return "KR";
-        }
-        return "US";
     }
 }

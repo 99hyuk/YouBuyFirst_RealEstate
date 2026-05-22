@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -309,12 +310,51 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
-    void exposesInvestorFlowsAsPreviousTradingDayDomesticSlice() {
+    void exposesInvestorFlowHistoryAsLatestFirstDomesticSliceAndSkipsErrorRows() {
         Instant asOf = Instant.now().minusSeconds(60);
 
         ResponseEntity<Void> upsert = restTemplate.postForEntity(
                 "/internal/market/investor-flows",
                 Map.of("items", List.of(
+                        Map.ofEntries(
+                                Map.entry("symbol", "005930.KS"),
+                                Map.entry("name", "Samsung Electronics"),
+                                Map.entry("market", "KR"),
+                                Map.entry("currency", "KRW"),
+                                Map.entry("tradeDate", "2026-05-22"),
+                                Map.entry("asOf", asOf.toString()),
+                                Map.entry("provider", "pykrx"),
+                                Map.entry("sourceLabel", "KRX investor trading by date via pykrx"),
+                                Map.entry("delayLabel", "Previous trading day investor flow"),
+                                Map.entry("dataStatus", "PROVIDER_ERROR"),
+                                Map.entry("individual", Map.of(
+                                        "netAmount", "0",
+                                        "netVolume", 0
+                                )),
+                                Map.entry("foreign", Map.of(
+                                        "netAmount", "0",
+                                        "netVolume", 0
+                                )),
+                                Map.entry("institution", Map.of(
+                                        "netAmount", "0",
+                                        "netVolume", 0
+                                ))
+                        ),
+                        Map.ofEntries(
+                                Map.entry("symbol", "005930.KS"),
+                                Map.entry("name", "Samsung Electronics"),
+                                Map.entry("market", "KR"),
+                                Map.entry("currency", "KRW"),
+                                Map.entry("tradeDate", "2026-05-19"),
+                                Map.entry("asOf", asOf.minusSeconds(172800).toString()),
+                                Map.entry("provider", "naver-finance"),
+                                Map.entry("sourceLabel", "Naver Finance investor trend; individual is residual from foreign and institution"),
+                                Map.entry("delayLabel", "Previous trading day investor trend"),
+                                Map.entry("dataStatus", "OK"),
+                                Map.entry("individual", investorLeg(null, -6280909, true)),
+                                Map.entry("foreign", investorLeg(null, 3672423, false)),
+                                Map.entry("institution", investorLeg(null, 2608486, false))
+                        ),
                         Map.ofEntries(
                                 Map.entry("symbol", "005930.KS"),
                                 Map.entry("name", "Samsung Electronics"),
@@ -338,13 +378,37 @@ class IngestionApiIntegrationTest {
                                         "netAmount", "-35000000000",
                                         "netVolume", -600000
                                 ))
+                        ),
+                        Map.ofEntries(
+                                Map.entry("symbol", "005930.KS"),
+                                Map.entry("name", "Samsung Electronics"),
+                                Map.entry("market", "KR"),
+                                Map.entry("currency", "KRW"),
+                                Map.entry("tradeDate", "2026-05-20"),
+                                Map.entry("asOf", asOf.minusSeconds(86400).toString()),
+                                Map.entry("provider", "pykrx"),
+                                Map.entry("sourceLabel", "KRX investor trading by date via pykrx"),
+                                Map.entry("delayLabel", "Previous trading day investor flow"),
+                                Map.entry("dataStatus", "OK"),
+                                Map.entry("individual", Map.of(
+                                        "netAmount", "-12000000000",
+                                        "netVolume", -120000
+                                )),
+                                Map.entry("foreign", Map.of(
+                                        "netAmount", "8000000000",
+                                        "netVolume", 90000
+                                )),
+                                Map.entry("institution", Map.of(
+                                        "netAmount", "4000000000",
+                                        "netVolume", 30000
+                                ))
                         )
                 )),
                 Void.class
         );
 
         ResponseEntity<String> response = restTemplate.getForEntity(
-                "/api/market/investor-flows?symbols=005930.KS",
+                "/api/market/investor-flows/history?symbol=005930.KS&limit=20",
                 String.class
         );
 
@@ -361,28 +425,33 @@ class IngestionApiIntegrationTest {
                 .contains("\"delayLabel\":\"Previous trading day investor flow\"")
                 .contains("\"stale\":false")
                 .contains("\"dataStatus\":\"OK\"")
-                .contains("\"individual\":{\"netAmount\":125000000000.00,\"netVolume\":1700000}")
-                .contains("\"foreign\":{\"netAmount\":-90000000000.00,\"netVolume\":-1100000}")
-                .contains("\"institution\":{\"netAmount\":-35000000000.00,\"netVolume\":-600000}")
+                .contains("\"individual\":{\"netAmount\":125000000000.00,\"netVolume\":1700000,\"derived\":false}")
+                .contains("\"foreign\":{\"netAmount\":-90000000000.00,\"netVolume\":-1100000,\"derived\":false}")
+                .contains("\"institution\":{\"netAmount\":-35000000000.00,\"netVolume\":-600000,\"derived\":false}")
+                .contains("\"tradeDate\":\"2026-05-20\"")
+                .contains("\"tradeDate\":\"2026-05-19\"")
+                .contains("\"provider\":\"naver-finance\"")
+                .contains("\"sourceLabel\":\"Naver Finance investor trend; individual is residual from foreign and institution\"")
+                .contains("\"delayLabel\":\"Previous trading day investor trend\"")
+                .contains("\"individual\":{\"netAmount\":null,\"netVolume\":-6280909,\"derived\":true}")
+                .contains("\"foreign\":{\"netAmount\":null,\"netVolume\":3672423,\"derived\":false}")
+                .contains("\"institution\":{\"netAmount\":null,\"netVolume\":2608486,\"derived\":false}")
+                .doesNotContain("\"tradeDate\":\"2026-05-22\"")
+                .doesNotContain("\"dataStatus\":\"PROVIDER_ERROR\"")
                 .doesNotContain("\"bars\"")
                 .doesNotContain("\"price\"");
+        assertThat(response.getBody().indexOf("\"tradeDate\":\"2026-05-21\""))
+                .isLessThan(response.getBody().indexOf("\"tradeDate\":\"2026-05-20\""));
     }
 
     @Test
-    void returnsInsufficientInvestorFlowWhenNoCachedDomesticFlowExists() {
+    void removesSingleInvestorFlowPublicEndpoint() {
         ResponseEntity<String> response = restTemplate.getForEntity(
                 "/api/market/investor-flows?symbols=000660.KS",
                 String.class
         );
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody())
-                .contains("\"symbol\":\"000660.KS\"")
-                .contains("\"market\":\"KR\"")
-                .contains("\"currency\":\"KRW\"")
-                .contains("\"provider\":\"none\"")
-                .contains("\"stale\":true")
-                .contains("\"dataStatus\":\"INSUFFICIENT\"");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -493,6 +562,14 @@ class IngestionApiIntegrationTest {
                 ),
                 String.class
         );
+    }
+
+    private static Map<String, Object> investorLeg(Object netAmount, long netVolume, boolean derived) {
+        Map<String, Object> leg = new LinkedHashMap<>();
+        leg.put("netAmount", netAmount);
+        leg.put("netVolume", netVolume);
+        leg.put("derived", derived);
+        return leg;
     }
 
     private void resetCrawlTargets() {

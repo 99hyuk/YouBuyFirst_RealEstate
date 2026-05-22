@@ -77,8 +77,11 @@ class SpringIngestionClient:
             response.raise_for_status()
 
     def publish_investor_flows(self, snapshots: Iterable[InvestorFlowSnapshot]) -> None:
+        items = [snapshot.to_request_dict() for snapshot in snapshots]
+        if not items:
+            return
         payload = {
-            "items": [snapshot.to_request_dict() for snapshot in snapshots],
+            "items": items,
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
             response = client.post(f"{self.base_url}/internal/market/investor-flows", json=payload)

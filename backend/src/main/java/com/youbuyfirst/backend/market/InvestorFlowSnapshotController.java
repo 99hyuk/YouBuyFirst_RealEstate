@@ -3,12 +3,14 @@ package com.youbuyfirst.backend.market;
 import com.youbuyfirst.backend.market.dto.InvestorFlowBatchRequest;
 import com.youbuyfirst.backend.market.dto.InvestorFlowSnapshotResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -27,8 +29,14 @@ public class InvestorFlowSnapshotController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/api/market/investor-flows")
-    public List<InvestorFlowSnapshotResponse> investorFlows(@RequestParam(required = false) String symbols) {
-        return investorFlowSnapshotService.list(symbols);
+    @GetMapping("/api/market/investor-flows/history")
+    public List<InvestorFlowSnapshotResponse> investorFlowHistory(
+            @RequestParam String symbol,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        if (symbol == null || symbol.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "symbol is required");
+        }
+        return investorFlowSnapshotService.history(symbol, limit);
     }
 }

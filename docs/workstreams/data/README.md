@@ -16,6 +16,8 @@
 - AI 3줄 요약 입력 데이터
 - 커뮤니티별 신호와 이후 수익률 비교용 원천 지표
 - `CommunitySignal`, `ForwardReturn`, `CommunityPerformanceSnapshot`
+- 커뮤니티 반응 토픽 클러스터와 과거 유사 상황 검색 후보
+- `CommunityTopicCluster` 후보: `symbol`, `windowStart`, `windowEnd`, `label`, `summary`, `postCount`, `representativePostIds`, `sentimentMix`, `confidence`
 - 종목 상세 팩트폭격 헤드라인의 기술/재무/밸류에이션 근거와 `stockHealthScore` 후보
 
 ## 파일 소유권
@@ -44,7 +46,15 @@
 3. 열기 지수 산식 문서화
 4. 개미 심리 지수 산식 문서화
 5. 커뮤니티별 성과 비교용 snapshot 모델 설계
-6. 종목 상세 팩트폭격 헤드라인에 넣을 기술/재무/밸류에이션 evidence schema 후보 정리
+6. 커뮤니티 토픽 클러스터링 실험 범위 정리
+7. 종목 상세 팩트폭격 헤드라인에 넣을 기술/재무/밸류에이션 evidence schema 후보 정리
+
+## 임베딩/클러스터링 적용 원칙
+
+- 먼저 글/댓글 수집, 종목 매칭, 반응 방향 분류, 30분 집계를 안정화합니다.
+- 임베딩은 실시간 종목 인식의 정본으로 쓰지 않고, 이미 매칭된 글을 의미 단위로 묶는 분석 레이어로 둡니다.
+- 초기에는 벡터DB 없이 window 단위 batch에서 임베딩과 클러스터링을 실험하고, 토픽 라벨/대표 글/감정 비율/신뢰도만 저장합니다.
+- 과거 유사 상황 검색, 사용자 질문형 분석, RAG가 실제 제품 기능으로 필요해질 때 벡터 저장소 도입을 검토합니다.
 
 ## 하지 않는 일
 

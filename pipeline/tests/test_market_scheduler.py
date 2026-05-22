@@ -28,8 +28,8 @@ class _InvestorFlowProvider:
         self.fail = fail
         self.calls: list[list[str]] = []
 
-    def snapshots(self, symbols: list[str]) -> list[str]:
-        self.calls.append(symbols)
+    def snapshots(self, symbols: list[str], limit: int) -> list[str]:
+        self.calls.append([*symbols, f"limit:{limit}"])
         if self.fail:
             raise RuntimeError("investor flow provider failed")
         return [f"flow:{symbol}" for symbol in symbols]
@@ -111,13 +111,14 @@ def test_investor_flow_refresh_job_pushes_previous_day_flows():
         provider=provider,
         client=client,
         symbols=["005930.KS", "000660.KS"],
+        limit=20,
     )
 
     result = job.run_once()
 
     assert result.status == "OK"
     assert result.count == 2
-    assert provider.calls == [["005930.KS", "000660.KS"]]
+    assert provider.calls == [["005930.KS", "000660.KS", "limit:20"]]
     assert client.investor_flow_batches == [["flow:005930.KS", "flow:000660.KS"]]
 
 
@@ -127,6 +128,7 @@ def test_investor_flow_refresh_job_reports_provider_error():
         provider=_InvestorFlowProvider(fail=True),
         client=client,
         symbols=["005930.KS"],
+        limit=20,
     )
 
     result = job.run_once()
@@ -152,6 +154,7 @@ def test_configure_scheduler_registers_market_refresh_interval_job():
         provider=_InvestorFlowProvider(),
         client=_Client(),
         symbols=["005930.KS"],
+        limit=20,
     )
 
     configure_scheduler(
