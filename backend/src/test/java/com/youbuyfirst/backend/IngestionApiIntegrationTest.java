@@ -309,6 +309,83 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void exposesInvestorFlowsAsPreviousTradingDayDomesticSlice() {
+        Instant asOf = Instant.now().minusSeconds(60);
+
+        ResponseEntity<Void> upsert = restTemplate.postForEntity(
+                "/internal/market/investor-flows",
+                Map.of("items", List.of(
+                        Map.ofEntries(
+                                Map.entry("symbol", "005930.KS"),
+                                Map.entry("name", "Samsung Electronics"),
+                                Map.entry("market", "KR"),
+                                Map.entry("currency", "KRW"),
+                                Map.entry("tradeDate", "2026-05-21"),
+                                Map.entry("asOf", asOf.toString()),
+                                Map.entry("provider", "pykrx"),
+                                Map.entry("sourceLabel", "KRX investor trading by date via pykrx"),
+                                Map.entry("delayLabel", "Previous trading day investor flow"),
+                                Map.entry("dataStatus", "OK"),
+                                Map.entry("individual", Map.of(
+                                        "netAmount", "125000000000",
+                                        "netVolume", 1700000
+                                )),
+                                Map.entry("foreign", Map.of(
+                                        "netAmount", "-90000000000",
+                                        "netVolume", -1100000
+                                )),
+                                Map.entry("institution", Map.of(
+                                        "netAmount", "-35000000000",
+                                        "netVolume", -600000
+                                ))
+                        )
+                )),
+                Void.class
+        );
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/investor-flows?symbols=005930.KS",
+                String.class
+        );
+
+        assertThat(upsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"symbol\":\"005930.KS\"")
+                .contains("\"name\":\"Samsung Electronics\"")
+                .contains("\"market\":\"KR\"")
+                .contains("\"currency\":\"KRW\"")
+                .contains("\"tradeDate\":\"2026-05-21\"")
+                .contains("\"provider\":\"pykrx\"")
+                .contains("\"sourceLabel\":\"KRX investor trading by date via pykrx\"")
+                .contains("\"delayLabel\":\"Previous trading day investor flow\"")
+                .contains("\"stale\":false")
+                .contains("\"dataStatus\":\"OK\"")
+                .contains("\"individual\":{\"netAmount\":125000000000.00,\"netVolume\":1700000}")
+                .contains("\"foreign\":{\"netAmount\":-90000000000.00,\"netVolume\":-1100000}")
+                .contains("\"institution\":{\"netAmount\":-35000000000.00,\"netVolume\":-600000}")
+                .doesNotContain("\"bars\"")
+                .doesNotContain("\"price\"");
+    }
+
+    @Test
+    void returnsInsufficientInvestorFlowWhenNoCachedDomesticFlowExists() {
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/investor-flows?symbols=000660.KS",
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"symbol\":\"000660.KS\"")
+                .contains("\"market\":\"KR\"")
+                .contains("\"currency\":\"KRW\"")
+                .contains("\"provider\":\"none\"")
+                .contains("\"stale\":true")
+                .contains("\"dataStatus\":\"INSUFFICIENT\"");
+    }
+
+    @Test
     void claimsOnlyDueActiveTargetsFromAllowedSources() {
         resetCrawlTargets();
 

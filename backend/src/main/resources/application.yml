@@ -32,3 +32,4 @@ app:
   market:
     quote-stale-minutes: ${QUOTE_STALE_MINUTES:2160}
     chart-candle-stale-minutes: ${CHART_CANDLE_STALE_MINUTES:2160}
+    investor-flow-stale-minutes: ${INVESTOR_FLOW_STALE_MINUTES:5760}

@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import os
+from datetime import date
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -16,7 +17,11 @@ from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
 from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
 from youbuyfirst_pipeline.instruments import load_instruments
 from youbuyfirst_pipeline.llm import build_llm_provider
-from youbuyfirst_pipeline.market_scheduler import build_market_refresh_job
+from youbuyfirst_pipeline.market_investor_flows import (
+    MarketInvestorFlowProvider,
+    configured_investor_flow_symbols,
+)
+from youbuyfirst_pipeline.market_scheduler import build_investor_flow_refresh_job, build_market_refresh_job
 from youbuyfirst_pipeline.market_quotes import (
     DEFAULT_QUOTE_CACHE_TTL_SECONDS,
     MarketChartCandleProvider,
@@ -86,7 +91,16 @@ async def async_main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "command",
-        choices=["run-once", "serve", "quote-snapshot", "quote-push", "chart-candles", "chart-candles-push"],
+        choices=[
+            "run-once",
+            "serve",
+            "quote-snapshot",
+            "quote-push",
+            "chart-candles",
+            "chart-candles-push",
+            "investor-flows",
+            "investor-flows-push",
+        ],
     )
     parser.add_argument("--interval-minutes", type=int, default=int(os.getenv("CRAWL_INTERVAL_MINUTES", "30")))
     parser.add_argument(
@@ -98,6 +112,13 @@ async def async_main() -> None:
     parser.add_argument("--chart-range", default=os.getenv("MARKET_CHART_RANGE", "3M"))
     parser.add_argument("--interval", default=os.getenv("MARKET_CHART_INTERVAL", "1d"))
     parser.add_argument(
+        "--investor-flow-symbols",
+        nargs="+",
+        default=configured_investor_flow_symbols(os.getenv("MARKET_INVESTOR_FLOW_SYMBOLS")),
+        help="Domestic investor flow symbols such as 005930.KS 000660.KS 069500.KS",
+    )
+    parser.add_argument("--trade-date", default=os.getenv("MARKET_INVESTOR_FLOW_TRADE_DATE"))
+    parser.add_argument(
         "--market-refresh-interval-minutes",
         type=int,
         default=int(os.getenv("MARKET_REFRESH_INTERVAL_MINUTES", "10")),
@@ -106,6 +127,25 @@ async def async_main() -> None:
         "--disable-market-refresh",
         action="store_true",
         default=os.getenv("MARKET_REFRESH_ENABLED", "true").lower() in {"0", "false", "no"},
+    )
+    parser.add_argument(
+        "--disable-investor-flow-refresh",
+        action="store_true",
+        default=os.getenv("MARKET_INVESTOR_FLOW_REFRESH_ENABLED", "true").lower() in {"0", "false", "no"},
+    )
+    parser.add_argument(
+        "--investor-flow-refresh-hour",
+        type=int,
+        default=int(os.getenv("MARKET_INVESTOR_FLOW_REFRESH_HOUR_LOCAL", "18")),
+    )
+    parser.add_argument(
+        "--investor-flow-refresh-minute",
+        type=int,
+        default=int(os.getenv("MARKET_INVESTOR_FLOW_REFRESH_MINUTE_LOCAL", "30")),
+    )
+    parser.add_argument(
+        "--investor-flow-refresh-timezone",
+        default=os.getenv("MARKET_INVESTOR_FLOW_REFRESH_TIMEZONE", "Asia/Seoul"),
     )
     args = parser.parse_args()
 
@@ -136,6 +176,18 @@ async def async_main() -> None:
         client.publish_chart_candles(candle_sets)
         return
 
+    if args.command in {"investor-flows", "investor-flows-push"}:
+        provider = MarketInvestorFlowProvider(
+            stale_after_hours=int(os.getenv("MARKET_INVESTOR_FLOW_STALE_AFTER_HOURS", "96")),
+        )
+        snapshots = provider.snapshots(args.investor_flow_symbols, trade_date=_parse_trade_date(args.trade_date))
+        if args.command == "investor-flows":
+            print(json.dumps({"items": [snapshot.to_api_dict() for snapshot in snapshots]}, ensure_ascii=False, indent=2))
+            return
+        client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+        client.publish_investor_flows(snapshots)
+        return
+
     pipeline = build_pipeline()
     if args.command == "run-once":
         results = await pipeline.run_once()
@@ -143,10 +195,11 @@ async def async_main() -> None:
             print(result)
     else:
         market_refresh_job = None
+        investor_flow_refresh_job = None
+        market_client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
         if not args.disable_market_refresh:
-            client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
             market_refresh_job = build_market_refresh_job(
-                client=client,
+                client=market_client,
                 symbols=args.symbols,
                 chart_range=args.chart_range,
                 chart_interval=args.interval,
@@ -155,12 +208,28 @@ async def async_main() -> None:
                 chart_cache_ttl_seconds=int(os.getenv("MARKET_CHART_CACHE_TTL_SECONDS", str(DEFAULT_QUOTE_CACHE_TTL_SECONDS))),
                 chart_stale_after_hours=int(os.getenv("MARKET_CHART_STALE_AFTER_HOURS", "36")),
             )
+        if not args.disable_investor_flow_refresh:
+            investor_flow_refresh_job = build_investor_flow_refresh_job(
+                client=market_client,
+                symbols=args.investor_flow_symbols,
+                stale_after_hours=int(os.getenv("MARKET_INVESTOR_FLOW_STALE_AFTER_HOURS", "96")),
+            )
         await serve(
             pipeline,
             interval_minutes=args.interval_minutes,
             market_refresh_job=market_refresh_job,
             market_interval_minutes=args.market_refresh_interval_minutes,
+            investor_flow_refresh_job=investor_flow_refresh_job,
+            investor_flow_hour=args.investor_flow_refresh_hour,
+            investor_flow_minute=args.investor_flow_refresh_minute,
+            investor_flow_timezone=args.investor_flow_refresh_timezone,
         )
+
+
+def _parse_trade_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    return date.fromisoformat(value)
 
 
 def main() -> None:

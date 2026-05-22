@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from youbuyfirst_pipeline.client import SpringIngestionClient
+from youbuyfirst_pipeline.market_investor_flows import InvestorFlowSnapshot, MarketInvestorFlowProvider
 from youbuyfirst_pipeline.market_quotes import ChartCandleSet, MarketChartCandleProvider, MarketQuoteProvider, QuoteSnapshot
 
 logger = logging.getLogger(__name__)
@@ -20,11 +21,19 @@ class ChartCandleProvider(Protocol):
         ...
 
 
+class InvestorFlowProvider(Protocol):
+    def snapshots(self, symbols: list[str]) -> list[InvestorFlowSnapshot]:
+        ...
+
+
 class MarketRefreshClient(Protocol):
     def publish_quote_snapshots(self, snapshots: list[QuoteSnapshot]) -> None:
         ...
 
     def publish_chart_candles(self, candle_sets: list[ChartCandleSet]) -> None:
+        ...
+
+    def publish_investor_flows(self, snapshots: list[InvestorFlowSnapshot]) -> None:
         ...
 
 
@@ -34,6 +43,12 @@ class MarketRefreshResult:
     chart_status: str
     quote_count: int
     chart_count: int
+
+
+@dataclass(frozen=True)
+class InvestorFlowRefreshResult:
+    status: str
+    count: int
 
 
 class MarketRefreshJob:
@@ -95,6 +110,37 @@ class MarketRefreshJob:
         return result
 
 
+class InvestorFlowRefreshJob:
+    def __init__(
+            self,
+            provider: InvestorFlowProvider,
+            client: MarketRefreshClient,
+            symbols: list[str],
+    ) -> None:
+        self.provider = provider
+        self.client = client
+        self.symbols = symbols
+
+    def run_once(self) -> InvestorFlowRefreshResult:
+        status = "OK"
+        count = 0
+        try:
+            snapshots = self.provider.snapshots(self.symbols)
+            self.client.publish_investor_flows(snapshots)
+            count = len(snapshots)
+        except Exception:
+            status = "PROVIDER_ERROR"
+            logger.exception("market investor flow refresh failed")
+
+        result = InvestorFlowRefreshResult(status=status, count=count)
+        logger.info(
+            "market investor flow refresh finished; status=%s count=%s",
+            result.status,
+            result.count,
+        )
+        return result
+
+
 def build_market_refresh_job(
         *,
         client: SpringIngestionClient,
@@ -119,4 +165,17 @@ def build_market_refresh_job(
         symbols=symbols,
         chart_range=chart_range,
         chart_interval=chart_interval,
+    )
+
+
+def build_investor_flow_refresh_job(
+        *,
+        client: SpringIngestionClient,
+        symbols: list[str],
+        stale_after_hours: int,
+) -> InvestorFlowRefreshJob:
+    return InvestorFlowRefreshJob(
+        provider=MarketInvestorFlowProvider(stale_after_hours=stale_after_hours),
+        client=client,
+        symbols=symbols,
     )

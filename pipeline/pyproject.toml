@@ -11,6 +11,7 @@ dependencies = [
     "openai>=1.50",
     "playwright==1.48.0",
     "pydantic>=2.8",
+    "pykrx>=1.2.8",
     "python-dotenv>=1.0",
     "yfinance>=0.2.66",
 ]

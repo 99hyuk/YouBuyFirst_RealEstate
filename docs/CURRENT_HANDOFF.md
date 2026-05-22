@@ -40,6 +40,7 @@
 - 부동산은 주식 MVP에 섞지 않고 후순위 별도 버티컬로만 검토합니다. SSAFY 관통프로젝트 주제와 병행할 수는 있지만, 너나사 주식 서비스의 핵심 범위는 주식/ETF 커뮤니티 반응 분석입니다.
 - market MVP 데이터 공급자는 `yfinance` + FinanceDataReader 조합으로 정합니다. `yfinance`는 국내/미국 시세와 거래량의 1차 provider, FinanceDataReader는 국내 종목 메타데이터와 일부 스냅샷 보강 후보로 둡니다. `.KS`/`.KQ` quote는 Yahoo Finance 원천 20분 지연과 pipeline 기본 10분 갱신 주기를 합쳐 최대 30분 지연으로 표시합니다. 미국 quote는 지연 시간을 단정하지 않고 10분 주기 refresh snapshot으로 표시합니다. 개인/외국인/기관 수급은 quote snapshot과 분리해 국내 전체 종목 대상 전 거래일 기준 데이터로만 다룹니다. 현재 FinanceDataReader 수급 후보는 호환성 문제로 1차 provider로 확정하지 않고, `pykrx` 등 KRX 데이터 기반 오픈소스 후보를 provider spike에서 검증합니다. Naver Finance 직접 HTML 크롤링 fallback은 두지 않습니다. 공개 화면에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 표시가 필수입니다.
 - 종목 상세 실제 차트는 `GET /api/market/chart-candles` 계약을 사용합니다. `GET /api/quotes`는 snapshot 전용으로 유지하고, front는 fixture 차트를 실제 차트처럼 렌더링하지 않습니다. chart-candles 공개 범위는 `1M/3M/6M/1Y/3Y/5Y`, 최대 `1260` daily bars이며, market/backend 트랙은 `docs/workstreams/market/chart-candles.md`를 기준으로 구현합니다.
+- 종목별 전 거래일 수급은 `GET /api/market/investor-flows` 별도 API로 분리합니다. backend는 display cache를 제공하고, pipeline은 pykrx adapter 후보와 한국시간 평일 18:30 refresh job을 둡니다. 단, 로컬 pykrx 실 provider 검증은 KRX 응답 문제로 `PROVIDER_ERROR`가 발생할 수 있어 provider 접근 안정화가 다음 리스크입니다.
 - 종목 상세 상단의 강한 한줄평은 커뮤니티 요약이 아니라 시황/기술지표/재무 기반 `종목 상태 팩트폭격 헤드라인`입니다. 프론트 배너뿐 아니라 backend/API 계약 후보이며, `headlineTone`, `headline`, `subtitle`, `evidence`, `asOf`, `dataQuality`, `personalizedSafe` 기준은 `docs/STOCK_DETAIL_COPY_GUIDE.md`를 봅니다.
 - 디자인과 프론트 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다. Figma AI/Stitch는 기본 흐름이 아니며, 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 씁니다.
 - 현재 디자인 판단 기준은 `docs/workstreams/front/README.md`의 `현재 디자인 우선순위` 섹션입니다. 가독성, 정보 밀도, 전문적인 차트 느낌, 토스증권/야선식 직관성을 우선하고, 다크/라이트 테마는 후속 작업으로 둡니다.
@@ -75,7 +76,7 @@
 - 열린 브랜치/worktree 정리 후보 점검
 - front 종목 상세 5Y 차트 축/이평선/컨트롤 QA와 사용자 확인
 - front 브랜치에 market scheduler와 chart candles API가 반영된 최신 main 병합
-- 국내 전체 종목 대상 전 거래일 개인/외국인/기관 수급 provider spike
+- 국내 전체 종목 대상 전 거래일 개인/외국인/기관 수급 provider 접근 안정화. pykrx 최신 버전, KRX OpenAPI, 권한이 명확한 vendor 후보를 비교합니다.
 - trade 모의 계좌/주문/체결/원장 트랜잭션 설계
 - agent paper trading 판단 key와 중복 실행 방지 설계
 - crawl source registry에 뽐뿌/디시 미주갤/주식갤/국내주식 계열 후보 정리

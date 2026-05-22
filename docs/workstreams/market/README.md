@@ -77,6 +77,15 @@
 - 서비스 트래픽이 커지거나 수익화/상용화 단계로 넘어가면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 다시 검토합니다.
 - quote snapshot 세부 API 계약, 캐시/stale 기준, KODEX 200 수급 후보는 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.
 - 종목 상세 실제 차트용 display-only OHLC API 계약은 `docs/workstreams/market/chart-candles.md`를 기준으로 봅니다.
+- 국내 종목/ETF 전 거래일 개인/외국인/기관 수급 API 계약은 `docs/workstreams/market/investor-flows.md`를 기준으로 봅니다.
+
+## 종목별 수급 slice
+
+- backend는 `POST /internal/market/investor-flows`로 전 거래일 수급 snapshot을 upsert하고, `GET /api/market/investor-flows?symbols=005930.KS,000660.KS,069500.KS`로 프론트용 응답을 제공합니다.
+- 공개 응답에는 `symbol`, `name`, `market`, `currency`, `tradeDate`, `provider`, `sourceLabel`, `delayLabel`, `asOf`, `stale`, `dataStatus`, `individual`, `foreign`, `institution`이 포함됩니다.
+- pipeline은 `pykrx` adapter 후보로 KRX 투자자별 거래대금/거래량을 조회하고, FinanceDataReader는 종목명/시장/통화 같은 메타데이터 보강에 사용합니다.
+- `serve` runtime은 quote/chart 10분 refresh와 별개로 한국시간 평일 18:30 수급 refresh job을 등록합니다.
+- 현재 로컬 pykrx 실 provider 호출은 KRX 응답 문제로 `PROVIDER_ERROR`가 날 수 있으므로, 프론트는 `dataStatus`가 `INSUFFICIENT`, `PROVIDER_ERROR`, `MOCK`이면 수급 영역을 숨깁니다.
 
 ## 하지 않는 일
 
