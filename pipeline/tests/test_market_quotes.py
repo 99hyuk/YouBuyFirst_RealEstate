@@ -1,5 +1,9 @@
+import sys
 from datetime import datetime, timezone
 from decimal import Decimal
+from types import SimpleNamespace
+
+import pandas as pd
 
 from youbuyfirst_pipeline.market_quotes import (
     ChartCandleBar,
@@ -163,7 +167,12 @@ def test_market_chart_candle_provider_builds_display_only_contract():
         metadata_provider=_FakeKoreaMetadataProvider(),
     )
 
-    response = provider.chart("005930.KS", chart_range="3M", interval="1d").to_api_dict()
+    response = provider.chart(
+        "005930.KS",
+        chart_range="3M",
+        interval="1d",
+        now=datetime(2026, 5, 21, 1, tzinfo=timezone.utc),
+    ).to_api_dict()
 
     assert client.calls == [("005930.KS", "3M", "1d")]
     assert response == {
@@ -228,3 +237,36 @@ def test_yfinance_chart_candle_client_maps_public_range_to_yfinance_period():
     assert client.period_for("3M") == "3mo"
     assert client.period_for("1Y") == "1y"
     assert client.period_for("3Y") == "5y"
+
+
+def test_yfinance_chart_candle_client_preserves_exchange_local_daily_dates(monkeypatch):
+    frame = pd.DataFrame(
+        {
+            "Open": [270000, 271000],
+            "High": [274000, 273000],
+            "Low": [269500, 270000],
+            "Close": [270500, 272000],
+            "Volume": [38075487, 22059084],
+        },
+        index=pd.DatetimeIndex(
+            [
+                pd.Timestamp("2026-05-15 00:00:00", tz="Asia/Seoul"),
+                pd.Timestamp("2026-05-18 00:00:00", tz="Asia/Seoul"),
+            ]
+        ),
+    )
+
+    class _Ticker:
+        def __init__(self, symbol: str) -> None:
+            self.symbol = symbol
+
+        def history(self, **kwargs):
+            assert kwargs["period"] == "5y"
+            assert kwargs["interval"] == "1d"
+            return frame
+
+    monkeypatch.setitem(sys.modules, "yfinance", SimpleNamespace(Ticker=_Ticker))
+
+    bars = YFinanceChartCandleClient().candles("005930.KS", chart_range="5Y", interval="1d")
+
+    assert [bar.date for bar in bars] == ["2026-05-15", "2026-05-18"]

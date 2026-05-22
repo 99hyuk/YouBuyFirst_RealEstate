@@ -226,10 +226,9 @@ class YFinanceChartCandleClient:
         frame = frame.dropna(subset=["Open", "High", "Low", "Close"])
         candles: list[ChartCandleBar] = []
         for index_value, row in frame.iterrows():
-            timestamp = _as_utc_datetime(index_value)
             candles.append(
                 ChartCandleBar(
-                    date=timestamp.date().isoformat(),
+                    date=_exchange_trading_date(index_value),
                     open=Decimal(str(row["Open"])),
                     high=Decimal(str(row["High"])),
                     low=Decimal(str(row["Low"])),
@@ -510,6 +509,16 @@ def _as_utc_datetime(value) -> datetime:
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc)
+
+
+def _exchange_trading_date(value) -> str:
+    if hasattr(value, "to_pydatetime"):
+        value = value.to_pydatetime()
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    raise TypeError(f"expected date-like value, got {type(value)!r}")
 
 
 def _decimal_number(value: Decimal) -> int | float:

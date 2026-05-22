@@ -130,7 +130,8 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 - `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.
 - Backend stale threshold candidate: 36 hours until a market-calendar slice exists. During holidays/weekends this prevents normal closed-market data from looking broken too quickly.
 - `asOf` should be the latest provider bar timestamp converted to UTC.
-- `date` should be the exchange trading date for the candle, formatted as `YYYY-MM-DD`.
+- `date` should be the exchange-local trading date for the candle, formatted as `YYYY-MM-DD`. Do not derive `bars[].date` from the UTC-converted timestamp. For Korean daily bars, a provider index such as `2026-05-15 00:00:00+09:00` must stay `2026-05-15`, even though the UTC instant is `2026-05-14T15:00:00Z`.
+- `asOf` may be UTC, but `bars[].date` is a trading-day key used to match investor-flow `tradeDate`.
 
 ## Public Display Guardrails
 
