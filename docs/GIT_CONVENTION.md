@@ -12,9 +12,10 @@ PR 전후에 아래는 생략하지 않습니다.
 4. 본문: `.github/pull_request_template.md` 복사본 + UTF-8 no BOM 파일 + `gh --body-file`
 5. 검증: 관련 테스트 + `git diff --check`
 6. 본문 확인: `gh pr view --json body --jq .body`
-7. 한글 깨짐 확인: `??` 검색
-8. 기록: Notion 기록 여부와 이유 명시
-9. 종료: merge/close 후 브랜치와 worktree 정리 여부 확인
+7. 템플릿 감사: 현재 PR 템플릿의 `##` 섹션이 모두 남아 있는지 확인
+8. 한글 깨짐 확인: `??` 검색
+9. 기록: Notion 기록 여부와 이유 명시
+10. 종료: merge/close 후 브랜치와 worktree 정리 여부 확인
 
 ## 브랜치
 
@@ -138,6 +139,8 @@ GitHub 라벨:
 
 PR 본문은 `.github/pull_request_template.md`를 출발점으로 작성합니다. GitHub 웹 UI를 쓰면 템플릿이 자동으로 깔리지만, CLI에서 `gh pr create --body-file <path>`를 쓰면 넘긴 파일 내용이 그대로 저장됩니다. 그래서 `--body-file`에 넘기는 파일도 반드시 템플릿 파일을 복사한 뒤 각 항목을 채워야 합니다.
 
+기억에 의존해 비슷한 구조로 다시 쓰는 것은 실패로 봅니다. 제목과 문체가 비슷해도 현재 템플릿의 `##` 섹션 제목이 하나라도 빠지면 PR 규칙 미준수입니다.
+
 템플릿을 일부 비워야 하는 경우에도 섹션 제목은 유지합니다. 해당 없는 항목은 `해당 없음` 또는 `Notion 미기록: <이유>`처럼 이유를 남깁니다.
 
 PR 본문은 파일 목록, 브랜치 이름, 명령어, 내부 기술명 나열로 시작하지 않습니다. 첫 화면에서는 사용자가 무엇을 판단할 수 있게 되었는지, 제품이나 운영 흐름이 어떻게 달라졌는지부터 설명합니다. 파일명, 경로, 브랜치명, 구현 세부 기술은 `리뷰 가이드`, `PR 범위`, 접힌 details 같은 보조 위치에 둡니다.
@@ -179,6 +182,16 @@ gh pr view <number> --json body --jq .body | Select-String -Pattern "\?\?"
 ```
 
 `??` 치환 문자열이 보이면 merge 전에 UTF-8 파일 방식으로 다시 올립니다.
+
+템플릿 섹션 감사:
+
+```powershell
+$template = Get-Content -Raw -Encoding utf8 .github\pull_request_template.md
+$required = [regex]::Matches($template, '(?m)^## .+$') | ForEach-Object { $_.Value }
+$body = gh pr view <number> --json body --jq .body
+$missing = $required | Where-Object { -not $body.Contains($_) }
+if ($missing) { throw "PR template headings missing: $($missing -join ', ')" }
+```
 
 ## 완료 보고
 

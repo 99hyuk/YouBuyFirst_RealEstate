@@ -96,7 +96,9 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 - PR에는 `track:*`, `type:*`, `size:*` 라벨을 붙이고, 필요한 경우에만 `part:*`를 붙입니다.
 - 한국어 PR 본문은 UTF-8 no BOM 파일과 `gh --body-file <path>`를 사용합니다.
 - PR 본문 파일은 `.github/pull_request_template.md`를 복사해서 채웁니다. `gh --body-file`을 쓰더라도 임의 본문으로 템플릿을 우회하지 않습니다.
+- 템플릿을 기억으로 비슷하게 재작성하지 않습니다. 현재 템플릿의 `##` 섹션 제목이 하나라도 빠지면 PR 규칙 미준수입니다.
 - PR 생성/수정 직후 `gh pr view --json body --jq .body`와 `??` 검색으로 한글 깨짐을 확인합니다.
+- PR 생성/수정 직후 `docs/GIT_CONVENTION.md`의 템플릿 섹션 감사 명령으로 누락된 섹션이 없는지 확인합니다.
 - 관련 테스트를 실행합니다. 문서만 바꿔도 `git diff --check`를 실행합니다.
 - 세부 PR/라벨/본문 규칙은 `docs/GIT_CONVENTION.md`와 `docs/LABEL_GUIDE.md`의 관련 섹션만 확인합니다.
 
