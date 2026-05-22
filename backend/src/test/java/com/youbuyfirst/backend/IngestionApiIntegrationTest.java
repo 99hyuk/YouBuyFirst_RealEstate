@@ -292,7 +292,7 @@ class IngestionApiIntegrationTest {
                 .contains("\"displayOnly\":true")
                 .contains("\"rawMinute\":false")
                 .contains("\"downloadable\":false")
-                .contains("\"maxBars\":260")
+                .contains("\"maxBars\":66")
                 .doesNotContain("individual")
                 .doesNotContain("foreign")
                 .doesNotContain("institution");

@@ -1,92 +1,101 @@
 # Front Minimal Design System
 
-## 기준 화면
+기준 화면은 `/dashboard`입니다. 새 화면은 대시보드의 정보 밀도, 작은 헤더, Pretendard 타이포, 얇은 선, 절제된 그림자를 먼저 따릅니다.
 
-- 1차 기준 화면은 `/dashboard`입니다. 현재 프론트 화면 중 완성도가 가장 높으므로 새 화면과 컴포넌트는 대시보드의 정보 밀도, 간격, panel header, feed/table/chart 톤을 먼저 따릅니다.
-- 대시보드처럼 한 화면에 여러 정보가 읽히게 하되, 큰 네모 카드 반복보다 작은 제목, 짧은 badge, 얇은 구분선, 촘촘한 리스트로 위계를 만듭니다.
-- 다른 화면 brief와 충돌하면 이 문서와 현재 대시보드 구현을 우선 확인합니다. 새 UI 패턴이 필요하면 페이지 안에 숨기지 말고 아래 `디자인 시스템 후보 기록`에 남깁니다.
-- 종목 상세의 팩트폭격 배너는 예외적인 특수 컴포넌트이며 `docs/STOCK_DETAIL_COPY_GUIDE.md`와 `docs/workstreams/front/screens/stock-detail.md`를 함께 따릅니다.
+## UI 표현 원칙
 
-현재 화면에서 반복되는 UI만 기준으로 둔 최소 디자인 시스템입니다. 새 화면을 만들 때는 이 기준을 먼저 적용하고, 새 패턴이 필요하면 해당 페이지에만 숨기지 말고 `디자인 시스템 후보`로 남깁니다.
+긴 설명문을 많이 쌓기보다 정보를 시각 구조로 바꿔 보여줍니다.
+
+| 정보 성격 | 우선 표현 |
+| --- | --- |
+| 순위, 급증, 주목 대상 | rank tile, signal mosaic, compact list |
+| 비율, 긍정/부정, 상승/하락 | 막대, split meter, 색상 chip |
+| 시간 흐름, 수익률, 반응 변화 | 선 그래프, sparkline, timeline |
+| 이유, 근거, 상태 | 짧은 chip 2-3개, badge, 상태 pill |
+| 비교, 로그, 원장성 데이터 | 표, ledger row, dense grid |
+
+문장은 보조 설명으로만 씁니다. 카드 안에 긴 문단이 필요해지면 숫자, 축, 범례, chip, 표 row로 쪼갤 수 있는지 먼저 봅니다. 이 기준은 인간 지표, 뉴스룸, 종목, 주요 지표, 포트폴리오 화면에 공통 적용합니다.
+
+탭 첫 화면은 `핵심 요약 허브`로 설계합니다. 사용자가 탭에 들어오자마자 봐야 하는 정보만 카드, 타일, 그래프, 표로 보여주고, 상세한 지표 묶음은 별도 route나 하위 상세 화면으로 보냅니다.
 
 ## 색상 토큰
 
-| 용도 | 토큰 | 값 | 기준 |
-| --- | --- | --- | --- |
-| 배경 | `--bg` | `#f3f6f8` | 전체 앱 배경 |
-| 본문 글자 | `--ink` | `#17212b` | 제목, 숫자, 주요 텍스트 |
-| 보조 글자 | `--muted` | `#6b7788` | 설명, 메타 |
-| 약한 보조 | `--muted-2` | `#9aa5b3` | timestamp, 비활성 설명 |
-| 선 | `--line` | `#dfe5ec` | panel/table 구분선 |
-| 강한 선 | `--line-strong` | `#cdd6e1` | graph axis, 강조 border |
-| 표면 | `--surface` | `#ffffff` | panel, table, card |
-| 약한 표면 | `--surface-soft` | `#f8fafc` | table head, inner card |
-| 상단/강조 어두움 | `--nav` | `#1d1f23` | topbar, roast banner |
-| 브랜드 | `--brand` | `#4f7fee` | active tab, link, rank number |
+| 용도 | 토큰 | 값 |
+| --- | --- | --- |
+| 배경 | `--bg` | `#f3f6f8` |
+| 본문 | `--ink` | `#17212b` |
+| 보조 글씨 | `--muted` | `#6b7788` |
+| 구분선 | `--line` | `#dfe5ec` |
+| 표면 | `--surface` | `#ffffff` |
+| 상단/강조 어두운 면 | `--nav` | `#1d1f23` |
+| 브랜드 | `--brand` | `#4f7fee` |
+| 상승/긍정 관찰 | `--market-up` | 빨강 계열 |
+| 하락/부정 관찰 | `--market-down` | 파랑 계열 |
 
 ## 타이포
 
-Pretendard Variable을 기본으로 씁니다. 숫자는 굵게, 설명은 작게 둡니다.
+- 페이지 제목: 21-24px, 900
+- 섹션 제목: 14-17px, 850-920
+- 핵심 숫자: 17-38px, 900
+- 표/카드 이름: 13px, 800-850
+- 설명/메타: 11-12px, 650-780
+- badge/tab: 10.5-12px, 780-860
 
-| 용도 | 크기 | 굵기 | 예 |
-| --- | --- | --- | --- |
-| 화면 제목 | `21-24px` | `900` | page header, 종목 거래량 순위 |
-| 섹션 제목 | `14-17px` | `850-920` | panel header, table title |
-| 핵심 숫자 | `17-38px` | `900` | KPI, 가격, 스코어 |
-| 본문/행 제목 | `13px` | `800-850` | table row stock name |
-| 보조 설명 | `11-12px` | `650-780` | meta, timestamp, source |
-| badge/tab | `10.5-12px` | `780-860` | status pill, filter |
+## 간격과 형태
 
-## 간격, Radius, Elevation
+- 페이지 gutter: 24px, 좁은 화면에서는 12px까지 축소
+- 섹션 gap: 14-18px
+- 카드 padding: 12-16px, 고밀도 카드는 8-12px
+- radius: panel 8-18px, small card 7-14px, pill 999px
+- elevation: 기본 panel은 약한 그림자만 사용
+- 카드 안에 또 카드가 중첩되는 구조는 피합니다.
 
-- 페이지 gutter: `24px`, 좁은 화면에서는 `12px`까지 축소합니다.
-- 화면/큰 섹션 gap: `14-18px`.
-- 카드 내부 padding: 일반 `12-16px`, 고밀도 데이터 카드 `8-12px`.
-- radius: panel/table `8px`, 작은 카드 `7px`, pill/tab `999px`, 원형 버튼 `50%`.
-- elevation: 기본 panel은 `0 16px 36px rgba(39, 51, 67, 0.07)`, 강조 overlay/right panel은 더 강한 그림자만 씁니다.
-- 카드 중첩은 피하고, 반복 항목은 table row, strip, band로 처리합니다.
-
-## 공통 컴포넌트 패턴
+## 공통 컴포넌트
 
 | 패턴 | 기준 |
 | --- | --- |
-| `topbar` | `--nav` 배경, 중앙 nav, 오른쪽 로그인/상태. 아래 live ticker는 별도 얇은 band로 둡니다. |
-| `right rail` | 오른쪽 고정 rail, 아이콘/짧은 라벨. 확장 패널은 본문을 덮는 overlay 성격이며 별도 카드 중첩을 피합니다. |
-| `page header` | label + H2 + 짧은 설명 + 상태 badge/search. 긴 기능 설명을 넣지 않습니다. |
-| `panel` | 흰 배경, 8px radius, 얇은 border. 반복되는 큰 영역의 기본 컨테이너입니다. |
-| `data card` | 고밀도 숫자/상태용. `label`, `strong`, `em` 3단 구조를 기본으로 합니다. |
-| `badge` | `status-pill`. mock/stale/warning/subtle 상태를 짧게 표시합니다. |
-| `tab` | pill 형태, 활성 상태는 brand 계열 border/background. 많은 탭은 filter strip으로 처리합니다. |
-| `table` | header band + row. 행 높이는 `42-52px`, 숫자와 상태는 작고 굵게. 좁은 화면에서는 가로 스크롤 허용. |
-| `chart shell` | 축/범례/기간 버튼을 그래프 안쪽 또는 헤더 오른쪽에 붙입니다. PPT식 단일 선만 두지 않습니다. 가격 차트는 quote snapshot과 데이터 출처 라벨을 분리합니다. |
+| topbar | 어두운 배경, 중앙 nav, 오른쪽 로그인/상태. live ticker는 별도 얇은 band. |
+| right rail | 오른쪽 고정 rail. 확장 panel은 overlay 성격으로 다루며 버튼 상태가 눌린 채 남지 않게 합니다. |
+| page header | label + H2 + 짧은 설명 + 보조 tab/search. 긴 기능 설명은 넣지 않습니다. |
+| panel | 흰 배경, 얇은 border, 작은 header band. |
+| data card | `label`, `strong`, `em` 구조를 기본으로 숫자와 상태를 먼저 읽게 합니다. |
+| badge | mock/stale/warning/subtle 상태를 짧게 표시합니다. |
+| tab | pill 형태. 활성 상태는 브랜드 계열 또는 어두운 배경. |
+| table | header band + row. 좁은 화면에서는 가로 스크롤 허용. |
+| chart shell | 그래프, 범례, 기간 버튼, 데이터 출처와 상태를 한 shell 안에서 정리합니다. 축과 grid를 넣어 전문적인 느낌을 유지하고, quote snapshot과 raw 차트 데이터는 시각적으로 분리합니다. |
+| signal mosaic | 인간 지표처럼 상단 핵심 신호를 `2칸+1칸 / 1칸+2칸` 모자이크로 배치합니다. |
+| overview hub | 주요 지표처럼 국내주식, 미국주식, 채권, 원자재 등 큰 묶음을 첫 화면 카드로 보여주고 상세 route로 연결합니다. |
+| sector square map | 국장/미장 섹터처럼 방향성이 중요한 데이터는 정사각형에 가까운 타일 묶음으로 보여줍니다. |
 
-## 상승/하락/긍정/부정
+## 금융/커뮤니티 색상
 
-- 한국 주식/금융 관습 기준으로 상승은 빨강 `--market-up`, 하락은 파랑 `--market-down`을 씁니다.
-- 커뮤니티 반응도 긍정은 빨강, 부정은 파랑으로 맞춰 `매수/매도 의견처럼 읽히는 색상 혼선`을 줄입니다.
-- 중립/미분류는 `--neutral-slate`.
-- 위험/주의는 `--orange` 또는 warning badge, 성공/정상은 `--green`.
-- 서비스 결론처럼 보이는 `추천`, `매수`, `매도` 표현은 쓰지 않고, 관찰 데이터 라벨로만 씁니다.
+- 한국 주식 관습에 맞춰 상승은 빨강, 하락은 파랑 계열을 씁니다.
+- 커뮤니티 긍정/부정도 관찰 데이터로는 같은 계열을 쓰되, 서비스 결론처럼 보이지 않게 라벨을 명확히 둡니다.
+- `추천`, `사라`, `팔아라`, `수익 보장`, `진입`, `시그널 확정` 같은 투자 자문형 표현은 서비스 문구로 쓰지 않습니다.
+- `매수 언급`, `매도 언급`, `순매수`, `호가 잔량`처럼 출처가 있는 관찰 데이터 라벨은 사용할 수 있습니다.
 
 ## 특수 컴포넌트
 
 ### 종목 상세 팩트폭격 배너
 
-- 기준 문서: `docs/STOCK_DETAIL_COPY_GUIDE.md`, 화면 brief: `docs/workstreams/front/screens/stock-detail.md`.
-- 위치: 종목 상세 최상단, 종목명/티커와 닫기 이후 바로 노출.
-- 시각: `--nav` 계열 검은 배너, 작은 radius, 중앙 큰 헤드라인.
-- 내용: `mood`, `headline`, `subtitle`, `scoreLine`, `riskNote`, 근거 chip.
-- 헤드라인은 커뮤니티 요약이 아니라 시황/기술/재무/뉴스/컨센서스 기반 종목 상태 한줄평입니다.
-- `roast` 톤은 공개 데모/검색 상세에 우선 적용하고, 보유 종목/개인화 화면에서는 순화 기준을 따릅니다.
+- 기준 문서: `docs/STOCK_DETAIL_COPY_GUIDE.md`
+- 위치: 종목 상세 최상단
+- 시각: 검은색 배너, 큰 한줄평, 보조 근거 chip
+- 내용: 커뮤니티 요약이 아니라 시황, 기술 지표, 재무, 뉴스/공시, 컨센서스 기반 종목 상태 카피
 
-## 디자인 시스템 후보 기록
+### 종목 상세 가격 차트
 
-새 페이지에서 다음이 필요하면 바로 공통화하지 말고 PR 또는 Screen Brief의 `기획자 확인 필요`에 후보로 남깁니다.
+- TradingView embed 대신 우리 UI shell을 우선 사용합니다.
+- 차트 shell은 봉, 기간, 표시, 단기 이평, 장기 이평처럼 기능 대분류별 control group을 나눕니다.
+- control group의 label과 실제 버튼은 배경, border, 크기를 달리해 한눈에 구분되게 합니다.
+- 날짜 축은 zoom/scroll 상태에 맞춰 일, 월, 년 단위가 자연스럽게 드러나야 하고, 날짜 요약은 화면에 보이는 logical range 기준으로 갱신합니다.
+- 날짜 축은 시작/끝 두 점만 보여주지 않고 zoom/scroll 상태에 맞춰 여러 tick을 보여줍니다. 좁은 구간은 일자, 중간 구간은 월, 장기 구간은 연도 중심으로 읽히게 합니다.
+- 이평선은 현재 화면에 보이는 bars만이 아니라 chart-candles 전체 bars로 계산해 visible range 안에서 선이 불필요하게 끊기지 않게 합니다.
+- 이평선, 상승/하락, 긍정/부정처럼 색상이 의미를 가지는 요소는 차트 안팎에 짧은 범례를 둡니다.
+- 종목 상세 메인 차트는 `GET /api/market/chart-candles`의 display-only bars로만 렌더링합니다. 실제 일자별 차트 데이터가 없으면 fixture를 현재가에 맞춰 늘리거나 실제 차트처럼 보이게 하지 않고 API 필요 상태를 표시합니다.
+- 현재가, 등락률, 거래량, asOf, provider, delayLabel, stale, dataStatus는 quote snapshot 영역에서만 표시합니다.
+- 공개 화면에서 원시 분봉, 호가, 대량 OHLC를 요청하거나 그대로 노출하지 않습니다.
 
-- 새 table variant
-- 새 chart shell
-- Lightweight Charts 외 다른 차트 provider shell
-- 새 drawer/modal/detail panel
-- 새 상태 badge
-- 새 데이터 카드 밀도
-- roast banner 외 특수 hero 패턴
+## 후보 기록
+
+새 패턴이 필요하면 페이지 안에서만 임시로 끝내지 말고 여기에 후보로 남깁니다. 오래된 설명을 누적하지 않고 최신 기준만 유지합니다.

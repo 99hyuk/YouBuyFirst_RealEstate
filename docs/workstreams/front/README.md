@@ -1,141 +1,78 @@
-﻿# front
+# front
 
-## 역할
+너나사(YouBuyFirst)의 사용자 화면을 담당합니다. `front/`는 Vue 3 + Vite + TypeScript 기반 mock UI이며, 커뮤니티 반응과 종목/시장 데이터를 투자 참고용으로 보여주는 제품 화면을 만듭니다.
 
-사용자가 실제로 보는 너나사 (YouBuyFirst)의 화면 경험을 담당합니다. 이 트랙은 대시보드, mock data, 차트, 사용자 흐름, API 연동, 로딩/오류/빈 상태를 소유합니다.
+## 먼저 읽을 것
 
-프론트는 모든 백엔드가 끝난 뒤 마지막에 몰아서 하지 않습니다. 먼저 fixture/mock 기반으로 투자 참고 사이트의 골격을 만들고, 각 기능 트랙의 API 계약이 생길 때마다 작은 PR로 연결합니다.
+프론트 작업을 시작할 때는 아래만 먼저 봅니다.
 
-## 현재 프론트 전략
+1. `docs/workstreams/front/WIREFRAME_HANDOFF.md`
+2. 바꾸려는 화면의 `docs/workstreams/front/screens/*.md`
+3. 디자인 판단이 필요하면 `docs/workstreams/front/DESIGN_SYSTEM.md`
 
-새 front 세션에서 현재 dashboard 작업을 이어갈 때는 이 README보다 먼저 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 확인합니다. 해당 파일은 현재 기준만 짧게 담습니다. 과거 디자인 조정 로그는 `docs/workstreams/front/archive/`에서 필요한 키워드로만 검색합니다.
+아래는 시작 루틴이 아닙니다.
 
-초기 프론트는 최종 디자인이 아니라 `저충실도 와이어프레임`으로 시작합니다. 목표는 예쁜 화면을 먼저 만드는 것이 아니라, 사용자가 실제로 볼 정보 구조와 라우팅, mock data, API 계약 후보, 빠진 기획 질문을 드러내는 것입니다.
+- `docs/workstreams/front/archive/`
+- `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- `front/public/visual-history/YYYY-MM-DD/index.html`
+- Browser/gstack/Playwright 스킬 전문
 
-기획 정리 구간의 기본 운영은 `front-first discovery`입니다. backend/API 구현을 기다리지 않고 관심종목 브리핑, 종목 이벤트 타임라인, 신호 신뢰도 배지 같은 핵심 사용자 흐름을 mock으로 먼저 세우고, 필요한 API 계약을 역으로 도출합니다.
+필요할 때만 파일 1개와 키워드 1개로 좁혀 검색합니다.
 
-- 기술 선택은 `Vue 3 + Vite + TypeScript` SPA를 기본으로 둡니다.
-- 라우팅은 `Vue Router`를 기준으로 설계합니다.
-- 서버 데이터 연동 방식은 실제 API 계약이 생긴 뒤 별도 PR에서 확정합니다.
-- 디자인과 프론트 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다.
-- Figma AI, Stitch 같은 외부 디자인 도구는 기본 흐름이 아니며, 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 씁니다.
-- 디자인 시스템, 브랜드 컬러, 일러스트, 고충실도 UI도 최종 산출물은 외부 툴 파일이 아니라 작은 front PR로 반영된 코드입니다.
-- 차트 라이브러리는 대시보드 정보 구조와 데이터 형태를 먼저 본 뒤 확정합니다.
+## 현재 디자인 기준
 
-프론트 에이전트는 화면을 만들면서 기획을 임의로 확정하지 않습니다. 애매한 지표, 화면 문구, API 응답, 사용자 행동은 `기획자 확인 필요` 항목으로 남기고, mock 화면은 그 경계를 명시한 상태로 진행합니다.
+대시보드(`/dashboard`)가 현재 가장 완성도가 높은 기준 화면입니다. 새 화면은 대시보드의 정보 밀도, Pretendard 기반 타이포 위계, 작은 링크/태그, 얇은 구분선, 카드 간격을 먼저 따릅니다.
 
-현재 `front/`에는 Vue 3 + Vite + TypeScript 기반 mock 와이어프레임 shell이 있습니다. 실제 backend API 연결, 차트 라이브러리 확정, 고충실도 디자인은 아직 하지 않았습니다.
+우선순위는 다음 순서입니다.
 
-현재 화면과 Codex 디자인/구현 기준은 `docs/workstreams/front/WIREFRAME_HANDOFF.md`를 먼저 봅니다. 오래된 세부 로그는 archive 기록이므로 현재 `main` 코드와 브랜치 상태를 확인한 뒤 참고합니다.
+1. 검색창, 상단 메뉴, 오른쪽 rail의 위치를 안정적으로 유지합니다.
+2. 한 화면에 많은 정보를 넣되, 숫자와 상태가 먼저 읽히게 합니다.
+3. 사각 카드 반복을 줄이고, 헤더 색/간격/선/배경 톤으로 영역을 구분합니다.
+4. 긴 설명문은 도형, 막대, 선 그래프, 칩, 표, timeline 같은 UI 구조로 치환합니다.
+5. 탭 첫 화면은 핵심 요약 허브로 만들고, 상세 정보는 별도 route나 하위 상세 화면으로 분리합니다.
+6. 금융 차트는 축, 범례, 선 두께, 색 대비를 정돈해 PPT처럼 보이지 않게 합니다.
+7. 커뮤니티 반응, 뉴스/공시, 가격 변화가 왜 같이 움직였는지 짧게 연결합니다.
+8. 외부 글 제목이 아닌 서비스 문구에서는 `추천`, `사라`, `팔아라`, `수익 보장`, `진입`, `시그널 확정` 같은 투자 자문형 표현을 쓰지 않습니다.
 
-화면별 기획, route, child screen, API 후보는 `docs/workstreams/front/screens/`에서 관리합니다. 탭 안에서 다시 상세 화면으로 들어가는 경우도 별도 Screen Brief 후보로 보며, 프론트 PR이 화면 구조를 바꾸면 사용자가 따로 지시하지 않아도 해당 Screen Brief를 함께 갱신합니다. Screen Brief는 최신 기준만 유지하고, 긴 시행착오와 오래된 변경 로그를 누적하지 않습니다.
+## 담당 화면
 
-현재 반복 UI의 최소 디자인 시스템은 `docs/workstreams/front/DESIGN_SYSTEM.md`에서 관리합니다. 기준 화면은 현재 완성도가 가장 높은 대시보드(`/dashboard`)입니다. 새 화면을 만들 때는 대시보드의 정보 밀도와 UI 톤을 먼저 적용하고, 새 UI 패턴이 필요하면 페이지 안에만 임시로 두지 말고 디자인 시스템 후보로 남깁니다.
+- 대시보드
+- 종목 목록과 종목 상세
+- 뉴스룸
+- 인간 지표
+- 주요 지표
+- 내 포트폴리오
+- 오른쪽 rail과 검색/상단 메뉴
 
-## 현재 디자인 우선순위
+화면 구조, route, child detail, fixture/API 후보가 바뀌면 해당 Screen Brief를 최신 기준으로 갱신합니다. 긴 변경 이력은 Screen Brief에 누적하지 않습니다.
 
-다음 front 작업에서 디자인 판단이 필요하면 이 순서를 우선합니다. 과거 `Balanced Dark Toss` 같은 별도 다크 테마 제안은 현재 정본이 아니며, 다크/라이트 테마 구현은 후속 작업으로 둡니다.
+## 시각 기록
 
-1. 가독성: Pretendard 기준으로 숫자, 제목, 보조 설명, 태그의 크기와 위계를 분명히 둡니다. 큰 글씨와 큰 박스로만 강조하지 않습니다.
-2. 정보 밀도: 한 화면에서 커뮤니티 비교, 종목 반응, 지표, 뉴스/리포트가 함께 읽혀야 합니다. 한 종목이나 한 카드가 과하게 넓은 영역을 차지하지 않게 합니다.
-3. 전문적인 금융 차트 느낌: 커뮤니티 지표 비교와 주요 지표 그래프는 축, 라벨, 범례, 선 두께, 색을 정돈해 PPT식 단순 그래프처럼 보이지 않게 합니다.
-4. 토스증권과 야선식 직관성: 긴 설명보다 숫자, 순위, 상태, 링크, 작은 태그로 바로 이해되게 합니다. 검색, 오른쪽 탭, 지표, 뉴스/리포트 목록은 실제 기능처럼 보여야 합니다.
-5. AI스러운 네모 박스 반복 줄이기: 카드 남발 대신 간격, 선, 헤더, 배경 톤, 정보 밀도 차이로 영역을 구분합니다.
-6. 커뮤니티 반응 서비스의 차별점: 단순 주식 대시보드가 아니라 기사, 공시, 커뮤니티 키워드, 가격 변동이 왜 반응을 움직였는지 짧게 연결합니다.
-7. 종목 상세 팩트폭격 헤드라인: 특정 종목 화면 상단의 큰 한줄평은 커뮤니티 요약이 아니라 시황, 기술 지표, 재무, 뉴스/공시, 컨센서스 기반 종목 상태 카피입니다. 검은 네모 배너 UI, 사용자 제공 레퍼런스 이미지, tone/API 계약 후보는 `docs/STOCK_DETAIL_COPY_GUIDE.md`를 따릅니다.
-8. 투자 자문처럼 보이지 않기: 서비스의 판단, CTA, 제목, 요약 문구에서 `추천`, `매수`, `매도`, `수익 보장`, `진입`, `시그널 확정`처럼 투자 행동을 지시하는 표현을 쓰지 않습니다. 단, `매수 언급`, `매도 언급`, `순매수`, `호가 잔량` 같은 관찰 데이터 라벨은 사용할 수 있습니다. 커뮤니티 원문이나 외부 링크 제목에 이런 단어가 포함될 때도 출처가 있는 반응 데이터로만 다루고 서비스의 결론처럼 보이게 만들지 않습니다.
-9. 변경 기록 유지: 디자인 변경은 PR preview와 visual history로 비교 가능하게 남깁니다. 운영 주소는 Netlify main 배포본, 작업 중 확인은 로컬 서버 또는 PR preview를 사용합니다.
+Visual History는 기본적으로 읽는 자료가 아니라 등록용 산출물입니다. 화면이 의미 있게 바뀌면 캡처와 짧은 설명을 추가해 사용자가 이전 버전과 비교할 수 있게 합니다.
 
-## 프론트 에이전트 시작 지시
+에이전트는 복구, 회귀 비교, 사용자가 특정 과거 버전을 지목한 경우가 아니면 visual history HTML과 이미지 목록을 읽지 않습니다. 새 변경을 기록할 때는 기존 갤러리를 훑지 말고 새 캡처 파일, 날짜별 index, `docs/workstreams/front/VISUAL_CHANGELOG.md`의 상단 대표 행만 갱신합니다.
 
-사용자가 새 채팅에서 `front 작업`, `프론트 맡아줘`, `화면 와이어프레임 해줘`처럼 짧게 말하면 아래 지시를 사용자가 다시 붙여 넣지 않아도 프론트 에이전트가 스스로 적용합니다.
+## 검증
 
-```text
-너는 너나사 (YouBuyFirst)의 front 담당 에이전트다.
-AGENTS.md, docs/CURRENT_HANDOFF.md, docs/DOCUMENTATION_GUIDE.md,
-docs/workstreams/README.md, docs/workstreams/front/README.md는 필요한 섹션만 확인한다.
-이미 대화에 주입된 긴 문서는 다시 전문 출력하지 않는다.
-docs/superpowers/specs, docs/superpowers/plans, docs/workstreams/front/archive는 과거 archive이므로 현재 handoff가 부족할 때만 파일 1개와 키워드 1개로 좁혀 본다.
-화면별 기획과 child screen/API 후보는 docs/workstreams/front/screens/README.md와 해당 화면 brief를 확인한다.
-Browser/gstack 검증은 구현 후 화면 확인 가치가 있을 때 한 번에 모아 실행하고, 스킬 문서/콘솔/DOM 전문은 출력하지 않는다.
+프론트 UI를 바꾸면 가능한 범위에서 확인합니다.
 
-이번 front 작업의 기본값은 Vue 3 + Vite + TypeScript 기반 저충실도 와이어프레임이다.
-목표는 화면 구조, 라우팅, mock data, API 계약 후보, 기획자 확인 필요 항목을 드러내는 것이다.
-브랜드 디자인, 고충실도 UI, 최종 컬러, 일러스트는 Codex가 화면 코드 안에서 점진적으로 다듬는다.
-디자인 판단은 README의 "현재 디자인 우선순위"를 따른다.
-Figma AI, Stitch 같은 외부 디자인 도구 산출물을 정본처럼 고정하지 않는다.
-
-작업 중 기획이 불명확한 부분은 임의로 확정하지 말고 "기획자 확인 필요"로 문서와 PR에 남긴다.
-작업 하나는 브랜치 하나와 PR 하나로 만들고, PR 설명과 작업 기록은 한국어로 작성한다.
+```powershell
+npm.cmd run build --prefix front
+npm.cmd test --prefix front
+git diff --check
 ```
 
-## 담당 범위
+레이아웃 변경은 Playwright나 Browser로 실제 viewport를 확인합니다. 단, DOM/콘솔 전문을 출력하지 말고 좌표, 스크린샷 경로, 실패 지점만 짧게 남깁니다.
 
-- 사용자용 대시보드 shell
-- 관심종목 브리핑 화면
-- 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인
-- 종목/커뮤니티 반응 랭킹 화면
-- 열기 지수, 개미 심리 지수, 반응 방향 비율, 대표 키워드 표시
-- 신호 신뢰도/주의 배지
-- 가격, 등락률, 거래량, stale quote 상태 표시
-- 커뮤니티별 수익률 비교 화면
-- 모의투자/에이전트 리더보드 화면
-- fixture/mock data
-- API contract 기반 client adapter
-- 로딩, 오류, 빈 상태
-- 반응형 레이아웃과 접근성 기본값
+## PR 기준
 
-## 파일 소유권
-
-주로 담당:
-
-- front 또는 dashboard 패키지
-- front fixture/mock data
-- front client adapter
-- UI component와 page layout
-- front 테스트
-
-공유 전 협의:
-
-- backend API contract
-- indicator API response
-- quote snapshot response
-- trade/agent API response
-- 문서/Notion/PR 운영 기준
-
-## 초기 작업 순서
-
-1. 화면 인벤토리와 라우팅 후보 설계 완료
-2. mock data와 API 응답 후보 정리 완료
-3. fixture/mock 기반 dashboard shell 구현 완료
-4. 브라우저 QA와 기획자 확인 필요 항목 정리
-5. 메인 대시보드 와이어프레임 보강
-6. 관심종목 브리핑 와이어프레임 추가
-7. 종목 상세의 기사/공시/커뮤니티/가격 이벤트 타임라인 보강
-8. 신호 신뢰도/주의 배지 표현 정리
-9. 시세/모의투자/AI 에이전트 화면 초안
-10. analysis ranking/indicator API 계약 연결
-11. quote snapshot API 계약 연결
-12. 커뮤니티별 수익률 비교 화면 연결
-13. 모의투자/AI 에이전트 화면 연결
-
-## PR 규칙
-
-- 브랜치 prefix는 `codex/front-*`를 씁니다.
-- GitHub 라벨은 `track:front`를 붙입니다. 화면 파일을 직접 바꾸면 `part:front`도 함께 붙입니다.
-- 실제 API가 없으면 fixture/mock data를 명시합니다.
-- dashboard shell, component system, chart view, real API integration을 한 PR에 섞지 않습니다.
-- PR 본문에는 `기획자 확인 필요` 항목을 별도로 두고, 임의 확정한 부분이 없었는지 적습니다.
-- 화면 구조, route, child detail, fixture/API 후보가 바뀌면 `docs/workstreams/front/screens/`의 해당 Screen Brief를 갱신합니다.
-- Screen Brief를 갱신할 때는 최신 기준만 남기고 변경 로그는 최근 5개를 넘기지 않습니다.
-- UI 구현 PR은 가능하면 스크린샷 또는 브라우저 검증 결과를 PR 본문에 남깁니다.
+- 한 PR은 한 front 작업만 소유합니다.
+- PR 제목은 `[front][type] 명사형 요약` 형태를 따릅니다.
+- PR 본문은 사람이 이해할 수 있게 `무슨 문제를 해결했는지`, `현재 상태`, `검증`, `남은 리스크` 중심으로 씁니다.
+- 작업 중 확인한 화면은 visual history 또는 PR 스크린샷으로 추적 가능하게 남깁니다.
 
 ## 하지 않는 일
 
-- crawler parser 구현
-- 반응 지표 산식 구현
-- quote provider 내부 구현
-- 모의투자 체결 로직 구현
-- GitHub/Notion 운영 자동화
-- Figma AI/Stitch 산출물을 정본처럼 고정
-- 외부 디자인 도구 결과를 검토 없이 그대로 구현
+- 실거래, 로그인/보안, OCR 계좌 연동, 운영 배포는 명시 요청 없이 구현하지 않습니다.
+- 크롤러 정책, API 계약, 투자 자문처럼 보이는 문구는 임의로 확정하지 않습니다.
+- archive 문서, 긴 세션 로그, Browser/gstack 전문을 시작 루틴으로 읽지 않습니다.

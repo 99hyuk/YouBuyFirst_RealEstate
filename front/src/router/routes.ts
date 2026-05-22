@@ -44,6 +44,11 @@ export const routes: RouteRecordRaw[] = [
     component: IndicatorsPage
   },
   {
+    path: '/indicators/:category',
+    name: 'indicator-detail',
+    component: IndicatorsPage
+  },
+  {
     path: '/agents',
     name: 'agents',
     redirect: {

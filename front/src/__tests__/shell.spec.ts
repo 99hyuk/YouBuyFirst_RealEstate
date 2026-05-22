@@ -38,6 +38,7 @@ describe('front dashboard shell', () => {
       '/stocks/:symbol',
       '/communities',
       '/indicators',
+      '/indicators/:category',
       '/agents',
       '/portfolio'
     ]);
@@ -69,6 +70,10 @@ describe('front dashboard shell', () => {
     expect(wrapper.find('[data-testid="nav-agents"]').exists()).toBe(false);
     expect(wrapper.get('[data-testid="nav-portfolio"]').text()).toContain('내 포트폴리오');
     expect(wrapper.find('.topbar .live-ticker').exists()).toBe(true);
+    expect(wrapper.text()).toContain('개미 심리 지수');
+    expect(wrapper.text()).toContain('73점');
+    expect(wrapper.text()).toContain('어제 대비 +6.4%');
+    expect(wrapper.text()).toContain('실적 경계');
     expect(wrapper.text()).toContain('커뮤니티 지표 비교');
     expect(wrapper.find('.edge-rail').exists()).toBe(true);
     expect(wrapper.find('.edge-panel').exists()).toBe(true);
@@ -106,14 +111,16 @@ describe('front dashboard shell', () => {
     expect(stock.text()).toContain('오늘의 한줄평');
     expect(stock.text()).toContain('실적표 없으면 행복회로 압수');
     expect(stock.text()).toContain('실거래 판단 근거 아님');
-    expect(stock.text()).toContain('국내/해외 TradingView 위젯 비교');
+    expect(stock.text()).toContain('가격 차트와 매매 동향');
     expect(stock.text()).toContain('KRX:005930');
-    expect(stock.text()).toContain('NASDAQ:NVDA');
-    expect(stock.text()).toContain('국내주식 위젯 테스트');
-    expect(stock.text()).toContain('해외주식 위젯 테스트');
+    expect(stock.text()).toContain('quote API 미연결 · mock fixture');
+    expect(stock.text()).toContain('MOCK · stale');
     expect(stock.text()).toContain('거래량');
     expect(stock.text()).toContain('quote snapshot');
-    expect(stock.text()).toContain('TradingView 공개 embed 위젯');
+    expect(stock.text()).toContain('실제 차트 API 대기');
+    expect(stock.text()).toContain('/api/market/chart-candles');
+    expect(stock.text()).toContain('유효한 bars를 줄 때만 표시');
+    expect(stock.text()).toContain('bars[].open/high/low/close');
     expect(stock.text()).toContain('어제와 달라진 점');
     expect(stock.text()).toContain('반응 키워드');
     expect(stock.text()).toContain('시간대별 변화');
@@ -173,6 +180,14 @@ describe('front dashboard shell', () => {
 
     expect(indicators.text()).toContain('국장 섹터 방향');
     expect(indicators.text()).toContain('미장 섹터 방향');
+    expect(indicators.text()).toContain('국내주식');
+    expect(indicators.text()).toContain('미국주식');
+    expect(indicators.text()).toContain('채권');
+    expect(indicators.text()).toContain('원자재');
+
+    const indicatorDetail = await mountAt('/indicators/domestic');
+    expect(indicatorDetail.text()).toContain('국내주식 상세 지표');
+    expect(indicatorDetail.text()).toContain('전체 핵심 보기');
 
     const agents = await mountAt('/agents');
     expect(agents.text()).toContain('인간 지표');

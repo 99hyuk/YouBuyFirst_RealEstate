@@ -3,56 +3,43 @@
 ## Route
 
 - Parent: root
-- Route 후보: `/communities`
-- Child screens: 커뮤니티 인기글 상세는 `stock-community-post` 후보와 공유 가능
+- Route: `/communities`
+- `/agents`는 `/communities?view=agents`로 redirect합니다.
+- 종목 신호와 판단 로그의 종목명은 `/stocks/:symbol` 상세로 연결합니다.
 
 ## 화면 목적
 
-커뮤니티별 언급 급증, 반응 비율, 수집 상태, 관심 테마, 성과 실험을 한 화면에서 비교합니다. 특정 커뮤니티가 맞춘다고 단정하지 않고 최근 반응 흐름을 관찰합니다.
+커뮤니티 반응을 긴 문장 목록이 아니라 투자 참고용 관찰 보드로 압축합니다. 사용자는 어떤 종목이 지금 뜨는지, 어떤 종목의 부정 반응이 강한지, 어떤 커뮤니티/에이전트 실험이 어떤 흐름을 보였는지 빠르게 훑고 종목 상세로 들어갈 수 있어야 합니다.
 
 ## 현재 섹션
 
-- 인간 지표 제목과 KPI
-- 커뮤니티별 언급 급증과 반응 비율 matrix
-- 커뮤니티별 언급 급증 종목
-- 수집 상태: enabled, public-demo-only, local-research-only, disabled 후보
-- 커뮤니티별 관심 테마
-- 인기글/개념글 레이어
-- 커뮤니티별 성과 실험: 추종/역추종, 적중률, 최대 낙폭
-- 하위 탭: 커뮤니티 반응, 성과 실험, 모의 에이전트
-- 모의 에이전트 판단 기록: 커뮤니티 반응 기반 페르소나 성과, 판단 입력값, 최근 판단 로그, 판단 key
+- 상단 헤더: `인간 지표`, 하위 탭 `반응 한눈에 / 성과 비교 / 모의 에이전트`
+- 핵심 종목 모자이크: `지금 뜨는 종목`, `부정적인 종목`, `언급 많은 종목`, `라이징 스타`
+- 각 종목 신호: 종목명, 대표 수치, 커뮤니티, 짧은 이유 3개, 종목 상세 링크
+- 커뮤니티 에이전트 수익률 비교 그래프: `지표 추종`과 `커뮤니티 역추종`
+- 전략 요약: 전략 버전, 판단 key 수, 후보/스킵 기준
+- 커뮤니티별 반응 비교: 수집 상태, 급증 종목, 언급량, 긍정/부정 비율, 테마
+- 모의 에이전트 판단 기록: 시간, 종목, 전략, 상태, 판단 입력값, 판단 key
 
-## 상태와 빈 화면
+## UI 기준
 
-- loading: KPI와 matrix skeleton을 보여줍니다.
-- empty: 수집 가능한 커뮤니티가 없으면 소스 상태를 먼저 보여줍니다.
-- error: 커뮤니티별 실패/skip 사유를 row 단위로 표시합니다.
-- stale/mock: source state와 마지막 수집 시각에 표시합니다.
+- 대시보드와 같은 정보 밀도 기준을 따릅니다.
+- 긴 설명 문장보다 타일, 막대, 선 그래프, 칩, 표 형태로 해결합니다.
+- 상단은 3열 모자이크로 배치해 카드가 위에서 아래로만 나열되는 느낌을 피합니다.
+- 모의 성과는 수익 보장처럼 보이지 않게 `paper`, `모의`, `관찰`, `스킵` 표현을 유지합니다.
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| Field | Owner Track | Description |
 | --- | --- | --- |
-| `communities` | crawl/data | 커뮤니티 목록과 반응 비율 |
-| `humanStats` | data | 화면 상단 KPI |
-| `surgeStocks` | data | 커뮤니티별 언급 급증 종목 |
-| `sourceStates` | crawl/backend | enabled, disabled, skip 사유, 마지막 수집 |
-| `themeRows` | data | 커뮤니티별 관심 테마 |
-| `topPosts` | crawl/data | 내부 상위 N% 인기글 |
-| `experiments` | agent/data | 추종/역추종 성과 실험 |
-| `agentPersonas` | agent | 인간 지표를 해석하는 모의 에이전트 페르소나 |
-| `agentPipeline` | agent/data/market | 판단 입력값, 신뢰도, 중복 판단 key, paper 후보 수 |
-| `agentDecisionLogs` | agent/trade | 관찰, 스킵, paper 후보, 스킵 사유 기록 |
-| `strategyVersions` | agent | 전략 버전과 판단 key 규칙 |
+| `signalTiles` | data/agent | 지금 뜨는 종목, 부정적인 종목, 언급 많은 종목, 라이징 스타 |
+| `communityPulses` | crawl/data | 커뮤니티별 수집 상태, 급증 종목, 언급량, 긍정/부정 비율 |
+| `strategySeries` | agent/trade | 지표 추종과 커뮤니티 역추종의 paper 수익률 비교 |
+| `agentLogs` | agent/trade | 모의 판단 로그, 판단 입력값, 판단 key, 스킵 사유 |
+| `strategyRules` | agent | 전략 버전, 판단 key 생성 기준, 중복 판단 방지 규칙 |
 
-## 기획자 확인 필요
+## 기획 확인 필요
 
-- `커뮤니티별 성과` 표현을 어떻게 제한해서 투자 자문처럼 보이지 않게 할지.
-- 인기글 원문 snippet 범위와 저작권/출처 표시 기준.
-- 수집 불가 커뮤니티를 화면에 노출할지, 내부 admin으로만 둘지.
-- `/agents` redirect를 언제까지 유지할지.
-
-## 변경 로그
-
-- 2026-05-19: 에이전트 화면을 인간 지표 하위 탭과 모의 판단 섹션으로 흡수.
-- 2026-05-18: Screen Brief 신규 작성. `커뮤니티` 탭을 `인간 지표` 화면 기준으로 정리.
+- `지표 추종`과 `커뮤니티 역추종`의 정확한 계산 기간과 기준 수익률.
+- 커뮤니티별 인기글/개념글 상위 N% 기준.
+- 실제 API 연결 시 종목 상세에서 어떤 근거 링크까지 이어 보여줄지.

@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>2026-05-18 Front Visual History</title>
+    <title>YouBuyFirst Front Visual History - 2026-05-18</title>
     <style>
       :root {
         color: #17212b;
-        background: #eef3f8;
+        background: #f3f6f8;
         font-family:
           Pretendard,
           "Pretendard Variable",
@@ -18,70 +18,26 @@
           sans-serif;
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 36px 0 64px; }
+      header { display: grid; gap: 10px; margin-bottom: 28px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 28px; line-height: 1.2; }
+      h2 { font-size: 16px; line-height: 1.35; }
+      p { color: #627084; font-size: 14px; line-height: 1.55; }
+      a { color: #2f6fed; font-size: 13px; font-weight: 760; text-decoration: none; }
+      code { color: #526071; font-size: 12px; }
 
-      body {
-        margin: 0;
-      }
-
-      main {
-        width: min(1120px, calc(100% - 40px));
-        margin: 0 auto;
-        padding: 34px 0 64px;
-      }
-
-      header,
-      .version-list,
-      article,
-      .version-copy {
-        display: grid;
-        gap: 14px;
-      }
-
-      header {
-        margin-bottom: 24px;
-      }
-
-      h1,
-      h2,
-      p {
-        margin: 0;
-      }
-
-      h1 {
-        font-size: 28px;
-        line-height: 1.2;
-      }
-
-      h2 {
-        font-size: 18px;
-        line-height: 1.35;
-      }
-
-      p {
-        color: #627084;
-        font-size: 14px;
-        line-height: 1.55;
-      }
-
-      a {
-        color: #2f6fed;
-        font-size: 13px;
-        font-weight: 760;
-        text-decoration: none;
-      }
-
-      .actions,
-      .shot-links {
+      .actions, .shot-links {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
       }
 
-      .actions a,
-      .shot-links a {
+      .actions { margin-top: 6px; }
+
+      .actions a, .shot-links a {
         display: inline-flex;
         align-items: center;
         min-height: 34px;
@@ -90,597 +46,207 @@
         border-radius: 999px;
         background: #ffffff;
         color: #26384f;
+        box-shadow: 0 8px 20px rgba(39, 51, 67, 0.06);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 28px;
       }
 
       article {
-        grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
-        align-items: start;
-        padding: 16px;
+        overflow: hidden;
         border: 1px solid #dfe5ec;
-        border-radius: 12px;
+        border-radius: 10px;
         background: #ffffff;
         box-shadow: 0 14px 36px rgba(39, 51, 67, 0.08);
       }
 
-      .thumb {
+      article img {
         display: block;
         width: 100%;
-        height: 220px;
+        aspect-ratio: 16 / 10;
         object-fit: cover;
         object-position: top left;
-        border: 1px solid #dfe5ec;
-        border-radius: 10px;
+        border-bottom: 1px solid #dfe5ec;
+      }
+
+      .copy {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
       }
 
       .meta {
         color: #8491a3;
         font-size: 12px;
-        font-weight: 700;
-      }
-
-      .capture-note {
-        display: inline-flex;
-        width: fit-content;
-        min-height: 26px;
-        align-items: center;
-        padding: 0 10px;
-        border-radius: 999px;
-        background: #eef5ff;
-        color: #2f6fed;
-        font-size: 12px;
-        font-weight: 820;
-      }
-
-      .rejected {
-        display: inline-flex;
-        width: fit-content;
-        min-height: 24px;
-        align-items: center;
-        padding: 0 8px;
-        border-radius: 999px;
-        background: #fff7eb;
-        color: #bd6b10;
-        font-size: 11px;
-        font-weight: 820;
+        font-weight: 760;
       }
 
       @media (max-width: 760px) {
-        main {
-          width: min(100% - 24px, 1120px);
-        }
-
-        article {
-          grid-template-columns: 1fr;
-        }
+        main { width: min(100% - 24px, 1180px); }
+        .grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
   <body>
     <main>
       <header>
-        <h1>2026-05-18</h1>
-        <p>하루 안에 여러 버전이 생길 수 있어서 날짜 페이지 안에 버전 카드를 따로 둡니다. 썸네일은 대시보드만 작게 보이고, 나머지 화면은 링크로 열어 봅니다.</p>
-        <div class="actions">
-          <a href="../index.html">전체 날짜로 돌아가기</a>
-          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-dashboard-design-polish/front/public/visual-history/2026-05-18/">로컬 이미지 폴더 열기</a>
+        <h1>Front Visual History · 2026-05-18</h1>
+        <p>2026-05-18에 남긴 대표 프론트 화면 캡처입니다.</p>
+        <p>이 날짜 폴더에는 비교할 대표 버전만 모읍니다. 모든 세부 캡처는 로컬 이미지 폴더에서 확인합니다.</p>
+        <div class="actions" aria-label="로컬 갤러리 링크">
+          <a href="../index.html">날짜 목록으로</a>
+          <a href="http://127.0.0.1:5174/visual-history/2026-05-18/index.html">서버 2026-05-18</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-retail-sentiment-widget/front/public/visual-history/2026-05-18/index.html">로컬 2026-05-18</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-retail-sentiment-widget/front/public/visual-history/2026-05-18/">이미지 폴더 열기</a>
         </div>
       </header>
 
-      <section class="version-list">
+      <section class="grid" aria-label="프론트 UI 대표 버전 캡처">
         <article>
-          <img class="thumb" src="./FV-20260518-2306-stock-detail-buffett-roast-copy-stock-detail-1440.png" alt="2026-05-18 stock detail buffett roast copy thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2306-stock-detail-buffett-roast-copy · current</span>
+          <img src="./FV-20260518-2306-stock-detail-buffett-roast-copy-stock-detail-1440.png" alt="FV-20260518-2306 stock detail" />
+          <div class="copy">
+            <span class="meta">FV-20260518-2306 · stock detail</span>
             <h2>종목 상세 한줄평을 워런 버핏 드립으로 교체</h2>
-            <span class="capture-note">Chrome headless viewport · 1440px wide · 1 screen</span>
-            <p>한줄평을 `HBM 붙었다고 삼전이 엔비디아면 내 통장도 워런 버핏임`으로 바꿨습니다. 자료 모음집은 ops가 저장한 `docs/assets/stock-detail-copy` 이미지 3개로 연결하고, 한 화면에 여러 이미지를 보는 격자 구조로 정리했습니다.</p>
-            <div class="shot-links" aria-label="2306 version screenshots">
-              <a href="./FV-20260518-2306-stock-detail-buffett-roast-copy-stock-detail-1440.png">종목 상세 워런 버핏 드립</a>
+            <p>팩트폭격 배너의 톤을 더 짧고 꼴받는 방향으로 잡은 대표 버전.</p>
+            <div class="shot-links">
+              <a href="./FV-20260518-2306-stock-detail-buffett-roast-copy-stock-detail-1440.png">원본 이미지 열기</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-2254-stock-detail-education-roast-copy-stock-detail-1440.png" alt="2026-05-18 stock detail education roast copy thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2254-stock-detail-education-roast-copy · current</span>
-            <h2>종목 상세 한줄평을 짧은 팩폭 문구로 교체</h2>
-            <span class="capture-note">Chrome headless viewport · 1440px wide · 1 screen</span>
-            <p>한줄평을 `HBM 붙었다고 다 엔비디아 되는 줄 알면 계좌가 교육비 냄`으로 줄였습니다. 배너 아래 키워드 줄은 글자 크기를 맞추고, 자료 모음집은 사진 격자형 페이지로 단순화했습니다.</p>
-            <div class="shot-links" aria-label="2254 version screenshots">
-              <a href="./FV-20260518-2254-stock-detail-education-roast-copy-stock-detail-1440.png">종목 상세 짧은 한줄평</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-2243-stock-detail-angry-roast-copy-stock-detail-1440.png" alt="2026-05-18 stock detail angry roast copy thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2243-stock-detail-angry-roast-copy · current</span>
-            <h2>종목 상세 한줄평을 더 꼴받는 팩트폭격 톤으로 교체</h2>
-            <span class="capture-note">Chrome headless viewport · 1440px wide · 1 screen</span>
-            <p>한줄평을 `HBM 세 글자 붙었다고 실적도 복사될 거라 믿는 건 양심 없는 주문임`으로 바꿨습니다. 하단 시황 문장도 뉴스와 실적표를 대비시켜 더 세게 긁히는 톤으로 정리했습니다.</p>
-            <div class="shot-links" aria-label="2243 version screenshots">
-              <a href="./FV-20260518-2243-stock-detail-angry-roast-copy-stock-detail-1440.png">종목 상세 꼴받는 한줄평</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-2236-stock-detail-market-roast-copy-stock-detail-1440.png" alt="2026-05-18 stock detail market roast copy thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2236-stock-detail-market-roast-copy · current</span>
-            <h2>한줄평 하단 문구를 최근 시황 분석 톤으로 변경</h2>
-            <span class="capture-note">Chrome headless viewport · 1440px wide · 1 screen</span>
-            <p>상단 배너 아래 설명을 커뮤니티 분석이 아니라 최근 시황 분석으로 바꾸고, 글자 크기를 키웠습니다. 문구도 실적 확인 전 설레발을 때리는 팩트폭격 톤으로 정리했습니다.</p>
-            <div class="shot-links" aria-label="2236 version screenshots">
-              <a href="./FV-20260518-2236-stock-detail-market-roast-copy-stock-detail-1440.png">종목 상세 시황 한줄평</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-2228-stock-detail-reference-roast-banner-stock-detail-1440.png" alt="2026-05-18 stock detail reference roast banner thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2228-stock-detail-reference-roast-banner · current</span>
-            <h2>종목 상세 한줄평을 참고 이미지 구조로 상단 고정</h2>
-            <span class="capture-note">Chrome headless viewport · 1440px wide · 1 screen</span>
-            <p>종목 상세 맨 위에 종목명 줄, 큰 청록 한줄평 배너, 설명·점수·근거 지표 줄을 참고 이미지와 같은 순서로 배치했습니다. 기존 종목 헤더와 상세 지표는 그 아래로 이어집니다.</p>
-            <div class="shot-links" aria-label="2228 version screenshots">
-              <a href="./FV-20260518-2228-stock-detail-reference-roast-banner-stock-detail-1440.png">종목 상세 상단 배너</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-2219-stock-detail-witty-takeaway-stock-detail-1440.png" alt="2026-05-18 stock detail witty takeaway thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2219-stock-detail-witty-takeaway · current</span>
-            <h2>종목 상세 한줄평을 더 웃긴 톤으로 교체</h2>
-            <span class="capture-note">Chrome headless viewport · 1440px wide · 1 screen</span>
-            <p>종목 상세 상단의 안전한 요약 문구를 `HBM 한마디에 게시판은 축제 모드, 주가는 뒤늦게 입장 중`처럼 더 직접적이고 재밌는 한줄평으로 바꿨습니다. 근거 지표와 출처 편중 안내는 같이 유지했습니다.</p>
-            <div class="shot-links" aria-label="2219 version screenshots">
-              <a href="./FV-20260518-2219-stock-detail-witty-takeaway-stock-detail-1440.png">종목 상세 한줄평</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-2213-stock-detail-takeaway-brief-stock-detail-1440.png" alt="2026-05-18 stock detail takeaway brief thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2213-stock-detail-takeaway-brief · current</span>
-            <h2>종목 상세 상단에 커뮤니티 반응 한줄 요약 추가</h2>
-            <span class="capture-note">Chrome headless viewport · 1440px wide · 1 screen</span>
-            <p>삼성전자 상세 화면 맨 위에 커뮤니티 반응을 재밌게 읽을 수 있는 큰 요약 카드를 추가했습니다. HBM 키워드, 언급 증가, 긍정/부정 비율, 가격·거래량, 출처 편중과 가격 지연을 한 화면에서 같이 확인합니다.</p>
-            <div class="shot-links" aria-label="2213 version screenshots">
-              <a href="./FV-20260518-2213-stock-detail-takeaway-brief-stock-detail-1440.png">종목 상세 상단</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-2108-newsroom-four-feed-overview-newsroom-1920.png" alt="2026-05-18 newsroom four feed overview thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-2108-newsroom-four-feed-overview · current</span>
+          <img src="./FV-20260518-2108-newsroom-four-feed-overview-newsroom-1920.png" alt="FV-20260518-2108 newsroom" />
+          <div class="copy">
+            <span class="meta">FV-20260518-2108 · newsroom</span>
             <h2>뉴스룸 종합 화면을 4개 피드 카드로 재정리</h2>
-            <span class="capture-note">Chrome headless viewport · 1920px wide · 2 screens</span>
-            <p>뉴스룸 기본 화면을 대시보드 피드처럼 실시간 뉴스, 애널리스트 리포트, 증권 영상 새 글, 블로그와 커뮤니티 링크 4개 카드로 나눴습니다. 각 카드는 8개 항목을 보여주고, `뉴스만 몰아보기` 같은 링크로 해당 피드만 길게 보는 화면에 바로 들어갑니다.</p>
-            <div class="shot-links" aria-label="2108 version screenshots">
+            <p>뉴스, 리포트, 영상, 블로그/커뮤니티를 대시보드와 같은 카드 문법으로 맞춘 버전.</p>
+            <div class="shot-links">
               <a href="./FV-20260518-2108-newsroom-four-feed-overview-newsroom-1920.png">뉴스룸 종합</a>
               <a href="./FV-20260518-2108-newsroom-four-feed-overview-videos-1920.png">영상 피드</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1938-non-dashboard-density-redesign-dashboard-1920.png" alt="2026-05-18 non-dashboard density redesign thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1938-non-dashboard-density-redesign · current</span>
+          <img src="./FV-20260518-1938-non-dashboard-density-redesign-dashboard-1920.png" alt="FV-20260518-1938 non-dashboard density" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1938 · density redesign</span>
             <h2>비대시보드 탭을 랭킹·매트릭스·원장 화면으로 재설계</h2>
-            <span class="capture-note">Chrome headless viewport · 1920px wide · 8 screens</span>
-            <p>대시보드는 유지하고, 종목은 랭킹 목록에서 상세로 들어가는 흐름으로 분리했습니다. 인간 지표는 커뮤니티 매트릭스, 주요 지표는 시장 테이프와 괴리표, 에이전트는 판단 원장, 포트폴리오는 보유·OCR·원장 화면으로 밀도를 올렸습니다.</p>
-            <div class="shot-links" aria-label="1938 version screenshots">
+            <p>대시보드를 기준으로 종목, 뉴스룸, 인간 지표, 주요 지표, 포트폴리오의 정보 밀도를 끌어올린 대표 묶음.</p>
+            <div class="shot-links">
               <a href="./FV-20260518-1938-non-dashboard-density-redesign-dashboard-1920.png">대시보드 기준</a>
-              <a href="./FV-20260518-1938-non-dashboard-density-redesign-stocks-1920.png">종목 랭킹</a>
-              <a href="./FV-20260518-1938-non-dashboard-density-redesign-stock-detail-1920.png">종목 상세</a>
-              <a href="./FV-20260518-1938-non-dashboard-density-redesign-newsroom-1920.png">뉴스룸</a>
+              <a href="./FV-20260518-1938-non-dashboard-density-redesign-stocks-1920.png">종목</a>
               <a href="./FV-20260518-1938-non-dashboard-density-redesign-human-indicator-1920.png">인간 지표</a>
               <a href="./FV-20260518-1938-non-dashboard-density-redesign-indicators-1920.png">주요 지표</a>
-              <a href="./FV-20260518-1938-non-dashboard-density-redesign-agents-1920.png">에이전트</a>
-              <a href="./FV-20260518-1938-non-dashboard-density-redesign-portfolio-1920.png">내 포트폴리오</a>
+              <a href="./FV-20260518-1938-non-dashboard-density-redesign-portfolio-1920.png">포트폴리오</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1802-surface-density-tight-dashboard-1920.png" alt="2026-05-18 dashboard density thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1802-surface-density-tight · current</span>
+          <img src="./FV-20260518-1802-surface-density-tight-dashboard-1920.png" alt="FV-20260518-1802 surface density" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1802 · surface density</span>
             <h2>비대시보드 화면 밀도 재정리</h2>
-            <span class="capture-note">Chrome headless viewport · 1920px wide · 7 screens</span>
-            <p>대시보드 캡처를 기준으로 종목 상세, 뉴스룸, 인간 지표, 주요 지표, 에이전트, 내 포트폴리오의 카드 높이와 간격을 더 촘촘하게 맞췄습니다. 종목 상세는 검색창과 반응 랭킹을 먼저 보여준 뒤 선택 종목 상세로 내려가도록 바꿨습니다.</p>
-            <div class="shot-links" aria-label="1802 version screenshots">
+            <p>각 탭의 빈 여백을 줄이고, 카드보다 표·칩·막대·리스트 중심으로 바꾸기 시작한 기준.</p>
+            <div class="shot-links">
               <a href="./FV-20260518-1802-surface-density-tight-dashboard-1920.png">대시보드 기준</a>
               <a href="./FV-20260518-1802-surface-density-tight-newsroom-1920.png">뉴스룸</a>
               <a href="./FV-20260518-1802-surface-density-tight-stock-detail-1920.png">종목 상세</a>
-              <a href="./FV-20260518-1802-surface-density-tight-human-indicator-1920.png">인간 지표</a>
-              <a href="./FV-20260518-1802-surface-density-tight-indicators-1920.png">주요 지표</a>
-              <a href="./FV-20260518-1802-surface-density-tight-agents-1920.png">에이전트</a>
-              <a href="./FV-20260518-1802-surface-density-tight-portfolio-1920.png">내 포트폴리오</a>
+              <a href="./FV-20260518-1802-surface-density-tight-portfolio-1920.png">포트폴리오</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1714-surface-density-portfolio-1920.png" alt="2026-05-18 surface density portfolio thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1714-surface-density · current</span>
-            <h2>대시보드 제외 탭 정보 밀도 보강</h2>
-            <span class="capture-note">Chrome headless viewport · 1920px wide · 5 screens</span>
-            <p>종목 상세, 인간 지표, 주요 지표, 에이전트, 내 포트폴리오에 요약 KPI, 급증 랭킹, 상태표, 전략 버전, OCR/거래내역 후보 같은 촘촘한 정보 블록을 추가했습니다. 대시보드는 유지했습니다.</p>
-            <div class="shot-links" aria-label="1714 version screenshots">
-              <a href="./FV-20260518-1714-surface-density-stock-detail-1920.png">종목 상세</a>
-              <a href="./FV-20260518-1714-surface-density-human-indicator-1920.png">인간 지표</a>
-              <a href="./FV-20260518-1714-surface-density-indicators-1920.png">주요 지표</a>
-              <a href="./FV-20260518-1714-surface-density-agents-1920.png">에이전트</a>
-              <a href="./FV-20260518-1714-surface-density-portfolio-1920.png">내 포트폴리오</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1637-surface-tabs-polish-portfolio-1920.png" alt="2026-05-18 surface tabs portfolio OCR thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1637-surface-tabs-polish · current</span>
+          <img src="./FV-20260518-1637-surface-tabs-polish-portfolio-1920.png" alt="FV-20260518-1637 surface tabs polish" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1637 · tabs polish</span>
             <h2>대시보드 톤으로 주요 탭 정리와 포트폴리오 OCR mock 추가</h2>
-            <span class="capture-note">Chrome headless viewport · 1920px wide · 5 screens</span>
-            <p>종목 상세, 인간 지표, 주요 지표, 에이전트, 내 포트폴리오 화면의 상단 제목과 패널 헤더를 대시보드 피드 카드 톤으로 맞췄습니다. 내 포트폴리오에는 실제 금융 계좌 연결이 아닌 `자산 OCR · 주식 계좌 연결 준비` mock 카드를 추가했습니다.</p>
-            <div class="shot-links" aria-label="1637 version screenshots">
+            <p>대시보드 제외 화면을 같은 서비스처럼 보이게 맞추고, 포트폴리오에 OCR 연동 준비 영역을 추가한 버전.</p>
+            <div class="shot-links">
               <a href="./FV-20260518-1637-surface-tabs-polish-stock-detail-1920.png">종목 상세</a>
               <a href="./FV-20260518-1637-surface-tabs-polish-human-indicator-1920.png">인간 지표</a>
               <a href="./FV-20260518-1637-surface-tabs-polish-indicators-1920.png">주요 지표</a>
-              <a href="./FV-20260518-1637-surface-tabs-polish-agents-1920.png">에이전트</a>
               <a href="./FV-20260518-1637-surface-tabs-polish-portfolio-1920.png">내 포트폴리오</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1623-human-indicator-tab-dashboard-1920.png" alt="2026-05-18 human indicator tab dashboard thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1623-human-indicator-tab · current</span>
+          <img src="./FV-20260518-1623-human-indicator-tab-dashboard-1920.png" alt="FV-20260518-1623 human indicator tab" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1623 · tab naming</span>
             <h2>상단 커뮤니티 탭을 인간 지표로 변경</h2>
-            <span class="capture-note">Chrome headless viewport · 1920px wide</span>
-            <p>상단 메뉴의 기존 `커뮤니티` 탭 이름을 `인간 지표`로 바꿨습니다. 주소와 커뮤니티 비교 화면 구조는 유지했습니다.</p>
-            <div class="shot-links" aria-label="1623 version screenshots">
+            <p>커뮤니티 탭의 제품 언어를 인간 지표로 바꾸고, 이후 에이전트 내용을 이 화면에 흡수하기 위한 기준.</p>
+            <div class="shot-links">
               <a href="./FV-20260518-1623-human-indicator-tab-dashboard-1920.png">대시보드 1920px</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1617-newsroom-overview-header-band-1920.png" alt="2026-05-18 newsroom overview header band thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1617-newsroom-overview-header-band · current</span>
-            <h2>뉴스룸 좌우 리스트 제목칸에 피드 카드형 디자인 적용</h2>
-            <span class="capture-note">Chrome headless viewport · 1920px wide</span>
-            <p>뉴스룸 종합 화면의 `뉴스 · 리포트`, `영상 · 블로그 및 커뮤니티` 제목칸에 대시보드 피드 카드와 같은 라벨, 색 배경, 구분선을 적용했습니다.</p>
-            <div class="shot-links" aria-label="1617 version screenshots">
-              <a href="./FV-20260518-1617-newsroom-overview-header-band-1920.png">뉴스룸 종합 1920px</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1601-newsroom-no-switch-long-lists-1920.png" alt="2026-05-18 newsroom no switch long lists thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1601-newsroom-no-switch-long-lists · current</span>
-            <h2>뉴스룸 스위치 제거와 15개 리스트 확장</h2>
-            <span class="capture-note">Chrome CDP full-page · 1920px wide</span>
-            <p>뉴스룸 상단 필터 스위치를 제거하고, 좌우 리스트를 각각 15개 항목으로 확장했습니다. 두 리스트 사이 간격도 48px로 넓혀 분리감을 키웠습니다.</p>
-            <div class="shot-links" aria-label="1601 version screenshots">
-              <a href="./FV-20260518-1601-newsroom-no-switch-long-lists-1920.png">뉴스룸 종합 1920px</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1553-newsroom-two-overview-lists-1920.png" alt="2026-05-18 newsroom two overview lists thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1553-newsroom-two-overview-lists · current</span>
-            <h2>뉴스룸 종합을 좌우 두 리스트로 정리</h2>
-            <span class="capture-note">Chrome CDP full-page · 1920px wide</span>
-            <p>뉴스룸 종합 화면을 네 개 카드가 아니라 두 개의 리스트로 정리했습니다. 왼쪽은 뉴스와 리포트, 오른쪽은 영상과 블로그·커뮤니티 원문이 한 리스트 안에서 섞여 보입니다.</p>
-            <div class="shot-links" aria-label="1553 version screenshots">
-              <a href="./FV-20260518-1553-newsroom-two-overview-lists-1920.png">뉴스룸 종합 1920px</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1542-newsroom-overview-pagination-overview-1920.png" alt="2026-05-18 newsroom overview pagination thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1542-newsroom-overview-pagination · current</span>
-            <h2>뉴스룸 종합 2컬럼과 페이지 넘김 정리</h2>
-            <span class="capture-note">Chrome CDP full-page · 1920px wide</span>
-            <p>뉴스룸 종합 화면에서 카운트 요약 카드를 빼고, 왼쪽에는 뉴스·리포트, 오른쪽에는 영상·블로그 및 커뮤니티를 배치했습니다. 개별 필터 화면 하단에는 이전/다음과 페이지 번호를 추가했습니다.</p>
-            <div class="shot-links" aria-label="1542 version screenshots">
-              <a href="./FV-20260518-1542-newsroom-overview-pagination-overview-1920.png">뉴스룸 종합 1920px</a>
-              <a href="./FV-20260518-1542-newsroom-overview-pagination-page2-1920.png">영상 2페이지 1920px</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1525-newsroom-feed-tabs-newsroom-1920.png" alt="2026-05-18 newsroom feed tabs thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1525-newsroom-feed-tabs · current</span>
+          <img src="./FV-20260518-1525-newsroom-feed-tabs-newsroom-1920.png" alt="FV-20260518-1525 newsroom feed tabs" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1525 · newsroom route</span>
             <h2>뉴스룸 탭과 피드 상세 화면 추가</h2>
-            <span class="capture-note">Chrome CDP full-page · 1920px wide</span>
-            <p>상단 메뉴에 뉴스룸을 추가하고, 종합·뉴스·리포트·영상·블로그 및 커뮤니티 필터로 피드 원문 링크를 볼 수 있게 했습니다. 대시보드 피드 카드의 자세히 보기도 뉴스룸의 해당 필터로 연결됩니다.</p>
-            <div class="shot-links" aria-label="1525 version screenshots">
-              <a href="./FV-20260518-1525-newsroom-feed-tabs-dashboard-1920.png">대시보드 1920px</a>
-              <a href="./FV-20260518-1525-newsroom-feed-tabs-newsroom-1920.png">뉴스룸 1920px</a>
+            <p>상단 메뉴의 뉴스룸 하위 항목과 피드별 상세 route를 실험한 대표 버전.</p>
+            <div class="shot-links">
+              <a href="./FV-20260518-1525-newsroom-feed-tabs-dashboard-1920.png">대시보드</a>
+              <a href="./FV-20260518-1525-newsroom-feed-tabs-newsroom-1920.png">뉴스룸</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1506-reaction-graph-ratio-dashboard-960.png" alt="2026-05-18 reaction graph ratio dashboard thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1506-reaction-graph-ratio · current</span>
+          <img src="./FV-20260518-1506-reaction-graph-ratio-dashboard-960.png" alt="FV-20260518-1506 reaction graph ratio" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1506 · responsive ratio</span>
             <h2>종목 반응과 그래프 높이감 정렬</h2>
-            <span class="capture-note">Chrome CDP full-page · 1920px / 960px wide</span>
-            <p>16:9와 8:9 화면에서 `종목 반응 한눈에` 카드 묶음이 커뮤니티 지표 그래프보다 짧게 끊기거나 위로 붙어 보이지 않도록 반응 카드 영역을 같은 세로 흐름으로 맞췄습니다.</p>
-            <div class="shot-links" aria-label="1506 version screenshots">
-              <a href="./FV-20260518-1506-reaction-graph-ratio-dashboard-1920.png">대시보드 1920px</a>
-              <a href="./FV-20260518-1506-reaction-graph-ratio-dashboard-960.png">대시보드 960px</a>
+            <p>16:9와 좁은 화면에서 종목 반응 영역의 비율이 달라지던 문제를 확인한 비교용 버전.</p>
+            <div class="shot-links">
+              <a href="./FV-20260518-1506-reaction-graph-ratio-dashboard-1920.png">1920px</a>
+              <a href="./FV-20260518-1506-reaction-graph-ratio-dashboard-960.png">960px</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1449-zoom-stable-layout-dashboard-open-960.png" alt="2026-05-18 zoom stable layout thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1449-zoom-stable-layout · current</span>
-            <h2>확대 보기용 데스크톱 구조 고정</h2>
-            <span class="capture-note">Chrome CDP full-page · 960px wide · rail open</span>
-            <p>브라우저 확대나 반쪽 창에서 데스크톱 구조가 갑자기 1열로 바뀌지 않도록 최소 본문 폭과 가로 스크롤을 적용했습니다. 960px rail-open 상태에서도 대시보드 본문과 피드가 기존 컬럼 구조를 유지합니다.</p>
-            <div class="shot-links" aria-label="1449 version screenshots">
-              <a href="./FV-20260518-1449-zoom-stable-layout-dashboard-open-960.png">대시보드 960px rail open</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1442-rail-overlay-all-dashboard-open-1920.png" alt="2026-05-18 all width rail overlay dashboard thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1442-rail-overlay-all · comparison only</span>
+          <img src="./FV-20260518-1442-rail-overlay-all-dashboard-open-1920.png" alt="FV-20260518-1442 rail overlay" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1442 · right rail</span>
             <h2>전 화면 rail 오버레이 적용</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Chrome CDP full-page · 1920px wide · rail open</span>
-            <p>오른쪽 패널이 열려도 1920px 화면과 좁은 화면 모두 본문 폭과 위치가 변하지 않도록 했습니다. 패널은 본문을 밀지 않고 오른쪽 위에 올라오는 방식으로 통일했습니다.</p>
-            <div class="shot-links" aria-label="1442 version screenshots">
-              <a href="./FV-20260518-1442-rail-overlay-all-dashboard-open-1920.png">대시보드 1920px rail open</a>
+            <p>오른쪽 탭 확장 시 본문이 찌그러지지 않도록 rail을 overlay 방식으로 바꾼 기준.</p>
+            <div class="shot-links">
+              <a href="./FV-20260518-1442-rail-overlay-all-dashboard-open-1920.png">대시보드 rail open</a>
             </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
 
         <article>
-          <img class="thumb" src="./FV-20260518-1420-rail-overlay-narrow-dashboard-open-1280.png" alt="2026-05-18 narrow rail overlay dashboard thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1420-rail-overlay-narrow · comparison only</span>
-            <h2>좁은 화면 rail 오버레이 전환</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Chrome CDP full-page · 1280px wide · rail open</span>
-            <p>1500px 이하 화면에서는 오른쪽 패널이 열려도 본문 폭에서 320px을 빼지 않도록 바꿨습니다. 반쪽 브라우저에서는 본문을 찌그러뜨리지 않고 패널이 오른쪽 위에 올라오는 방식으로 동작합니다.</p>
-            <div class="shot-links" aria-label="1420 version screenshots">
-              <a href="./FV-20260518-1420-rail-overlay-narrow-dashboard-open-1280.png">대시보드 1280px rail open</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1411-header-brand-rail-direction-dashboard.png" alt="2026-05-18 header brand rail direction thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1411-header-brand-rail-direction · comparison only</span>
-            <h2>헤더 로고 간격과 오른쪽 rail 방향 복구</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Chrome headless full-page · 1920px wide</span>
-            <p>배포본 기준으로 헤더의 `너나사`와 `YouBuyFirst` 사이 공백을 되돌리고, 오른쪽 rail의 열기/닫기 화살표를 닫힌 상태 `«`, 열린 상태 `»`로 맞췄습니다.</p>
-            <div class="shot-links" aria-label="1411 version screenshots">
-              <a href="./FV-20260518-1411-header-brand-rail-direction-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1359-feed-header-clean-engagement-dashboard.png" alt="2026-05-18 feed header clean engagement thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1359-feed-header-clean-engagement · comparison only</span>
-            <h2>피드 헤더 배지 제거 + 순위 근거 표시</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Chrome headless full-page · 1920px wide</span>
-            <p>실시간 뉴스, 애널리스트 리포트, 증권 영상 새 글, 블로그/커뮤니티 링크의 오른쪽 위 상태 배지를 제거했습니다. 영상과 블로그/커뮤니티 순위에는 조회수, 공감, 댓글 수 mock 지표를 붙여 순위 근거가 보이도록 했습니다.</p>
-            <div class="shot-links" aria-label="1359 version screenshots">
-              <a href="./FV-20260518-1359-feed-header-clean-engagement-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1345-feed-video-blog-ranking-dashboard.png" alt="2026-05-18 video blog ranking thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1345-feed-video-blog-ranking · comparison only</span>
-            <h2>영상·블로그 피드 순위 복구</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Chrome headless full-page · 1920px wide</span>
-            <p>뉴스와 리포트는 최신순 피드로 유지하고, 증권 영상 새 글과 블로그/커뮤니티 링크에만 1위~5위 순위를 다시 넣었습니다. 전문/보기 꼬리표는 제거한 상태를 유지했습니다.</p>
-            <div class="shot-links" aria-label="1345 version screenshots">
-              <a href="./FV-20260518-1345-feed-video-blog-ranking-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1339-feed-latest-time-dashboard.png" alt="2026-05-18 latest feed time thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1339-feed-latest-time · comparison only</span>
-            <h2>피드 최신순 시간 표시 정리</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Chrome headless full-page · 1920px wide</span>
-            <p>피드 행의 순위와 전문/보기 꼬리표를 제거했습니다. 각 행은 카드 전체가 링크로 동작하고, 출처 옆에 방금·몇 시간 전·며칠 전 표시가 남도록 정리했습니다.</p>
-            <div class="shot-links" aria-label="1339 version screenshots">
-              <a href="./FV-20260518-1339-feed-latest-time-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1322-feed-five-card-height-dashboard.png" alt="2026-05-18 five item feed cards thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1322-feed-five-card-height · comparison only</span>
-            <h2>피드 카드 5개 노출 + 카드 높이 확장</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>네 개 피드 카드의 기존 줄 간격은 유지하고 카드 자체 높이를 늘려 각 카드에 5개 항목이 보이게 했습니다.</p>
-            <div class="shot-links" aria-label="1322 version screenshots">
-              <a href="./FV-20260518-1322-feed-five-card-height-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1310-feed-header-compact-dashboard.png" alt="2026-05-18 compact feed header thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1310-feed-header-compact · comparison only</span>
-            <h2>피드 카드 제목칸 높이 축소</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>실시간 뉴스, 애널리스트 리포트, 증권 영상 새 글, 블로그/커뮤니티 링크 카드의 제목 band를 48px에서 42px로 살짝 줄였습니다.</p>
-            <div class="shot-links" aria-label="1310 version screenshots">
-              <a href="./FV-20260518-1310-feed-header-compact-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1158-dark-mode-full-label-dashboard.png" alt="2026-05-18 dark mode full label thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1158-dark-mode-full-label · comparison only</span>
-            <h2>다크모드 전체 라벨 적용</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>오른쪽 아래 버튼 라벨을 `다크`에서 `다크모드`로 바꿨습니다. rail 폭 안에서 잘리지 않고 들어가는 것을 확인했습니다.</p>
-            <div class="shot-links" aria-label="1158 version screenshots">
-              <a href="./FV-20260518-1158-dark-mode-full-label-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1134-dark-mode-rail-label-dashboard.png" alt="2026-05-18 dark mode rail label thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1134-dark-mode-rail-label · comparison only</span>
-            <h2>테마 라벨을 다크로 변경</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>오른쪽 아래 버튼 이름을 넓은 의미의 `테마` 대신 현재 화면에서 전환할 대상이 바로 읽히는 `다크`로 바꿨습니다. rail 폭을 고려해 `다크모드` 전체 문구는 쓰지 않았습니다.</p>
-            <div class="shot-links" aria-label="1134 version screenshots">
-              <a href="./FV-20260518-1134-dark-mode-rail-label-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1125-flat-theme-rail-dashboard.png" alt="2026-05-18 flat theme rail thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1125-flat-theme-rail · comparison only</span>
-            <h2>테마 버튼 안쪽 박스 제거</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>오른쪽 아래 테마 버튼의 아이콘 안쪽 흰 박스와 inset 선을 제거했습니다. rail 안에서 아이콘과 라벨만 보이도록 더 납작하게 정리했습니다.</p>
-            <div class="shot-links" aria-label="1125 version screenshots">
-              <a href="./FV-20260518-1125-flat-theme-rail-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1117-theme-icon-rail-dashboard.png" alt="2026-05-18 theme icon rail thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1117-theme-icon-rail · comparison only</span>
-            <h2>오른쪽 rail 테마 버튼 아이콘형 정리</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>알파벳 `T` 대신 직관적인 반달 아이콘을 쓰도록 바꾼 버전입니다. 이후 안쪽 박스 중첩감이 보여 다음 버전에서 제거했습니다.</p>
-            <div class="shot-links" aria-label="1117 version screenshots">
-              <a href="./FV-20260518-1117-theme-icon-rail-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1110-theme-toggle-rail-dashboard.png" alt="2026-05-18 theme toggle rail thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1110-theme-toggle-rail · comparison only</span>
-            <h2>오른쪽 rail 테마 버튼 정리</h2>
-            <span class="rejected">비교 보존용</span>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>오른쪽 아래 라이트/다크 모드 버튼을 위 rail 항목과 같은 키캡 문법으로 맞췄지만, 알파벳 `T`가 직관적이지 않아 다음 버전에서 아이콘형으로 바꿨습니다.</p>
-            <div class="shot-links" aria-label="1110 version screenshots">
-              <a href="./FV-20260518-1110-theme-toggle-rail-dashboard.png">대시보드</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1053-dashboard-original-product-tabs-dashboard.png" alt="2026-05-18 restored dashboard thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1053-dashboard-original-product-tabs</span>
+          <img src="./FV-20260518-1053-dashboard-original-product-tabs-dashboard.png" alt="FV-20260518-1053 restored dashboard" />
+          <div class="copy">
+            <span class="meta">FV-20260518-1053 · dashboard restore</span>
             <h2>대시보드 원복 + 탭 화면 보강 캡처</h2>
-            <span class="capture-note">Playwright full-page · 1920px wide</span>
-            <p>대시보드 위에 추가했던 관심종목/이벤트/데이터 기준 스트립을 제거하고 기존 대시보드 흐름으로 되돌린 버전입니다. 종목 상세, 커뮤니티, 주요 지표, 에이전트, 포트폴리오 보강 화면은 같은 버전으로 하단까지 캡처했습니다.</p>
-            <div class="shot-links" aria-label="1053 version screenshots">
+            <p>대시보드를 갈아엎었던 초안을 되돌리고, 기존 대시보드 기준 위에 각 탭을 다시 보강한 기준.</p>
+            <div class="shot-links">
               <a href="./FV-20260518-1053-dashboard-original-product-tabs-dashboard.png">대시보드</a>
               <a href="./FV-20260518-1053-dashboard-original-product-tabs-stock-detail.png">종목 상세</a>
-              <a href="./FV-20260518-1053-dashboard-original-product-tabs-communities.png">커뮤니티</a>
-              <a href="./FV-20260518-1053-dashboard-original-product-tabs-indicators.png">주요 지표</a>
-              <a href="./FV-20260518-1053-dashboard-original-product-tabs-agents.png">에이전트</a>
               <a href="./FV-20260518-1053-dashboard-original-product-tabs-portfolio.png">내 포트폴리오</a>
             </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1042-product-surface-dashboard.png" alt="2026-05-18 dashboard strip draft thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1042-product-surface · comparison only</span>
-            <h2>대시보드 상단 스트립을 추가했던 직전 버전</h2>
-            <span class="rejected">비교 보존용</span>
-            <p>기존 대시보드 위에 관심종목 요약, 이벤트 미리보기, 데이터 기준 시각을 얹었던 버전입니다. 현재 방향은 아니지만 전후 비교를 위해 삭제하지 않고 남깁니다.</p>
-            <div class="shot-links" aria-label="1042 version screenshots">
-              <a href="./FV-20260518-1042-product-surface-dashboard.png">대시보드</a>
-              <a href="./FV-20260518-1042-product-surface-stock-detail.png">종목 상세</a>
-              <a href="./FV-20260518-1042-product-surface-communities.png">커뮤니티</a>
-              <a href="./FV-20260518-1042-product-surface-indicators.png">주요 지표</a>
-              <a href="./FV-20260518-1042-product-surface-agents.png">에이전트</a>
-              <a href="./FV-20260518-1042-product-surface-portfolio.png">내 포트폴리오</a>
-            </div>
-          </div>
-        </article>
-
-        <article>
-          <img class="thumb" src="./FV-20260518-1005-product-surface-dashboard.png" alt="2026-05-18 earlier dashboard draft thumbnail" />
-          <div class="version-copy">
-            <span class="meta">FV-20260518-1005-product-surface · earlier draft</span>
-            <h2>대시보드 구조를 너무 크게 바꾼 초안</h2>
-            <span class="rejected">비교 보존용</span>
-            <p>기존 대시보드 디자인을 많이 바꿨던 초안입니다. 현재 방향과 맞지 않지만 어떤 변경이 과했는지 확인할 수 있게 남깁니다.</p>
-            <div class="shot-links" aria-label="1005 version screenshots">
-              <a href="./FV-20260518-1005-product-surface-dashboard.png">대시보드 초안</a>
-              <a href="./FV-20260518-1005-product-surface-stock-detail.png">종목 상세 초안</a>
-            </div>
+            <code>front/public/visual-history/2026-05-18/</code>
           </div>
         </article>
       </section>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026-05-20 Front Visual History</title>
+    <style>
+      :root {
+        color: #17212b;
+        background: #eef3f8;
+        font-family: Pretendard, "Pretendard Variable", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 34px 0 64px; }
+      header, .version-list, article, .version-copy { display: grid; gap: 14px; }
+      header { margin-bottom: 24px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 28px; line-height: 1.2; }
+      h2 { font-size: 18px; line-height: 1.35; }
+      p { color: #627084; font-size: 14px; line-height: 1.55; }
+      a { color: #2f6fed; font-size: 13px; font-weight: 760; text-decoration: none; }
+      .actions, .shot-links { display: flex; flex-wrap: wrap; gap: 8px; }
+      .actions a, .shot-links a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border: 1px solid #d8e1ec; border-radius: 999px; background: #fff; color: #26384f; }
+      article { grid-template-columns: minmax(280px, 420px) minmax(0, 1fr); align-items: start; padding: 16px; border: 1px solid #dfe5ec; border-radius: 12px; background: #fff; box-shadow: 0 14px 36px rgba(39, 51, 67, 0.08); }
+      .thumb { display: block; width: 100%; height: 260px; object-fit: cover; object-position: top left; border: 1px solid #dfe5ec; border-radius: 10px; }
+      .meta { color: #8491a3; font-size: 12px; font-weight: 700; }
+      .capture-note { display: inline-flex; width: fit-content; min-height: 26px; align-items: center; padding: 0 10px; border-radius: 999px; background: #eef5ff; color: #2f6fed; font-size: 12px; font-weight: 820; }
+      @media (max-width: 760px) { main { width: min(100% - 24px, 1120px); } article { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>2026-05-20</h1>
+        <p>대시보드 개미 심리 지수와 주요 탭 밀도 개편을 확인하는 대표 캡처입니다.</p>
+        <div class="actions">
+          <a href="../index.html">전체 날짜로 돌아가기</a>
+          <a href="../references/index.html">자료 모음집</a>
+          <a href="file:///C:/agents/YouBuyFirst/.worktrees/front-retail-sentiment-widget/front/public/visual-history/2026-05-20/">로컬 이미지 폴더 열기</a>
+        </div>
+      </header>
+
+      <section class="version-list">
+        <article>
+          <img class="thumb" src="./FV-20260520-1320-stock-screener-redesign-full.png" alt="국장과 해외 거래량 TOP 10을 좌우로 보여주는 종목 탭" />
+          <div class="version-copy">
+            <span class="meta">FV-20260520-1320-tab-density-redesign · current</span>
+            <h2>종목·주요 지표 상세·포트폴리오 밀도 개편</h2>
+            <span class="capture-note">Playwright full page · 1440px wide · stocks / indicators / portfolio</span>
+            <p>종목 탭은 국장/해외 거래량 TOP 10을 좌우 랭킹으로 정리하고, 주요 지표 상세 route는 별도 분석 페이지로 분리했습니다. 내 포트폴리오는 보유 종목, OCR 후보, 주문·원장, 체결 후 복기를 한 화면에서 비교하게 바꿨습니다.</p>
+            <div class="shot-links" aria-label="tab density screenshots">
+              <a href="./FV-20260520-1320-stock-screener-redesign-full.png">종목 탭 캡처 보기</a>
+              <a href="./FV-20260520-1320-indicator-domestic-detail-full.png">주요 지표 상세 캡처 보기</a>
+              <a href="./FV-20260520-1320-portfolio-ledger-redesign-full.png">포트폴리오 캡처 보기</a>
+            </div>
+          </div>
+        </article>
+
+        <article>
+          <img class="thumb" src="./FV-20260520-1257-indicators-hub-redesign-1440.png" alt="주요 지표 핵심 허브와 국장 미장 섹터 방향 화면" />
+          <div class="version-copy">
+            <span class="meta">FV-20260520-1257-indicators-hub-redesign · current</span>
+            <h2>주요 지표 핵심 허브 재구성</h2>
+            <span class="capture-note">Playwright full page · 1440px wide · indicators</span>
+            <p>국내주식, 미국주식, 채권, 원자재 핵심 카드를 상세 route로 연결하고, 국장·미장 섹터 방향을 정사각형 타일 맵으로 한눈에 볼 수 있게 바꿨습니다.</p>
+            <div class="shot-links" aria-label="indicators screenshot">
+              <a href="./FV-20260520-1257-indicators-hub-redesign-1440.png">주요 지표 캡처 보기</a>
+            </div>
+          </div>
+        </article>
+
+        <article>
+          <img class="thumb" src="./FV-20260520-1233-human-indicator-redesign-communities-1440.png" alt="인간 지표 모자이크 신호, 성과 그래프, 모의 판단 로그 화면" />
+          <div class="version-copy">
+            <span class="meta">FV-20260520-1233-human-indicator-redesign · current</span>
+            <h2>인간 지표 대시보드형 재구성</h2>
+            <span class="capture-note">Playwright full page · 1440px wide · communities</span>
+            <p>지금 뜨는 종목, 부정적인 종목, 언급 많은 종목, 라이징 스타를 상단 모자이크로 배치했습니다. 커뮤니티 에이전트 수익률 비교 그래프와 지표 추종/커뮤니티 역추종 판단 로그를 함께 보여줍니다.</p>
+            <div class="shot-links" aria-label="human indicator screenshot">
+              <a href="./FV-20260520-1233-human-indicator-redesign-communities-1440.png">인간 지표 캡처 보기</a>
+            </div>
+          </div>
+        </article>
+
+        <article>
+          <img class="thumb" src="./FV-20260520-1132-retail-sentiment-half-qhd-dashboard-1280.png" alt="1280px 반폭에서 검색창 위로 올라간 개미 심리 지수 바" />
+          <div class="version-copy">
+            <span class="meta">FV-20260520-1132-retail-sentiment-half-qhd · responsive check</span>
+            <h2>QHD 절반 폭 심리 지수 바</h2>
+            <span class="capture-note">Playwright viewport · 1280px wide · dashboard</span>
+            <p>1280px 폭에서는 왼쪽 게이지 카드가 검색창과 겹치지 않도록 검색창 위의 얇은 정보 바로 전환합니다.</p>
+            <div class="shot-links" aria-label="half qhd screenshot">
+              <a href="./FV-20260520-1132-retail-sentiment-half-qhd-dashboard-1280.png">1280px 캡처 보기</a>
+            </div>
+          </div>
+        </article>
+
+        <article>
+          <img class="thumb" src="./FV-20260520-1038-retail-sentiment-gauge-ratio-dashboard-1440.png" alt="개미 심리 지수 가로형 게이지가 들어간 대시보드" />
+          <div class="version-copy">
+            <span class="meta">FV-20260520-1038-retail-sentiment-gauge-ratio</span>
+            <h2>대시보드 가로형 개미 심리 지수 게이지</h2>
+            <span class="capture-note">Playwright viewport · 1440px wide · dashboard</span>
+            <p>검색창 위치를 유지하면서 개미 심리 지수를 가로형 게이지 카드로 정리한 기준 캡처입니다.</p>
+            <div class="shot-links" aria-label="dashboard screenshots">
+              <a href="./FV-20260520-1038-retail-sentiment-gauge-ratio-dashboard-1440.png">대시보드 캡처 보기</a>
+            </div>
+          </div>
+        </article>
+
+        <article>
+          <img class="thumb" src="./FV-20260520-1042-reference-library-originals.png" alt="원본 이미지 중심으로 정리한 자료 모음집" />
+          <div class="version-copy">
+            <span class="meta">FV-20260520-1042-reference-library-originals</span>
+            <h2>자료 모음집 원본 이미지 정리</h2>
+            <span class="capture-note">Playwright viewport · 1440px wide · references</span>
+            <p>종목 상세 레퍼런스 이미지를 실제 로컬 원본 파일로 연결한 자료 모음집 캡처입니다.</p>
+            <div class="shot-links" aria-label="reference screenshots">
+              <a href="./FV-20260520-1042-reference-library-originals.png">자료 모음집 캡처 보기</a>
+              <a href="../references/index.html">자료 모음집 열기</a>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

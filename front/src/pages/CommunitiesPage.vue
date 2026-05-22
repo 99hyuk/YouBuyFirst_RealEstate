@@ -2,6 +2,50 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
+type Tone = 'positive' | 'negative' | 'watch' | 'neutral';
+
+type SignalTile = {
+  label: string;
+  stock: string;
+  symbol: string;
+  metric: string;
+  tone: Tone;
+  summary: string;
+  reasons: string[];
+  pulse: number;
+  community: string;
+};
+
+type CommunityPulse = {
+  name: string;
+  status: string;
+  topStock: string;
+  mention: number;
+  positive: number;
+  negative: number;
+  theme: string;
+};
+
+type StrategySeries = {
+  name: string;
+  tone: 'follow' | 'reverse';
+  returnPct: string;
+  hitRate: string;
+  drawdown: string;
+  points: string;
+};
+
+type AgentLog = {
+  time: string;
+  strategy: '지표 추종' | '커뮤니티 역추종';
+  stock: string;
+  symbol: string;
+  state: string;
+  input: string;
+  reason: string;
+  key: string;
+};
+
 const route = useRoute();
 const activeHumanView = computed(() => {
   const view = route.query.view;
@@ -9,109 +53,144 @@ const activeHumanView = computed(() => {
 });
 
 const humanViewTabs = [
-  { label: '커뮤니티 반응', view: 'overview', to: { path: '/communities' } },
-  { label: '성과 실험', view: 'experiments', to: { path: '/communities', query: { view: 'experiments' } } },
+  { label: '반응 한눈에', view: 'overview', to: { path: '/communities' } },
+  { label: '성과 비교', view: 'experiments', to: { path: '/communities', query: { view: 'experiments' } } },
   { label: '모의 에이전트', view: 'agents', to: { path: '/communities', query: { view: 'agents' } } }
 ];
 
-const communities = [
-  { name: '네이버 종토방', status: 'local-research-only', lastCollected: '10:03', skipReason: '본문 일부만 저장', surge: '삼성전자', positive: 41, negative: 33, theme: '반도체·대형주' },
-  { name: '디시 주식', status: 'public-demo-only', lastCollected: '10:01', skipReason: '속도 제한 관찰', surge: '에코프로', positive: 48, negative: 37, theme: '2차전지·미국주식' },
-  { name: '뽐뿌 증권포럼', status: 'enabled', lastCollected: '09:58', skipReason: '정상', surge: 'NAVER', positive: 36, negative: 42, theme: '플랫폼·배당' },
-  { name: '에펨코리아 주식', status: 'public-demo-only', lastCollected: '10:05', skipReason: '인기글 링크 우선', surge: '두산로보틱스', positive: 61, negative: 18, theme: '로봇·AI' },
-  { name: '토스증권 커뮤니티', status: 'public-demo-only', lastCollected: '10:02', skipReason: '제목 링크만', surge: '한미반도체', positive: 57, negative: 22, theme: '장비·실적' },
-  { name: '블라인드 주식 라운지', status: 'local-research-only', lastCollected: '09:54', skipReason: '요약 통계만', surge: 'SOXS', positive: 28, negative: 51, theme: '해외주식·변동성' }
+const signalTiles: SignalTile[] = [
+  {
+    label: '지금 뜨는 종목',
+    stock: '두산로보틱스',
+    symbol: '454910',
+    metric: '+42%',
+    tone: 'positive',
+    summary: '로봇 수주 키워드와 인기글 상위권이 같이 붙었습니다.',
+    reasons: ['에펨코리아 상위 2% 글', '댓글 속도 1.8배', '가격 +4.8% 동시'],
+    pulse: 88,
+    community: '에펨코리아'
+  },
+  {
+    label: '부정적인 종목',
+    stock: 'NAVER',
+    symbol: '035420',
+    metric: '부정 48',
+    tone: 'negative',
+    summary: '비용 부담, 광고 둔화, AI 투자비 키워드가 반복됩니다.',
+    reasons: ['뽐뿌 비용 우려', '종토방 실적 논쟁', '출처 편중 58%'],
+    pulse: 64,
+    community: '뽐뿌 증권포럼'
+  },
+  {
+    label: '언급 많은 종목',
+    stock: '삼성전자',
+    symbol: '005930',
+    metric: '18.4M',
+    tone: 'watch',
+    summary: 'HBM, 서버 수요, 외국인 수급 이야기가 넓게 퍼졌습니다.',
+    reasons: ['네이버 종토방 급증', '반도체 테마 1위', '출처 4곳 이상'],
+    pulse: 76,
+    community: '네이버 종토방'
+  },
+  {
+    label: '라이징 스타',
+    stock: '한미반도체',
+    symbol: '042700',
+    metric: '+22%',
+    tone: 'positive',
+    summary: '장비 수주와 실적 기대 키워드가 짧은 시간에 올라왔습니다.',
+    reasons: ['토스 관심 등록 증가', '장비 수주 키워드', '긍정 57 / 부정 22'],
+    pulse: 72,
+    community: '토스증권 커뮤니티'
+  }
 ];
 
-const humanStats = [
-  { label: '수집 소스', value: '4개', meta: 'enabled 1 · demo 2' },
-  { label: '급증 종목', value: '6개', meta: '상위 N% 기준' },
-  { label: '인기글 후보', value: '18건', meta: '원문 링크만' },
-  { label: '테마', value: '5개', meta: '반도체·2차전지' },
-  { label: '주의 소스', value: '2개', meta: 'skip 사유 있음' }
+const communityPulses: CommunityPulse[] = [
+  { name: '네이버 종토방', status: 'local-research-only', topStock: '삼성전자', mention: 92, positive: 41, negative: 33, theme: '반도체' },
+  { name: '디시 주식', status: 'public-demo-only', topStock: '에코프로', mention: 78, positive: 48, negative: 37, theme: '2차전지' },
+  { name: '뽐뿌 증권포럼', status: 'enabled', topStock: 'NAVER', mention: 61, positive: 36, negative: 42, theme: '플랫폼' },
+  { name: '에펨코리아', status: 'public-demo-only', topStock: '두산로보틱스', mention: 84, positive: 61, negative: 18, theme: '로봇' },
+  { name: '토스증권', status: 'public-demo-only', topStock: '한미반도체', mention: 69, positive: 57, negative: 22, theme: '장비' },
+  { name: '블라인드', status: 'local-research-only', topStock: 'SOXS', mention: 57, positive: 28, negative: 51, theme: '미국주식' }
 ];
 
-const surgeStocks = [
-  { stock: '삼성전자', community: '네이버 종토방', delta: '+34%', tone: '긍정 우세' },
-  { stock: '두산로보틱스', community: '에펨코리아', delta: '+29%', tone: '긍정 우세' },
-  { stock: '에코프로', community: '디시 주식', delta: '+24%', tone: '혼재' },
-  { stock: '한미반도체', community: '토스증권', delta: '+22%', tone: '긍정 우세' },
-  { stock: 'NAVER', community: '뽐뿌 증권포럼', delta: '+18%', tone: '부정 증가' },
-  { stock: 'SOXS', community: '블라인드', delta: '+13%', tone: '부정 우세' }
+const strategySeries: StrategySeries[] = [
+  {
+    name: '지표 추종',
+    tone: 'follow',
+    returnPct: '+3.1%',
+    hitRate: '55%',
+    drawdown: '-3.8%',
+    points: '0,82 58,74 116,64 174,67 232,51 290,42 348,34 406,28'
+  },
+  {
+    name: '커뮤니티 역추종',
+    tone: 'reverse',
+    returnPct: '+1.7%',
+    hitRate: '49%',
+    drawdown: '-5.4%',
+    points: '0,86 58,80 116,76 174,70 232,73 290,61 348,58 406,49'
+  }
 ];
 
-const sourceStates = [
-  { status: 'enabled', count: 1, note: '정상 수집' },
-  { status: 'public-demo-only', count: 2, note: '공개 화면 기준' },
-  { status: 'local-research-only', count: 1, note: '로컬 연구용' },
-  { status: 'disabled', count: 0, note: '현재 없음' }
+const agentLogs: AgentLog[] = [
+  {
+    time: '10:12',
+    strategy: '지표 추종',
+    stock: '두산로보틱스',
+    symbol: '454910',
+    state: 'paper 후보',
+    input: '언급 +42% · 긍정 61 · 가격 +4.8%',
+    reason: '인기글 상위권과 가격 흐름이 같은 방향',
+    key: 'follow-v2-454910-1012'
+  },
+  {
+    time: '10:04',
+    strategy: '커뮤니티 역추종',
+    stock: 'NAVER',
+    symbol: '035420',
+    state: '관찰만',
+    input: '부정 48 · 출처 편중 58% · 가격 +0.7%',
+    reason: '부정 반응은 강하지만 표본이 한쪽으로 치우침',
+    key: 'reverse-v1-035420-1004'
+  },
+  {
+    time: '09:51',
+    strategy: '지표 추종',
+    stock: '삼성전자',
+    symbol: '005930',
+    state: '관찰 유지',
+    input: '언급 18.4M · 긍정 54 · 출처 4곳',
+    reason: '반도체 테마와 수급 키워드가 동시에 증가',
+    key: 'follow-v2-005930-0951'
+  },
+  {
+    time: '09:37',
+    strategy: '커뮤니티 역추종',
+    stock: '에코프로',
+    symbol: '086520',
+    state: '스킵',
+    input: '관심 +24% · 부정 46 · 가격 -1.1%',
+    reason: '관심은 늘었지만 가격과 반응 방향이 엇갈림',
+    key: 'reverse-v1-086520-0937'
+  }
 ];
 
-const themeRows = [
-  { theme: '반도체', naver: 42, dc: 31, ppomppu: 18, fmkorea: 29, leader: '네이버 종토방' },
-  { theme: '2차전지', naver: 16, dc: 38, ppomppu: 21, fmkorea: 14, leader: '디시 주식' },
-  { theme: '로봇·AI', naver: 18, dc: 20, ppomppu: 11, fmkorea: 44, leader: '에펨코리아' },
-  { theme: '미국주식', naver: 8, dc: 35, ppomppu: 12, fmkorea: 18, leader: '디시 주식' },
-  { theme: '배당·가치', naver: 21, dc: 8, ppomppu: 29, fmkorea: 9, leader: '뽐뿌 증권포럼' },
-  { theme: '환율·금리', naver: 14, dc: 24, ppomppu: 18, fmkorea: 12, leader: '디시 주식' }
-];
-
-const topPosts = [
-  { community: '네이버 종토방', stock: '삼성전자', rank: '상위 4%', signal: '조회수 급증' },
-  { community: '에펨코리아', stock: '두산로보틱스', rank: '상위 2%', signal: '댓글 속도 증가' },
-  { community: '디시 주식', stock: '에코프로', rank: '상위 6%', signal: '상위 반응 글 확산' },
-  { community: '토스증권', stock: '한미반도체', rank: '상위 7%', signal: '관심 등록 증가' }
-];
-
-const experiments = [
-  { community: '네이버 종토방', style: '반응 추종', returnPct: '+1.8%', hitRate: '53%', drawdown: '-4.2%' },
-  { community: '디시 주식', style: '반응 역추적', returnPct: '+0.6%', hitRate: '49%', drawdown: '-5.1%' },
-  { community: '에펨코리아', style: '급증 관찰', returnPct: '+2.4%', hitRate: '55%', drawdown: '-3.6%' },
-  { community: '토스증권', style: '관심 등록 변화', returnPct: '+1.2%', hitRate: '51%', drawdown: '-3.9%' }
-];
-
-const agentPersonas = [
-  { name: 'Momentum', label: '언급 급증 추적', returnPct: '+3.2%', winRate: '55%', drawdown: '-3.8%', trades: 18, status: 'active' },
-  { name: 'Contrarian', label: '과열 반대 관찰', returnPct: '+1.1%', winRate: '49%', drawdown: '-5.4%', trades: 12, status: 'watch' },
-  { name: 'Risk Guard', label: '신뢰도 낮으면 스킵', returnPct: '+0.8%', winRate: '58%', drawdown: '-2.1%', trades: 8, status: 'guard' },
-  { name: 'Community Follow', label: '인기글 상위권 추적', returnPct: '+2.4%', winRate: '53%', drawdown: '-4.0%', trades: 21, status: 'active' }
-];
-
-const agentPipeline = [
-  { step: '입력 수집', count: 42, detail: '커뮤니티·가격 snapshot' },
-  { step: '신뢰도 배점', count: 31, detail: '편중·stale·원문 확인' },
-  { step: '판단 key', count: 14, detail: '중복 판단 방지' },
-  { step: 'paper 후보', count: 3, detail: '실거래 아님' }
-];
-
-const agentDecisionLogs = [
-  { time: '10:02', agent: 'Momentum', stock: '삼성전자', action: '관찰 유지', input: '반응 +18p · 가격 +1.2%', state: '판단 생성', key: 'mom-v3-005930-1002' },
-  { time: '09:48', agent: 'Risk Guard', stock: 'NAVER', action: '스킵', input: '부정 +14p · 출처 편중 58%', state: '스킵 사유', key: 'risk-v2-035420-0948' },
-  { time: '09:35', agent: 'Community Follow', stock: '두산로보틱스', action: 'paper 후보', input: '상위 2% 글 · 가격 변동', state: '후보 기록', key: 'follow-v1-454910-0935' },
-  { time: '09:20', agent: 'Contrarian', stock: '에코프로', action: '관찰만', input: '관심 +24% · 가격 -1.1%', state: '판단 생성', key: 'contra-v2-086520-0920' }
-];
-
-const strategyVersions = [
-  { version: 'mom-v3', persona: 'Momentum', rule: '언급 증가 + 가격 지지 + 출처 3개 이상', keys: 6 },
-  { version: 'risk-v2', persona: 'Risk Guard', rule: '출처 편중 55% 이상이면 후보 제외', keys: 4 },
-  { version: 'follow-v1', persona: 'Community Follow', rule: '인기글 상위 N%와 키워드 동시 관찰', keys: 7 },
-  { version: 'contra-v2', persona: 'Contrarian', rule: '가격 하락과 관심 증가 괴리만 관찰', keys: 3 }
+const strategyRules = [
+  { name: '지표 추종', version: 'follow-v2', rule: '언급 증가, 긍정 비율, 가격 snapshot이 같은 방향일 때만 paper 후보로 둡니다.', keys: 9 },
+  { name: '커뮤니티 역추종', version: 'reverse-v1', rule: '과열·부정 편중·가격 괴리가 커질 때 관찰하거나 스킵 사유를 남깁니다.', keys: 6 }
 ];
 </script>
 
 <template>
-  <section class="surface-page communities-page terminal-density-page">
-    <section class="terminal-board human-terminal" aria-labelledby="human-title">
-      <div class="terminal-title-row">
-        <div>
-          <p class="label">human indicator</p>
-          <h2 id="human-title">인간 지표</h2>
-          <span>커뮤니티별 반응, 수집 상태, 내부 상위권 글을 한 번에 비교합니다.</span>
-        </div>
-        <span class="status-pill subtle">커뮤니티 반응 비교</span>
+  <section class="surface-page communities-page human-dashboard-page">
+    <section class="human-hero-panel" aria-labelledby="human-title">
+      <div class="human-hero-copy">
+        <p class="label">human indicator</p>
+        <h2 id="human-title">인간 지표</h2>
+        <span>커뮤니티 반응을 종목 신호, 성과 실험, 모의 에이전트 판단 기록으로 압축해 봅니다.</span>
       </div>
-
-      <nav class="human-view-tabs" aria-label="인간 지표 하위 화면">
+      <nav class="human-view-tabs compact" aria-label="인간 지표 하위 화면">
         <RouterLink
           v-for="tab in humanViewTabs"
           :key="tab.view"
@@ -121,203 +200,145 @@ const strategyVersions = [
           {{ tab.label }}
         </RouterLink>
       </nav>
+    </section>
 
-      <div class="terminal-kpi-row" aria-label="인간 지표 요약">
-        <article v-for="item in humanStats" :key="item.label">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-          <em>{{ item.meta }}</em>
+    <section class="human-signal-board" aria-label="커뮤니티별 언급 급증 종목">
+      <div class="section-band-title full">
+        <div>
+          <p class="label">signal board</p>
+          <h3>커뮤니티별 언급 급증 종목</h3>
+        </div>
+        <span>인기글·개념글 레이어에서 강하게 뜬 종목만 짧게 표시</span>
+      </div>
+      <RouterLink
+        v-for="tile in signalTiles"
+        :key="tile.label"
+        :class="['human-signal-tile', tile.tone]"
+        :to="`/stocks/${tile.symbol}`"
+      >
+        <div class="signal-tile-top">
+          <span>{{ tile.label }}</span>
+          <em>{{ tile.community }}</em>
+        </div>
+        <strong>{{ tile.stock }}</strong>
+        <b>{{ tile.metric }}</b>
+        <p>{{ tile.summary }}</p>
+        <div class="signal-reason-row">
+          <small v-for="reason in tile.reasons" :key="reason">{{ reason }}</small>
+        </div>
+        <i class="signal-pulse-track">
+          <mark :style="{ width: `${tile.pulse}%` }"></mark>
+        </i>
+      </RouterLink>
+    </section>
+
+    <section class="human-main-grid">
+      <article class="human-performance-panel">
+        <div class="section-band-title">
+          <div>
+            <p class="label">paper experiment</p>
+            <h3>커뮤니티 에이전트 수익률 비교 그래프</h3>
+          </div>
+          <span>커뮤니티별 성과 실험 · 1D · 7D · 1M · 3M mock</span>
+        </div>
+        <div class="human-chart-shell">
+          <svg viewBox="0 0 430 130" role="img" aria-label="지표 추종과 커뮤니티 역추종 수익률 비교">
+            <line x1="0" y1="100" x2="420" y2="100" />
+            <line x1="0" y1="68" x2="420" y2="68" />
+            <line x1="0" y1="36" x2="420" y2="36" />
+            <polyline
+              v-for="series in strategySeries"
+              :key="series.name"
+              :class="series.tone"
+              :points="series.points"
+            />
+          </svg>
+          <div class="human-chart-legend">
+            <article v-for="series in strategySeries" :key="series.name">
+              <i :class="series.tone"></i>
+              <strong>{{ series.name }}</strong>
+              <em>{{ series.returnPct }}</em>
+              <span>적중 {{ series.hitRate }} · 최대 낙폭 {{ series.drawdown }}</span>
+            </article>
+          </div>
+        </div>
+      </article>
+
+      <aside class="human-rule-stack">
+        <article v-for="rule in strategyRules" :key="rule.version">
+          <span>{{ rule.version }}</span>
+          <strong>{{ rule.name }}</strong>
+          <p>{{ rule.rule }}</p>
+          <em>판단 key {{ rule.keys }}개</em>
         </article>
+      </aside>
+    </section>
+
+    <section class="human-community-grid" aria-label="커뮤니티별 반응 비교">
+      <div class="section-band-title full">
+        <div>
+          <p class="label">community pulse</p>
+          <h3>커뮤니티별 언급 급증과 반응 비율</h3>
+        </div>
+        <span>커뮤니티별 반응 비교 · 수집 상태 · 언급량 · 긍정/부정 비율</span>
+      </div>
+      <article v-for="community in communityPulses" :key="community.name" class="human-community-tile">
+        <div>
+          <strong>{{ community.name }}</strong>
+          <span>{{ community.status }}</span>
+        </div>
+        <b>{{ community.topStock }}</b>
+        <i class="mention-meter">
+          <mark :style="{ width: `${community.mention}%` }"></mark>
+        </i>
+        <div class="tone-meter">
+          <span class="positive" :style="{ width: `${community.positive}%` }"></span>
+          <span class="negative" :style="{ width: `${community.negative}%` }"></span>
+        </div>
+        <em>{{ community.theme }} · 긍정 {{ community.positive }} / 부정 {{ community.negative }}</em>
+      </article>
+    </section>
+
+    <section id="agent-simulation" class="human-agent-section compact-ledger" aria-labelledby="human-agent-title">
+      <div class="section-band-title">
+        <div>
+          <p class="label">agent simulation</p>
+          <h3 id="human-agent-title">모의 에이전트 판단 기록</h3>
+        </div>
+        <span>최근 판단 로그 · 인간 지표 기반 · 실거래 아님</span>
       </div>
 
-      <section class="human-workbench">
-        <div class="human-source-table">
-          <div class="table-caption">
-            <div>
-              <p class="label">source matrix</p>
-              <h3>커뮤니티별 언급 급증과 반응 비율</h3>
-            </div>
-            <span class="status-pill warning">성과 해석 주의</span>
-          </div>
-          <div class="human-table-head">
-            <span>커뮤니티</span>
-            <span>급증 종목</span>
-            <span>긍정/부정</span>
-            <span>수집 상태</span>
-            <span>관심 테마</span>
-          </div>
-          <article v-for="community in communities" :key="community.name">
-            <div class="community-name-cell">
-              <strong>{{ community.name }}</strong>
-              <span>{{ community.status }}</span>
-            </div>
-            <div>
-              <strong>{{ community.surge }}</strong>
-              <small>{{ community.skipReason }}</small>
-            </div>
-            <div class="community-ratio-cell">
-              <div class="ratio-track">
-                <i class="positive" :style="{ width: `${community.positive}%` }"></i>
-                <i class="negative" :style="{ width: `${community.negative}%` }"></i>
-                <i class="neutral" :style="{ width: `${100 - community.positive - community.negative}%` }"></i>
-              </div>
-              <small>긍정 {{ community.positive }} · 부정 {{ community.negative }}</small>
-            </div>
-            <div>
-              <strong>{{ community.lastCollected }}</strong>
-              <small>{{ community.status }}</small>
-            </div>
-            <strong>{{ community.theme }}</strong>
-          </article>
+      <div class="agent-log-board">
+        <div class="agent-log-head">
+          <span>시간</span>
+          <span>종목</span>
+          <span>전략</span>
+          <span>상태</span>
+          <span>판단 입력값</span>
+          <span>판단 key</span>
         </div>
+        <RouterLink
+          v-for="log in agentLogs"
+          :key="log.key"
+          class="agent-log-row"
+          :to="`/stocks/${log.symbol}`"
+        >
+          <time>{{ log.time }}</time>
+          <strong>{{ log.stock }}</strong>
+          <span>{{ log.strategy }}</span>
+          <em>{{ log.state }}</em>
+          <p>{{ log.input }} · {{ log.reason }}</p>
+          <code>{{ log.key }}</code>
+        </RouterLink>
+      </div>
 
-        <aside class="human-side-rail">
-          <section>
-            <p class="label">surge board</p>
-            <h3>커뮤니티별 언급 급증 종목</h3>
-            <article v-for="(stock, index) in surgeStocks" :key="`${stock.stock}-${stock.community}`">
-              <b>{{ index + 1 }}</b>
-              <div>
-                <strong>{{ stock.stock }}</strong>
-                <span>{{ stock.community }} · {{ stock.tone }}</span>
-              </div>
-              <em>{{ stock.delta }}</em>
-            </article>
-          </section>
-          <section>
-            <p class="label">source state</p>
-            <h3>수집 상태</h3>
-            <div class="policy-grid">
-              <span v-for="state in sourceStates" :key="state.status">
-                <strong>{{ state.count }}</strong>
-                {{ state.status }}
-              </span>
-            </div>
-          </section>
-        </aside>
-      </section>
-
-      <section class="human-theme-table" aria-label="커뮤니티별 관심 테마">
-        <div class="table-caption">
-          <div>
-            <p class="label">theme map</p>
-            <h3>커뮤니티별 관심 테마</h3>
-          </div>
-        </div>
-        <div class="theme-row theme-head">
-          <span>테마</span><span>네이버</span><span>디시</span><span>뽐뿌</span><span>에펨</span><span>강한 곳</span>
-        </div>
-        <div v-for="theme in themeRows" :key="theme.theme" class="theme-row">
-          <strong>{{ theme.theme }}</strong>
-          <span>{{ theme.naver }}</span>
-          <span>{{ theme.dc }}</span>
-          <span>{{ theme.ppomppu }}</span>
-          <span>{{ theme.fmkorea }}</span>
-          <em>{{ theme.leader }}</em>
-        </div>
-      </section>
-
-      <section class="human-bottom-strip">
-        <div>
-          <p class="label">top layer</p>
-          <h3>인기글·개념글 레이어</h3>
-          <article v-for="post in topPosts" :key="`${post.community}-${post.stock}`">
-            <span>{{ post.community }}</span>
-            <strong>{{ post.stock }}</strong>
-            <em>{{ post.rank }} · {{ post.signal }}</em>
-          </article>
-        </div>
-        <div>
-          <p class="label">paper experiment</p>
-          <h3>커뮤니티별 성과 실험</h3>
-          <article v-for="experiment in experiments" :key="`${experiment.community}-${experiment.style}`">
-            <span>{{ experiment.style }}</span>
-            <strong>{{ experiment.community }}</strong>
-            <em>{{ experiment.returnPct }} · 적중률 {{ experiment.hitRate }} · 최대 낙폭 {{ experiment.drawdown }}</em>
-          </article>
-        </div>
-      </section>
-
-      <section id="agent-simulation" class="human-agent-section" aria-labelledby="human-agent-title">
-        <div class="table-caption">
-          <div>
-            <p class="label">agent simulation</p>
-            <h3 id="human-agent-title">모의 에이전트 판단 기록</h3>
-          </div>
-          <span class="status-pill warning">인간 지표 기반 · 실거래 아님</span>
-        </div>
-
-        <section class="agent-ledger-layout">
-          <div class="agent-leaderboard">
-            <div class="table-caption">
-              <div>
-                <p class="label">paper leaderboard</p>
-                <h3>페르소나별 모의 성과</h3>
-              </div>
-            </div>
-            <article v-for="persona in agentPersonas" :key="persona.name">
-              <span :class="['agent-state-dot', persona.status]"></span>
-              <div>
-                <strong>{{ persona.name }}</strong>
-                <small>{{ persona.label }}</small>
-              </div>
-              <em>{{ persona.returnPct }}</em>
-              <span>승률 {{ persona.winRate }}</span>
-              <span>낙폭 {{ persona.drawdown }}</span>
-              <span>{{ persona.trades }}회</span>
-            </article>
-          </div>
-
-          <aside class="agent-pipeline">
-            <div>
-              <p class="label">input pipeline</p>
-              <h3>판단 입력값</h3>
-            </div>
-            <article v-for="item in agentPipeline" :key="item.step">
-              <strong>{{ item.count }}</strong>
-              <span>{{ item.step }}</span>
-              <em>{{ item.detail }}</em>
-            </article>
-          </aside>
-        </section>
-
-        <section class="agent-log-terminal">
-          <div class="table-caption">
-            <div>
-              <p class="label">decision log</p>
-              <h3>최근 판단 로그</h3>
-            </div>
-            <span class="status-pill subtle">판단 key로 중복 방지</span>
-          </div>
-          <div class="agent-log-head">
-            <span>시간</span><span>종목</span><span>에이전트</span><span>상태</span><span>입력값</span><span>판단 key</span>
-          </div>
-          <article v-for="log in agentDecisionLogs" :key="log.key">
-            <time>{{ log.time }}</time>
-            <strong>{{ log.stock }}</strong>
-            <span>{{ log.agent }} · {{ log.action }}</span>
-            <em>{{ log.state }}</em>
-            <span>{{ log.input }}</span>
-            <code>{{ log.key }}</code>
-          </article>
-        </section>
-
-        <section class="strategy-version-table">
-          <div class="table-caption">
-            <div>
-              <p class="label">strategy versions</p>
-              <h3>전략 버전과 판단 key 기준</h3>
-            </div>
-            <span class="status-pill subtle">모의 판단 기록</span>
-          </div>
-          <article v-for="strategy in strategyVersions" :key="strategy.version">
-            <strong>{{ strategy.version }}</strong>
-            <span>{{ strategy.persona }}</span>
-            <em>{{ strategy.rule }}</em>
-            <b>{{ strategy.keys }} keys</b>
-          </article>
-        </section>
-      </section>
+      <div class="strategy-key-strip" aria-label="전략 버전과 판단 key 기준">
+        <article v-for="rule in strategyRules" :key="`${rule.version}-strip`">
+          <strong>전략 버전과 판단 key 기준</strong>
+          <span>{{ rule.version }} · {{ rule.name }}</span>
+          <em>{{ rule.rule }}</em>
+        </article>
+      </div>
     </section>
   </section>
 </template>

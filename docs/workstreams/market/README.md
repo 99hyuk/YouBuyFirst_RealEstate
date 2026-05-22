@@ -35,6 +35,7 @@
 - community signal schema
 - dashboard API contract
 - stock detail roast headline API contract
+- stock detail chart candle display contract
 - external quote provider 이용 조건 문서
 - trade execution price contract
 - agent market input contract
@@ -54,7 +55,7 @@
 - 공개 응답에는 `symbol`, `name`, `market`, `currency`, `price`, `change`, `changePct`, `volume`, `asOf`, `provider`, `delayLabel`, `stale`, `dataStatus`가 포함됩니다.
 - 프론트 fixture는 같은 응답 shape로 맞춰져 있어 mock에서 API 호출로 교체할 수 있습니다.
 - 세부 계약과 예시 JSON은 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.
-- chart candle slice는 `POST /internal/market/chart-candles`로 bounded OHLC bars를 저장하고, `GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d`로 프론트 차트용 display-only 응답을 제공합니다.
+- chart candle slice는 `POST /internal/market/chart-candles`로 bounded OHLC bars를 저장하고, `GET /api/market/chart-candles?symbol=005930.KS&range=5Y&interval=1d` 같은 프론트 차트용 display-only 응답을 제공합니다. 공개 범위는 `1M/3M/6M/1Y/3Y/5Y`까지만 허용합니다.
 - chart candle 응답에는 `symbol`, `name`, `market`, `currency`, `range`, `interval`, `provider`, `delayLabel`, `asOf`, `stale`, `dataStatus`, `bars`, `displayPolicy`가 포함됩니다.
 - chart candle bars에는 `date`, `open`, `high`, `low`, `close`, `volume`만 포함하며 개인/외국인/기관 수급은 별도 전 거래일 수급 slice로 분리합니다.
 - pipeline `serve` runtime은 market refresh job을 함께 등록해 `quote_snapshots`와 `chart_candle_sets` display cache를 기본 10분 주기로 갱신합니다.
@@ -71,7 +72,7 @@
 - `.KS`/`.KQ` quote는 Yahoo Finance 원천 20분 지연과 pipeline 기본 10분 갱신 주기를 합쳐 공개 화면에서는 최대 30분 지연으로 표시합니다.
 - 미국 quote는 지연 시간을 단정하지 않고 10분 주기 refresh snapshot으로 표시합니다.
 - 종목별 개인/외국인/기관 수급은 quote snapshot과 분리하고 전 거래일 기준 데이터로만 다룹니다.
-- 차트 전체는 우선 TradingView 같은 외부 위젯을 사용하거나, 자체 차트는 내부 quote snapshot 기반으로 제한된 범위에서 구성합니다.
+- 차트 전체는 우선 TradingView 같은 외부 위젯을 사용하거나, 별도 chart candle display API가 있을 때만 자체 차트로 구성합니다. quote snapshot만으로 캔들을 만들거나 fixture를 실제 종목 차트처럼 보이게 하지 않습니다.
 - 원시 분봉, 호가, 대량 OHLC, 다운로드/API 형태의 재배포는 별도 계약이나 명확한 허용 조건 전까지 만들지 않습니다.
 - 서비스 트래픽이 커지거나 수익화/상용화 단계로 넘어가면 국내는 KRX/KOSCOM, 미국은 public display 권한이 있는 데이터 벤더 계약을 다시 검토합니다.
 - quote snapshot 세부 API 계약, 캐시/stale 기준, KODEX 200 수급 후보는 `docs/workstreams/market/quote-snapshot.md`를 기준으로 봅니다.

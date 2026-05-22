@@ -200,7 +200,7 @@ def test_market_chart_candle_provider_builds_display_only_contract():
             "displayOnly": True,
             "rawMinute": False,
             "downloadable": False,
-            "maxBars": 260,
+            "maxBars": 66,
         },
     }
     assert "individual" not in str(response)
@@ -227,3 +227,4 @@ def test_yfinance_chart_candle_client_maps_public_range_to_yfinance_period():
 
     assert client.period_for("3M") == "3mo"
     assert client.period_for("1Y") == "1y"
+    assert client.period_for("3Y") == "5y"

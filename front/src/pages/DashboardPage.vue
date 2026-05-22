@@ -12,6 +12,7 @@ const drawerTabs = [
   { id: 'watch', label: '관심' }
 ];
 const activeDrawerTab = ref('reaction');
+const retailSentimentIndex = dashboardSummary.retailSentimentIndex;
 const topRiser = dashboardSummary.risingStars[0];
 const totalMentions = reactionRanking.items.reduce((sum, item) => sum + item.mentionCount, 0);
 const staleQuoteCount = quoteSnapshots.items.filter((quote) => quote.stale).length;
@@ -87,6 +88,24 @@ const widePointString = (pointString: string) =>
     })
     .join(' ');
 const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length - 1]?.x ?? 0) + 8, 1138);
+const gaugeCenter = { x: 92, y: 92 };
+const gaugeRadius = 70;
+const gaugePoint = (value: number, radius = gaugeRadius) => {
+  const angle = (180 - value * 1.8) * (Math.PI / 180);
+
+  return {
+    x: Math.round((gaugeCenter.x + Math.cos(angle) * radius) * 10) / 10,
+    y: Math.round((gaugeCenter.y - Math.sin(angle) * radius) * 10) / 10
+  };
+};
+const gaugeArcPath = (start: number, end: number) => {
+  const startPoint = gaugePoint(start);
+  const endPoint = gaugePoint(end);
+  const largeArcFlag = end - start > 50 ? 1 : 0;
+
+  return `M ${startPoint.x} ${startPoint.y} A ${gaugeRadius} ${gaugeRadius} 0 ${largeArcFlag} 1 ${endPoint.x} ${endPoint.y}`;
+};
+const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
 </script>
 
 <template>
@@ -94,11 +113,42 @@ const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length
     <section class="standalone-search" aria-label="대시보드 검색과 필터">
       <p class="eyebrow">{{ reactionRanking.windowLabel }} · mock data</p>
       <div class="search-line">
-        <button class="mock-search" type="button" disabled>
-          <span class="search-icon" aria-hidden="true"></span>
-          <strong>/</strong>
-          <span>종목이나 키워드 검색</span>
-        </button>
+        <div class="search-primary-row">
+          <aside class="retail-sentiment-gauge-card" aria-label="개미 심리 지수">
+            <div class="retail-sentiment-copy">
+              <span>{{ retailSentimentIndex.label }}</span>
+              <strong>{{ retailSentimentIndex.value }}<small>{{ retailSentimentIndex.unit }}</small></strong>
+              <em>{{ retailSentimentIndex.status }} · {{ retailSentimentIndex.changeLabel }} {{ formatPct(retailSentimentIndex.changePct) }}</em>
+              <div class="retail-sentiment-keywords" aria-label="대표 반응 키워드">
+                <span v-for="keyword in retailSentimentIndex.keywords.slice(0, 2)" :key="keyword">{{ keyword }}</span>
+              </div>
+            </div>
+            <div class="retail-gauge-wrap">
+              <svg class="retail-gauge" viewBox="0 0 184 104" role="img" :aria-label="`${retailSentimentIndex.label} ${retailSentimentIndex.value}${retailSentimentIndex.unit}`">
+                <path class="gauge-base" :d="gaugeArcPath(0, 100)" />
+                <path
+                  v-for="segment in retailSentimentIndex.segments"
+                  :key="segment.label"
+                  class="gauge-segment"
+                  :d="gaugeArcPath(segment.start, segment.end)"
+                  :stroke="segment.color"
+                />
+                <line class="gauge-needle" :x1="gaugeCenter.x" :y1="gaugeCenter.y" :x2="needleEnd.x" :y2="needleEnd.y" />
+                <circle class="gauge-hub" :cx="gaugeCenter.x" :cy="gaugeCenter.y" r="4.6" />
+              </svg>
+              <div class="retail-gauge-scale" aria-hidden="true">
+                <span>공포</span>
+                <span>중립</span>
+                <span>탐욕</span>
+              </div>
+            </div>
+          </aside>
+          <button class="mock-search" type="button" disabled>
+            <span class="search-icon" aria-hidden="true"></span>
+            <strong>/</strong>
+            <span>종목이나 키워드 검색</span>
+          </button>
+        </div>
         <p>{{ dashboardSummary.headline }}</p>
       </div>
       <div class="market-filter-row" aria-label="지금 뜨는 반응 필터">

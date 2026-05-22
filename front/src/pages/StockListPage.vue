@@ -1,4 +1,6 @@
 <script setup lang="ts">
+type Tone = 'up' | 'down';
+
 type StockRankingRow = {
   rank: number;
   name: string;
@@ -12,7 +14,7 @@ type StockRankingRow = {
   negative: number;
   event: string;
   freshness: string;
-  tone: 'up' | 'down';
+  tone: Tone;
 };
 
 const domesticRows: StockRankingRow[] = [
@@ -23,7 +25,7 @@ const domesticRows: StockRankingRow[] = [
   { rank: 5, name: 'NAVER', symbol: '035420', market: 'KRX', price: '182,600원', change: '+0.70%', volume: '6.2M', volumeDelta: '+18%', positive: 29, negative: 48, event: '비용 우려', freshness: '09:43 · 지연', tone: 'up' },
   { rank: 6, name: '에코프로', symbol: '086520', market: 'KRX', price: '128,600원', change: '-1.10%', volume: '5.9M', volumeDelta: '+24%', positive: 34, negative: 46, event: '2차전지 수급', freshness: '09:45 · 지연', tone: 'down' },
   { rank: 7, name: '한미반도체', symbol: '042700', market: 'KRX', price: '171,500원', change: '+3.20%', volume: '4.8M', volumeDelta: '+22%', positive: 58, negative: 21, event: '장비 수주', freshness: '09:47 · mock', tone: 'up' },
-  { rank: 8, name: 'LG전자', symbol: '066570', market: 'KRX', price: '238,500원', change: '+0.90%', volume: '4.3M', volumeDelta: '+15%', positive: 44, negative: 32, event: '전장 키워드', freshness: '09:42 · 지연', tone: 'up' },
+  { rank: 8, name: 'LG전자', symbol: '066570', market: 'KRX', price: '238,500원', change: '+0.90%', volume: '4.3M', volumeDelta: '+15%', positive: 44, negative: 32, event: '전장 수요', freshness: '09:42 · 지연', tone: 'up' },
   { rank: 9, name: '현대차', symbol: '005380', market: 'KRX', price: '242,000원', change: '-0.80%', volume: '3.9M', volumeDelta: '+9%', positive: 36, negative: 41, event: '환율·수출', freshness: '09:41 · 지연', tone: 'down' },
   { rank: 10, name: '삼성SDI', symbol: '006400', market: 'KRX', price: '356,000원', change: '-1.30%', volume: '3.2M', volumeDelta: '+8%', positive: 31, negative: 47, event: '배터리 마진', freshness: '09:39 · mock', tone: 'down' }
 ];
@@ -42,18 +44,8 @@ const overseasRows: StockRankingRow[] = [
 ];
 
 const rankingGroups = [
-  {
-    id: 'domestic',
-    title: '국장 거래량 TOP 10',
-    caption: 'KRX · ETF 포함',
-    rows: domesticRows
-  },
-  {
-    id: 'overseas',
-    title: '해외 거래량 TOP 10',
-    caption: 'NASDAQ · NYSE · ETF 포함',
-    rows: overseasRows
-  }
+  { id: 'domestic', title: '국장 거래량 TOP 10', caption: 'KRX · ETF 포함', rows: domesticRows },
+  { id: 'overseas', title: '해외 거래량 TOP 10', caption: 'NASDAQ · NYSE · ETF 포함', rows: overseasRows }
 ];
 
 const filters = ['거래량 급증', '언급 증가', '가격 괴리', '부정 증가', '원문 링크 있음', 'stale 제외'];
@@ -62,7 +54,14 @@ const rankSummary = [
   { label: '정렬 기준', value: '거래량', meta: 'mock volume' },
   { label: '국장 표시', value: '10종목', meta: 'KRX·ETF' },
   { label: '해외 표시', value: '10종목', meta: 'US·ETF' },
-  { label: '보조 지표', value: '반응', meta: '긍정/부정·이벤트' }
+  { label: '보조 지표', value: '반응', meta: '긍정/부정 비율' }
+];
+
+const focusTiles = [
+  { label: '거래량 급증', value: '삼성전자', meta: '18.4M · +34%' },
+  { label: '긍정 우세', value: 'NVIDIA', meta: '긍정 68 / 부정 15' },
+  { label: '부정 증가', value: 'NAVER', meta: '부정 48 · 비용 우려' },
+  { label: '라이징', value: '두산로보틱스', meta: '언급 +42% · 로봇' }
 ];
 
 const hotThemes = [
@@ -74,108 +73,114 @@ const hotThemes = [
 </script>
 
 <template>
-  <section class="surface-page stocks-page">
-    <section class="stock-board-shell">
-      <div class="stock-board-top">
-        <div>
-          <p class="label">stock screener</p>
-          <h2>종목 거래량 순위</h2>
-          <span>국장과 해외를 나눠 보고, 반응 변화는 보조로 확인합니다.</span>
-        </div>
-        <div class="stock-board-search">
-          <span aria-hidden="true">⌕</span>
-          <strong>종목명·티커·키워드 검색</strong>
-          <em>목록에서 종목을 눌러 상세로 이동</em>
-        </div>
+  <section class="surface-page stocks-page stock-screener-page">
+    <section class="stock-screener-hero">
+      <div>
+        <p class="label">stock screener</p>
+        <h2>종목 거래량 순위</h2>
+        <span>목록에서 종목을 눌러 상세로 이동하고, 가격보다 반응 변화가 큰 종목을 먼저 훑습니다.</span>
       </div>
-
-      <div class="stock-filter-strip" aria-label="종목 필터">
-        <button v-for="filter in filters" :key="filter" type="button">{{ filter }}</button>
+      <div class="stock-search-pill">
+        <span aria-hidden="true">⌕</span>
+        <strong>종목이나 키워드 검색</strong>
+        <em>mock</em>
       </div>
-
-      <div class="rank-summary-strip" aria-label="랭킹 요약">
-        <article v-for="item in rankSummary" :key="item.label">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-          <em>{{ item.meta }}</em>
-        </article>
-      </div>
-
-      <div class="market-ranking-grid" aria-label="국장과 해외 거래량 순위">
-        <section
-          v-for="group in rankingGroups"
-          :key="group.id"
-          class="stock-screener-table market-ranking-card"
-          :aria-label="group.title"
-        >
-          <div class="market-ranking-title">
-            <div>
-              <p class="label">{{ group.caption }}</p>
-              <h3>{{ group.title }}</h3>
-            </div>
-            <span class="status-pill subtle">거래량순 mock</span>
-          </div>
-
-          <div class="market-ranking-head">
-            <span>순위</span>
-            <span>종목</span>
-            <span>거래량</span>
-            <span>반응</span>
-            <span>이벤트</span>
-          </div>
-
-          <RouterLink
-            v-for="row in group.rows"
-            :key="row.symbol"
-            class="stock-screener-row market-ranking-row"
-            :to="`/stocks/${row.symbol}`"
-          >
-            <b>{{ row.rank }}</b>
-            <div>
-              <strong>{{ row.name }}</strong>
-              <small>{{ row.symbol }} · {{ row.market }} · {{ row.price }} <em :class="row.tone">{{ row.change }}</em></small>
-            </div>
-            <div>
-              <strong>{{ row.volume }}</strong>
-              <em>{{ row.volumeDelta }}</em>
-            </div>
-            <div class="stock-mini-ratio">
-              <span>{{ row.positive }}</span>
-              <i>
-                <mark :style="{ width: `${row.positive}%` }"></mark>
-                <mark class="down" :style="{ width: `${row.negative}%` }"></mark>
-              </i>
-              <span>{{ row.negative }}</span>
-            </div>
-            <div>
-              <span>{{ row.event }}</span>
-              <small>{{ row.freshness }}</small>
-            </div>
-          </RouterLink>
-        </section>
-      </div>
-
-      <aside class="stock-side-console market-ranking-console" aria-label="랭킹 보조 지표">
-        <section>
-          <p class="label">theme heat</p>
-          <h3>급증 테마</h3>
-          <article v-for="theme in hotThemes" :key="theme.theme">
-            <strong>{{ theme.theme }}</strong>
-            <span>{{ theme.count }}종목</span>
-            <i><mark :style="{ width: `${theme.heat}%` }"></mark></i>
-          </article>
-        </section>
-        <section>
-          <p class="label">data clock</p>
-          <h3>데이터 기준</h3>
-          <div class="clock-grid">
-            <span>수집</span><strong>10:05</strong>
-            <span>가격</span><strong>15분 지연</strong>
-            <span>거래량</span><strong>mock</strong>
-            <span>상태</span><strong>demo</strong>
-          </div>
-        </section>
-      </aside>
     </section>
+
+    <section class="stock-focus-strip" aria-label="종목 핵심 신호">
+      <article v-for="tile in focusTiles" :key="tile.label">
+        <span>{{ tile.label }}</span>
+        <strong>{{ tile.value }}</strong>
+        <em>{{ tile.meta }}</em>
+      </article>
+    </section>
+
+    <div class="stock-filter-strip" aria-label="종목 필터">
+      <button v-for="filter in filters" :key="filter" type="button">{{ filter }}</button>
+    </div>
+
+    <section class="rank-summary-strip" aria-label="랭킹 요약">
+      <article v-for="item in rankSummary" :key="item.label">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <em>{{ item.meta }}</em>
+      </article>
+    </section>
+
+    <section class="market-ranking-grid" aria-label="국장과 해외 거래량 순위">
+      <div
+        v-for="group in rankingGroups"
+        :key="group.id"
+        class="stock-rank-panel"
+        :aria-label="group.title"
+      >
+        <div class="section-band-title">
+          <div>
+            <p class="label">{{ group.caption }}</p>
+            <h3>{{ group.title }}</h3>
+          </div>
+          <span>거래량순 mock</span>
+        </div>
+
+        <div class="market-ranking-head">
+          <span>순위</span>
+          <span>종목</span>
+          <span>거래량</span>
+          <span>반응</span>
+          <span>이벤트</span>
+        </div>
+
+        <RouterLink
+          v-for="row in group.rows"
+          :key="row.symbol"
+          class="market-ranking-row"
+          :to="`/stocks/${row.symbol}`"
+        >
+          <b>{{ row.rank }}</b>
+          <div>
+            <strong>{{ row.name }}</strong>
+            <small>{{ row.symbol }} · {{ row.market }} · {{ row.price }} <em :class="row.tone">{{ row.change }}</em></small>
+          </div>
+          <div>
+            <strong>{{ row.volume }}</strong>
+            <em>{{ row.volumeDelta }}</em>
+          </div>
+          <div class="stock-mini-ratio">
+            <span>{{ row.positive }}</span>
+            <i>
+              <mark :style="{ width: `${row.positive}%` }"></mark>
+              <mark class="down" :style="{ width: `${row.negative}%` }"></mark>
+            </i>
+            <span>{{ row.negative }}</span>
+          </div>
+          <div>
+            <span>{{ row.event }}</span>
+            <small>{{ row.freshness }}</small>
+          </div>
+        </RouterLink>
+      </div>
+    </section>
+
+    <aside class="stock-side-console market-ranking-console" aria-label="랭킹 보조 지표">
+      <section>
+        <p class="label">theme heat</p>
+        <h3>급증 테마</h3>
+        <article v-for="theme in hotThemes" :key="theme.theme">
+          <strong>{{ theme.theme }}</strong>
+          <span>{{ theme.count }}종목</span>
+          <i><mark :style="{ width: `${theme.heat}%` }"></mark></i>
+        </article>
+      </section>
+      <section>
+        <p class="label">data clock</p>
+        <h3>데이터 기준</h3>
+        <div class="clock-grid">
+          <span>수집</span><strong>10:05</strong>
+          <span>가격</span><strong>15분 지연</strong>
+          <span>거래량</span><strong>mock</strong>
+          <span>상태</span><strong>demo</strong>
+        </div>
+      </section>
+    </aside>
   </section>
 </template>

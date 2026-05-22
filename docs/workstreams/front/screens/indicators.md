@@ -3,47 +3,58 @@
 ## Route
 
 - Parent: root
-- Route 후보: `/indicators`
-- Child screens: 지표 개별 설명 panel은 `stock-indicator-detail` 후보와 공유 가능
+- Overview route: `/indicators`
+- Detail routes:
+  - `/indicators/domestic`
+  - `/indicators/us`
+  - `/indicators/bonds`
+  - `/indicators/commodities`
 
 ## 화면 목적
 
-시장 지표와 커뮤니티 반응을 같이 보여주고, 가격과 반응이 엇갈리는 종목이나 테마를 찾아냅니다. 일반 금융 대시보드가 아니라 커뮤니티 반응과 시장 지표의 괴리를 보여주는 화면입니다.
+시장 전체 분위기를 일반 금융 대시보드처럼 길게 설명하지 않고, 핵심 지표와 커뮤니티 반응의 괴리를 한눈에 보여줍니다. 상세한 지표 묶음은 국내주식, 미국주식, 채권, 원자재 상세 route에서 확인합니다.
 
 ## 현재 섹션
 
-- 시장 지표 tape: KOSPI, KOSDAQ, NASDAQ, 환율, VIX, 금리, SOX 등
-- 가격과 반응이 엇갈린 종목
-- 섹터/테마별 반응 히트맵
-- 국장/미장 섹터 방향 보드: 정사각형에 가까운 타일로 각 섹터의 상승/하락 방향과 강도를 표시
-- 주요 일정: CPI, FOMC, 실적, 공시
+- 핵심 지표 카드: 국내주식, 미국주식, 채권, 원자재
+- 각 카드: 대표 변화율, 한 줄 해석, 지표 chip, 상세 route 링크
+- 국장 섹터 방향: 정사각형에 가까운 섹터 타일, 상승/하락 방향, 강도 막대
+- 미장 섹터 방향: AI 반도체, 빅테크, 에너지, 소비재, 헬스케어, 리츠
+- 가격과 반응이 엇갈린 종목: 가격 변화, 반응 변화, 이유를 표로 표시
+- 섹터·테마별 반응 히트맵: chip map
 - 지표별 데이터 신선도
+- 주요 일정: CPI, FOMC, 실적, 공시
 
-## 상태와 빈 화면
+## 상세 route 섹션
 
-- loading: market tape skeleton을 먼저 보여줍니다.
-- empty: 시장 지표는 유지하고 커뮤니티 괴리 섹션만 빈 상태로 둡니다.
-- error: market, data, schedule 실패를 분리합니다.
-- stale/mock: 지표별 `state`와 신선도 표에 표시합니다.
+- 별도 분석 hero: 카테고리명, 대표 변화율, 전체 핵심 보기 링크
+- 상세 KPI grid: 상승 섹터 수, 커뮤니티 괴리, 일정 민감도, 시장 폭
+- 가격·반응 동시 변화 chart shell
+- 지표별 데이터 신선도와 연결 키워드
+- 가격과 반응이 엇갈린 종목 table
+
+## UI 기준
+
+- 탭 첫 화면은 핵심 정보만 보여줍니다.
+- 긴 설명은 카드, chip, 막대, 표, 섹터 타일로 치환합니다.
+- 상세 내용은 overview 카드 아래에 붙이지 않고 별도 route의 분석 페이지로 분리합니다.
+- 상승은 빨강, 하락은 파랑 계열을 유지합니다.
+- `추천`, `진입`, `확정 시그널` 같은 투자 자문형 표현은 쓰지 않습니다.
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| Field | Owner Track | Description |
 | --- | --- | --- |
-| `marketIndicators` | market | 지수, 환율, VIX, 금리, 원자재 |
-| `marketIndicators[].reaction` | data | 해당 지표와 연결된 커뮤니티 반응 변화 |
-| `anomalyRows` | market/data | 가격 상승·부정 증가, 가격 하락·관심 증가 등 |
-| `themeHeatmap` | data | 섹터/테마별 언급과 반응 점수 |
-| `sectorBreadthGroups` | market/data | 국장, 미장 섹터별 상승/하락 방향, 변화율, 강도와 기준 시각 |
-| `schedules` | market/backend | 주요 일정과 영향 후보 |
-| `freshnessRows` | backend | 데이터 신선도와 사용처 |
+| `marketGroups` | market/data | 국내주식, 미국주식, 채권, 원자재 핵심 지표 묶음 |
+| `detailRows` | market/data | 상세 route별 지표 목록 |
+| `domesticSectors` | market/data | 국장 섹터 방향과 강도 |
+| `usSectors` | market/data | 미장 섹터 방향과 강도 |
+| `anomalyRows` | market/data | 가격과 반응이 엇갈린 종목 |
+| `freshnessRows` | backend | 지표별 데이터 신선도 |
+| `schedules` | market/backend | 주요 일정 |
 
-## 기획자 확인 필요
+## 기획 확인 필요
 
-- 지표와 커뮤니티 반응의 연결 산식을 어떤 수준까지 노출할지.
-- CPI/FOMC 같은 일정은 수동 mock, 공개 API, 크롤링 중 무엇으로 시작할지.
-- 가격/반응 괴리 종목을 투자 시그널처럼 보이지 않게 하는 문구 기준.
-
-## 변경 로그
-
-- 2026-05-18: Screen Brief 신규 작성. 시장 지표와 커뮤니티 괴리 중심으로 기준화.
+- 상세 route의 최종 정보량과 API 응답 단위.
+- 섹터 분류 기준: KRX 업종, 자체 테마, 외부 provider 분류 중 무엇을 우선할지.
+- 채권/원자재 지표의 공개 배포 가능 데이터 provider.

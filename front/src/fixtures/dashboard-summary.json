@@ -4,6 +4,27 @@
   "headline": "투자자들이 먼저 떠드는 종목을 읽습니다",
   "description": "커뮤니티 반응이 커진 종목을 mock 데이터로 빠르게 훑어보고, 실제 API 계약 전까지 필요한 기획 질문을 남깁니다.",
   "notice": "투자 자문이 아니라 커뮤니티 반응을 관찰하는 참고 화면입니다.",
+  "retailSentimentIndex": {
+    "label": "개미 심리 지수",
+    "value": 73,
+    "unit": "점",
+    "changePct": 6.4,
+    "changeLabel": "어제 대비",
+    "keywords": ["실적 경계", "반도체 과열", "저가 매수 언급"],
+    "status": "탐욕",
+    "segments": [
+      { "label": "공포", "start": 0, "end": 25, "color": "#dfe6ee" },
+      { "label": "경계", "start": 25, "end": 50, "color": "#edf1f5" },
+      { "label": "중립", "start": 50, "end": 65, "color": "#d7eadf" },
+      { "label": "탐욕", "start": 65, "end": 85, "color": "#72c79a" },
+      { "label": "과열", "start": 85, "end": 100, "color": "#f0a66e" }
+    ],
+    "history": [
+      { "label": "전일", "value": 67, "status": "탐욕" },
+      { "label": "1주 전", "value": 58, "status": "중립" },
+      { "label": "1개월 전", "value": 42, "status": "경계" }
+    ]
+  },
   "activeMoodPeriod": "1D",
   "moodPeriods": ["1D", "7D", "1M", "3M"],
   "activeReturnPeriod": "1M",

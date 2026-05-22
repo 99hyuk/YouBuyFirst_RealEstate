@@ -16,14 +16,22 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 @Service
 public class ChartCandleService {
 
-    private static final Set<String> ALLOWED_RANGES = Set.of("1M", "3M", "6M", "1Y");
+    private static final Set<String> ALLOWED_RANGES = Set.of("1M", "3M", "6M", "1Y", "3Y", "5Y");
     private static final Set<String> ALLOWED_INTERVALS = Set.of("1d", "1wk", "1mo");
-    private static final int MAX_BARS = 260;
+    private static final Map<String, Integer> MAX_BARS_BY_RANGE = Map.of(
+            "1M", 22,
+            "3M", 66,
+            "6M", 132,
+            "1Y", 252,
+            "3Y", 756,
+            "5Y", 1260
+    );
 
     private final ChartCandleSetRepository repository;
     private final Duration staleAfter;
@@ -44,7 +52,7 @@ public class ChartCandleService {
             String range = normalizeRange(request.range());
             String interval = normalizeInterval(request.interval());
             validateRangeAndInterval(range, interval);
-            List<ChartCandleBarRequest> bars = boundedBars(request.bars());
+            List<ChartCandleBarRequest> bars = boundedBars(request.bars(), range);
             String dataStatus = bars.isEmpty() ? "INSUFFICIENT" : normalizeUpper(request.dataStatus());
 
             ChartCandleSet candleSet = repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(symbol, range, interval)
@@ -107,7 +115,7 @@ public class ChartCandleService {
                 stale,
                 dataStatus,
                 bars,
-                displayPolicy()
+                displayPolicy(candleSet.getRangeLabel())
         );
     }
 
@@ -126,7 +134,7 @@ public class ChartCandleService {
                 true,
                 "INSUFFICIENT",
                 List.of(),
-                displayPolicy()
+                displayPolicy(range)
         );
     }
 
@@ -137,16 +145,20 @@ public class ChartCandleService {
         return candleSet.getAsOf().plus(staleAfter).isBefore(Instant.now());
     }
 
-    private static List<ChartCandleBarRequest> boundedBars(List<ChartCandleBarRequest> bars) {
+    private static List<ChartCandleBarRequest> boundedBars(List<ChartCandleBarRequest> bars, String range) {
         List<ChartCandleBarRequest> sorted = bars.stream()
                 .sorted(Comparator.comparing(ChartCandleBarRequest::date))
                 .toList();
-        int from = Math.max(0, sorted.size() - MAX_BARS);
+        int from = Math.max(0, sorted.size() - maxBarsForRange(range));
         return sorted.subList(from, sorted.size());
     }
 
-    private static ChartCandleDisplayPolicyResponse displayPolicy() {
-        return new ChartCandleDisplayPolicyResponse(true, false, false, MAX_BARS);
+    private static ChartCandleDisplayPolicyResponse displayPolicy(String range) {
+        return new ChartCandleDisplayPolicyResponse(true, false, false, maxBarsForRange(range));
+    }
+
+    private static int maxBarsForRange(String range) {
+        return MAX_BARS_BY_RANGE.getOrDefault(range, MAX_BARS_BY_RANGE.get("5Y"));
     }
 
     private static void validateRangeAndInterval(String range, String interval) {

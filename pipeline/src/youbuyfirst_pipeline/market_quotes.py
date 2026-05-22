@@ -98,7 +98,7 @@ class ChartCandleSet:
     stale: bool
     data_status: str
     bars: list[ChartCandleBar]
-    max_bars: int = 260
+    max_bars: int = 1260
 
     def to_api_dict(self) -> dict:
         return {
@@ -191,6 +191,8 @@ class YFinanceChartCandleClient:
         "3M": "3mo",
         "6M": "6mo",
         "1Y": "1y",
+        "3Y": "5y",
+        "5Y": "5y",
     }
 
     def period_for(self, chart_range: str) -> str:
@@ -343,8 +345,16 @@ class MarketQuoteProvider:
         return [self.snapshot(symbol, now=now) for symbol in symbols]
 
 
-_ALLOWED_CHART_RANGES = {"1M", "3M", "6M", "1Y"}
+_ALLOWED_CHART_RANGES = {"1M", "3M", "6M", "1Y", "3Y", "5Y"}
 _ALLOWED_CHART_INTERVALS = {"1d", "1wk", "1mo"}
+_MAX_CHART_BARS_BY_RANGE = {
+    "1M": 22,
+    "3M": 66,
+    "6M": 132,
+    "1Y": 252,
+    "3Y": 756,
+    "5Y": 1260,
+}
 
 
 class MarketChartCandleProvider:
@@ -354,7 +364,7 @@ class MarketChartCandleProvider:
             metadata_provider: MetadataProvider | None = None,
             cache_ttl_seconds: int = DEFAULT_QUOTE_CACHE_TTL_SECONDS,
             stale_after_hours: int = 36,
-            max_bars: int = 260,
+            max_bars: int = 1260,
     ) -> None:
         self.candle_client = candle_client or YFinanceChartCandleClient()
         self.metadata_provider = metadata_provider or FinanceDataReaderMetadataProvider()
@@ -380,10 +390,11 @@ class MarketChartCandleProvider:
         if cached and current_time - cached[0] < self.cache_ttl:
             return cached[1]
 
+        range_max_bars = min(self.max_bars, _MAX_CHART_BARS_BY_RANGE.get(normalized_range, self.max_bars))
         bars = sorted(
             self.candle_client.candles(normalized, normalized_range, normalized_interval),
             key=lambda bar: bar.date,
-        )[-self.max_bars:]
+        )[-range_max_bars:]
         metadata = self.metadata_provider.resolve(normalized)
         as_of = _chart_as_of(bars)
         stale = current_time - as_of > self.stale_after
@@ -401,7 +412,7 @@ class MarketChartCandleProvider:
             stale=stale,
             data_status=data_status,
             bars=bars,
-            max_bars=self.max_bars,
+            max_bars=range_max_bars,
         )
         self._cache[cache_key] = (current_time, chart)
         return chart

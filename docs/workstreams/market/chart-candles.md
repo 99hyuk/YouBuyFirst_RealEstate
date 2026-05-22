@@ -13,7 +13,7 @@ The frontend branch `codex/front-retail-sentiment-widget` blocks the stock-detai
 Public endpoint:
 
 ```http
-GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d
+GET /api/market/chart-candles?symbol=005930.KS&range=5Y&interval=1d
 ```
 
 ## Public Endpoint
@@ -25,7 +25,7 @@ GET /api/market/chart-candles?symbol=005930.KS&range=3M&interval=1d
 | Name | Required | Values | Default | Notes |
 | --- | --- | --- | --- | --- |
 | `symbol` | yes | `005930.KS`, `AAPL`, `NVDA` | none | Same provider symbol format as `GET /api/quotes`. |
-| `range` | no | `1M`, `3M`, `6M`, `1Y` | `3M` | MVP display range. Do not add `2Y`, `5Y`, `MAX` until provider display and redistribution conditions are reviewed. |
+| `range` | no | `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y` | `3M` | Bounded display ranges only. `5Y` is the longest public stock-detail chart window; do not add `MAX` or arbitrary `from/to` download behavior without another review. |
 | `interval` | no | `1d`, `1wk`, `1mo` | `1d` | Public display candles only. No minute interval in this slice. |
 
 Unsupported values return `400` with a small error body. If no cached candle set exists, the API returns `dataStatus: "INSUFFICIENT"` with empty `bars` so the frontend can keep the chart hidden.
@@ -59,7 +59,7 @@ Unsupported values return `400` with a small error body. If no cached candle set
     "displayOnly": true,
     "rawMinute": false,
     "downloadable": false,
-    "maxBars": 260
+    "maxBars": 1260
   }
 }
 ```
@@ -126,8 +126,8 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 ## Cache And Stale Rules
 
 - Pipeline refresh cadence: every 10 minutes by default through the market refresh job registered by `python -m youbuyfirst_pipeline.main serve`.
-- Public response max bars: `260`.
-- `1M`, `3M`, `6M`, `1Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.
+- Public response max bars: `1260` daily bars, roughly five trading years.
+- `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.
 - Backend stale threshold candidate: 36 hours until a market-calendar slice exists. During holidays/weekends this prevents normal closed-market data from looking broken too quickly.
 - `asOf` should be the latest provider bar timestamp converted to UTC.
 - `date` should be the exchange trading date for the candle, formatted as `YYYY-MM-DD`.
@@ -137,7 +137,7 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 Allowed:
 
 - display-only daily/weekly/monthly OHLC bars.
-- bounded ranges: `1M`, `3M`, `6M`, `1Y`.
+- bounded ranges: `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y`.
 - latest source metadata: `provider`, `delayLabel`, `asOf`, `stale`, `dataStatus`.
 
 Not allowed in this slice:
@@ -163,13 +163,13 @@ Not allowed in this slice:
 Print provider candles:
 
 ```bash
-python -m youbuyfirst_pipeline.main chart-candles --symbols 005930.KS AAPL NVDA --chart-range 3M --interval 1d
+python -m youbuyfirst_pipeline.main chart-candles --symbols 005930.KS AAPL NVDA --chart-range 5Y --interval 1d
 ```
 
 Push provider candles to Spring:
 
 ```bash
-python -m youbuyfirst_pipeline.main chart-candles-push --symbols 005930.KS AAPL NVDA --chart-range 3M --interval 1d
+python -m youbuyfirst_pipeline.main chart-candles-push --symbols 005930.KS AAPL NVDA --chart-range 5Y --interval 1d
 ```
 
 Run scheduled quote and chart refresh:

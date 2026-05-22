@@ -44,6 +44,36 @@
       "delayLabel": "Yahoo Finance delayed up to 30 min",
       "stale": false,
       "dataStatus": "OK"
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple",
+      "market": "US",
+      "currency": "USD",
+      "price": 198.12,
+      "change": 1.25,
+      "changePct": 0.64,
+      "volume": 42123456,
+      "asOf": "2026-05-20T20:00:00Z",
+      "provider": "yfinance",
+      "delayLabel": "Yahoo Finance 10 min refresh snapshot",
+      "stale": false,
+      "dataStatus": "OK"
+    },
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA",
+      "market": "US",
+      "currency": "USD",
+      "price": 924.8,
+      "change": 16.82,
+      "changePct": 1.85,
+      "volume": 51700000,
+      "asOf": "2026-05-20T20:00:00Z",
+      "provider": "yfinance",
+      "delayLabel": "Yahoo Finance 10 min refresh snapshot",
+      "stale": false,
+      "dataStatus": "OK"
     }
   ]
 }

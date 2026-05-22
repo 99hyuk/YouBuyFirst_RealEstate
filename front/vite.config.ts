@@ -8,6 +8,12 @@ const stockDetailCopyAssets = 'C:/agents/YouBuyFirst/docs/assets/stock-detail-co
 export default defineConfig({
   plugins: [vue()],
   server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
+      }
+    },
     fs: {
       allow: [frontRoot, stockDetailCopyAssets]
     }
