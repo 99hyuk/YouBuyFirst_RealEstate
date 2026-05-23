@@ -121,6 +121,11 @@ Uniqueness:
 - one latest set per `symbol + range + interval`.
 - one candle per `set_id + trade_date`.
 
+Refresh semantics:
+
+- `POST /internal/market/chart-candles` replaces the existing bounded candle set for the same `symbol + range + interval`.
+- Replacement must be idempotent: replaying the same payload or pushing corrected trading dates should not require manual DB deletion and should not fail on `set_id + trade_date` uniqueness.
+
 Redis can be added later if chart requests become hot or if WebSocket/STOMP market refresh is introduced. It is not required for this first display contract.
 
 ## Cache And Stale Rules

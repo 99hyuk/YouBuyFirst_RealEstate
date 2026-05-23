@@ -111,6 +111,10 @@ public class ChartCandleSet {
                 .forEach(this.bars::add);
     }
 
+    public void clearBars() {
+        this.bars.clear();
+    }
+
     public String getSymbol() {
         return symbol;
     }

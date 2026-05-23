@@ -300,6 +300,60 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void replacesExistingChartCandlesWhenCorrectedDatesOverlap() {
+        Instant asOf = Instant.now().minusSeconds(60);
+
+        ResponseEntity<Void> firstUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(
+                        chartCandleSet(
+                                "000660.KS",
+                                "5Y",
+                                asOf,
+                                List.of(
+                                        chartCandleBar("2026-05-14", "190000", 1000),
+                                        chartCandleBar("2026-05-15", "191000", 2000)
+                                )
+                        )
+                )),
+                Void.class
+        );
+
+        ResponseEntity<Void> secondUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(
+                        chartCandleSet(
+                                "000660.KS",
+                                "5Y",
+                                asOf.plusSeconds(60),
+                                List.of(
+                                        chartCandleBar("2026-05-15", "270500", 38075487),
+                                        chartCandleBar("2026-05-18", "281000", 33555214)
+                                )
+                        )
+                )),
+                Void.class
+        );
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=000660.KS&range=5Y&interval=1d",
+                String.class
+        );
+
+        assertThat(firstUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(secondUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"date\":\"2026-05-15\"")
+                .contains("\"close\":270500")
+                .contains("\"volume\":38075487")
+                .contains("\"date\":\"2026-05-18\"")
+                .contains("\"close\":281000")
+                .contains("\"volume\":33555214")
+                .doesNotContain("\"date\":\"2026-05-14\"");
+    }
+
+    @Test
     void rejectsUnsupportedChartCandleInterval() {
         ResponseEntity<String> response = restTemplate.getForEntity(
                 "/api/market/chart-candles?symbol=005930.KS&range=3M&interval=5m",
@@ -570,6 +624,38 @@ class IngestionApiIntegrationTest {
         leg.put("netVolume", netVolume);
         leg.put("derived", derived);
         return leg;
+    }
+
+    private static Map<String, Object> chartCandleSet(
+            String symbol,
+            String range,
+            Instant asOf,
+            List<Map<String, Object>> bars
+    ) {
+        return Map.ofEntries(
+                Map.entry("symbol", symbol),
+                Map.entry("name", "SK hynix"),
+                Map.entry("market", "KR"),
+                Map.entry("currency", "KRW"),
+                Map.entry("range", range),
+                Map.entry("interval", "1d"),
+                Map.entry("provider", "yfinance+FinanceDataReader"),
+                Map.entry("delayLabel", "Yahoo Finance delayed up to 30 min"),
+                Map.entry("asOf", asOf.toString()),
+                Map.entry("dataStatus", "OK"),
+                Map.entry("bars", bars)
+        );
+    }
+
+    private static Map<String, Object> chartCandleBar(String date, String close, long volume) {
+        return Map.of(
+                "date", date,
+                "open", close,
+                "high", close,
+                "low", close,
+                "close", close,
+                "volume", volume
+        );
     }
 
     private void resetCrawlTargets() {

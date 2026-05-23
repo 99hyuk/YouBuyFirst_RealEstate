@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -55,8 +56,16 @@ public class ChartCandleService {
             List<ChartCandleBarRequest> bars = boundedBars(request.bars(), range);
             String dataStatus = bars.isEmpty() ? "INSUFFICIENT" : normalizeUpper(request.dataStatus());
 
-            ChartCandleSet candleSet = repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(symbol, range, interval)
-                    .orElseGet(() -> new ChartCandleSet(symbol, range, interval));
+            Optional<ChartCandleSet> existingCandleSet = repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
+                    symbol,
+                    range,
+                    interval
+            );
+            ChartCandleSet candleSet = existingCandleSet.orElseGet(() -> new ChartCandleSet(symbol, range, interval));
+            if (existingCandleSet.isPresent()) {
+                candleSet.clearBars();
+                repository.saveAndFlush(candleSet);
+            }
             candleSet.update(
                     request.name().trim(),
                     normalizeUpper(request.market()),
