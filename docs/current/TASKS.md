@@ -4,11 +4,8 @@
 
 ## 완료 요약
 
-- ingestion MVP: Spring Boot backend, MySQL/Flyway, Swagger admin API, Python pipeline, 네이버/에펨코리아 crawler, fixture test, 별칭 matcher, LLM provider abstraction, Docker Compose.
-- 협업 기반: 공통 기획/에이전트 문서, GitHub Actions CI, 작업 단위 문서, 최종 제품 기획, GitHub remote/CLI 인증, bootstrap PR merge.
-- 운영 체계: PR 카드형 본문, UTF-8 body-file 규칙, Notion 작업일지/트러블슈팅 허브, 개발자 기술 경험 DB와 에이전트 운영 로그 DB 분리.
-- 트랙 체계: `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops` 분리, `track:*`/`type:*`/`part:*`/`size:*` 라벨 기준, `.worktrees/` 병렬 작업 기준.
-- 최근 기능 기반: data 별칭 중첩 매칭, AI 종목 언급 검증 계약과 filtering, crawl source policy registry와 scheduler gate, crawl run skip/backoff 기록, persistent `CrawlTarget` 설계와 backend API, front Vue 3 + Vite + TypeScript shell.
+- ingestion MVP, 협업/PR 기반, 운영 기록 체계, 트랙/라벨 기준, front shell은 main에 반영되어 있습니다.
+- 최근 완료 상세는 PR/Notion 작업 로그와 `docs/archive/work-units/items/`에서 찾습니다.
 
 ## 지금 가장 가까운 작업
 
@@ -20,7 +17,7 @@
 - [ ] pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
 - [ ] admin target pause/resume/clear-backoff API와 화면 액션 연결
 - [ ] 열린 브랜치/worktree를 active, review, blocked, stale, close-candidate로 분류하고 정리 후보 점검
-- [ ] `market` 트랙에서 quote snapshot 계약 설계
+- [ ] `market` 트랙에서 chart candles, quote snapshot, investor flows provider 안정화
 - [ ] `trade` 트랙에서 `simulation` 도메인의 모의 계좌, 주문, 체결, 원장 트랜잭션 최소 설계
 - [ ] `agent` 트랙에서 역발상 페르소나 입력 contract와 판단 key/idempotency 설계
 - [ ] `crawl` 트랙에서 뽐뿌 증권포럼, 디시 미국주식/주식갤러리/국내주식 계열 source registry 후보 정리

@@ -89,33 +89,17 @@
 - 답이 없으면 문장을 줄이거나, 결정 전 고민은 `docs/product/PRODUCT_DECISION_NOTES.md`, 작업 이력은 archive/PR/Notion 기록으로 보냅니다.
 - 대표파일에는 요약과 링크만 둡니다. 상세 근거, 예시, 과거 맥락은 담당 도메인/layer 정본 문서에 둡니다.
 
-## 채팅 안정성 규칙
-
-- 이미 주입된 `AGENTS.md`나 긴 문서는 터미널로 다시 전문 출력하지 않습니다.
-- 트랙이 명확하면 관련 도메인/layer `AGENTS.md`와 `docs/current/HANDOFF.md`의 관련 줄을 우선합니다. 세부 색인이 필요할 때만 같은 폴더의 `README.md`를 봅니다.
-- `docs/current/HANDOFF.md` 전문 읽기는 기본값이 아닙니다. 현재 상태, 다음 후보, 해당 트랙 관련 줄만 확인합니다.
-- 메모리와 과거 대화 요약은 색인으로만 사용합니다. 현재 결정은 repo 문서, 현재 코드, 필요한 경우 공식 문서로 재확인합니다.
-- 객관성은 확인된 사실, 추론, 결정, 남은 불확실성을 구분해 보고하는 방식으로 유지합니다. 근거 없는 낙관이나 과장된 포트폴리오 표현은 피합니다.
-- 스킬 문서는 적용할 스킬이 정해진 뒤 설명, 체크리스트, 이번 절차만 읽습니다.
-- 큰 스킬 문서는 전문 출력하지 않습니다. Browser/Figma/Stitch/gstack/Superpowers는 `-TotalCount 120` 안팎이나 관련 섹션 검색으로 시작하고, 같은 세션에서 반복해서 읽지 않습니다.
-- `docs/archive/superpowers/items/specs/`, `docs/archive/superpowers/items/plans/`, `docs/archive/front/wireframe/`는 현재 작업 시작 문서가 아니라 archive입니다. 현재 handoff가 부족할 때만 `rg -n -m 20 <키워드> <파일>`처럼 제한해 확인합니다.
-- 세션 로그는 파일 하나와 키워드 하나로 좁혀 검색합니다. `C:\Users\JYH\.codex` 전체에 넓은 `rg`를 돌리지 않습니다.
-- 로그/JSONL은 본문 출력 대신 parser로 필요한 필드만 집계합니다. 예: `token_count`의 `last_token_usage.input_tokens` 최대/평균.
-- Notion은 필요한 page/database 하나씩 fetch합니다. 루트, Archive, 전체 DB를 연달아 전문 fetch하지 않습니다.
-- front/gstack은 화면 변경, 라우팅, 콘솔 오류, 반응형처럼 실제 확인 가치가 있을 때 사용합니다. 결과는 요약합니다.
-- 토큰 최적화는 필수 행동을 없애는 근거가 아닙니다. PR, 테스트, 라벨, Notion 기록 필요성 판단, gstack 검증 필요성 판단은 유지합니다.
-
-## 최적화 해결 원칙
+## 읽기와 출력 게이트
 
 토큰 문제는 필수 작업을 줄여 해결하지 않습니다. 같은 일을 하되 큰 입력과 큰 출력을 막습니다.
 
-1. 시작 입력을 줄입니다. 트랙이 명확하면 루트 `AGENTS.md`, `docs/current/HANDOFF.md`, 관련 도메인/layer `AGENTS.md`의 관련 줄만 봅니다. 세부 색인이 필요할 때만 README를 봅니다.
-2. 스킬 입력을 줄입니다. 큰 스킬 파일은 필요한 절차만 읽고, Browser/gstack 검증은 구현 후 한 번에 모아 실행합니다.
-3. 도구 출력을 줄입니다. `Get-Content -TotalCount`, `Select-Object -First/-Skip`, `rg -n -m 20 <키워드> <좁은 경로>`처럼 출력량을 먼저 제한합니다.
-4. 로그는 집계합니다. 세션 JSONL, 브라우저 콘솔, DOM, Notion 페이지 전문은 대화에 붙이지 않고 오류명, 파일명, 수치만 남깁니다.
-5. 검증은 유지합니다. 테스트, `git diff --check`, PR 라벨/본문 확인, 필요한 브라우저 QA는 생략하지 않고 결과만 짧게 보고합니다.
-6. 문서를 늘리지 않습니다. 새 규칙은 기존 시작 문서에 짧게 합치고, 세부 이력은 archive나 PR/Notion 기록으로 보냅니다.
-7. 수치로 확인합니다. 채팅 오류가 났거나 최적화 PR을 낸 뒤에는 이전/현재 세션의 `last input` 최대/평균을 비교합니다.
+- 시작 입력: 트랙이 명확하면 루트 `AGENTS.md`, `docs/current/HANDOFF.md`, 담당 도메인/layer `AGENTS.md`의 관련 줄만 봅니다. 세부 색인이 필요할 때만 README를 봅니다.
+- 스킬 입력: 적용할 스킬이 정해진 뒤 필요한 절차만 읽습니다. Browser/Figma/Stitch/gstack/Superpowers 전문은 시작 루틴이 아닙니다.
+- archive 입력: archive는 현재 handoff가 부족할 때만 파일 1개와 키워드 1개로 좁혀 검색합니다.
+- 로그 출력: 세션 JSONL, 브라우저 콘솔, DOM, Notion 페이지 전문은 대화에 붙이지 않고 오류명, 파일명, 수치만 남깁니다.
+- 도구 출력: `Get-Content -TotalCount`, `Select-Object -First/-Skip`, `rg -n -m 20 <키워드> <좁은 경로>`처럼 출력량을 먼저 제한합니다.
+- 검증 출력: 테스트, `git diff --check`, PR 라벨/본문 확인, 필요한 브라우저 QA는 생략하지 않고 결과만 짧게 보고합니다.
+- 재확인: 메모리와 과거 대화 요약은 색인으로만 쓰고, 현재 결정은 repo 문서와 현재 코드로 확인합니다.
 
 ## 컨텍스트 예산 점검
 
@@ -135,21 +119,6 @@
 - front Screen Brief는 일반 화면 150줄 이하, 복잡한 부모 화면 220줄 이하를 목표로 하고 변경 로그는 최근 5개만 유지합니다.
 
 초과하면 전체 삭제가 아니라 `rg` 검색, 섹션 읽기, 완료 이력 요약, 출력 요약으로 줄입니다.
-
-## 상황별 읽기 게이트
-
-| 대상 | 방식 |
-| --- | --- |
-| 시작 문서 | `rg` 또는 관련 섹션 |
-| 담당 도메인/layer `AGENTS.md` | 시작 규칙, 읽기 게이트, 경계 섹션 |
-| 담당 도메인/layer `README.md` | AGENTS만으로 부족할 때 작업 범위와 파일 소유권 섹션 |
-| PR/라벨 문서 | PR 직전 필요한 섹션 |
-| 스킬 문서 | 실제 적용 절차만 |
-| `docs/archive/superpowers/items/` archive | 현재 handoff가 부족할 때만 파일 1개, 키워드 1개 |
-| front archive | 현재 front handoff가 부족할 때만 파일 1개, 키워드 1개 |
-| gstack/browse 출력 | 결과 요약, 핵심 오류 |
-| 세션/로그 JSONL | 파일명, 날짜, 키워드 제한 |
-| Notion page/database | 대상 하나씩, 바꿀 섹션 중심 |
 
 ## 업데이트 규칙
 

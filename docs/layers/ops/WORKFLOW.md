@@ -20,7 +20,7 @@
 3. 트랙 경계가 헷갈릴 때만 `docs/layers/ops/TRACKS.md`를 봅니다.
 4. 제품 방향이 필요한 경우에만 `docs/product/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 봅니다.
 5. 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 짧게 선언합니다.
-6. 루트 checkout이 아니라 `.worktrees/<task>`에서 작업합니다.
+6. 루트 checkout은 main 조율과 짧은 ops 문서 작업에만 씁니다. 병렬 구현, 장기 작업, dev server가 필요한 작업은 `.worktrees/<task>`에서 진행합니다.
 7. 장기 브랜치에서 작업을 재개할 때는 `origin/main`보다 뒤처졌는지 확인합니다. `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/`, `docs/domains/*/AGENTS.md`, `docs/layers/*/AGENTS.md` 같은 에이전트 행동 규칙 문서가 main에 새로 들어왔으면 먼저 main을 병합합니다.
 
 빈 채팅에서 `뭐 해야 해?`, `다음 뭐하지?`처럼 범위 없이 물으면 바로 구현하지 않고 `docs/layers/ops/CHAT_START_GUIDE.md` 기준으로 트랙 선택을 돕습니다.
@@ -148,6 +148,8 @@ gstack을 쓰지 않았다면 `gstack 미사용: 문서/backend 작업이라 브
 - `AGENTS.md`와 `docs/current/HANDOFF.md`는 짧은 시작 문서로 유지합니다.
 - 오래된 완료 내역은 `docs/archive/work-units/items/`나 archive 성격 문서로 보냅니다.
 - 세부 설명은 필요한 문서에 두고, 시작 루틴에는 넣지 않습니다.
+- 같은 내용이 루트/ops/도메인 문서에 반복되면 루트에는 라우팅만 남기고 세부 규칙은 소유 문서 하나로 합칩니다.
+- 추상적 다짐이나 좋은 태도 선언은 문장을 남기지 말고, 실제 판단/행동/위치/예외/검증 기준으로 바꿉니다.
 - 문서 구조와 확인 우선순위는 `docs/layers/ops/DOCUMENTATION_GUIDE.md`를 따릅니다.
 - 시작 문서나 트랙 문서를 바꾸는 PR은 컨텍스트 예산을 확인합니다.
 - 메모리나 과거 대화는 색인으로만 쓰고, 현재 판단 기준은 repo 문서와 현재 코드로 둡니다.

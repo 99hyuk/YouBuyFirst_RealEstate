@@ -1,4 +1,4 @@
-﻿# simulation
+# simulation
 
 ## 역할
 

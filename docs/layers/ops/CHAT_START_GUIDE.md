@@ -46,19 +46,7 @@ agent 트랙에서 커뮤니티별 성과 비교 설계해
 프론트 와이어프레임 잡아줘
 ```
 
-에이전트는 내부적으로 아래처럼 확장합니다.
-
-```text
-너는 너나사 (YouBuyFirst)의 <트랙명> 담당 에이전트다.
-AGENTS.md, docs/current/HANDOFF.md, docs/layers/ops/DOCUMENTATION_GUIDE.md는 필요한 섹션만 확인한다.
-필요하면 `docs/product/FINAL_PRODUCT_PLAN.md`와 관련 도메인/layer `AGENTS.md`의 관련 섹션을 확인한다. 세부 색인이 필요할 때만 같은 폴더의 `README.md`를 본다.
-이미 주입된 긴 문서는 다시 전문 출력하지 않는다.
-확인된 사실, 추론, 결정, 남은 불확실성을 구분해 보고한다.
-생소한 개념은 최신성/약관/보안/API처럼 위험이 큰 경우에만 공식 문서나 1차 자료로 확인한다.
-이 채팅에서는 지정된 작업 범위와 해당 트랙만 다룬다.
-작업 하나는 브랜치 하나와 PR 하나로 만든다.
-PR 설명과 작업 기록은 한국어로 작성한다.
-```
+에이전트는 루트 `AGENTS.md`의 라우팅 표와 담당 도메인/layer `AGENTS.md`를 적용합니다. 긴 역할 프롬프트를 새로 만들지 않습니다.
 
 `front` 지시를 받으면 `docs/layers/ui/README.md`의 시작 지시를 함께 적용합니다. 기본값은 Vue 3 + Vite + TypeScript 기반 저충실도 와이어프레임이며, 최종 브랜드 디자인은 별도 합의 전에는 고정하지 않습니다.
 

@@ -58,7 +58,7 @@
 
 ### 소스 활성화 상태
 
-커뮤니티 구조와 별개로, 각 소스는 공개 운영 리스크와 실행 환경에 따라 활성화 상태를 가집니다. 상세 설계는 `docs/archive/superpowers/items/specs/2026-05-15-source-activation-state-design.md`를 기준으로 봅니다.
+커뮤니티 구조와 별개로, 각 소스는 공개 운영 리스크와 실행 환경에 따라 활성화 상태를 가집니다. 현재 source policy와 `CrawlTarget` 실행 기준은 `COLLECTION.md`를 봅니다.
 
 | 상태 | 수집 실행 | 공개 화면 | 기준 |
 | --- | --- | --- | --- |
