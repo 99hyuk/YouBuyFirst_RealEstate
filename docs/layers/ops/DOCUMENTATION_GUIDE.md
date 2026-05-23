@@ -61,7 +61,7 @@
 | `docs/archive/work-units/items/` | PR 단위 작업 이력 |
 | `docs/archive/superpowers/items/README.md` | 큰 spec/plan 기록을 읽기 전 안내 |
 | `docs/archive/superpowers/items/specs/`, `docs/archive/superpowers/items/plans/` | 승인된 설계와 상세 실행 계획 |
-| `docs/archive/front/wireframe/` | 과거 front 와이어프레임 세부 로그 |
+| `docs/archive/ui/wireframe/` | 과거 UI 와이어프레임 세부 로그 |
 | Notion 작업일지 | 사람이 보는 PR 카드 로그 |
 | Notion 개발자 기술 경험 DB | 제품 개발/운영 문제, 개선 근거, 기술 결정 |
 | Notion 에이전트 운영 로그 DB | Codex, Notion, GitHub PR, 문서 운영 사고 |

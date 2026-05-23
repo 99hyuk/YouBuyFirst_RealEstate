@@ -27,7 +27,7 @@ Screen Brief가 커지면 새 채팅이 느려지고, 화면 기준도 흐려집
 | 기획자 확인 필요 | 열린 질문만 유지 |
 | 이미지 | 직접 붙이지 않고 필요한 경우 `docs/assets/` 링크만 사용 |
 
-오래된 결정 과정은 Screen Brief에 계속 붙이지 않습니다. 필요한 경우 `docs/archive/front/wireframe/` 또는 PR/Notion 작업 로그로 넘기고, Screen Brief에는 현재 결론만 남깁니다.
+오래된 결정 과정은 Screen Brief에 계속 붙이지 않습니다. 필요한 경우 `docs/archive/ui/wireframe/` 또는 PR/Notion 작업 로그로 넘기고, Screen Brief에는 현재 결론만 남깁니다.
 
 ## 화면 트리
 

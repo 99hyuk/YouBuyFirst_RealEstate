@@ -1,6 +1,8 @@
 # Stitch Dashboard Prompt
 
-이 문서는 현재 `front/` 대시보드 와이어프레임을 기반으로 Stitch에 넣을 고충실도 시안 생성 프롬프트입니다. `WIREFRAME_HANDOFF.md` 전체를 그대로 넣지 말고, 아래 프롬프트를 우선 사용합니다.
+이 문서는 과거에 Stitch로 대시보드 시안을 탐색하려고 만든 프롬프트입니다. 현재 디자인/구현 정본이 아니며, 기본 작업 루틴에서는 읽지 않습니다.
+
+Stitch를 다시 쓰기로 명시 결정한 경우에만 보조 입력으로 사용합니다. 현재 UI 기준은 `docs/layers/ui/WIREFRAME_HANDOFF.md`, `docs/layers/ui/DESIGN_SYSTEM.md`, `docs/layers/ui/screens/`입니다.
 
 ## 사용 방법
 

@@ -4,11 +4,11 @@ This archive used to contain a long, chat-derived handoff. It became too large a
 
 Use current files first:
 
-- `docs/workstreams/front/WIREFRAME_HANDOFF.md`
-- `docs/workstreams/front/README.md`
-- `docs/workstreams/front/DESIGN_SYSTEM.md`
-- `docs/workstreams/front/screens/`
-- `docs/workstreams/front/VISUAL_CHANGELOG.md`
+- `docs/layers/ui/WIREFRAME_HANDOFF.md`
+- `docs/layers/ui/README.md`
+- `docs/layers/ui/DESIGN_SYSTEM.md`
+- `docs/layers/ui/screens/`
+- `docs/layers/ui/VISUAL_CHANGELOG.md`
 
 Historical visual evidence remains in:
 

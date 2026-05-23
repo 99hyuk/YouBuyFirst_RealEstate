@@ -12,7 +12,7 @@
 
 아래는 시작 루틴이 아닙니다.
 
-- `docs/archive/front/wireframe/`
+- `docs/archive/ui/wireframe/`
 - `docs/archive/superpowers/items/specs/`, `docs/archive/superpowers/items/plans/`
 - `front/public/visual-history/YYYY-MM-DD/index.html`
 - Browser/gstack/Playwright 스킬 전문
@@ -66,8 +66,8 @@ git diff --check
 
 ## PR 기준
 
-- 한 PR은 한 front 작업만 소유합니다.
-- PR 제목은 `[front][type] 명사형 요약` 형태를 따릅니다.
+- 한 PR은 한 ui 작업만 소유합니다.
+- PR 제목은 `[ui][type] 명사형 요약` 형태를 따릅니다.
 - PR 본문은 사람이 이해할 수 있게 `무슨 문제를 해결했는지`, `현재 상태`, `검증`, `남은 리스크` 중심으로 씁니다.
 - 작업 중 확인한 화면은 visual history 또는 PR 스크린샷으로 추적 가능하게 남깁니다.
 

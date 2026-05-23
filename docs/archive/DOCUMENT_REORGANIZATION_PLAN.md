@@ -1,6 +1,6 @@
 # 문서 재분류 계획
 
-이 문서는 현재 문서를 먼저 모아 분류하기 위한 임시 작업 문서입니다. 실제 이동이 끝나면 `docs/layers/ops/` 또는 `docs/archive/`로 옮기거나 삭제합니다.
+이 문서는 2026-05 문서 재분류 당시의 임시 작업 계획입니다. 현재 실행할 계획이 아니며, archive의 과거 근거로만 봅니다. 최신 구조와 읽기 기준은 `AGENTS.md`, `docs/layers/ops/DOCUMENTATION_GUIDE.md`, `docs/layers/ops/WORK_AREAS.md`가 정본입니다.
 
 ## 결론
 
@@ -73,10 +73,10 @@ docs/
 | `docs/layers/ui/README.md` | `docs/layers/ui/README.md` | UI 레이어 정본입니다. |
 | `docs/layers/ui/DESIGN_SYSTEM.md` | `docs/layers/ui/DESIGN_SYSTEM.md` | UI 레이어 정본입니다. |
 | `docs/layers/ui/WIREFRAME_HANDOFF.md` | `docs/layers/ui/WIREFRAME_HANDOFF.md` 또는 current 링크 | UI 현재 작업과 겹치므로 이관 시 최신성 확인이 필요합니다. |
-| `docs/workstreams/front/STITCH_DASHBOARD_PROMPT.md` | `docs/archive/ui/STITCH_DASHBOARD_PROMPT.md` | Stitch 흐름은 기본 디자인 방식에서 폐기하고 과거 참고 자료로만 보관합니다. |
+| old front Stitch prompt | `docs/archive/ui/STITCH_DASHBOARD_PROMPT.md` | Stitch 흐름은 기본 디자인 방식에서 폐기하고 과거 참고 자료로만 보관합니다. |
 | `docs/layers/ui/VISUAL_CHANGELOG.md` | `docs/layers/ui/VISUAL_CHANGELOG.md` | UI 변경 이력입니다. 최근 항목만 유지하는 후보입니다. |
 | `docs/layers/ui/screens/` | `docs/layers/ui/screens/` | 화면별 Screen Brief 정본입니다. |
-| `docs/archive/front/wireframe/` | `docs/archive/front/` | 과거 front 기록입니다. |
+| old front wireframe archive | `docs/archive/ui/wireframe/` | 과거 UI 기록입니다. |
 | `docs/workstreams/ops/README.md` | `docs/layers/ops/README.md` | ops 레이어 정본입니다. |
 | `docs/archive/work-units/items/` | `docs/archive/work-units/` | PR/작업 단위 과거 기록입니다. |
 | `docs/archive/superpowers/items/` | `docs/archive/superpowers/` | 과거 설계/실행 계획 archive입니다. |
