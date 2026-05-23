@@ -6,6 +6,13 @@
 
 ## 원칙
 
-- `AGENTS.md`, `CURRENT_HANDOFF.md`, `TASKS.md`가 길어지면 오래된 완료 내역을 이곳이나 `docs/work-units/`로 보냅니다.
+- `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/current/TASKS.md`가 길어지면 오래된 완료 내역을 이곳으로 보냅니다.
 - archive 문서는 새 채팅이 매번 읽지 않습니다.
 - 필요한 경우 `rg`로 검색해서 봅니다.
+
+## 하위 위치
+
+- `work-units/items/`: PR/작업 단위 과거 기록
+- `superpowers/items/`: 과거 Superpowers spec/plan 기록
+- `front/wireframe/`: 과거 front 와이어프레임 기록
+- `ui/`: 폐기된 디자인 도구 입력 자료

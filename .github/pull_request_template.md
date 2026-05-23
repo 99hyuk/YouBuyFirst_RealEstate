@@ -3,7 +3,7 @@ PR template guard:
 - 이 파일을 복사해서 채웁니다. 기억으로 비슷하게 다시 쓰지 않습니다.
 - 아래 ## 섹션 제목은 삭제하거나 이름을 바꾸지 않습니다.
 - 해당 없는 항목도 지우지 말고 `해당 없음` 또는 `Notion 미기록: <이유>`처럼 남깁니다.
-- 생성/수정 직후 `docs/GIT_CONVENTION.md`의 PR 본문 감사 명령으로 섹션 누락과 물음표 두 개 치환 깨짐을 확인합니다.
+- 생성/수정 직후 `docs/layers/ops/GIT_CONVENTION.md`의 PR 본문 감사 명령으로 섹션 누락과 물음표 두 개 치환 깨짐을 확인합니다.
 -->
 
 ## 🧭 한눈에 보기
@@ -17,7 +17,7 @@ PR template guard:
 | 작업 타입 | `type:` |
 | 변경 파트 | `part:` 필요할 때만 |
 | 크기 | `size:` |
-| 기준 문서 | `docs/LABEL_GUIDE.md` |
+| 기준 문서 | `docs/layers/ops/LABEL_GUIDE.md` |
 | 상태 | CI 확인 전 / CI 통과 / 병합 완료 |
 | Notion 기록 | 작업일지 반영 전 / 반영 완료 |
 | 트러블슈팅 | 해당 없음 / 상세 기록 링크 |
@@ -74,10 +74,10 @@ git diff --check
 ## 🗂️ Notion 기록
 
 - 작업일지:
-- 트러블슈팅: 해당 없음 / 기록 링크 (`docs/TROUBLESHOOTING_GUIDE.md` 기준)
+- 트러블슈팅: 해당 없음 / 기록 링크 (`docs/governance/TROUBLESHOOTING_GUIDE.md` 기준)
 - 다음 에이전트 메모:
 
 ## 🏷️ 라벨/태그 참고
 
-- GitHub/Notion 라벨 의미: `docs/LABEL_GUIDE.md`
-- 트랙별 작업 기준: `docs/workstreams/README.md`
+- GitHub/Notion 라벨 의미: `docs/layers/ops/LABEL_GUIDE.md`
+- 트랙별 작업 기준: `docs/layers/ops/TRACKS.md`

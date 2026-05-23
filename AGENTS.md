@@ -8,11 +8,11 @@
 
 - `crawl 작업`, `front 작업`, `ops로 Notion 정리`처럼 말하면 해당 트랙을 먼저 정합니다.
 - 이미 대화에 주입된 긴 문서는 터미널로 다시 전문 출력하지 않습니다.
-- `AGENTS.md`, `docs/CURRENT_HANDOFF.md`, `docs/DOCUMENTATION_GUIDE.md`는 필요한 섹션만 확인합니다.
-- 트랙이 명확하면 담당 트랙 README를 우선 보고, 트랙 경계가 헷갈릴 때만 `docs/workstreams/README.md`를 봅니다.
-- 제품 방향이 필요한 경우에만 `docs/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 봅니다.
+- `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/DOCUMENTATION_GUIDE.md`는 필요한 섹션만 확인합니다.
+- 트랙이 명확하면 관련 도메인/layer README를 우선 보고, 트랙 경계가 헷갈릴 때만 `docs/layers/ops/TRACKS.md`를 봅니다.
+- 제품 방향이 필요한 경우에만 `docs/product/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 봅니다.
 - 시작할 때 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 짧게 선언합니다.
-- 범위 없는 `뭐 해야 해?` 요청에는 바로 구현하지 말고 `docs/CHAT_START_GUIDE.md` 기준으로 트랙 선택을 돕습니다.
+- 범위 없는 `뭐 해야 해?` 요청에는 바로 구현하지 말고 `docs/layers/ops/CHAT_START_GUIDE.md` 기준으로 트랙 선택을 돕습니다.
 
 ## 협업 원칙
 
@@ -36,9 +36,10 @@ Codex는 사용자의 요구를 무조건 수용하는 실행기가 아닙니다
 | 백엔드 API/도메인 | `backend/` |
 | 수집/분석 worker | `pipeline/` |
 | 화면/fixture/API client | `front/` |
-| 트랙별 작업 기준 | `docs/workstreams/<track>/README.md` |
-| 화면별 최신 기획 | `docs/workstreams/front/screens/` |
-| 완료 이력/과거 설계 | `docs/work-units/`, `docs/superpowers/` archive |
+| 도메인별 정본 | `docs/domains/<domain>/README.md` |
+| 트랙/작업 라벨 기준 | `docs/layers/ops/TRACKS.md` |
+| 화면별 최신 기획 | `docs/layers/ui/screens/` |
+| 완료 이력/과거 설계 | `docs/archive/work-units/items/`, `docs/archive/superpowers/items/` archive |
 
 | 트랙 | 담당 |
 | --- | --- |
@@ -66,11 +67,11 @@ Codex는 사용자의 요구를 무조건 수용하는 실행기가 아닙니다
 - Superpowers는 기획, 설계, 구현 계획, 검증, 디버깅 게이트로 씁니다.
 - gstack은 front/UI 변경처럼 실제 브라우저 확인 가치가 있을 때 씁니다.
 - 작업은 작게 나누되, 사용자 승인이 꼭 필요한 결정이 아니면 바로 구현하고 검증합니다.
-- 구현 전 API 계약, 데이터 흐름, 실패 케이스를 짧게 정리하고, 작업 후에는 필요한 후속 작업만 `TASKS.md`나 handoff에 남깁니다.
+- 구현 전 API 계약, 데이터 흐름, 실패 케이스를 짧게 정리하고, 작업 후에는 필요한 후속 작업만 `docs/current/TASKS.md`나 `docs/current/HANDOFF.md`에 남깁니다.
 - 스킬 문서는 필요한 상황에서만 읽고, 긴 스킬은 필요한 절차만 확인합니다.
 - Browser, Figma, Stitch, gstack, Superpowers 같은 큰 스킬 문서는 전문 출력하지 않습니다. 필요한 경우 `-TotalCount 120` 안팎이나 관련 섹션 검색으로 시작하고, 같은 스킬을 한 세션에서 반복해서 읽지 않습니다.
-- `docs/work-units/`, `docs/superpowers/`, Notion 작업 로그, 세션 로그, 브라우저 콘솔 전체는 시작 루틴이 아닙니다.
-- `docs/superpowers/specs/`, `docs/superpowers/plans/`는 과거 설계/실행 archive입니다. front 복구나 현재 작업은 담당 트랙 handoff를 우선하고, 과거 근거가 필요할 때만 파일 1개와 키워드 1개로 좁혀 봅니다.
+- `docs/archive/work-units/items/`, `docs/archive/superpowers/items/`, Notion 작업 로그, 세션 로그, 브라우저 콘솔 전체는 시작 루틴이 아닙니다.
+- `docs/archive/superpowers/items/specs/`, `docs/archive/superpowers/items/plans/`는 과거 설계/실행 archive입니다. front 복구나 현재 작업은 담당 트랙 handoff를 우선하고, 과거 근거가 필요할 때만 파일 1개와 키워드 1개로 좁혀 봅니다.
 - 넓은 `rg`, 전체 로그/JSONL 출력, 전체 Notion page/database fetch, 콘솔/DOM 전문 출력은 금지합니다. 경로, 키워드, 출력량을 먼저 좁힙니다.
 - 메모리나 이전 대화는 현재 판단을 돕는 색인으로만 씁니다. 최신 기준은 repo 문서와 현재 코드이고, 오래된 메모리/로그 전문을 새 채팅에 다시 붙이지 않습니다.
 - 토큰 최적화는 필수 검증, PR/라벨, Notion/gstack 필요성 판단을 없애는 근거가 아닙니다.
@@ -98,11 +99,11 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 - PR 본문 파일은 `.github/pull_request_template.md`를 복사해서 채웁니다. `gh --body-file`을 쓰더라도 임의 본문으로 템플릿을 우회하지 않습니다.
 - 템플릿을 기억으로 비슷하게 재작성하지 않습니다. 현재 템플릿의 `##` 섹션 제목이 하나라도 빠지면 PR 규칙 미준수입니다.
 - PR 생성/수정 직후 `gh pr view --json body --jq .body`와 `??` 검색으로 한글 깨짐을 확인합니다.
-- PR 생성/수정 직후 `docs/GIT_CONVENTION.md`의 템플릿 섹션 감사 명령으로 누락된 섹션이 없는지 확인합니다.
+- PR 생성/수정 직후 `docs/layers/ops/GIT_CONVENTION.md`의 템플릿 섹션 감사 명령으로 누락된 섹션이 없는지 확인합니다.
 - 관련 테스트를 실행합니다. 문서만 바꿔도 `git diff --check`를 실행합니다.
-- 세부 PR/라벨/본문 규칙은 `docs/GIT_CONVENTION.md`와 `docs/LABEL_GUIDE.md`의 관련 섹션만 확인합니다.
+- 세부 PR/라벨/본문 규칙은 `docs/layers/ops/GIT_CONVENTION.md`와 `docs/layers/ops/LABEL_GUIDE.md`의 관련 섹션만 확인합니다.
 
-검증 명령은 `docs/WORKFLOW.md`의 관련 섹션을 봅니다.
+검증 명령은 `docs/layers/ops/WORKFLOW.md`의 관련 섹션을 봅니다.
 
 ## 사용자 보고 방식
 
@@ -122,19 +123,19 @@ Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기
 - Codex, Notion, GitHub PR, 문서 운영 사고는 에이전트 운영 로그 DB에 분리합니다.
 - 새 데이터/API/배치 흐름은 정본 위치, 식별자, 상태값, 출처/asOf, 완료 기준을 함께 정합니다. 예: `QuoteSnapshot`, `CommunityMetricSnapshot`, `AgentDecision`, `LedgerEntry`.
 - 확인할 수 없는 값은 추측으로 채우지 않고 `unknown`, `null`, `확인 필요`, `mock`처럼 구분합니다.
-- 최종 기획상 생길 수 있는 기술/제품/운영 리스크 후보는 `docs/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
-- 사용자가 작업 중 던진 제품/기술 고민을 나중에 다시 보고 싶다고 하면 `docs/PRODUCT_DECISION_NOTES.md`에 짧게 누적합니다. 확정된 결정은 최종 기획, 현재 handoff, 리스크 문서, Notion 기술 경험 DB 중 맞는 위치로 승격합니다.
-- front 화면 구조, route, child detail, fixture/API 후보, 화면 문구 기준이 바뀌면 사용자의 별도 기록 지시 없이 `docs/workstreams/front/screens/`의 해당 Screen Brief를 갱신합니다. Screen Brief는 최신 기준만 유지하고 긴 변경 이력은 누적하지 않습니다.
+- 최종 기획상 생길 수 있는 기술/제품/운영 리스크 후보는 `docs/governance/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/governance/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
+- 사용자가 작업 중 던진 제품/기술 고민을 나중에 다시 보고 싶다고 하면 `docs/product/PRODUCT_DECISION_NOTES.md`에 짧게 누적합니다. 확정된 결정은 최종 기획, 현재 handoff, 리스크 문서, Notion 기술 경험 DB 중 맞는 위치로 승격합니다.
+- front 화면 구조, route, child detail, fixture/API 후보, 화면 문구 기준이 바뀌면 사용자의 별도 기록 지시 없이 `docs/layers/ui/screens/`의 해당 Screen Brief를 갱신합니다. Screen Brief는 최신 기준만 유지하고 긴 변경 이력은 누적하지 않습니다.
 
 ## 참고 문서
 
-- 현재 인수인계: `docs/CURRENT_HANDOFF.md`
-- 문서 구조와 읽기 게이트: `docs/DOCUMENTATION_GUIDE.md`
-- 채팅 시작: `docs/CHAT_START_GUIDE.md`
-- 프론트 화면별 기준: `docs/workstreams/front/screens/`
-- 종목 상세 팩트폭격 카피: `docs/STOCK_DETAIL_COPY_GUIDE.md`
-- 작업 방식: `docs/WORKFLOW.md`
-- 기술 리스크 목록: `docs/TECHNICAL_RISK_REGISTER.md`
-- 병렬 트랙: `docs/workstreams/`
-- Git/PR 컨벤션: `docs/GIT_CONVENTION.md`
-- 라벨 사전: `docs/LABEL_GUIDE.md`
+- 현재 인수인계: `docs/current/HANDOFF.md`
+- 문서 구조와 읽기 게이트: `docs/layers/ops/DOCUMENTATION_GUIDE.md`
+- 채팅 시작: `docs/layers/ops/CHAT_START_GUIDE.md`
+- 프론트 화면별 기준: `docs/layers/ui/screens/`
+- 종목 상세 팩트폭격 카피: `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`
+- 작업 방식: `docs/layers/ops/WORKFLOW.md`
+- 기술 리스크 목록: `docs/governance/TECHNICAL_RISK_REGISTER.md`
+- 병렬 트랙: `docs/layers/ops/TRACKS.md`
+- Git/PR 컨벤션: `docs/layers/ops/GIT_CONVENTION.md`
+- 라벨 사전: `docs/layers/ops/LABEL_GUIDE.md`
