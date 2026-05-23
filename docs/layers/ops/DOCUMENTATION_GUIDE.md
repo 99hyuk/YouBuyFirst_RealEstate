@@ -11,7 +11,7 @@
 
 문서 구조 변경은 아래 원칙을 깨지 않는 선에서만 합니다.
 
-1. 트리 구조를 유지합니다. 현재 상태는 `current`, 제품 방향은 `product`, 도메인 정본은 `domains`, 공통 구현/운영 레이어는 `layers`, 정책/리스크/장애는 `governance`, 과거 기록은 `archive`에 둡니다.
+1. 트리 구조를 유지합니다. 현재 상태는 `current`, 제품 방향은 `product`, 도메인 정본은 `domains`, 공통 구현/운영 레이어는 `layers`, 정책/리스크/장애는 `governance`, 과거 기록은 `archive`에 둡니다. 트러블슈팅 본문은 장애와 재발 방지 지식이므로 `governance`가 정본이고, Notion/PR에 어떻게 기록할지는 `layers/ops`가 소유합니다.
 2. 도메인별 인접성을 유지합니다. 한 도메인의 판단 근거, contract, 정책은 가능한 한 `docs/domains/<domain>/` 안에 모읍니다. 여러 도메인에 걸치는 화면/운영 규칙은 `layers`, 제품 전체 결정은 `product`, 위험과 사고 기록은 `governance`로 보냅니다.
 3. 대표파일을 먼저 봅니다. 루트 `AGENTS.md`는 전체 라우터이고, 도메인/layer `AGENTS.md`는 에이전트용 읽기 게이트입니다. `README.md`는 사람용 설명과 세부 문서 색인입니다.
 4. 새 문서는 먼저 소유권을 정합니다. 어느 도메인/layer/product/governance/current/archive에 속하는지 애매하면 새 파일을 만들기 전에 `docs/layers/ops/WORK_AREAS.md`나 관련 도메인 `AGENTS.md`를 확인합니다.

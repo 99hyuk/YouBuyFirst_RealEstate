@@ -10,6 +10,10 @@
 2. 바꾸려는 화면의 `docs/layers/ui/screens/*.md`
 3. 디자인 판단이 필요하면 `docs/layers/ui/DESIGN_SYSTEM.md`
 
+`screens/` 안의 문서는 화면별 최신 기획과 API 후보입니다. `screens/` 밖의 문서는 ui layer 전체에 공통 적용되는 기준입니다. 예를 들어 `WIREFRAME_HANDOFF.md`는 현재 UI 방향, `DESIGN_SYSTEM.md`는 반복 UI 규칙, `STOCK_DETAIL_BANNER.md`는 종목 상세 특수 배너 기준입니다.
+
+제품 전체 기획은 시작 루틴이 아닙니다. 화면 목적이나 우선순위가 흔들릴 때만 `docs/product/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 검색해서 봅니다.
+
 아래는 시작 루틴이 아닙니다.
 
 - `docs/archive/ui/wireframe/`
