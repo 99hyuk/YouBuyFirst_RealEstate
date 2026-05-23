@@ -2,7 +2,7 @@
 
 이 문서는 기존 track 중심 작업을 domain/layer 중심 작업 영역으로 전환하기 위한 기준입니다. 작업 영역은 새 채팅 시작, 문서 정본 위치, PR 범위 판단의 1차 단위입니다.
 
-기존 `track:*` 라벨, PR 제목 prefix, Notion `트랙` 값은 아직 남아 있는 legacy 호환값입니다. 새 문서와 작업 설명에서는 가능한 한 작업 영역 이름을 먼저 쓰고, 기존 track 이름은 alias로만 다룹니다.
+GitHub 라벨 family는 기존 형식인 `track:*`를 유지하되 값은 작업 영역 이름을 씁니다. Notion도 기존 `트랙` 속성 구조를 유지하고 값만 작업 영역 기준으로 분류합니다. 기존 `crawl`, `data`, `trade`, `front` 값은 과거 기록 해석용 alias입니다.
 
 ## 기본 원칙
 
@@ -10,7 +10,7 @@
 - 한 PR은 하나의 primary work area를 가집니다.
 - 여러 영역을 건드려야 하면 계약 문서, 작은 선행 PR, 사용자 확인 중 하나를 먼저 둡니다.
 - 기존 `crawl`, `data`, `trade`, `front` 같은 track 이름은 아래 표의 alias로 해석합니다.
-- PR/라벨/Notion 실제 마이그레이션은 별도 ops 작업으로 진행합니다. 그 전까지는 legacy 라벨을 유지하되 본문과 문서에는 작업 영역을 병기합니다.
+- PR 제목은 기존 `[값][타입]` 형식을 유지하되 값에는 작업 영역 이름을 씁니다.
 
 ## 작업 영역
 
@@ -40,7 +40,6 @@
 ## 전환 규칙
 
 - 새 문서에는 `작업 영역`을 기본 표현으로 씁니다.
-- `track`이라는 단어는 GitHub legacy 라벨, 과거 PR/Notion 값, alias 설명에만 씁니다.
-- PR 제목과 라벨은 마이그레이션 전까지 기존 형식을 유지할 수 있습니다. 대신 PR 본문 첫 요약에 primary work area를 적습니다.
-- Notion 속성이 아직 `트랙`이면 기존 값을 쓰되, 카드 본문이나 다음 메모에 primary work area를 병기합니다.
+- `track:*` 라벨 prefix와 Notion `트랙` 속성명은 유지합니다. 값은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops`를 씁니다.
+- 과거 `track:crawl`, `track:data`, `track:trade`, `track:front`는 닫힌 PR이나 과거 Notion 카드 해석용으로만 봅니다.
 - 새 영역이 필요해 보이면 먼저 이 문서를 바꾸기보다 기존 영역에 둘 수 있는지 확인합니다. 정말 필요할 때만 ops 문서 PR로 추가합니다.

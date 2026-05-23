@@ -26,7 +26,7 @@
 
 - 새 채팅은 루트 `AGENTS.md`와 이 문서를 읽고, 작업 영역이 정해지면 해당 `docs/domains/.../AGENTS.md` 또는 `docs/layers/.../AGENTS.md`만 추가로 봅니다.
 - 문서 구조는 `product`, `current`, `domains`, `layers`, `governance`, `archive`로 봅니다. 작업 영역은 domain/layer 기준이고, 기존 track 값은 PR/라벨/Notion 호환용 alias로만 봅니다.
-- PR 제목, GitHub 라벨, Notion `트랙` 속성은 아직 legacy 값을 유지합니다. 다음 ops 작업에서 `area:*` 또는 `domain:*`/`layer:*` 기준으로 바꿀지 결정합니다.
+- PR 제목, GitHub 라벨, Notion `트랙` 속성은 기존 구조를 유지하되 값은 작업 영역 기준으로 분류합니다. 예: `[community][feat]`, `track:community`, Notion `트랙=community`.
 - handoff에는 최신 기준과 상세 문서 위치만 남깁니다. 긴 근거, 과거 설계, 검증 로그는 도메인 문서나 archive로 넘깁니다.
 - 채팅 오류는 제품 코드보다 대화 컨텍스트/도구 출력 과다를 먼저 의심합니다. 스킬 문서, gstack, Notion fetch, 세션 로그 검색은 시작 루틴이 아닙니다.
 - 브랜치는 실제 PR 후보가 있을 때 열고, merge/close/대체 후에는 worktree와 함께 정리합니다. 열린 브랜치는 active, review, blocked, stale, close-candidate 중 하나로 설명할 수 있어야 합니다.

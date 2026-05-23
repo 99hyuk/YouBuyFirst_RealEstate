@@ -1,6 +1,6 @@
 # ops layer 작업 지침
 
-ops layer는 문서 구조, Git/PR, Notion 기록, 작업 영역/legacy 라벨, 브랜치/worktree 생명주기, 컨텍스트 예산을 소유합니다.
+ops layer는 문서 구조, Git/PR, Notion 기록, 작업 영역 라벨, 브랜치/worktree 생명주기, 컨텍스트 예산을 소유합니다.
 
 ## 시작
 

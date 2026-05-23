@@ -14,4 +14,4 @@
 | `front` | `ui` | 화면, 디자인 시스템, fixture/API 후보 |
 | `ops` | `ops` | 문서 구조, PR/라벨/Notion, 브랜치/worktree |
 
-전환이 끝나기 전까지 `track:*` 라벨과 Notion `트랙` 값은 남을 수 있습니다. 새 PR/문서에는 primary work area를 병기합니다.
+새 PR과 새 Notion 카드는 `track:<작업영역>` 값과 Notion `트랙=<작업영역>` 값을 씁니다. 이 파일의 legacy track 값은 과거 기록 해석용입니다.

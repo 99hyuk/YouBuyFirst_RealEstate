@@ -4,7 +4,7 @@
 
 ## 완료 요약
 
-- ingestion MVP, 협업/PR 기반, 운영 기록 체계, 작업 영역/legacy 라벨 기준, ui/front shell은 main에 반영되어 있습니다.
+- ingestion MVP, 협업/PR 기반, 운영 기록 체계, 작업 영역 라벨 기준, ui/front shell은 main에 반영되어 있습니다.
 - 최근 완료 상세는 PR/Notion 작업 로그와 `docs/archive/work-units/items/`에서 찾습니다.
 
 ## 지금 가장 가까운 작업
@@ -17,8 +17,8 @@
 - [ ] pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
 - [ ] admin target pause/resume/clear-backoff API와 화면 액션 연결
 - [ ] 열린 브랜치/worktree를 active, review, blocked, stale, close-candidate로 분류하고 정리 후보 점검
-- [ ] ops에서 PR 제목, GitHub 라벨, Notion `트랙` 속성을 작업 영역 기준으로 마이그레이션하는 별도 PR 설계
-- [ ] ops에서 legacy `track:*` 라벨을 `area:*` 또는 `domain:*`/`layer:*`로 바꿀지 결정
+- [ ] 기존 PR/Notion 카드 중 열려 있는 항목만 작업 영역 값으로 재분류
+- [ ] Notion 과거 카드 대량 재분류는 도구 timeout을 피하도록 작은 묶음으로 진행
 - [ ] `market` 영역에서 chart candles, quote snapshot, investor flows provider 안정화
 - [ ] `simulation` 영역에서 모의 계좌, 주문, 체결, 원장 트랜잭션 최소 설계
 - [ ] `agent` 영역에서 역발상 페르소나 입력 contract와 판단 key/idempotency 설계

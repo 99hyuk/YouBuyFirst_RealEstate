@@ -13,7 +13,7 @@ PR template guard:
 
 | 항목 | 내용 |
 | --- | --- |
-| 작업 트랙 | `track:` |
+| 작업 영역 | `track:<community/stock/indicator/market/simulation/agent/ui/ops>` |
 | 작업 타입 | `type:` |
 | 변경 파트 | `part:` 필요할 때만 |
 | 크기 | `size:` |
@@ -39,7 +39,7 @@ PR template guard:
 
 ## 📌 PR 범위
 
-- 제목 형식: `[트랙][타입] 명사형 요약`
+- 제목 형식: `[작업영역][타입] 명사형 요약`
 - 이 PR에 포함한 것:
 - 일부러 제외한 것:
 - 이 크기로 묶은 이유:
@@ -80,4 +80,4 @@ git diff --check
 ## 🏷️ 라벨/태그 참고
 
 - GitHub/Notion 라벨 의미: `docs/layers/ops/LABEL_GUIDE.md`
-- 트랙별 작업 기준: `docs/layers/ops/TRACKS.md`
+- 작업 영역 기준: `docs/layers/ops/WORK_AREAS.md`

@@ -7,8 +7,8 @@
 PR 전후에 아래는 생략하지 않습니다.
 
 1. 브랜치: `codex/<short-task-name>`
-2. 제목: 마이그레이션 전까지 `[legacy-alias][타입] 명사형 요약`
-3. 라벨: `track:*`, `type:*`, `size:*`, 필요 시 `part:*`
+2. 제목: `[작업영역][타입] 명사형 요약`
+3. 라벨: `track:<작업영역>`, `type:*`, `size:*`, 필요 시 `part:*`
 4. 본문: `.github/pull_request_template.md` 복사본 + UTF-8 no BOM 파일 + `gh --body-file`
 5. 검증: 관련 테스트 + `git diff --check`
 6. 본문 확인: `gh pr view --json body --jq .body`
@@ -80,25 +80,25 @@ codex/<work-area>-<task>
 형식:
 
 ```text
-[legacy-alias][타입] 명사형 요약
+[작업영역][타입] 명사형 요약
 ```
 
 예:
 
-- `[crawl][feat] CrawlTarget queue API`
-- `[data][fix] 별칭 중첩 매칭 보강`
-- `[front][feat] 대시보드 shell`
+- `[community][feat] CrawlTarget queue API`
+- `[stock][fix] 별칭 중첩 매칭 보강`
+- `[ui][feat] 대시보드 shell`
 - `[ops][docs] 채팅 안정성 규칙`
 
 제목은 `~한다`, `~했다`, `~함`으로 끝내지 않습니다.
 
 ## 태그와 라벨
 
-작업 영역과 legacy alias:
+작업 영역:
 
-- primary work area는 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops`입니다.
-- `track:*` 라벨과 PR 제목 prefix는 아직 legacy alias인 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops`를 씁니다.
-- 매핑은 `docs/layers/ops/WORK_AREAS.md`를 봅니다. 예: `community -> crawl`, `ui -> front`, `simulation -> trade`.
+- PR 제목 prefix와 `track:*` 라벨 값은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops` 중 하나를 씁니다.
+- GitHub 라벨 family 이름은 기존 형식인 `track:*`를 유지합니다. 바뀌는 것은 `track:` 뒤 분류값입니다.
+- 과거 `crawl`, `data`, `trade`, `front` 값은 닫힌 PR이나 과거 Notion 카드 해석용 alias입니다.
 
 작업 타입:
 
@@ -111,7 +111,7 @@ codex/<work-area>-<task>
 
 GitHub 라벨:
 
-- `track:*`: legacy 작업 alias. PR 본문에는 primary work area를 병기합니다.
+- `track:*`: 작업 영역. 예: `track:community`, `track:stock`, `track:ui`
 - `type:*`: 작업 타입
 - `size:*`: 변경 크기
 - `part:*`: 실제 리뷰 경로나 변경 파트를 드러낼 때만 사용

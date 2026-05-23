@@ -6,7 +6,7 @@
 
 | 질문 | 볼 태그 |
 | --- | --- |
-| 어느 작업 영역인가? | 작업 영역 + legacy 라벨 `track:*` |
+| 어느 작업 영역인가? | `track:<작업영역>` |
 | 어떤 종류의 변경인가? | 작업 타입 `type:*` |
 | 어느 부분을 건드렸나? | 변경 파트 `part:*` |
 | 리뷰 크기가 어느 정도인가? | `size:*` |
@@ -28,19 +28,22 @@
 | `type:perf` | 성능 개선 | bulk insert, cache, query 최적화 |
 | `type:chore` | 기타 유지보수 | 사소한 정리, 설정 보정 |
 
-### 작업 영역과 Legacy Track
+### 작업 영역 Track
 
-작업 판단의 1차 기준은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops` 작업 영역입니다. `track:*`는 GitHub와 Notion에 남아 있는 legacy 라벨입니다. 새 PR 본문에는 primary work area를 병기합니다.
+작업 판단의 1차 기준은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops` 작업 영역입니다. GitHub 라벨 family는 기존 형식인 `track:*`를 유지하고, `track:` 뒤 값만 작업 영역 이름으로 씁니다.
 
-| legacy 라벨 | primary work area | 담당 |
+| 라벨 | 작업 영역 | 담당 |
 | --- | --- | --- |
-| `track:crawl` | `community` | 커뮤니티 글 수집, 소스 어댑터, source policy, 원문 제한 저장 |
-| `track:data` | `stock` 또는 `indicator` | 종목 인식, 별칭 매칭, 반응 방향, 열기 지수, 개미 심리 지수 |
+| `track:community` | `community` | 커뮤니티 글 수집, 소스 어댑터, source policy, 원문 제한 저장 |
+| `track:stock` | `stock` | 종목 master, symbol, alias, 종목 식별 |
+| `track:indicator` | `indicator` | 반응 방향, 열기 지수, 개미 심리 지수, snapshot |
 | `track:market` | `market` | 실시간/지연 시세, 차트 캔들, quote cache, 수급 |
-| `track:trade` | `simulation` | 가상 계좌, 주문, 체결, 원장, 포트폴리오, 수익률 |
+| `track:simulation` | `simulation` | 가상 계좌, 주문, 체결, 원장, 포트폴리오, 수익률 |
 | `track:agent` | `agent` | AI 판단, 커뮤니티별 성과 비교, 결정 로그, 헤드라인 |
-| `track:front` | `ui` | 사용자 화면, 디자인 시스템, mock data, API 연동 |
+| `track:ui` | `ui` | 사용자 화면, 디자인 시스템, mock data, API 연동 |
 | `track:ops` | `ops` | 기획 조율, 문서, Notion, PR/CI, 배포 정책 |
+
+과거 `track:crawl`, `track:data`, `track:trade`, `track:front`는 닫힌 PR이나 기존 Notion 카드 해석용으로만 봅니다.
 
 ### 변경 파트 Part
 
@@ -73,7 +76,7 @@
 | 속성 | 의미 |
 | --- | --- |
 | `상태` | `Merged`, `Open`, `Draft`, `Blocked` 중 하나 |
-| `트랙` | legacy 속성명. 값은 기존 track alias를 쓰되 카드 본문에 primary work area를 병기 |
+| `트랙` | 기존 속성명 유지. 값은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops` 중 하나 |
 | `변경 파트` | 영향을 받은 코드/문서/규칙/자산 |
 | `크기` | PR 리뷰 크기 |
 | `검증` | 사람이 읽기 쉬운 검증 결과 |
@@ -85,7 +88,7 @@
 | --- | --- |
 | `상태` | `Next`, `Ready`, `Later`, `Blocked` 중 하나 |
 | `우선순위` | `P0` 긴급, `P1` 가까운 작업, `P2` 후속, `P3` 언젠가 |
-| `트랙` | legacy 속성명. 담당 primary work area를 다음 메모나 본문에 병기 |
+| `트랙` | 기존 속성명 유지. 담당 작업 영역 값 |
 | `변경 파트` | 영향을 받을 코드/문서/규칙/자산 |
 | `예상 PR 크기` | 예상되는 리뷰 크기 |
 | `완료 기준` | 이 작업이 끝났다고 말할 수 있는 조건 |
@@ -105,7 +108,7 @@
 
 ## 작성 원칙
 
-- PR 제목은 마이그레이션 전까지 `[legacy-alias][타입] 명사형 요약`으로 씁니다. 예: `[ops][docs] 작업 영역과 legacy 라벨 기준 정리`
+- PR 제목은 `[작업영역][타입] 명사형 요약`으로 씁니다. 예: `[ops][docs] 작업 영역 라벨 기준 정리`
 - PR 본문은 카드형 구조로 작성합니다.
 - Notion 작업 카드는 PR 본문과 같은 흐름을 따릅니다.
 - 명령어는 PR 본문 첫 화면에 길게 늘어놓지 않고 접힌 영역에 둡니다.
