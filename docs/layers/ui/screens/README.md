@@ -8,6 +8,7 @@
 
 - 탭 하나만 기준으로 보지 않고, 사용자가 실제로 이동하는 화면 트리 기준으로 정리합니다.
 - route를 가진 페이지는 Screen Brief를 둡니다.
+- 단순 화면은 `screens/<screen>.md`로 두고, 하위 상세나 특수 컴포넌트가 많은 복잡한 화면은 `screens/<screen>/README.md`와 보조 문서로 묶습니다.
 - route가 없어도 독립 데이터 계약, 독립 상태, 공유 가능한 상세 UI를 가진 drawer/modal/detail panel은 Screen Brief 후보입니다.
 - 단순 버튼, 카드, 표 셀처럼 독립 기획이 없는 component는 별도 brief를 만들지 않습니다.
 - 화면을 만들며 바뀐 기획은 먼저 해당 Screen Brief에 남기고, 안정화된 것만 `docs/product/FINAL_PRODUCT_PLAN.md`, API 명세, 관련 도메인/layer `AGENTS.md`/`README.md`로 승격합니다.
@@ -36,7 +37,7 @@ Screen Brief가 커지면 새 채팅이 느려지고, 화면 기준도 흐려집
 | `dashboard` | `/dashboard` | `dashboard.md` | active | 메인 대시보드, 종목/커뮤니티/뉴스 요약 |
 | `newsroom` | `/newsroom?feed=&page=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그/커뮤니티 링크 |
 | `stocks` | `/stocks` | `stocks.md` | active | 종목 반응 랭킹, 검색/필터, 상세 진입 |
-| `stock-detail` | `/stocks/:symbol` | `stock-detail.md` | active | 종목 상세, 팩트폭격 배너, 반응, 근거, 신뢰도 |
+| `stock-detail` | `/stocks/:symbol` | `stock-detail/README.md` | active | 종목 상세, 팩트폭격 배너, 반응, 근거, 신뢰도 |
 | `stock-news-detail` | `/stocks/:symbol/news/:newsId` 또는 drawer | 예정 | candidate | 뉴스/공시 상세 링크와 원문 이동 전 요약 |
 | `stock-filing-detail` | `/stocks/:symbol/filings/:filingId` 또는 drawer | 예정 | candidate | 공시 상세, 관련 지표 영향 |
 | `stock-community-post` | `/stocks/:symbol/community/:postId` 또는 drawer | 예정 | candidate | 커뮤니티 원문 snippet, 출처, 관련 종목 |

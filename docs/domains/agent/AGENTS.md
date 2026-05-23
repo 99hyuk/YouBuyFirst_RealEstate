@@ -12,7 +12,7 @@ agent는 지표와 시세를 읽어 paper trading 판단, 커뮤니티별 성과
 
 - 실제 투자 자문, 실거래 지시, 수익 보장처럼 보이는 표현은 만들지 않습니다.
 - 장부 수정과 체결 정합성은 `simulation` contract를 통합니다.
-- 화면 배너의 시각 표현은 `layers/ui/STOCK_DETAIL_BANNER.md`가 소유합니다.
+- 화면 배너의 시각 표현은 `layers/ui/screens/stock-detail/banner.md`가 소유합니다.
 - 커뮤니티 원문 분석 기준은 `community`, 핵심 지표 산식은 `indicator`가 소유합니다.
 
 ## 기록

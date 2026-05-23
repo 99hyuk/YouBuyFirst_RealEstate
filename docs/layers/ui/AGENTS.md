@@ -6,7 +6,7 @@ ui layer는 화면 구조, route, Screen Brief, 디자인 시스템, fixture/API
 
 - 화면 작업이면 `WIREFRAME_HANDOFF.md`에서 현재 UI 방향을 짧게 확인한 뒤, 해당 `screens/<screen>.md`를 봅니다.
 - 공통 스타일, 색상, spacing, panel/data card 기준이면 `DESIGN_SYSTEM.md`를 봅니다.
-- 종목 상세 검은 배너 표현이면 `STOCK_DETAIL_BANNER.md`를 봅니다.
+- 종목 상세 검은 배너 표현이면 `screens/stock-detail/banner.md`를 봅니다.
 - 전체 UI 색인이 필요할 때만 `README.md`를 봅니다.
 
 ## 기획 이해 게이트

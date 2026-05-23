@@ -12,7 +12,7 @@
 
 ## 화면 목적
 
-사용자가 종목 랭킹에서 특정 종목을 눌렀을 때 가격 흐름, 커뮤니티 반응, 근거 링크, 데이터 신뢰도를 한 화면에서 빠르게 확인하게 한다. 상단 팩트폭격 카피는 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md` 기준의 시황 요약이며, 검은 배너 표현은 `docs/layers/ui/STOCK_DETAIL_BANNER.md`를 따른다. 투자 행동을 지시하는 문구가 아니라 공개 데이터 기반 상태 표현으로 유지한다.
+사용자가 종목 랭킹에서 특정 종목을 눌렀을 때 가격 흐름, 커뮤니티 반응, 근거 링크, 데이터 신뢰도를 한 화면에서 빠르게 확인하게 한다. 상단 팩트폭격 카피는 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md` 기준의 시황 요약이며, 검은 배너 표현은 `docs/layers/ui/screens/stock-detail/banner.md`를 따른다. 투자 행동을 지시하는 문구가 아니라 공개 데이터 기반 상태 표현으로 유지한다.
 
 ## 현재 섹션
 

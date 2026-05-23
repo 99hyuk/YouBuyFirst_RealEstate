@@ -79,7 +79,7 @@
 ### 종목 상세 팩트폭격 배너
 
 - 생성 기준: `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`
-- 표현 기준: `docs/layers/ui/STOCK_DETAIL_BANNER.md`
+- 표현 기준: `docs/layers/ui/screens/stock-detail/banner.md`
 - 위치: 종목 상세 최상단
 - 시각: 검은색 배너, 큰 한줄평, 보조 근거 chip
 - 내용: 커뮤니티 요약이 아니라 시황, 기술 지표, 재무, 뉴스/공시, 컨센서스 기반 종목 상태 카피

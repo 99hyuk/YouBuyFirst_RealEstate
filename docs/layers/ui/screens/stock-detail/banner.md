@@ -9,9 +9,9 @@
 사용자가 준 레퍼런스는 종목 상세 최상단의 검은 네모 배너입니다. 프론트에서는 이 영역을 일반 카드가 아니라 `stock-roast-banner` 같은 독립 상단 훅으로 다룹니다.
 
 <p>
-  <img src="../../assets/stock-detail-copy/reference-palantir-roast.webp" width="220" alt="Palantir 종목 상세 팩트폭격 배너 레퍼런스" />
-  <img src="../../assets/stock-detail-copy/reference-nuscale-roast.webp" width="220" alt="NuScale 종목 상세 팩트폭격 배너 레퍼런스" />
-  <img src="../../assets/stock-detail-copy/reference-ast-roast.webp" width="220" alt="AST SpaceMobile 종목 상세 팩트폭격 배너 레퍼런스" />
+  <img src="../../../../assets/stock-detail-copy/reference-palantir-roast.webp" width="220" alt="Palantir 종목 상세 팩트폭격 배너 레퍼런스" />
+  <img src="../../../../assets/stock-detail-copy/reference-nuscale-roast.webp" width="220" alt="NuScale 종목 상세 팩트폭격 배너 레퍼런스" />
+  <img src="../../../../assets/stock-detail-copy/reference-ast-roast.webp" width="220" alt="AST SpaceMobile 종목 상세 팩트폭격 배너 레퍼런스" />
 </p>
 
 ## 배너 구조
@@ -39,5 +39,5 @@
 ## 참조
 
 - 생성 기준: `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`
-- 화면 상세: `docs/layers/ui/screens/stock-detail.md`
+- 화면 상세: `docs/layers/ui/screens/stock-detail/README.md`
 - 디자인 시스템: `docs/layers/ui/DESIGN_SYSTEM.md`

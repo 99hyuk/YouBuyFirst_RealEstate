@@ -91,7 +91,7 @@
 
 - 배경: 종목 상세에 들어갔을 때 이미지 예시처럼 강한 한줄평을 보여주고 싶음. 이 문구는 커뮤니티 분석이 아니라 실제 시황과 종목 상태 분석에 기반해야 함.
 - 현재 판단: 가능하고, 제품 차별점이 될 수 있습니다. 다만 `커뮤니티 반응 한줄평`과 분리해 `종목 상태 한줄평`으로 설계합니다. 근거는 가격/추세, 기술 지표, 재무/성장, 밸류에이션, 뉴스/공시, 애널리스트 컨센서스에서 가져오고, 최소 2개 이상의 근거 묶음이 같은 방향일 때만 강한 카피를 씁니다. 사용자가 준 `종목 고르다 이거 골랐으면 안목을 의심해봐`, `분할매수 한다고 했는데 전부 다 물린 거 맞지?`, `이거 매수하는 건 돈에 대한 모독임`은 `roast` 레퍼런스로 보관합니다.
-- 남은 확인: front fixture와 backend/API 명세에 `headlineTone`, `headline`, `subtitle`, `evidence`, `asOf`, `dataQuality`, `personalizedSafe` 후보 필드를 두고, `roast` 단계 카피는 공개 배포 전 별도 리뷰합니다. 헤드라인 생성 기준은 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`, 검은 네모 배너 UI와 레퍼런스 이미지는 `docs/layers/ui/STOCK_DETAIL_BANNER.md`를 따릅니다.
+- 남은 확인: front fixture와 backend/API 명세에 `headlineTone`, `headline`, `subtitle`, `evidence`, `asOf`, `dataQuality`, `personalizedSafe` 후보 필드를 두고, `roast` 단계 카피는 공개 배포 전 별도 리뷰합니다. 헤드라인 생성 기준은 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`, 검은 네모 배너 UI와 레퍼런스 이미지는 `docs/layers/ui/screens/stock-detail/banner.md`를 따릅니다.
 
 ### 2026-05-18. 프론트 화면별 기획과 하위 상세 화면 관리
 

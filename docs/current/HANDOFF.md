@@ -35,7 +35,7 @@
 - 제품명은 붙여 쓴 `너나사`를 기본 브랜드명으로 씁니다. 풀어서 설명할 때만 `너나 사` 말장난을 제한적으로 씁니다.
 - 부동산은 주식 MVP에 섞지 않고 후순위 별도 버티컬로만 검토합니다.
 - market MVP는 quote/chart를 `yfinance` + FinanceDataReader 조합으로 다루고, 국내 수급은 quote와 분리합니다. 화면에는 지연, provider, `asOf`, `stale`, 참고용 표시가 필요합니다. 상세 기준은 `docs/domains/market/README.md`, `docs/domains/market/CHART_CANDLES.md`, `docs/domains/market/INVESTOR_FLOWS.md`를 봅니다.
-- 종목 상세 상단의 강한 한줄평은 커뮤니티 요약이 아니라 시황/기술지표/재무 기반 `종목 상태 팩트폭격 헤드라인`입니다. 생성 기준은 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`, UI 표현은 `docs/layers/ui/STOCK_DETAIL_BANNER.md`를 봅니다.
+- 종목 상세 상단의 강한 한줄평은 커뮤니티 요약이 아니라 시황/기술지표/재무 기반 `종목 상태 팩트폭격 헤드라인`입니다. 생성 기준은 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`, UI 표현은 `docs/layers/ui/screens/stock-detail/banner.md`를 봅니다.
 - 디자인과 프론트 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다. Figma AI/Stitch는 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 씁니다.
 - 사용자 화면에서 `추천`, `매수`, `매도`, `수익 보장`, `진입`, `시그널 확정`처럼 투자 행동을 지시하는 표현은 서비스 판단이나 CTA로 쓰지 않습니다.
 - 소스 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나누며 새 소스는 기본 `disabled`입니다. 공개 배포 전에는 원문 재게시, 작성자 추적, 닉네임 랭킹을 하지 않습니다.
