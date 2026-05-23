@@ -219,7 +219,7 @@
 - 증상: PR은 머지됐는데 `docs/current/HANDOFF.md`, `docs/current/TASKS.md`, Notion 작업 로그가 다른 상태를 가리킵니다.
 - 영향: 새 채팅과 병렬 에이전트가 오래된 전제를 따릅니다.
 - 방어: PR 머지 후 ops가 주요 handoff와 task list를 확인합니다. 큰 구조 변경은 문서 PR로 먼저 남깁니다.
-- 확인: PR 종료 시 `docs/current/HANDOFF.md`, `docs/current/TASKS.md`, 관련 도메인/layer README의 다음 작업이 맞는지 확인합니다.
+- 확인: PR 종료 시 `docs/current/HANDOFF.md`, `docs/current/TASKS.md`, 관련 도메인/layer `AGENTS.md`/`README.md`의 다음 작업이 맞는지 확인합니다.
 
 ### RISK-022. 토큰/도구 출력 과다로 채팅 중단
 

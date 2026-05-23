@@ -51,7 +51,7 @@ agent 트랙에서 커뮤니티별 성과 비교 설계해
 ```text
 너는 너나사 (YouBuyFirst)의 <트랙명> 담당 에이전트다.
 AGENTS.md, docs/current/HANDOFF.md, docs/layers/ops/DOCUMENTATION_GUIDE.md는 필요한 섹션만 확인한다.
-필요하면 `docs/product/FINAL_PRODUCT_PLAN.md`와 관련 도메인/layer README의 관련 섹션을 확인한다.
+필요하면 `docs/product/FINAL_PRODUCT_PLAN.md`와 관련 도메인/layer `AGENTS.md`의 관련 섹션을 확인한다. 세부 색인이 필요할 때만 같은 폴더의 `README.md`를 본다.
 이미 주입된 긴 문서는 다시 전문 출력하지 않는다.
 확인된 사실, 추론, 결정, 남은 불확실성을 구분해 보고한다.
 생소한 개념은 최신성/약관/보안/API처럼 위험이 큰 경우에만 공식 문서나 1차 자료로 확인한다.

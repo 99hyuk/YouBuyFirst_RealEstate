@@ -11,7 +11,9 @@
 
 `AGENTS.md`는 자동으로 적용되어야 하는 작업 규칙, 금지 사항, 읽기 순서를 담는 파일입니다. `README.md`는 사람이 보거나 에이전트가 필요할 때 여는 도메인/layer 색인입니다.
 
-모든 폴더의 README를 AGENTS로 바꾸지 않습니다. 자동 적용이 꼭 필요한 코드 실행 경계나 하위 워크스페이스에만 짧은 `AGENTS.md`를 두고, 일반 도메인 설명과 문서 색인은 `README.md`를 유지합니다.
+도메인/layer 폴더는 `AGENTS.md`와 `README.md`를 함께 둘 수 있습니다. `AGENTS.md`는 "이 작업자가 무엇을 먼저 읽고 무엇을 건드리면 안 되는지"만 짧게 담고, `README.md`는 도메인 설명과 문서 색인을 유지합니다.
+
+모든 하위 폴더에 AGENTS를 뿌리지는 않습니다. 자동 적용이 필요한 도메인/layer 경계에만 짧은 `AGENTS.md`를 두고, 세부 설명은 README와 개별 contract 문서에 둡니다.
 
 ## 읽기 우선순위
 
@@ -23,7 +25,8 @@
 | `docs/current/HANDOFF.md` | 현재 상태, 최근 결정, 다음 후보 확인 |
 | `docs/layers/ops/CHAT_START_GUIDE.md` | 빈 채팅, 짧은 트랙 지시, 시작 응답 틀 확인 |
 | `docs/layers/ops/TRACKS.md` | 트랙 경계가 헷갈릴 때 |
-| 담당 도메인/layer README | 새 도메인 작업을 시작할 때 |
+| 담당 도메인/layer `AGENTS.md` | 새 도메인/layer 작업을 시작할 때 |
+| 담당 도메인/layer `README.md` | 도메인 설명, 세부 문서 색인, 다른 도메인 접점이 필요할 때 |
 | `docs/product/FINAL_PRODUCT_PLAN.md` | 제품 방향이나 최종 범위가 필요할 때 |
 | `docs/product/PROJECT_BRIEF.md` | 현재 MVP 범위가 필요할 때 |
 | `docs/layers/ops/GIT_CONVENTION.md` | PR, 커밋, 라벨 작업 직전 |
@@ -60,7 +63,7 @@
 | 제품 범위와 결정 | `docs/product/FINAL_PRODUCT_PLAN.md`, `docs/product/PRODUCT_DECISION_NOTES.md` |
 | 현재 작업 상태 | `docs/current/HANDOFF.md`, `docs/current/TASKS.md` |
 | 화면 구조와 API 후보 | `docs/layers/ui/screens/`, 현재 `front/` 코드 |
-| 시세/커뮤니티/지표/에이전트/원장 데이터 | 해당 도메인 README, API contract, DB entity/snapshot |
+| 시세/커뮤니티/지표/에이전트/원장 데이터 | 해당 도메인 `AGENTS.md`, `README.md`, API contract, DB entity/snapshot |
 | 장애와 기술 결정 근거 | `docs/governance/TECHNICAL_RISK_REGISTER.md`, Notion 개발자 기술 경험 DB |
 
 새 인덱스 문서는 같은 lookup을 여러 트랙이 반복할 때만 만듭니다. 인덱스는 상세 설명을 복제하지 않고 정본 위치, ID/key, 상태, source/asOf만 짧게 가리킵니다.
@@ -68,7 +71,7 @@
 ## 채팅 안정성 규칙
 
 - 이미 주입된 `AGENTS.md`나 긴 문서는 터미널로 다시 전문 출력하지 않습니다.
-- 트랙이 명확하면 관련 도메인/layer README와 `docs/current/HANDOFF.md`의 관련 줄을 우선합니다.
+- 트랙이 명확하면 관련 도메인/layer `AGENTS.md`와 `docs/current/HANDOFF.md`의 관련 줄을 우선합니다. 세부 색인이 필요할 때만 같은 폴더의 `README.md`를 봅니다.
 - `docs/current/HANDOFF.md` 전문 읽기는 기본값이 아닙니다. 현재 상태, 다음 후보, 해당 트랙 관련 줄만 확인합니다.
 - 메모리와 과거 대화 요약은 색인으로만 사용합니다. 현재 결정은 repo 문서, 현재 코드, 필요한 경우 공식 문서로 재확인합니다.
 - 객관성은 확인된 사실, 추론, 결정, 남은 불확실성을 구분해 보고하는 방식으로 유지합니다. 근거 없는 낙관이나 과장된 포트폴리오 표현은 피합니다.
@@ -85,7 +88,7 @@
 
 토큰 문제는 필수 작업을 줄여 해결하지 않습니다. 같은 일을 하되 큰 입력과 큰 출력을 막습니다.
 
-1. 시작 입력을 줄입니다. 트랙이 명확하면 `AGENTS.md`, `docs/current/HANDOFF.md`, 관련 도메인/layer README의 관련 줄만 봅니다.
+1. 시작 입력을 줄입니다. 트랙이 명확하면 루트 `AGENTS.md`, `docs/current/HANDOFF.md`, 관련 도메인/layer `AGENTS.md`의 관련 줄만 봅니다. 세부 색인이 필요할 때만 README를 봅니다.
 2. 스킬 입력을 줄입니다. 큰 스킬 파일은 필요한 절차만 읽고, Browser/gstack 검증은 구현 후 한 번에 모아 실행합니다.
 3. 도구 출력을 줄입니다. `Get-Content -TotalCount`, `Select-Object -First/-Skip`, `rg -n -m 20 <키워드> <좁은 경로>`처럼 출력량을 먼저 제한합니다.
 4. 로그는 집계합니다. 세션 JSONL, 브라우저 콘솔, DOM, Notion 페이지 전문은 대화에 붙이지 않고 오류명, 파일명, 수치만 남깁니다.
@@ -117,7 +120,8 @@
 | 대상 | 방식 |
 | --- | --- |
 | 시작 문서 | `rg` 또는 관련 섹션 |
-| 담당 도메인/layer README | 작업 범위와 파일 소유권 섹션 |
+| 담당 도메인/layer `AGENTS.md` | 시작 규칙, 읽기 게이트, 경계 섹션 |
+| 담당 도메인/layer `README.md` | AGENTS만으로 부족할 때 작업 범위와 파일 소유권 섹션 |
 | PR/라벨 문서 | PR 직전 필요한 섹션 |
 | 스킬 문서 | 실제 적용 절차만 |
 | `docs/archive/superpowers/items/` archive | 현재 handoff가 부족할 때만 파일 1개, 키워드 1개 |
@@ -135,7 +139,7 @@
 | 제품 방향이나 범위 변경 | `docs/product/FINAL_PRODUCT_PLAN.md`, `docs/current/HANDOFF.md` |
 | front 화면 구조, route, child detail, 화면별 API 후보 변경 | `docs/layers/ui/screens/` |
 | 커뮤니티 분석 용어/수집 전략 변경 | `docs/domains/community/REACTION_GUIDE.md`, `docs/product/FINAL_PRODUCT_PLAN.md`, `docs/product/PROJECT_BRIEF.md` |
-| 최종 기획상 새 기술/제품/운영 리스크 발견 | `docs/governance/TECHNICAL_RISK_REGISTER.md`, 필요 시 관련 도메인 README |
+| 최종 기획상 새 기술/제품/운영 리스크 발견 | `docs/governance/TECHNICAL_RISK_REGISTER.md`, 필요 시 관련 도메인 `AGENTS.md`/`README.md` |
 | 작업 방식이나 라벨 기준 변경 | `docs/layers/ops/WORKFLOW.md`, `docs/layers/ops/GIT_CONVENTION.md`, `docs/layers/ops/LABEL_GUIDE.md` |
 | 브랜치 생명주기나 worktree 정리 기준 변경 | `docs/layers/ops/GIT_CONVENTION.md`, `docs/layers/ops/WORKFLOW.md`, `docs/current/HANDOFF.md` |
 | 다음 작업 후보 변경 | `docs/current/TASKS.md`, `docs/current/HANDOFF.md` |

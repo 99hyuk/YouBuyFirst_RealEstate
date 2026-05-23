@@ -83,4 +83,4 @@ docker run --rm -v "${PWD}/pipeline:/workspace" -w /workspace python:3.10-slim s
 
 ## 에이전트/PR 작업 흐름
 
-새 채팅이나 다른 에이전트는 [AGENTS.md](AGENTS.md)와 [docs/CURRENT_HANDOFF.md](docs/CURRENT_HANDOFF.md)의 필요한 섹션만 확인하고 시작합니다. 제품 방향, Git/PR 규칙, 트랙 경계가 필요할 때만 관련 문서를 좁게 열며, 작업은 작은 PR 하나로 쪼개는 것을 기본 규칙으로 둡니다.
+새 채팅이나 다른 에이전트는 [AGENTS.md](AGENTS.md)와 [docs/current/HANDOFF.md](docs/current/HANDOFF.md)의 필요한 섹션만 확인하고 시작합니다. 트랙이 명확하면 관련 도메인/layer의 `AGENTS.md`를 먼저 보고, 세부 색인이 필요할 때만 README를 엽니다. 제품 방향, Git/PR 규칙, 트랙 경계가 필요할 때만 관련 문서를 좁게 열며, 작업은 작은 PR 하나로 쪼개는 것을 기본 규칙으로 둡니다.

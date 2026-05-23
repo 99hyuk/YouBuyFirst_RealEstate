@@ -6,7 +6,7 @@
 
 - `front 작업해`, `crawl 쪽 맡아줘`, `ops로 Notion 정리해`처럼 짧게 시작해도 됩니다.
 - 범위 없이 `뭐 해야 해?`라고 물으면 바로 구현하지 않고 트랙 설명과 다음 작업 후보를 보여줍니다.
-- 각 에이전트는 `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/DOCUMENTATION_GUIDE.md`, 관련 도메인/layer README의 필요한 섹션만 확인합니다.
+- 각 에이전트는 루트 `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/DOCUMENTATION_GUIDE.md`, 관련 도메인/layer `AGENTS.md`의 필요한 섹션만 확인합니다. 세부 색인이 필요할 때만 README를 봅니다.
 - 이미 대화에 주입된 긴 문서는 다시 전문 출력하지 않습니다.
 
 ```text

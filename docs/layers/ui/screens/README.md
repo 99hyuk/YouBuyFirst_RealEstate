@@ -10,7 +10,7 @@
 - route를 가진 페이지는 Screen Brief를 둡니다.
 - route가 없어도 독립 데이터 계약, 독립 상태, 공유 가능한 상세 UI를 가진 drawer/modal/detail panel은 Screen Brief 후보입니다.
 - 단순 버튼, 카드, 표 셀처럼 독립 기획이 없는 component는 별도 brief를 만들지 않습니다.
-- 화면을 만들며 바뀐 기획은 먼저 해당 Screen Brief에 남기고, 안정화된 것만 `docs/product/FINAL_PRODUCT_PLAN.md`, API 명세, 관련 도메인/layer README로 승격합니다.
+- 화면을 만들며 바뀐 기획은 먼저 해당 Screen Brief에 남기고, 안정화된 것만 `docs/product/FINAL_PRODUCT_PLAN.md`, API 명세, 관련 도메인/layer `AGENTS.md`/`README.md`로 승격합니다.
 - `docs/current/HANDOFF.md`에는 세부 화면 내용을 늘리지 않고, 이 registry 위치만 안내합니다.
 - 사용자가 따로 "기록해"라고 말하지 않아도, 프론트 작업자가 화면 구조, route, child screen, fixture/API 후보, 화면 문구 기준을 바꾸면 해당 Screen Brief를 갱신합니다.
 - Screen Brief는 최신 기준 문서입니다. 완료된 시행착오, 긴 피드백 전문, 과거 스크린샷 설명을 계속 누적하지 않습니다.

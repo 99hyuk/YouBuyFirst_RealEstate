@@ -16,12 +16,12 @@
 ## 작업 시작
 
 1. `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/DOCUMENTATION_GUIDE.md`는 필요한 섹션만 확인합니다.
-2. 트랙이 명확하면 관련 도메인/layer README를 먼저 확인합니다.
+2. 트랙이 명확하면 관련 도메인/layer `AGENTS.md`를 먼저 확인합니다. 세부 색인이 필요할 때만 README를 봅니다.
 3. 트랙 경계가 헷갈릴 때만 `docs/layers/ops/TRACKS.md`를 봅니다.
 4. 제품 방향이 필요한 경우에만 `docs/product/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 봅니다.
 5. 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 짧게 선언합니다.
 6. 루트 checkout이 아니라 `.worktrees/<task>`에서 작업합니다.
-7. 장기 브랜치에서 작업을 재개할 때는 `origin/main`보다 뒤처졌는지 확인합니다. `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/`, `docs/domains/*/README.md`, `docs/layers/ui/README.md` 같은 에이전트 행동 규칙 문서가 main에 새로 들어왔으면 먼저 main을 병합합니다.
+7. 장기 브랜치에서 작업을 재개할 때는 `origin/main`보다 뒤처졌는지 확인합니다. `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/`, `docs/domains/*/AGENTS.md`, `docs/layers/*/AGENTS.md` 같은 에이전트 행동 규칙 문서가 main에 새로 들어왔으면 먼저 main을 병합합니다.
 
 빈 채팅에서 `뭐 해야 해?`, `다음 뭐하지?`처럼 범위 없이 물으면 바로 구현하지 않고 `docs/layers/ops/CHAT_START_GUIDE.md` 기준으로 트랙 선택을 돕습니다.
 

@@ -9,7 +9,8 @@
 - `crawl 작업`, `front 작업`, `ops로 Notion 정리`처럼 말하면 해당 트랙을 먼저 정합니다.
 - 이미 대화에 주입된 긴 문서는 터미널로 다시 전문 출력하지 않습니다.
 - `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/layers/ops/DOCUMENTATION_GUIDE.md`는 필요한 섹션만 확인합니다.
-- 트랙이 명확하면 관련 도메인/layer README를 우선 보고, 트랙 경계가 헷갈릴 때만 `docs/layers/ops/TRACKS.md`를 봅니다.
+- 트랙이 명확하면 관련 도메인/layer의 `AGENTS.md`를 먼저 보고, 세부 색인이 필요할 때만 같은 폴더의 `README.md`를 봅니다.
+- 도메인/layer에 `AGENTS.md`가 없으면 `README.md`의 작업 범위와 파일 소유권 섹션만 봅니다.
 - 제품 방향이 필요한 경우에만 `docs/product/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 봅니다.
 - 시작할 때 작업 트랙, 수정 대상, 기록 위치, 주요 위험을 짧게 선언합니다.
 - 범위 없는 `뭐 해야 해?` 요청에는 바로 구현하지 말고 `docs/layers/ops/CHAT_START_GUIDE.md` 기준으로 트랙 선택을 돕습니다.
@@ -36,7 +37,8 @@ Codex는 사용자의 요구를 무조건 수용하는 실행기가 아닙니다
 | 백엔드 API/도메인 | `backend/` |
 | 수집/분석 worker | `pipeline/` |
 | 화면/fixture/API client | `front/` |
-| 도메인별 정본 | `docs/domains/<domain>/README.md` |
+| 도메인별 작업 지침 | `docs/domains/<domain>/AGENTS.md` |
+| 도메인별 정본 색인 | `docs/domains/<domain>/README.md` |
 | 트랙/작업 라벨 기준 | `docs/layers/ops/TRACKS.md` |
 | 화면별 최신 기획 | `docs/layers/ui/screens/` |
 | 완료 이력/과거 설계 | `docs/archive/work-units/items/`, `docs/archive/superpowers/items/` archive |
