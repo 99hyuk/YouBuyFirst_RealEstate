@@ -52,6 +52,7 @@
 - 문서만 바꿔도 `git diff --check`를 실행합니다. 코드 변경은 해당 테스트/빌드/스모크 테스트를 실행하고, front/UI 변경은 가능한 경우 Browser/gstack으로 확인합니다.
 - 현재 상태는 `docs/current/`, 제품 결정은 `docs/product/`, 도메인 contract는 `docs/domains/`, UI 화면 기준은 `docs/layers/ui/screens/`, 운영 규칙은 `docs/layers/ops/`, 리스크는 `docs/governance/`에 둡니다.
 - front 화면 구조나 문구 기준이 바뀌면 사용자의 별도 기록 지시가 없어도 해당 Screen Brief를 갱신합니다.
+- 개발자 취업/포트폴리오에 쓸 수 있는 제품 개발 문제해결, 성능/품질 개선, 기술 의사결정은 `docs/layers/ops/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 Notion 개발자 기술 경험 DB에 남깁니다.
 - PR/라벨/브랜치/worktree/Notion 세부 규칙은 `docs/layers/ops/AGENTS.md`와 관련 ops 문서의 필요한 섹션만 봅니다.
 
 ## 보고 방식
