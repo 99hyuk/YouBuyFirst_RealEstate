@@ -111,7 +111,7 @@ describe('front dashboard shell', () => {
     expect(stock.text()).toContain('오늘의 한줄평');
     expect(stock.text()).toContain('실적표 없으면 행복회로 압수');
     expect(stock.text()).toContain('실거래 판단 근거 아님');
-    expect(stock.text()).toContain('가격 차트와 매매 동향');
+    expect(stock.text()).toContain('가격 차트');
     expect(stock.text()).toContain('KRX:005930');
     expect(stock.text()).toContain('quote API 미연결 · mock fixture');
     expect(stock.text()).toContain('MOCK · stale');
@@ -119,6 +119,7 @@ describe('front dashboard shell', () => {
     expect(stock.text()).toContain('quote snapshot');
     expect(stock.text()).toContain('실제 차트 API 대기');
     expect(stock.text()).toContain('/api/market/chart-candles');
+    expect(stock.text()).toContain('investor-flows/history API');
     expect(stock.text()).toContain('유효한 bars를 줄 때만 표시');
     expect(stock.text()).toContain('bars[].open/high/low/close');
     expect(stock.text()).toContain('어제와 달라진 점');

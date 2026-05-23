@@ -18,9 +18,9 @@
 
 - 팩트폭격 상단 패널: 종목명, 티커, 한줄평, 보조 시황 문장, 근거 keyword chips
 - 종목 헤더: 종목명, 시장, quote snapshot 기반 현재가/등락률/거래량/asOf/stale 상태
-- 메인 가격 차트: TradingView embed가 아니라 `StockPriceChart` 기반의 자체 UI shell이다. `GET /api/market/chart-candles?range=5Y&interval=1d`를 호출해 실제 display-only OHLC bars가 오면 렌더링하고, 화면 기본 범위는 3M으로 둔다. 화면 선택지는 `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y`이며, `bars`가 비었거나 `dataStatus`가 `INSUFFICIENT`, `PROVIDER_ERROR`, `MOCK`이면 차트를 숨기고 상태 안내를 보여준다.
+- 메인 가격 차트: TradingView embed가 아니라 `StockPriceChart` 기반의 자체 UI shell이다. 종목 헤더 아래에 두고, 차트 메타 정보는 그래프보다 뒤로 보내 실제 캔버스가 빨리 보이게 한다. `GET /api/market/chart-candles?range=5Y&interval=1d`를 호출해 실제 display-only OHLC bars가 오면 렌더링하고, 화면 기본 범위는 3M으로 둔다. 화면 선택지는 `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y`이며, `bars`가 비었거나 `dataStatus`가 `INSUFFICIENT`, `PROVIDER_ERROR`, `MOCK`이면 차트를 숨기고 상태 안내를 보여준다. 국내 종목 차트에 비거래일 bar가 있거나 수급 날짜와 차트 날짜가 맞지 않으면 날짜 정합성 경고를 표시한다.
 - quote snapshot 영역: `GET /api/quotes?symbols=005930.KS,AAPL,NVDA` 응답을 우선 사용한다. 현재가, 등락률, 거래량, asOf, provider, delayLabel, stale, dataStatus는 가격 근처에 함께 보여주며 차트에서 긁지 않는다.
-- 거래일별 수급 영역: 국내 종목/ETF는 `GET /api/market/investor-flows/history?symbol=005930.KS&limit=20` 응답으로 최근 거래일별 개인/외국인/기관 순매수 표를 보여준다. `naver-finance` row는 외국인/기관 순매수 수량만 직접 관찰값이고 개인은 잔차 추정값이므로, `individual.derived=true`이면 `개인(잔차)` 또는 `개인 추정`처럼 표시한다. `netAmount`가 `null`이면 금액 칸은 비우거나 `-`로 표시하고 0원처럼 보이지 않게 한다. `tradeDate`, `provider`, `sourceLabel`, `delayLabel`, `asOf`, `stale`, `dataStatus`를 함께 표시하고, 응답 배열이 비면 이 영역만 숨긴다. public API는 `OK`, `STALE` row만 반환한다.
+- 거래일별 수급 영역: 국내 종목/ETF는 `GET /api/market/investor-flows/history?symbol=005930.KS&limit=20` 응답으로 최근 거래일별 개인/외국인/기관 순매수 표를 보여준다. 화면 제목과 안내문에는 수급이 공개 표 기반 추정치이며 실제 확정값과 다를 수 있음을 명시한다. `naver-finance` row는 외국인/기관 순매수 수량만 직접 관찰값이고 개인은 잔차 추정값이므로, `individual.derived=true`이면 `개인(잔차)`처럼 표시한다. `netAmount`가 `null`이면 금액은 `-`로 처리하고 0원처럼 보이지 않게 한다. `tradeDate`, `provider`, `sourceLabel`, `delayLabel`, `asOf`, `stale`, `dataStatus`를 함께 표시한다. public API는 `OK`, `STALE` row만 반환하며, 국내 종목에서 응답 배열이 비면 가짜 0값 표 대신 빈 상태 문구만 보여준다. 미국 종목은 수급 영역을 숨긴다. 표는 5줄 높이 스크롤 목록으로 둔다. 수급 row와 같은 날짜의 `chart-candles` bar가 없으면 종가/전일비/등락률/거래량 칸은 `-`로 표시한다.
 - 차트 데이터 상태: `bars`가 비었거나 `dataStatus`가 `INSUFFICIENT`, `PROVIDER_ERROR`, `MOCK`이면 메인 차트를 숨기고 차트 영역에 API 상태 안내를 표시한다. 렌더링 가능한 경우에도 asOf, provider, delayLabel, stale, dataStatus를 차트 shell 안에 함께 보여준다.
 - 요약 지표 strip: 반응 점수, 언급 변화, 긍정/부정, 출처 수, 원문 링크 수
 - 반응 키워드와 시간대별 변화: 30분 키워드 pulse, 09:00~09:45 snapshot
@@ -37,7 +37,7 @@
 - empty: 근거가 부족하면 `headlineTone`을 `normal`로 낮추고 표본/원문 부족을 신뢰도 영역에 표시한다.
 - error: chart candle 실패와 quote snapshot 실패를 분리해서 표시한다.
 - stale/mock: `quoteSnapshot.dataStatus`, `quoteSnapshot.asOf`, `quoteSnapshot.stale`, `chartCandles.dataStatus`, `chartCandles.asOf`, `chartCandles.stale`을 각각 가격/차트 영역에 함께 표시한다.
-- investor flow stale/error: 수급은 거래일별 확정 관찰 데이터라 장중 실시간처럼 보이게 표시하지 않는다. `investorFlow.delayLabel`, `investorFlow.tradeDate`, `investorFlow.provider`, `investorFlow.stale`, `investorFlow.dataStatus`를 수급 영역에 함께 표시한다. history 배열이 비면 표를 숨긴다.
+- investor flow stale/error: 수급은 거래일별 확정 관찰 데이터라 장중 실시간처럼 보이게 표시하지 않는다. `investorFlow.delayLabel`, `investorFlow.tradeDate`, `investorFlow.provider`, `investorFlow.stale`, `investorFlow.dataStatus`를 수급 영역에 함께 표시한다. public history 응답은 `OK`, `STALE`만 표에 표시하고, 국내 종목의 배열이 비면 0 수급처럼 보이지 않게 표를 숨기되 빈 상태 패널로 위치를 알려준다.
 
 ## API 후보
 
@@ -64,6 +64,7 @@
 ## 확인 필요
 
 - investor flow 거래일별 slice는 `GET /api/market/investor-flows/history`를 사용한다. 현재 provider adapter는 `naver-finance`이며, 네이버 표 구조 변경이나 provider 실패 때는 빈 배열이 올 수 있다.
+- 외인보유/보유율 컬럼은 현재 API에 없으므로 표시하지 않는다. 필요하면 market API 후보로 `foreignHolding`, `foreignHoldingPct`를 별도 논의한다.
 - Lightweight Charts용 chartCandles와 quoteSnapshot의 기준 시각 차이를 어떻게 표시할지.
 - chartCandles API는 `docs/workstreams/market/chart-candles.md` shape를 따른다. raw minute, order book, bulk OHLC가 아닌 공개 표시 가능한 일/주/월 display bars만 사용한다.
 - quote snapshot만으로 차트를 만들지 않는다.

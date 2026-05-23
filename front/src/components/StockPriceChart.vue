@@ -41,6 +41,7 @@ const props = defineProps<{
   snapshotAsOf?: string;
   snapshotStatus?: string;
   dataMode?: 'fixture' | 'actual';
+  showFlowSummary?: boolean;
 }>();
 
 const chartEl = ref<HTMLDivElement | null>(null);
@@ -82,6 +83,7 @@ const tradingDayRanges = {
 
 const chartDataMode = computed(() => props.dataMode ?? 'fixture');
 const isFixtureChart = computed(() => chartDataMode.value === 'fixture');
+const showFlowSummary = computed(() => props.showFlowSummary !== false);
 
 const modeDivisor = computed(() => {
   if (candleMode.value === '주') return 5;
@@ -788,13 +790,13 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="stock-chart-lower-grid">
+    <div class="stock-chart-lower-grid" :class="{ 'volume-only': !showFlowSummary }">
       <article class="volume-brief">
         <span>거래량</span>
         <strong>{{ latest ? formatCompact(latest.volume) : '-' }}{{ volumeUnit }}</strong>
         <em>캔들 하단 히스토그램 표시</em>
       </article>
-      <article class="flow-brief">
+      <article v-if="showFlowSummary" class="flow-brief">
         <div>
           <span>매매 동향</span>
           <div class="flow-mode-tabs" aria-label="매매동향 보기 방식">

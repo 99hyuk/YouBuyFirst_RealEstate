@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import StockPriceChart from '../components/StockPriceChart.vue';
@@ -84,6 +84,29 @@ type ApiChartCandles = {
   };
 };
 
+type ApiInvestorFlowLeg = {
+  netAmount: number | null;
+  netVolume: number;
+  derived: boolean;
+};
+
+type ApiInvestorFlowSnapshot = {
+  symbol: string;
+  name: string;
+  market: string;
+  currency: 'KRW' | 'USD';
+  tradeDate: string;
+  provider: string;
+  sourceLabel: string;
+  delayLabel: string;
+  asOf: string;
+  stale: boolean;
+  dataStatus: string;
+  individual: ApiInvestorFlowLeg;
+  foreign: ApiInvestorFlowLeg;
+  institution: ApiInvestorFlowLeg;
+};
+
 type QuoteDisplay = {
   symbol: string;
   price: string;
@@ -104,9 +127,12 @@ const quoteLoadState = ref<'fixture' | 'api' | 'error'>('fixture');
 const chartCandles = ref<ApiChartCandles | null>(null);
 const chartLoadState = ref<'idle' | 'loading' | 'api' | 'hidden' | 'error'>('idle');
 const chartBlockReason = ref('차트 API 응답을 기다리고 있습니다.');
+const investorFlows = ref<ApiInvestorFlowSnapshot[]>([]);
+const investorFlowLoadState = ref<'idle' | 'loading' | 'api' | 'hidden' | 'error'>('idle');
 const isTestMode = typeof window !== 'undefined' && window.navigator.userAgent.includes('jsdom');
 const quoteApiBaseUrl = '';
 const hiddenChartStatuses = new Set(['INSUFFICIENT', 'PROVIDER_ERROR', 'MOCK']);
+const visibleInvestorFlowStatuses = new Set(['OK', 'STALE']);
 
 const routeSymbol = computed(() => String(route.params.symbol ?? stockFixtures[0].symbol).toUpperCase());
 const quoteApiSymbolFor = (item: StockDetailFixture) =>
@@ -124,9 +150,13 @@ const quoteApiSymbol = computed(() => quoteApiSymbolFor(stock.value));
 const quoteRequestSymbols = computed(() => Array.from(new Set(['005930.KS', 'AAPL', 'NVDA', quoteApiSymbol.value])));
 const quoteApiUrl = computed(() => `${quoteApiBaseUrl}/api/quotes?symbols=${quoteRequestSymbols.value.join(',')}`);
 const chartApiRequestUrl = computed(() => `/api/market/chart-candles?symbol=${quoteApiSymbol.value}&range=5Y&interval=1d`);
+const investorFlowApiRequestUrl = computed(
+  () => `/api/market/investor-flows/history?symbol=${encodeURIComponent(quoteApiSymbol.value)}&limit=20`
+);
 const apiQuoteSnapshot = computed(() =>
   quoteSnapshots.value.find((quote) => quote.symbol.toUpperCase() === quoteApiSymbol.value.toUpperCase())
 );
+const isDomesticInvestorFlowTarget = computed(() => quoteApiSymbol.value.toUpperCase().endsWith('.KS') || stock.value.market === 'KRX');
 const topBrief = computed(() => stock.value.brief);
 const chartFixture = computed(
   () =>
@@ -151,6 +181,35 @@ const formatVolume = (value: number) => {
   if (value >= 100000000) return `${(value / 100000000).toFixed(1)}억주`;
   if (value >= 10000) return `${(value / 10000).toFixed(1)}만주`;
   return `${value.toLocaleString('ko-KR')}주`;
+};
+
+const formatSignedNumber = (value: number) => {
+  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+  return `${sign}${Math.abs(value).toLocaleString('ko-KR')}`;
+};
+
+const formatSignedPct = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
+
+const formatNetAmount = (value: number | null, currency: ApiInvestorFlowSnapshot['currency']) => {
+  if (value === null) return '-';
+
+  const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+  const absolute = Math.abs(value);
+
+  if (currency === 'KRW') {
+    if (absolute >= 1000000000000) return `${sign}${(absolute / 1000000000000).toFixed(2)}조원`;
+    if (absolute >= 100000000) return `${sign}${(absolute / 100000000).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}억원`;
+    if (absolute >= 10000) return `${sign}${(absolute / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}만원`;
+    return `${sign}${absolute.toLocaleString('ko-KR')}원`;
+  }
+
+  return formatSignedCurrency(value, currency);
+};
+
+const flowTone = (value: number) => {
+  if (value > 0) return 'up';
+  if (value < 0) return 'down';
+  return 'flat';
 };
 
 const formatAsOf = (value: string) => {
@@ -243,6 +302,28 @@ const chartDisplayCandles = computed<StockChartCandle[]>(() =>
     institution: 0
   }))
 );
+const isWeekendDate = (value: string) => {
+  const day = new Date(`${value}T00:00:00`).getDay();
+  return day === 0 || day === 6;
+};
+const chartCalendarWarning = computed(() => {
+  const payload = chartCandles.value;
+  if (!payload || !isDomesticInvestorFlowTarget.value) return '';
+
+  const weekendBars = payload.bars.filter((bar) => isWeekendDate(bar.date));
+  const barDates = new Set(payload.bars.map((bar) => bar.date));
+  const missingFlowDates = investorFlowSnapshots.value
+    .filter((snapshot) => !barDates.has(snapshot.tradeDate))
+    .slice(0, 3)
+    .map((snapshot) => snapshot.tradeDate.slice(5));
+
+  if (!weekendBars.length && !missingFlowDates.length) return '';
+
+  const issueParts = [];
+  if (weekendBars.length) issueParts.push(`비거래일 bar ${weekendBars.length}개`);
+  if (missingFlowDates.length) issueParts.push(`수급 날짜 미매칭 ${missingFlowDates.join(', ')}`);
+  return `국장 차트 날짜 정합성 확인 필요: ${issueParts.join(' · ')}. 차트 API 날짜를 KRX 거래일 기준으로 보정하기 전까지 수급 표의 가격 칸은 같은 날짜만 붙입니다.`;
+});
 const chartStatusLabel = computed(() => {
   const payload = chartCandles.value;
   if (!payload) return chartLoadState.value === 'loading' ? 'chart API 확인 중' : 'chart API 대기';
@@ -270,6 +351,82 @@ const chartBlockTitle = computed(() => {
   if (chartLoadState.value === 'hidden') return '차트 응답이 표시 조건을 만족하지 않습니다';
   if (chartLoadState.value === 'error') return '실제 차트 API가 아직 연결되지 않았습니다';
   return `실제 ${chartFixture.value.providerSymbol} 일자별 차트 API가 필요합니다`;
+});
+const investorFlowSnapshots = computed(() =>
+  investorFlows.value
+    .filter((item) => item.symbol.toUpperCase() === quoteApiSymbol.value.toUpperCase())
+    .filter((item) => visibleInvestorFlowStatuses.has(item.dataStatus.toUpperCase()))
+    .sort((first, second) => second.tradeDate.localeCompare(first.tradeDate))
+);
+const latestInvestorFlow = computed(() => investorFlowSnapshots.value[0] ?? null);
+const canRenderInvestorFlow = computed(
+  () => investorFlowLoadState.value === 'api' && isDomesticInvestorFlowTarget.value && investorFlowSnapshots.value.length > 0
+);
+const canShowInvestorFlowPanel = computed(() => isDomesticInvestorFlowTarget.value && investorFlowLoadState.value !== 'idle');
+const chartPanelTitle = computed(() => (isDomesticInvestorFlowTarget.value ? '가격 차트와 일별 수급' : '가격 차트'));
+const investorFlowStatusLabel = computed(() => {
+  const payload = latestInvestorFlow.value;
+  if (!payload) return investorFlowLoadState.value === 'loading' ? '수급 API 확인 중' : '수급 API 대기';
+  return `${payload.dataStatus} · ${payload.stale ? 'stale' : 'fresh'}`;
+});
+const investorFlowEmptyMessage = computed(() => {
+  if (investorFlowLoadState.value === 'loading') return '수급 history API를 확인하고 있습니다.';
+  if (investorFlowLoadState.value === 'error') return '수급 history API 응답을 확인할 수 없습니다. 차트와 가격 영역은 그대로 볼 수 있습니다.';
+  return '표시 가능한 OK/STALE 수급 row가 아직 없습니다. 실패/부족/mock 값은 0 수급처럼 보이지 않게 숨깁니다.';
+});
+const investorFlowMetaItems = computed(() => {
+  const payload = latestInvestorFlow.value;
+  if (!payload) return [];
+
+  return [
+    { label: '최근 거래일', value: payload.tradeDate },
+    { label: 'provider', value: payload.provider },
+    { label: 'delay', value: payload.delayLabel },
+    { label: 'asOf', value: formatAsOf(payload.asOf) },
+    { label: 'status', value: investorFlowStatusLabel.value }
+  ];
+});
+const investorFlowSubjectLabels = computed(() => {
+  const payload = latestInvestorFlow.value;
+  const labelFor = (label: string, leg?: ApiInvestorFlowLeg) => (leg?.derived ? `${label}(잔차)` : label);
+
+  return {
+    individual: labelFor('개인', payload?.individual),
+    foreign: labelFor('외국인', payload?.foreign),
+    institution: labelFor('기관', payload?.institution)
+  };
+});
+const investorFlowTableRows = computed(() => {
+  const bars = chartCandles.value?.bars ?? [];
+
+  return investorFlowSnapshots.value.map((snapshot) => {
+    const barIndex = bars.findIndex((bar) => bar.date === snapshot.tradeDate);
+    const bar = barIndex >= 0 ? bars[barIndex] : null;
+    const previousBar = barIndex > 0 ? bars[barIndex - 1] : null;
+    const priceChange = bar && previousBar ? bar.close - previousBar.close : null;
+    const priceChangePct = priceChange !== null && previousBar?.close ? (priceChange / previousBar.close) * 100 : null;
+
+    const flowCell = (leg: ApiInvestorFlowLeg) => ({
+      volumeLabel: formatSignedNumber(leg.netVolume),
+      amountLabel: formatNetAmount(leg.netAmount, snapshot.currency),
+      derived: leg.derived,
+      title: `${leg.derived ? '잔차 계산값' : '관찰값'} · 금액 ${formatNetAmount(leg.netAmount, snapshot.currency)}`,
+      tone: flowTone(leg.netVolume || leg.netAmount || 0)
+    });
+
+    return {
+      key: `${snapshot.symbol}-${snapshot.tradeDate}`,
+      dateLabel: snapshot.tradeDate.slice(5),
+      closeLabel: bar ? formatCurrency(bar.close, snapshot.currency) : '-',
+      changeLabel: priceChange === null ? '-' : formatSignedCurrency(priceChange, snapshot.currency),
+      changePctLabel: priceChangePct === null ? '-' : formatSignedPct(priceChangePct),
+      changeTone: flowTone(priceChange ?? 0),
+      volumeLabel: bar ? formatVolume(bar.volume) : '-',
+      individual: flowCell(snapshot.individual),
+      foreign: flowCell(snapshot.foreign),
+      institution: flowCell(snapshot.institution)
+    };
+  });
 });
 
 const reactionTrend = [
@@ -407,9 +564,67 @@ const loadChartCandles = async () => {
   }
 };
 
-onMounted(() => {
+const loadInvestorFlows = async () => {
+  investorFlows.value = [];
+
+  if (isTestMode) {
+    return;
+  }
+
+  if (!isDomesticInvestorFlowTarget.value) {
+    investorFlowLoadState.value = 'hidden';
+    return;
+  }
+
+  investorFlowLoadState.value = 'loading';
+
+  try {
+    const response = await fetch(investorFlowApiRequestUrl.value, {
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`investor flow request failed: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('investor flow response is not JSON');
+    }
+
+    const payload = (await response.json()) as ApiInvestorFlowSnapshot[] | { items?: ApiInvestorFlowSnapshot[] };
+    const items = Array.isArray(payload) ? payload : payload.items;
+    const snapshots =
+      items?.filter(
+        (item) =>
+          item.symbol.toUpperCase() === quoteApiSymbol.value.toUpperCase() &&
+          visibleInvestorFlowStatuses.has(item.dataStatus.toUpperCase())
+      ) ?? [];
+
+    if (!snapshots.length) {
+      investorFlowLoadState.value = 'hidden';
+      return;
+    }
+
+    investorFlows.value = snapshots;
+    investorFlowLoadState.value = 'api';
+  } catch {
+    investorFlows.value = [];
+    investorFlowLoadState.value = 'error';
+  }
+};
+
+const loadMarketSlices = () => {
   void loadQuoteSnapshots();
   void loadChartCandles();
+  void loadInvestorFlows();
+};
+
+onMounted(() => {
+  loadMarketSlices();
+});
+
+watch(quoteApiSymbol, () => {
+  loadMarketSlices();
 });
 </script>
 
@@ -485,11 +700,11 @@ onMounted(() => {
       </div>
     </section>
 
-    <section class="stock-main-chart panel content-feed-card surface-data-card" aria-label="종목 가격 차트와 매매 동향">
+    <section class="stock-main-chart panel content-feed-card surface-data-card" :aria-label="`종목 ${chartPanelTitle}`">
       <div class="panel-header">
         <div>
           <p class="label">chart lab</p>
-          <h3>가격 차트와 매매 동향</h3>
+          <h3>{{ chartPanelTitle }}</h3>
         </div>
         <span class="status-pill subtle">{{ canRenderChart ? 'chart API 연결' : '실제 차트 API 대기' }}</span>
       </div>
@@ -500,6 +715,10 @@ onMounted(() => {
           <strong>{{ item.value }}</strong>
         </article>
       </div>
+
+      <p v-if="chartCalendarWarning" class="chart-data-warning" role="note">
+        {{ chartCalendarWarning }}
+      </p>
 
       <StockPriceChart
         v-if="canRenderChart && chartCandles"
@@ -514,6 +733,7 @@ onMounted(() => {
         :snapshot-as-of="chartCandles.asOf"
         :snapshot-status="chartStatusLabel"
         data-mode="actual"
+        :show-flow-summary="false"
       />
 
       <div v-else class="chart-api-blocker" role="note" aria-label="실제 차트 API 요청">
@@ -547,8 +767,68 @@ onMounted(() => {
         </div>
       </div>
 
+      <section v-if="canShowInvestorFlowPanel" class="investor-flow-panel" aria-label="일별 수급">
+        <div class="investor-flow-head">
+          <div>
+            <p class="label">investor flow</p>
+            <h4>일별 수급 추정치</h4>
+          </div>
+          <span class="status-pill subtle">{{ investorFlowStatusLabel }}</span>
+        </div>
+
+        <div v-if="canRenderInvestorFlow" class="investor-flow-meta" aria-label="수급 데이터 기준">
+          <span v-for="item in investorFlowMetaItems" :key="item.label">
+            <b>{{ item.label }}</b>
+            {{ item.value }}
+          </span>
+        </div>
+
+        <div v-if="canRenderInvestorFlow" class="investor-flow-table-wrap" aria-label="최근 거래일 수급 표">
+          <table class="investor-flow-table">
+            <thead>
+              <tr>
+                <th>날짜</th>
+                <th>종가</th>
+                <th>전일비</th>
+                <th>등락률</th>
+                <th>거래량</th>
+                <th>{{ investorFlowSubjectLabels.individual }}</th>
+                <th>{{ investorFlowSubjectLabels.foreign }}</th>
+                <th>{{ investorFlowSubjectLabels.institution }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in investorFlowTableRows" :key="row.key">
+                <td>{{ row.dateLabel }}</td>
+                <td>{{ row.closeLabel }}</td>
+                <td :class="row.changeTone">{{ row.changeLabel }}</td>
+                <td :class="row.changeTone">{{ row.changePctLabel }}</td>
+                <td>{{ row.volumeLabel }}</td>
+                <td :class="[row.individual.tone, { derived: row.individual.derived }]" :title="row.individual.title">
+                  {{ row.individual.volumeLabel }}
+                </td>
+                <td :class="[row.foreign.tone, { derived: row.foreign.derived }]" :title="row.foreign.title">
+                  {{ row.foreign.volumeLabel }}
+                </td>
+                <td :class="[row.institution.tone, { derived: row.institution.derived }]" :title="row.institution.title">
+                  {{ row.institution.volumeLabel }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-else class="investor-flow-empty" aria-label="수급 데이터 없음">
+          {{ investorFlowEmptyMessage }}
+        </div>
+
+        <p class="investor-flow-note">
+          수급은 공개 표 기반 추정치라 실제 확정값과 다를 수 있습니다. 개인(잔차)은 외국인/기관 관찰 수량으로 계산한 값이며,
+          종가·전일비·거래량은 차트 API에 같은 날짜 bar가 없으면 -로 표시합니다.
+        </p>
+      </section>
       <p class="chart-data-note">
-        현재가·등락률·거래량은 위 quote snapshot API 값입니다. 메인 차트는 chart-candles API의 display-only OHLC bars만 사용하고, 수급 데이터는 별도 전 거래일 slice로 분리합니다.
+        현재가·등락률·거래량은 quote snapshot API, 메인 차트는 chart-candles API, 일별 수급은 investor-flows/history API를 각각 따로 사용합니다.
       </p>
     </section>
 

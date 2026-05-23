@@ -3652,6 +3652,42 @@ a {
   color: #ffffff;
 }
 
+.stock-roast-panel {
+  order: -3;
+}
+
+.stock-hero {
+  order: -2;
+}
+
+.stock-main-chart {
+  order: -1;
+}
+
+.stock-main-chart > .panel-header {
+  order: 1;
+}
+
+.stock-main-chart > .stock-price-chart-shell {
+  order: 2;
+}
+
+.stock-main-chart > .chart-data-warning {
+  order: 3;
+}
+
+.stock-main-chart > .chart-source-meta-grid {
+  order: 4;
+}
+
+.stock-main-chart > .investor-flow-panel {
+  order: 5;
+}
+
+.stock-main-chart > .chart-data-note {
+  order: 6;
+}
+
 .stock-identity h2 {
   margin: 6px 0;
   color: #ffffff;
@@ -4072,6 +4108,18 @@ a {
   white-space: nowrap;
 }
 
+.chart-data-warning {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #f0d7a1;
+  border-radius: 8px;
+  background: #fff8e8;
+  color: #8a5a0b;
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1.45;
+}
+
 .chart-contract-fields {
   display: flex;
   flex-wrap: wrap;
@@ -4344,10 +4392,158 @@ a {
   line-height: 1.5;
 }
 
+.investor-flow-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dce5f1;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.96) 0%, rgba(243, 247, 252, 0.98) 100%),
+    #ffffff;
+}
+
+.investor-flow-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.investor-flow-head h4 {
+  margin: 1px 0 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 920;
+  letter-spacing: 0;
+}
+
+.investor-flow-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.investor-flow-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid #e1e9f3;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #647184;
+  font-size: 10.5px;
+  font-weight: 760;
+}
+
+.investor-flow-meta b {
+  color: #2f6fed;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.investor-flow-table-wrap {
+  max-height: 244px;
+  overflow: auto;
+  border: 1px solid #e1e9f3;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.investor-flow-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  color: #26384f;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.investor-flow-table th,
+.investor-flow-table td {
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid #edf2f7;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.investor-flow-table th:first-child,
+.investor-flow-table td:first-child {
+  text-align: left;
+}
+
+.investor-flow-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f7f9fc;
+  color: #728096;
+  font-size: 10.5px;
+  font-weight: 900;
+}
+
+.investor-flow-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.investor-flow-table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.investor-flow-table .up {
+  color: var(--market-up);
+}
+
+.investor-flow-table .down {
+  color: var(--market-down);
+}
+
+.investor-flow-table .flat {
+  color: #66758a;
+}
+
+.investor-flow-table .derived {
+  font-style: italic;
+  text-decoration: underline dotted rgba(100, 113, 132, 0.48);
+  text-underline-offset: 3px;
+}
+
+.investor-flow-empty {
+  padding: 14px 16px;
+  border: 1px dashed #cbd8e8;
+  border-radius: 8px;
+  background: rgba(248, 251, 255, 0.92);
+  color: #536174;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.55;
+}
+
+.investor-flow-note {
+  margin: 0;
+  color: #647184;
+  font-size: 11px;
+  font-weight: 720;
+  line-height: 1.55;
+}
+
+.investor-flow-note strong {
+  color: var(--ink);
+  font-weight: 900;
+}
+
 .stock-chart-lower-grid {
   align-items: stretch;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.stock-chart-lower-grid.volume-only {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .volume-brief,
