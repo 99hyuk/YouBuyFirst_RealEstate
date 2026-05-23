@@ -30,18 +30,18 @@
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `rankingGroups[].id` | front/backend | `domestic`, `overseas` 같은 시장 그룹 |
-| `rankingGroups[].rows[].rank` | market/data | 거래량 기준 현재 정렬 순위 |
-| `rankingGroups[].rows[].symbol`, `name`, `market` | backend/data | 종목 식별 |
+| `rankingGroups[].id` | layers/ui/backend | `domestic`, `overseas` 같은 시장 그룹 |
+| `rankingGroups[].rows[].rank` | market/indicator | 거래량 기준 현재 정렬 순위 |
+| `rankingGroups[].rows[].symbol`, `name`, `market` | stock/backend | 종목 식별 |
 | `rankingGroups[].rows[].price`, `change` | market | 현재가와 등락률 |
 | `rankingGroups[].rows[].volume`, `volumeDelta` | market | 거래량과 거래량 변화 |
-| `rankingGroups[].rows[].positive`, `negative` | data | 반응 방향 비율 |
-| `rankingGroups[].rows[].event` | backend/data | 반응을 움직인 대표 이벤트 |
+| `rankingGroups[].rows[].positive`, `negative` | indicator | 반응 방향 비율 |
+| `rankingGroups[].rows[].event` | backend/indicator | 반응을 움직인 대표 이벤트 |
 | `rankingGroups[].rows[].freshness` | backend/market | 지연, mock, stale 상태 |
-| `filters` | front/backend | 서버 필터 후보 |
-| `hotThemes` | data | 급증 테마와 종목 수 |
+| `filters` | layers/ui/backend | 서버 필터 후보 |
+| `hotThemes` | indicator | 급증 테마와 종목 수 |
 
 ## 기획자 확인 필요
 

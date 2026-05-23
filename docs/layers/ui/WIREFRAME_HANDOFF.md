@@ -54,5 +54,5 @@ git diff --check
 과거 근거가 꼭 필요할 때만 아래처럼 좁혀 봅니다.
 
 ```powershell
-rg -n -m 20 "검색어" docs\workstreams\front\archive\WIREFRAME_HANDOFF_2026-05-17.md
+rg -n -m 20 "검색어" docs\archive\front\wireframe\WIREFRAME_HANDOFF_2026-05-17.md
 ```

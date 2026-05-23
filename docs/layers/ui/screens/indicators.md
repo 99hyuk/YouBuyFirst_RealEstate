@@ -43,13 +43,13 @@
 
 ## API 후보
 
-| Field | Owner Track | Description |
+| Field | Owner Domain/Layer | Description |
 | --- | --- | --- |
-| `marketGroups` | market/data | 국내주식, 미국주식, 채권, 원자재 핵심 지표 묶음 |
-| `detailRows` | market/data | 상세 route별 지표 목록 |
-| `domesticSectors` | market/data | 국장 섹터 방향과 강도 |
-| `usSectors` | market/data | 미장 섹터 방향과 강도 |
-| `anomalyRows` | market/data | 가격과 반응이 엇갈린 종목 |
+| `marketGroups` | market/indicator | 국내주식, 미국주식, 채권, 원자재 핵심 지표 묶음 |
+| `detailRows` | market/indicator | 상세 route별 지표 목록 |
+| `domesticSectors` | market/indicator | 국장 섹터 방향과 강도 |
+| `usSectors` | market/indicator | 미장 섹터 방향과 강도 |
+| `anomalyRows` | market/indicator | 가격과 반응이 엇갈린 종목 |
 | `freshnessRows` | backend | 지표별 데이터 신선도 |
 | `schedules` | market/backend | 주요 일정 |
 

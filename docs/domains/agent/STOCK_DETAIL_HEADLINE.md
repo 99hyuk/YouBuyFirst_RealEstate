@@ -125,9 +125,9 @@
 - `GET /api/stocks/{symbol}/detail`
 - 또는 `GET /api/stocks/{symbol}/roast-headline`
 
-트랙별 책임:
+도메인/layer 접점:
 
-| 트랙 | 책임 |
+| 도메인/layer | 책임 |
 | --- | --- |
 | `backend` | API 응답 DTO, 캐시, `asOf`, stale 상태, Swagger/OpenAPI 문서 |
 | `market` | 가격, 수익률, EMA/VWAP, 거래량, 호가/수급성 근거 |
@@ -177,4 +177,4 @@
 }
 ```
 
-이 데이터는 `front`가 화면에 보여주고, `market`, `data`, `agent` 트랙이 어떤 필드를 실제로 제공할지 계약을 나눠 확정합니다.
+이 데이터는 `layers/ui`가 화면에 보여주고, `market`, `indicator`, `agent` 도메인이 어떤 필드를 실제로 제공할지 계약을 나눠 확정합니다.

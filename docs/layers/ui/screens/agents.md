@@ -28,12 +28,12 @@
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
 | `agentPersonas` | agent | 모멘텀, 역발상, 리스크 회피, 커뮤니티 추종 등 |
-| `agentPipeline` | agent/data/market | 판단 입력값, 신뢰도, 중복 판단 key, paper 후보 수 |
-| `agentDecisionLogs` | agent/trade | 관찰, 스킵, paper 후보, 스킵 사유 기록 |
-| `agentDecisionLogs[].input` | agent/data/market | 커뮤니티 반응, 가격 snapshot, 신뢰도, 뉴스 이벤트 |
+| `agentPipeline` | agent/indicator/market | 판단 입력값, 신뢰도, 중복 판단 key, paper 후보 수 |
+| `agentDecisionLogs` | agent/simulation | 관찰, 스킵, paper 후보, 스킵 사유 기록 |
+| `agentDecisionLogs[].input` | agent/indicator/market | 커뮤니티 반응, 가격 snapshot, 신뢰도, 뉴스 이벤트 |
 | `agentDecisionLogs[].key` | agent/backend | 중복 판단 방지 key |
 | `strategyVersions` | agent | 전략 버전과 규칙 |
 

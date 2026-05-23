@@ -23,7 +23,7 @@ backend/
     analysis/       # 종목별 반응 방향 판단, bullish/bearish/neutral, 근거
     indicator/      # 30분 집계, 열기 지수, 랭킹, 지표 snapshot
     market/         # 시세/호가, quote cache, WebSocket
-    trade/          # 가상 계좌, 주문, 체결, 포트폴리오
+    simulation/     # 가상 계좌, 주문, 체결, 포트폴리오
     agent/          # AI 전략 판단, 커뮤니티별 성과 비교, 결정 로그
 ```
 
@@ -54,8 +54,8 @@ pipeline/
 | `crawl` | `pipeline/crawlers`, `backend/crawl`, `backend/ingestion` 일부 | 수집 입력과 실행 상태를 담당합니다. |
 | `data` | `stock`, `analysis`, `indicator` | 종목 인식, 분석, 지표화까지 담당합니다. 매매 판단은 하지 않습니다. |
 | `market` | `market` | 시세/호가와 quote cache만 담당합니다. |
-| `trade` | `trade` | 가상 계좌, 주문, 체결, 포트폴리오를 담당합니다. |
-| `agent` | `agent` | data/market/trade 결과를 읽어 전략 판단과 결정 로그를 만듭니다. |
+| `trade` | `simulation` | 가상 계좌, 주문, 체결, 포트폴리오를 담당합니다. |
+| `agent` | `agent` | stock/analysis/indicator/market/simulation 결과를 읽어 전략 판단과 결정 로그를 만듭니다. |
 | `front` | frontend app | 화면과 API 연동을 담당합니다. |
 | `ops` | `docs`, `.github`, Notion, CI/운영 문서 | 제품 조율과 운영 기준을 담당합니다. |
 

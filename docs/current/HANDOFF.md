@@ -9,7 +9,7 @@
 - Repository: `99hyuk/YouBuyFirst`
 - Default branch: `main`
 - 루트 checkout: `C:\agents\YouBuyFirst`는 main/조율용, 병렬 작업은 `.worktrees/<task>`에서 진행합니다.
-- 최근 머지된 ops 규칙 PR: PR #60 `[ops][docs] PR 템플릿 적용 규칙 보강`
+- 최근 ops 정리: 문서 트리 구조, 도메인/layer `AGENTS.md`, 루트 QA 산출물 정리 기준이 `main`에 반영되어 있습니다.
 - 기반: Spring Boot backend, Python pipeline, MySQL, Docker Compose, Vue 3 front mock shell
 
 ## 구현 스냅샷
@@ -40,7 +40,7 @@
 - 제품 핵심은 관심종목 앱이 아니라 커뮤니티 반응 지표입니다. 관심종목은 커뮤니티 지표를 매일 쓰게 만드는 필터/개인화 레이어로 둡니다.
 - 부동산은 주식 MVP에 섞지 않고 후순위 별도 버티컬로만 검토합니다. SSAFY 관통프로젝트 주제와 병행할 수는 있지만, 너나사 주식 서비스의 핵심 범위는 주식/ETF 커뮤니티 반응 분석입니다.
 - market MVP 데이터 공급자는 quote/chart는 `yfinance` + FinanceDataReader 조합으로 정합니다. `yfinance`는 국내/미국 시세와 거래량의 1차 provider, FinanceDataReader는 국내 종목 메타데이터와 일부 스냅샷 보강 후보로 둡니다. `.KS`/`.KQ` quote는 Yahoo Finance 원천 20분 지연과 pipeline 기본 10분 갱신 주기를 합쳐 최대 30분 지연으로 표시합니다. 미국 quote는 지연 시간을 단정하지 않고 10분 주기 refresh snapshot으로 표시합니다. 개인/외국인/기관 수급은 quote snapshot과 분리해 국내 전체 종목 대상 전 거래일 기준 데이터로만 다룹니다. 수급은 `naver-finance`를 기본 provider로 두고, 네이버 금융 표의 외국인/기관 순매수 수량 관찰값과 개인 잔차 추정값(`derived=true`)을 사용합니다. `pykrx`는 KRX 응답/세션 문제가 있어 선택 검증 provider로 남깁니다. 공개 화면에는 `지연 데이터`, provider, `asOf`, `stale`, `참고용` 표시가 필수입니다.
-- 종목 상세 실제 차트는 `GET /api/market/chart-candles` 계약을 사용합니다. `GET /api/quotes`는 snapshot 전용으로 유지하고, front는 fixture 차트를 실제 차트처럼 렌더링하지 않습니다. chart-candles 공개 범위는 `1M/3M/6M/1Y/3Y/5Y`, 최대 `1260` daily bars입니다. `bars[].date`는 UTC 날짜가 아니라 거래소 현지 거래일이며, 국내 일봉은 KRX 거래일 기준으로 수급 `tradeDate`와 매칭합니다. market/backend 트랙은 `docs/domains/market/CHART_CANDLES.md`를 기준으로 구현합니다.
+- 종목 상세 실제 차트는 `GET /api/market/chart-candles` 계약을 사용합니다. `GET /api/quotes`는 snapshot 전용으로 유지하고, front는 fixture 차트를 실제 차트처럼 렌더링하지 않습니다. chart-candles 공개 범위는 `1M/3M/6M/1Y/3Y/5Y`, 최대 `1260` daily bars입니다. `bars[].date`는 UTC 날짜가 아니라 거래소 현지 거래일이며, 국내 일봉은 KRX 거래일 기준으로 수급 `tradeDate`와 매칭합니다. market/backend 작업은 `docs/domains/market/CHART_CANDLES.md`를 기준으로 구현합니다.
 - 종목별 수급은 `GET /api/market/investor-flows/history?symbol=005930.KS&limit=20` 단일 public API로 분리합니다. backend는 `symbol + tradeDate` display cache를 제공하고, pipeline은 기본 `naver-finance` adapter와 한국시간 평일 18:30 refresh job을 둡니다. 단일 최신 수급 public API는 두지 않고, provider 실패 row는 0 수급처럼 저장/공개하지 않습니다. 네이버 표는 금액을 제공하지 않으므로 `netAmount=null`이 가능하고, 개인 값은 잔차 추정값으로만 표시해야 합니다.
 - 종목 상세 상단의 강한 한줄평은 커뮤니티 요약이 아니라 시황/기술지표/재무 기반 `종목 상태 팩트폭격 헤드라인`입니다. 생성 기준과 API 후보 필드는 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`, 검은 배너 표현 기준은 `docs/layers/ui/STOCK_DETAIL_BANNER.md`를 봅니다.
 - 디자인과 프론트 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다. Figma AI/Stitch는 기본 흐름이 아니며, 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 씁니다.
@@ -50,8 +50,8 @@
 - 소스 후보에는 네이버 종토방, 에펨코리아 주식, 뽐뿌 증권포럼, 디시 미국 주식 갤러리, 디시 주식갤러리/국내주식 계열을 포함합니다. 디시 계열은 이름 하드코딩 대신 source/board registry로 관리합니다.
 - 블로그는 전체 검색 결과보다 신뢰 블로그 whitelist를 추적하고, 인기글/개념글/추천글/조회수 상위글은 초기 감지가 아니라 이슈 확산 확인 레이어로 둡니다.
 - 공개 배포 전에는 원문 재게시, 작성자 추적, 닉네임 랭킹을 하지 않습니다.
-- `trade`는 실제 결제나 실거래가 아니라 가상 주문, 체결, 정산, 원장, 포지션의 트랜잭션 정합성을 보여주는 트랙입니다. 동시 클릭 경쟁보다 에이전트 판단/주문/체결 idempotency와 원장 기반 손익 재계산을 우선합니다.
-- `agent`는 통계 윈도우를 보고 paper trading 결정을 남기며, `agentId + windowStart + symbol + strategyVersion` 같은 판단 key로 중복 판단을 막습니다. 체결 장부 수정은 `trade` contract를 통합니다.
+- `simulation` 도메인은 실제 결제나 실거래가 아니라 가상 주문, 체결, 정산, 원장, 포지션의 트랜잭션 정합성을 보여줍니다. 동시 클릭 경쟁보다 에이전트 판단/주문/체결 idempotency와 원장 기반 손익 재계산을 우선합니다.
+- `agent`는 통계 윈도우를 보고 paper trading 결정을 남기며, `agentId + windowStart + symbol + strategyVersion` 같은 판단 key로 중복 판단을 막습니다. 체결 장부 수정은 `simulation` contract를 통합니다.
 - 최종 기획상 생길 수 있는 기술/제품/운영 이슈는 `docs/governance/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/governance/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
 
 ## 바로 가기
@@ -78,7 +78,7 @@
 - front 종목 상세 5Y 차트 축/이평선/컨트롤 QA와 사용자 확인
 - front 브랜치에 market scheduler와 chart candles API가 반영된 최신 main 병합
 - 국내 전체 종목 대상 전 거래일 개인/외국인/기관 수급 provider 안정화. 현재 `naver-finance` HTML 표 파싱은 실사용 가능하지만 표 구조 변경/차단 리스크가 있으므로, pykrx 최신 버전, KRX OpenAPI, 권한이 명확한 vendor 후보를 계속 비교합니다.
-- trade 모의 계좌/주문/체결/원장 트랜잭션 설계
+- simulation 모의 계좌/주문/체결/원장 트랜잭션 설계
 - agent paper trading 판단 key와 중복 실행 방지 설계
 - crawl source registry에 뽐뿌/디시 미주갤/주식갤/국내주식 계열 후보 정리
 - crawl 인기글/개념글 확산 레이어와 신뢰 블로그 whitelist 후보 정리

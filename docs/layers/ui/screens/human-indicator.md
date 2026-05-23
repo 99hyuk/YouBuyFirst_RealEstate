@@ -30,12 +30,12 @@
 
 ## API 후보
 
-| Field | Owner Track | Description |
+| Field | Owner Domain/Layer | Description |
 | --- | --- | --- |
-| `signalTiles` | data/agent | 지금 뜨는 종목, 부정적인 종목, 언급 많은 종목, 라이징 스타 |
-| `communityPulses` | crawl/data | 커뮤니티별 수집 상태, 급증 종목, 언급량, 긍정/부정 비율 |
-| `strategySeries` | agent/trade | 지표 추종과 커뮤니티 역추종의 paper 수익률 비교 |
-| `agentLogs` | agent/trade | 모의 판단 로그, 판단 입력값, 판단 key, 스킵 사유 |
+| `signalTiles` | indicator/agent | 지금 뜨는 종목, 부정적인 종목, 언급 많은 종목, 라이징 스타 |
+| `communityPulses` | community/indicator | 커뮤니티별 수집 상태, 급증 종목, 언급량, 긍정/부정 비율 |
+| `strategySeries` | agent/simulation | 지표 추종과 커뮤니티 역추종의 paper 수익률 비교 |
+| `agentLogs` | agent/simulation | 모의 판단 로그, 판단 입력값, 판단 key, 스킵 사유 |
 | `strategyRules` | agent | 전략 버전, 판단 key 생성 기준, 중복 판단 방지 규칙 |
 
 ## 기획 확인 필요

@@ -2,9 +2,9 @@
 
 ## 역할
 
-AI 전략 에이전트를 담당합니다. `community`의 반응 데이터, `indicator`의 지표 snapshot, `market`의 가격 snapshot, `trade`의 포트폴리오 상태를 읽고 매수, 매도, 관망 판단과 근거 로그를 만듭니다.
+AI 전략 에이전트를 담당합니다. `community`의 반응 데이터, `indicator`의 지표 snapshot, `market`의 가격 snapshot, `simulation`의 포트폴리오 상태를 읽고 매수, 매도, 관망 판단과 근거 로그를 만듭니다.
 
-이 트랙은 판단을 만들지만 체결 장부를 직접 수정하지 않습니다. 주문 실행은 `trade` contract를 통해 요청합니다.
+이 도메인은 판단을 만들지만 체결 장부를 직접 수정하지 않습니다. 주문 실행은 `simulation` contract를 통해 요청합니다.
 
 에이전트는 사용자의 즉시 주문 명령을 대신 결제하는 주체가 아니라, 30분 집계와 가격 snapshot 같은 통계 윈도우를 보고 paper trading 결정을 남기는 전략 평가 주체입니다. 같은 에이전트가 같은 윈도우, 종목, 전략 버전으로 판단을 두 번 만들지 않도록 판단 key와 scheduler idempotency를 명확히 둡니다.
 
@@ -38,11 +38,11 @@ AI 전략 에이전트를 담당합니다. `community`의 반응 데이터, `ind
 
 공유 전 협의:
 
-- analysis/indicator schema
+- indicator schema
 - community performance snapshot schema
 - quote snapshot contract
 - stock detail roast headline API contract
-- trade order request contract
+- simulation order request contract
 - dashboard API contract
 
 ## 현재 우선순위

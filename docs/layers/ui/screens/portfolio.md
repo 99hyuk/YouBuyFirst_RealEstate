@@ -29,14 +29,14 @@
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `summary` | trade | 가상 예수금, 평가금액, 총 손익, 기간별 수익률 |
-| `holdings` | trade/market | 보유 종목, 수량, 평균단가, 현재가, 평가손익 |
-| `orders` | trade/agent | 주문 요청, 체결, 취소, 실패, 스킵 |
-| `ledger` | trade | 현금 변동, 체결 금액, 수수료 mock, 포지션 갱신 |
-| `importPreview` | front/trade | OCR/CSV/수기 입력 후보와 confidence |
-| `reviews` | trade/data/agent | 체결 후 커뮤니티 반응, 뉴스, 가격 변화 복기 |
+| `summary` | simulation | 가상 예수금, 평가금액, 총 손익, 기간별 수익률 |
+| `holdings` | simulation/market | 보유 종목, 수량, 평균단가, 현재가, 평가손익 |
+| `orders` | simulation/agent | 주문 요청, 체결, 취소, 실패, 스킵 |
+| `ledger` | simulation | 현금 변동, 체결 금액, 수수료 mock, 포지션 갱신 |
+| `importPreview` | layers/ui/simulation | OCR/CSV/수기 입력 후보와 confidence |
+| `reviews` | simulation/indicator/agent | 체결 후 커뮤니티 반응, 뉴스, 가격 변화 복기 |
 
 ## 기획자 확인 필요
 

@@ -28,16 +28,16 @@
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `feed` | front/backend | `news`, `reports`, `videos`, `links` |
-| `items[].title` | crawl/data | 제목 또는 영상/글 제목 |
-| `items[].source`, `items[].domain` | crawl/data | 출처와 icon domain |
-| `items[].url` | crawl/data | 외부 원문 링크 |
-| `items[].publishedAt`, `items[].timeAgo` | crawl/data | 최신순 정렬 기준 |
-| `items[].metricLabel` | crawl/data | 조회수, 추천수, 댓글수 등 순위 근거 |
+| `feed` | layers/ui/backend | `news`, `reports`, `videos`, `links` |
+| `items[].title` | community/indicator | 제목 또는 영상/글 제목 |
+| `items[].source`, `items[].domain` | community/indicator | 출처와 icon domain |
+| `items[].url` | community/indicator | 외부 원문 링크 |
+| `items[].publishedAt`, `items[].timeAgo` | community/indicator | 최신순 정렬 기준 |
+| `items[].metricLabel` | community/indicator | 조회수, 추천수, 댓글수 등 순위 근거 |
 | `items[].statusLabel` | backend | `mock`, `stale`, `public-demo-only` 등 |
-| `page`, `pageSize`, `totalCount` | backend/front | 페이지네이션 |
+| `page`, `pageSize`, `totalCount` | backend/layers/ui | 페이지네이션 |
 
 ## 기획자 확인 필요
 

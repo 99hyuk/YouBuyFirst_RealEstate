@@ -1,4 +1,4 @@
-# front
+# ui layer
 
 너나사(YouBuyFirst)의 사용자 화면을 담당합니다. `front/`는 Vue 3 + Vite + TypeScript 기반 mock UI이며, 커뮤니티 반응과 종목/시장 데이터를 투자 참고용으로 보여주는 제품 화면을 만듭니다.
 

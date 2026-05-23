@@ -33,23 +33,23 @@
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `dashboardSummary` | backend/data | 대시보드 요약, rising star, feed 묶음 |
-| `retailSentimentIndex` | data | 개미 심리 지수, 전일 대비 변화율, 키워드, 게이지 구간, 과거 비교값 |
-| `reactionRanking` | data | 종목 반응 순위와 기간별 반응 |
-| `communityPerformance` | agent/data | 커뮤니티 지표 비교 그래프 |
+| `dashboardSummary` | backend/indicator | 대시보드 요약, rising star, feed 묶음 |
+| `retailSentimentIndex` | indicator | 개미 심리 지수, 전일 대비 변화율, 키워드, 게이지 구간, 과거 비교값 |
+| `reactionRanking` | indicator/community | 종목 반응 순위와 기간별 반응 |
+| `communityPerformance` | agent/indicator | 커뮤니티 지표 비교 그래프 |
 | `quoteSnapshots` | market | 가격 상태와 stale quote |
 | `marketIndicators` | market | 주요 지표, 수익률, VIX, 금리 등 |
-| `contentFeeds` | crawl/data | 뉴스, 리포트, 영상, 블로그/커뮤니티 링크 |
-| `drawerTabs` | front/backend | 오른쪽 빠른 패널 탭 데이터 |
+| `contentFeeds` | community/indicator | 뉴스, 리포트, 영상, 블로그/커뮤니티 링크 |
+| `drawerTabs` | layers/ui/backend | 오른쪽 빠른 패널 탭 데이터 |
 
 ## 기획상 확인 필요
 
-- 개미 심리 지수 산식은 data 트랙에서 확정해야 합니다. 현재 프론트는 mock fixture와 시각 구조만 둡니다.
+- 개미 심리 지수 산식은 `indicator` 도메인에서 확정해야 합니다. 현재 프론트는 mock fixture와 시각 구조만 둡니다.
 - 검색창은 중앙 위치를 유지합니다. 넓은 화면에서는 보조 지표를 왼쪽 독립 카드로 두고, 1439px 이하 태블릿/반폭 화면에서는 검색창 위의 얇은 정보 바로 전환합니다.
 - 자료 모음집에는 재현 이미지보다 사용자가 준 원본 이미지 파일을 우선 연결합니다.
-- 커뮤니티 지표 비교의 실제 성과 산식은 agent/data 중 어느 트랙이 소유할지 정해야 합니다.
+- 커뮤니티 지표 비교의 실제 성과 산식은 `agent`와 `indicator` 중 어느 도메인이 정본을 소유할지 정해야 합니다.
 
 ## 변경 로그
 

@@ -1,8 +1,8 @@
-# crawl
+# community collection
 
 ## 역할
 
-커뮤니티 글을 안정적으로 수집하고, 어떤 소스를 어떤 조건에서 수집할지 관리합니다. 이 트랙은 반응 방향 분석 자체보다 "좋은 입력 데이터를 안전하게 가져오는 일"에 집중합니다.
+커뮤니티 글을 안정적으로 수집하고, 어떤 소스를 어떤 조건에서 수집할지 관리합니다. 이 문서는 `community` 도메인 안에서 수집 입력과 source policy를 담당하며, 반응 방향 산식 자체는 `REACTION_GUIDE.md`와 `indicator` 도메인으로 분리합니다.
 
 ## 담당 범위
 
@@ -48,7 +48,7 @@
 5. 신뢰 블로그 whitelist와 블로그별 수집 정책 후보 정리
 6. pipeline이 backend readiness를 기다리도록 개선
 
-소스별 활성화 상태의 의미와 트랙별 책임은 `docs/archive/superpowers/items/specs/2026-05-15-source-activation-state-design.md`를 기준으로 봅니다. persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계는 `docs/archive/superpowers/items/specs/2026-05-15-crawl-target-queue-design.md`를 기준으로 봅니다. source policy는 `CrawlTarget`보다 상위 게이트이고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/종목을 언제 다시 수집할지 정하는 실행 단위입니다.
+소스별 활성화 상태의 과거 설계 근거가 필요할 때만 `docs/archive/superpowers/items/specs/2026-05-15-source-activation-state-design.md`를 좁게 검색합니다. persistent `CrawlTarget` queue와 DB 기반 backoff 상태 설계도 필요할 때만 `docs/archive/superpowers/items/specs/2026-05-15-crawl-target-queue-design.md`를 봅니다. 현재 기준에서 source policy는 `CrawlTarget`보다 상위 게이트이고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/종목을 언제 다시 수집할지 정하는 실행 단위입니다.
 
 추가 커뮤니티 후보는 바로 adapter를 만들지 않습니다. 먼저 `disabled` source 후보로 두고 robots/약관, 공개 목록 접근성, 글 빈도, 조회/추천/댓글 필드, 광고성/홍보성 노이즈, 종목 인식 난이도를 검토한 뒤 `local-research-only` 또는 구현 후보로 올립니다.
 

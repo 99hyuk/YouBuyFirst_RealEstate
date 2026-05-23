@@ -21,7 +21,7 @@
 - [ ] admin target pause/resume/clear-backoff API와 화면 액션 연결
 - [ ] 열린 브랜치/worktree를 active, review, blocked, stale, close-candidate로 분류하고 정리 후보 점검
 - [ ] `market` 트랙에서 quote snapshot 계약 설계
-- [ ] `trade` 트랙에서 모의 계좌, 주문, 체결, 원장 트랜잭션 최소 도메인 설계
+- [ ] `trade` 트랙에서 `simulation` 도메인의 모의 계좌, 주문, 체결, 원장 트랜잭션 최소 설계
 - [ ] `agent` 트랙에서 역발상 페르소나 입력 contract와 판단 key/idempotency 설계
 - [ ] `crawl` 트랙에서 뽐뿌 증권포럼, 디시 미국주식/주식갤러리/국내주식 계열 source registry 후보 정리
 - [ ] `crawl` 트랙에서 인기글/개념글 확산 레이어와 신뢰 블로그 whitelist 후보 정리

@@ -4,7 +4,7 @@
 
 가격 데이터와 시세 전달 경로를 담당합니다. 너나사가 유머 반, 진지 반의 서비스여도 투자 참고 사이트로 납득되려면 커뮤니티 반응 지표와 시장 시세가 함께 있어야 합니다.
 
-이 트랙은 시세/호가와 quote cache만 소유합니다. 주문/체결은 `trade`, 매매 판단은 `agent`가 맡습니다.
+이 도메인은 시세/호가와 quote cache만 소유합니다. 주문/체결은 `simulation`, 매매 판단은 `agent`가 맡습니다.
 
 ## 담당 범위
 
@@ -31,13 +31,13 @@
 
 공유 전 협의:
 
-- analysis/indicator schema
+- indicator schema
 - community signal schema
 - dashboard API contract
 - stock detail roast headline API contract
 - stock detail chart candle display contract
 - external quote provider 이용 조건 문서
-- trade execution price contract
+- simulation execution price contract
 - agent market input contract
 
 ## 현재 우선순위

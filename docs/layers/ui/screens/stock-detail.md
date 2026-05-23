@@ -41,24 +41,24 @@
 
 ## API 후보
 
-| 필드 | 소유 트랙 | 설명 |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `symbol`, `name`, `market` | backend/data | 종목 식별과 표시명 |
+| `symbol`, `name`, `market` | stock/backend | 종목 식별과 표시명 |
 | `chartCandles.symbol`, `name`, `market`, `currency`, `range`, `interval`, `provider`, `delayLabel`, `asOf`, `stale`, `dataStatus`, `bars`, `displayPolicy` | market | `GET /api/market/chart-candles` 응답 shape. `bars`가 비었거나 `dataStatus`가 `INSUFFICIENT`, `PROVIDER_ERROR`, `MOCK`이면 메인 차트를 숨긴다. |
 | `chartCandles.bars[].date`, `open`, `high`, `low`, `close`, `volume` | market | display-only OHLC bars. `date`는 UTC 날짜가 아니라 거래소 현지 거래일이며, 수급 `tradeDate`와 같은 키로 매칭한다. 원시 분봉, 다운로드, 개인/외국인/기관 수급은 포함하지 않는다. |
 | `investorFlowHistory[].symbol`, `name`, `market`, `currency`, `tradeDate`, `provider`, `sourceLabel`, `delayLabel`, `asOf`, `stale`, `dataStatus`, `individual`, `foreign`, `institution` | market | `GET /api/market/investor-flows/history` 응답 shape. 국내 종목/ETF의 거래일별 개인/외국인/기관 수급만 다루며, public API는 `OK`, `STALE` row만 반환한다. |
 | `investorFlow.individual.netAmount`, `netVolume`, `derived`, `foreign.netAmount`, `netVolume`, `derived`, `institution.netAmount`, `netVolume`, `derived` | market | 순매수 금액과 순매수 수량. `netAmount`는 `null`일 수 있고, `derived=true`는 직접 관찰값이 아니라 잔차/계산값이라는 뜻이다. 음수는 순매도 방향이며 투자 판단 문구로 쓰지 않는다. |
 | `quoteSnapshot.symbol`, `name`, `market`, `currency`, `price`, `change`, `changePct`, `volume`, `asOf`, `provider`, `delayLabel`, `stale`, `dataStatus` | market | `GET /api/quotes?symbols=005930.KS,AAPL,NVDA` 응답 shape. 공개 화면은 provider/asOf/delayLabel/stale/dataStatus를 가격 근처에 함께 표시한다. |
 | `headlineTone`, `headline`, `subtitle`, `scoreLine`, `riskNote` | agent/backend | 상단 팩트폭격 카피와 보조 문구 |
-| `headlineEvidence` | market/data/agent | 한줄평 근거 chip 배열 |
-| `quickStats` | data | 반응 점수, 언급 변화, 출처 수, 링크 수 |
-| `keywordPulse` | data | 30분 반응 키워드 증감 |
-| `intradaySnapshots` | data/market | 시간대별 언급, 반응, 가격 변화 |
-| `reactionTrend` | data | 30분/1일/1주 언급량과 반응 비율 |
-| `sourceReaction` | data/crawl | 커뮤니티별 언급, 긍정/부정, 메모 |
-| `events` | backend/data/market | 뉴스, 공시, 가격, 커뮤니티 이벤트 타임라인 |
-| `evidenceLinks` | crawl/data | 제목 링크와 출처, 원문 URL |
-| `reliability` | backend/data | 표본 수, 편중, 출처 다양성, 가격 지연, 원문 확인 |
+| `headlineEvidence` | market/indicator/agent | 한줄평 근거 chip 배열 |
+| `quickStats` | indicator | 반응 점수, 언급 변화, 출처 수, 링크 수 |
+| `keywordPulse` | indicator | 30분 반응 키워드 증감 |
+| `intradaySnapshots` | indicator/market | 시간대별 언급, 반응, 가격 변화 |
+| `reactionTrend` | indicator | 30분/1일/1주 언급량과 반응 비율 |
+| `sourceReaction` | indicator/community | 커뮤니티별 언급, 긍정/부정, 메모 |
+| `events` | backend/indicator/market | 뉴스, 공시, 가격, 커뮤니티 이벤트 타임라인 |
+| `evidenceLinks` | community/indicator | 제목 링크와 출처, 원문 URL |
+| `reliability` | backend/indicator | 표본 수, 편중, 출처 다양성, 가격 지연, 원문 확인 |
 | `dataQuality` | backend | `complete`, `stale`, `partial`, `mock`, `insufficient` |
 
 ## 확인 필요
