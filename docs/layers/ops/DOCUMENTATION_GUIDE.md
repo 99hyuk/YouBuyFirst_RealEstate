@@ -40,7 +40,7 @@
 | 담당 도메인/layer `AGENTS.md` | 새 도메인/layer 작업을 시작할 때 |
 | 담당 도메인/layer `README.md` | 도메인 설명, 세부 문서 색인, 다른 도메인 접점이 필요할 때 |
 | `docs/product/FINAL_PRODUCT_PLAN.md` | 제품 방향이나 최종 범위가 필요할 때 |
-| `docs/product/PROJECT_BRIEF.md` | 현재 MVP 범위가 필요할 때 |
+| `docs/product/PROJECT_BRIEF.md` | 제품 요약과 현재 build strategy가 필요할 때 |
 | `docs/layers/ops/GIT_CONVENTION.md` | PR, 커밋, 라벨 작업 직전 |
 | `docs/layers/ops/LABEL_GUIDE.md` | GitHub/Notion 라벨 의미가 헷갈릴 때 |
 | `docs/layers/ops/DOMAIN_PACKAGE_GUIDE.md` | 작업 영역과 코드 패키지 경계가 헷갈릴 때 |

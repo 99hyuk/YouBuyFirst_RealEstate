@@ -20,7 +20,7 @@
 - front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드와 디자인/구현 정본은 현재 `front/` 코드와 짧은 `docs/layers/ui/WIREFRAME_HANDOFF.md`입니다. 과거 세부 로그는 `docs/archive/ui/wireframe/`에서 필요할 때만 검색합니다.
 - 화면별 기획, route, 하위 상세 화면, API 후보는 `docs/layers/ui/screens/`를 봅니다.
 - 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
-- 기획 정리 구간은 ui-first discovery로 갑니다. mock 화면을 먼저 세우고, API/데이터 계약은 화면에서 필요한 항목을 역으로 도출합니다.
+- 기획/개발은 완제품 사용 루프를 기준으로 세로 slice를 완성하는 방식으로 갑니다. mock 화면을 먼저 세우되, 프론트만 오래 다듬지 않고 화면에서 필요한 API/데이터 계약을 backend/pipeline 작업으로 바로 넘깁니다.
 
 ## 최근 결정
 
@@ -55,9 +55,10 @@
 
 ## 다음 작업 후보
 
-- UI: dashboard, stock detail, briefing, event timeline 화면을 실제 브라우저로 확인하고 Screen Brief를 최신 기준으로 유지합니다.
-- market: chart candles, quote snapshot, investor flows provider를 분리해 안정화합니다.
-- community/indicator: source registry, 인기글/개념글 확산 레이어, 신뢰 블로그 whitelist, 종목 언급/개미 심리 지수 계약을 정리합니다.
+- 전체 업무 지도: `docs/current/TASKS.md`는 MVP 후보 목록이 아니라 완제품 기준 세로 slice와 영역별 백로그로 유지합니다.
+- UI/API: dashboard, stocks, stock detail, newsroom, human indicator, portfolio 순서로 Screen Brief와 필수 API 후보를 맞춥니다.
+- stock/market: 국내/미국 종목 master, provider symbol, quote/chart/investor-flow 표시 계약을 안정화합니다.
+- community/indicator: source registry, 인기글/개념글 확산 레이어, 신뢰 블로그 whitelist, 개미 심리 지수 v1 산식을 정리합니다.
 - simulation/agent: 모의 계좌/주문/체결/원장 트랜잭션과 agent 판단 key/idempotency를 설계합니다.
-- backend/pipeline: `CrawlTarget` 연동, readiness wait, Swagger 예시, validation 오류 응답, 도메인 패키지 리네임 후보를 정리합니다.
+- backend/pipeline: 화면 계약을 실제 데이터로 채우기 위해 `CrawlTarget` 연동, readiness wait, Swagger 예시, validation 오류 응답을 정리합니다.
 - ops: 열린 브랜치/worktree와 오래된 문서 표현을 주기적으로 정리합니다.
