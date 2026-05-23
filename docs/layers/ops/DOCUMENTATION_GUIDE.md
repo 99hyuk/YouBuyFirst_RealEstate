@@ -7,6 +7,17 @@
 
 `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/current/TASKS.md`는 현재 작업자가 방향을 잡는 문서입니다. 오래된 상세 이력은 작업 단위 문서, PR, Notion 기록으로 넘깁니다.
 
+## 문서 구조 핵심 원칙
+
+문서 구조 변경은 아래 원칙을 깨지 않는 선에서만 합니다.
+
+1. 트리 구조를 유지합니다. 현재 상태는 `current`, 제품 방향은 `product`, 도메인 정본은 `domains`, 공통 구현/운영 레이어는 `layers`, 정책/리스크/장애는 `governance`, 과거 기록은 `archive`에 둡니다.
+2. 도메인별 인접성을 유지합니다. 한 도메인의 판단 근거, contract, 정책은 가능한 한 `docs/domains/<domain>/` 안에 모읍니다. 여러 도메인에 걸치는 화면/운영 규칙은 `layers`, 제품 전체 결정은 `product`, 위험과 사고 기록은 `governance`로 보냅니다.
+3. 대표파일을 먼저 봅니다. 루트 `AGENTS.md`는 전체 라우터이고, 도메인/layer `AGENTS.md`는 에이전트용 읽기 게이트입니다. `README.md`는 사람용 설명과 세부 문서 색인입니다.
+4. 새 문서는 먼저 소유권을 정합니다. 어느 도메인/layer/product/governance/current/archive에 속하는지 애매하면 새 파일을 만들기 전에 `docs/layers/ops/TRACKS.md`나 관련 도메인 `AGENTS.md`를 확인합니다.
+5. 중복 설명을 만들지 않습니다. 같은 내용을 여러 곳에 길게 복제하지 말고, 대표파일에는 위치와 읽기 기준만 두고 상세는 정본 문서 하나에 둡니다.
+6. 현재 문서와 archive를 섞지 않습니다. 현재 판단에 쓰는 내용은 정본 문서로 승격하고, 폐기된 시안, 긴 작업 로그, 과거 계획은 archive나 PR/Notion 기록에 둡니다.
+
 ## AGENTS.md와 README.md 기준
 
 `AGENTS.md`는 자동으로 적용되어야 하는 작업 규칙, 금지 사항, 읽기 순서를 담는 파일입니다. `README.md`는 사람이 보거나 에이전트가 필요할 때 여는 도메인/layer 색인입니다.
