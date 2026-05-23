@@ -397,14 +397,15 @@ flowchart LR
 - 내부 chain-of-thought는 저장하거나 노출하지 않고, 사용자용 짧은 근거만 저장합니다.
 - 부동산은 주식 MVP 범위에 섞지 않고, 별도 버티컬 후보로만 검토합니다.
 
-## 실행 트랙과 정본 위치
+## 작업 영역과 정본 위치
 
-최종 제품 구현은 짧은 작업 트랙으로 나눕니다. 트랙은 PR/브랜치/라벨용 실행 단위이고, 장기 정본은 `docs/domains/`와 `docs/layers/` 아래 문서를 기준으로 합니다. 트랙 경계는 `docs/layers/ops/TRACKS.md`를 봅니다.
+최종 제품 구현은 domain/layer 작업 영역으로 나눕니다. 작업 영역은 PR 범위와 문서 읽기 경계를 정하는 기준이고, 기존 `crawl`, `data`, `trade`, `front` 같은 track 이름은 legacy alias로만 봅니다. 경계가 헷갈리면 `docs/layers/ops/WORK_AREAS.md`를 봅니다.
 
-- `crawl` 작업: `community` 도메인의 수집/source policy 문서를 기준으로 합니다.
-- `data` 작업: `stock`, `community`, `indicator` 도메인 문서를 기준으로 합니다.
-- `market` 작업: `market` 도메인 문서를 기준으로 합니다.
-- `trade` 작업: `simulation` 도메인 문서를 기준으로 합니다.
-- `agent` 작업: `agent` 도메인 문서를 기준으로 합니다.
-- `front` 작업: `layers/ui` 문서와 화면별 Screen Brief를 기준으로 합니다.
+- `community` 작업: 커뮤니티 수집, source policy, 원문 제한 저장 문서를 기준으로 합니다.
+- `stock` 작업: 종목 master, symbol, alias, 종목 식별 문서를 기준으로 합니다.
+- `indicator` 작업: 반응 방향, 열기 지수, 개미 심리 지수, snapshot 문서를 기준으로 합니다.
+- `market` 작업: 시세, 차트 캔들, provider/cache, 수급 문서를 기준으로 합니다.
+- `simulation` 작업: 가상 계좌, 주문, 체결, 원장 문서를 기준으로 합니다.
+- `agent` 작업: AI 판단, paper trading 결정 로그, 헤드라인 문서를 기준으로 합니다.
+- `ui` 작업: `layers/ui` 문서와 화면별 Screen Brief를 기준으로 합니다.
 - `ops` 작업: `layers/ops` 문서를 기준으로 합니다.

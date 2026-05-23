@@ -49,4 +49,4 @@
 
 최종 제품은 `docs/product/FINAL_PRODUCT_PLAN.md`를 기준으로 합니다. 현재 MVP는 그 최종 제품의 첫 번째 기반 작업인 커뮤니티 반응 데이터 수집/저장 파이프라인입니다.
 
-최종 제품에는 커뮤니티별 수익률 비교 에이전트, 시세/호가 기반 투자 참고 화면, 모의투자/AI 에이전트, OCR 자산 연동이 포함됩니다. 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/domains/community/REACTION_GUIDE.md`를 기준으로 하고, 실행 트랙과 도메인/layer 정본의 연결은 `docs/layers/ops/TRACKS.md`를 기준으로 나눕니다.
+최종 제품에는 커뮤니티별 수익률 비교 에이전트, 시세/호가 기반 투자 참고 화면, 모의투자/AI 에이전트, OCR 자산 연동이 포함됩니다. 커뮤니티 분석 용어와 소스별 수집 전략은 `docs/domains/community/REACTION_GUIDE.md`를 기준으로 하고, 작업 영역과 도메인/layer 정본의 연결은 `docs/layers/ops/WORK_AREAS.md`를 기준으로 나눕니다.

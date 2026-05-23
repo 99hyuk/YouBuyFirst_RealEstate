@@ -20,12 +20,13 @@
 - front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드와 디자인/구현 정본은 현재 `front/` 코드와 짧은 `docs/layers/ui/WIREFRAME_HANDOFF.md`입니다. 과거 세부 로그는 `docs/archive/front/wireframe/`에서 필요할 때만 검색합니다.
 - 화면별 기획, route, 하위 상세 화면, API 후보는 `docs/layers/ui/screens/`를 봅니다.
 - 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
-- 기획 정리 구간은 front-first discovery로 갑니다. mock 화면을 먼저 세우고, API/데이터 계약은 화면에서 필요한 항목을 역으로 도출합니다.
+- 기획 정리 구간은 ui-first discovery로 갑니다. mock 화면을 먼저 세우고, API/데이터 계약은 화면에서 필요한 항목을 역으로 도출합니다.
 
 ## 최근 결정
 
 - 새 채팅은 루트 `AGENTS.md`와 이 문서를 읽고, 작업 영역이 정해지면 해당 `docs/domains/.../AGENTS.md` 또는 `docs/layers/.../AGENTS.md`만 추가로 봅니다.
-- 문서 구조는 `product`, `current`, `domains`, `layers`, `governance`, `archive`로 봅니다. 실행 트랙은 PR/작업 단위이고, 장기 정본은 도메인/layer 문서가 갖습니다.
+- 문서 구조는 `product`, `current`, `domains`, `layers`, `governance`, `archive`로 봅니다. 작업 영역은 domain/layer 기준이고, 기존 track 값은 PR/라벨/Notion 호환용 alias로만 봅니다.
+- PR 제목, GitHub 라벨, Notion `트랙` 속성은 아직 legacy 값을 유지합니다. 다음 ops 작업에서 `area:*` 또는 `domain:*`/`layer:*` 기준으로 바꿀지 결정합니다.
 - handoff에는 최신 기준과 상세 문서 위치만 남깁니다. 긴 근거, 과거 설계, 검증 로그는 도메인 문서나 archive로 넘깁니다.
 - 채팅 오류는 제품 코드보다 대화 컨텍스트/도구 출력 과다를 먼저 의심합니다. 스킬 문서, gstack, Notion fetch, 세션 로그 검색은 시작 루틴이 아닙니다.
 - 브랜치는 실제 PR 후보가 있을 때 열고, merge/close/대체 후에는 worktree와 함께 정리합니다. 열린 브랜치는 active, review, blocked, stale, close-candidate 중 하나로 설명할 수 있어야 합니다.
@@ -43,7 +44,7 @@
 
 ## 바로 가기
 
-- 트랙 경계: `docs/layers/ops/TRACKS.md`
+- 작업 영역: `docs/layers/ops/WORK_AREAS.md`
 - 문서/컨텍스트 예산: `docs/layers/ops/DOCUMENTATION_GUIDE.md`
 - 기술 리스크 목록: `docs/governance/TECHNICAL_RISK_REGISTER.md`
 - 제품/기술 고민 메모: `docs/product/PRODUCT_DECISION_NOTES.md`

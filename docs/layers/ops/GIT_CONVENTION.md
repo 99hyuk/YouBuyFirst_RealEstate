@@ -7,7 +7,7 @@
 PR 전후에 아래는 생략하지 않습니다.
 
 1. 브랜치: `codex/<short-task-name>`
-2. 제목: `[트랙][타입] 명사형 요약`
+2. 제목: 마이그레이션 전까지 `[legacy-alias][타입] 명사형 요약`
 3. 라벨: `track:*`, `type:*`, `size:*`, 필요 시 `part:*`
 4. 본문: `.github/pull_request_template.md` 복사본 + UTF-8 no BOM 파일 + `gh --body-file`
 5. 검증: 관련 테스트 + `git diff --check`
@@ -22,14 +22,14 @@ PR 전후에 아래는 생략하지 않습니다.
 기본 형식:
 
 ```text
-codex/<track>-<task>
+codex/<work-area>-<task>
 ```
 
 예:
 
-- `codex/crawl-target-api`
-- `codex/data-alias-matcher`
-- `codex/front-dashboard-shell`
+- `codex/community-target-api`
+- `codex/stock-alias-matcher`
+- `codex/ui-dashboard-shell`
 - `codex/ops-chat-stability`
 
 루트 checkout은 main/조율용입니다. 병렬 작업은 `.worktrees/<task>` 아래에서 진행합니다.
@@ -39,15 +39,15 @@ codex/<track>-<task>
 브랜치는 작업 단위가 실제로 생겼을 때 엽니다.
 
 - 엽니다: 코드/문서 수정이 필요하고 PR 후보가 분명할 때
-- 엽니다: 병렬 front/crawl/data/market/trade/agent 작업처럼 파일 소유권을 분리해야 할 때
+- 엽니다: 병렬 ui/community/stock/indicator/market/simulation/agent 작업처럼 파일 소유권을 분리해야 할 때
 - 열지 않습니다: 단순 조사, PR/로그 확인, 사용자 질문 답변처럼 변경이 없는 작업
-- 열지 않습니다: 이미 같은 트랙/같은 목적의 활성 브랜치가 있고 그 브랜치에서 이어가는 편이 자연스러울 때
+- 열지 않습니다: 이미 같은 작업 영역/같은 목적의 활성 브랜치가 있고 그 브랜치에서 이어가는 편이 자연스러울 때
 
 작업 중인 브랜치는 아래 상태 중 하나여야 합니다.
 
 - active: 현재 작업 중이고 다음 행동이 명확함
 - review: PR이 열려 있고 리뷰/CI/사용자 확인을 기다림
-- blocked: 외부 결정이나 다른 트랙 계약을 기다림
+- blocked: 외부 결정이나 다른 작업 영역 계약을 기다림
 - stale: main보다 오래 뒤처졌거나 대체 PR이 생김
 - close-candidate: merge, 폐기, 대체 중 하나로 정리할 수 있음
 
@@ -69,7 +69,7 @@ codex/<track>-<task>
 남겨둘 수 있는 경우:
 
 - PR review/CI/user 확인을 기다리는 review 상태
-- 다른 트랙 계약이나 사용자 결정이 필요한 blocked 상태
+- 다른 작업 영역 계약이나 사용자 결정이 필요한 blocked 상태
 - 실제로 이어서 작업할 active 상태
 - 데모 서버나 화면 확인이 그 worktree에 묶여 있고 대체 URL을 아직 못 정한 경우
 
@@ -80,7 +80,7 @@ codex/<track>-<task>
 형식:
 
 ```text
-[트랙][타입] 명사형 요약
+[legacy-alias][타입] 명사형 요약
 ```
 
 예:
@@ -94,9 +94,11 @@ codex/<track>-<task>
 
 ## 태그와 라벨
 
-트랙:
+작업 영역과 legacy alias:
 
-- `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops`
+- primary work area는 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops`입니다.
+- `track:*` 라벨과 PR 제목 prefix는 아직 legacy alias인 `crawl`, `data`, `market`, `trade`, `agent`, `front`, `ops`를 씁니다.
+- 매핑은 `docs/layers/ops/WORK_AREAS.md`를 봅니다. 예: `community -> crawl`, `ui -> front`, `simulation -> trade`.
 
 작업 타입:
 
@@ -109,7 +111,7 @@ codex/<track>-<task>
 
 GitHub 라벨:
 
-- `track:*`: 작업 트랙
+- `track:*`: legacy 작업 alias. PR 본문에는 primary work area를 병기합니다.
 - `type:*`: 작업 타입
 - `size:*`: 변경 크기
 - `part:*`: 실제 리뷰 경로나 변경 파트를 드러낼 때만 사용

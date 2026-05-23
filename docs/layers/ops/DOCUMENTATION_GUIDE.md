@@ -14,7 +14,7 @@
 1. 트리 구조를 유지합니다. 현재 상태는 `current`, 제품 방향은 `product`, 도메인 정본은 `domains`, 공통 구현/운영 레이어는 `layers`, 정책/리스크/장애는 `governance`, 과거 기록은 `archive`에 둡니다.
 2. 도메인별 인접성을 유지합니다. 한 도메인의 판단 근거, contract, 정책은 가능한 한 `docs/domains/<domain>/` 안에 모읍니다. 여러 도메인에 걸치는 화면/운영 규칙은 `layers`, 제품 전체 결정은 `product`, 위험과 사고 기록은 `governance`로 보냅니다.
 3. 대표파일을 먼저 봅니다. 루트 `AGENTS.md`는 전체 라우터이고, 도메인/layer `AGENTS.md`는 에이전트용 읽기 게이트입니다. `README.md`는 사람용 설명과 세부 문서 색인입니다.
-4. 새 문서는 먼저 소유권을 정합니다. 어느 도메인/layer/product/governance/current/archive에 속하는지 애매하면 새 파일을 만들기 전에 `docs/layers/ops/TRACKS.md`나 관련 도메인 `AGENTS.md`를 확인합니다.
+4. 새 문서는 먼저 소유권을 정합니다. 어느 도메인/layer/product/governance/current/archive에 속하는지 애매하면 새 파일을 만들기 전에 `docs/layers/ops/WORK_AREAS.md`나 관련 도메인 `AGENTS.md`를 확인합니다.
 5. 중복 설명을 만들지 않습니다. 같은 내용을 여러 곳에 길게 복제하지 말고, 대표파일에는 위치와 읽기 기준만 두고 상세는 정본 문서 하나에 둡니다.
 6. 현재 문서와 archive를 섞지 않습니다. 현재 판단에 쓰는 내용은 정본 문서로 승격하고, 폐기된 시안, 긴 작업 로그, 과거 계획은 archive나 PR/Notion 기록에 둡니다.
 7. 문서의 신호 밀도를 유지합니다. 에이전트가 실제 행동을 바꾸지 않는 추상적 다짐, 반복되는 설명, 의미가 흐린 문장은 핵심 판단을 희석시켜 작업 품질과 컨텍스트 효율을 떨어뜨립니다. 문장은 되도록 `판단`, `행동`, `위치`, `예외`, `검증 기준` 중 하나를 담아야 합니다.
@@ -35,15 +35,15 @@
 | --- | --- |
 | `AGENTS.md` | 공통 규칙, 금지 사항, PR 게이트가 필요할 때 |
 | `docs/current/HANDOFF.md` | 현재 상태, 최근 결정, 다음 후보 확인 |
-| `docs/layers/ops/CHAT_START_GUIDE.md` | 빈 채팅, 짧은 트랙 지시, 시작 응답 틀 확인 |
-| `docs/layers/ops/TRACKS.md` | 트랙 경계가 헷갈릴 때 |
+| `docs/layers/ops/CHAT_START_GUIDE.md` | 빈 채팅, 짧은 작업 영역 지시, 시작 응답 틀 확인 |
+| `docs/layers/ops/WORK_AREAS.md` | 작업 영역 경계나 legacy track alias가 헷갈릴 때 |
 | 담당 도메인/layer `AGENTS.md` | 새 도메인/layer 작업을 시작할 때 |
 | 담당 도메인/layer `README.md` | 도메인 설명, 세부 문서 색인, 다른 도메인 접점이 필요할 때 |
 | `docs/product/FINAL_PRODUCT_PLAN.md` | 제품 방향이나 최종 범위가 필요할 때 |
 | `docs/product/PROJECT_BRIEF.md` | 현재 MVP 범위가 필요할 때 |
 | `docs/layers/ops/GIT_CONVENTION.md` | PR, 커밋, 라벨 작업 직전 |
 | `docs/layers/ops/LABEL_GUIDE.md` | GitHub/Notion 라벨 의미가 헷갈릴 때 |
-| `docs/layers/ops/DOMAIN_PACKAGE_GUIDE.md` | 트랙과 코드 패키지 경계가 헷갈릴 때 |
+| `docs/layers/ops/DOMAIN_PACKAGE_GUIDE.md` | 작업 영역과 코드 패키지 경계가 헷갈릴 때 |
 | `docs/domains/community/REACTION_GUIDE.md` | 커뮤니티 반응 용어와 수집 전략 확인 |
 | `docs/domains/agent/STOCK_DETAIL_HEADLINE.md` | 종목 상세 상단의 시황/기술지표/재무 기반 팩트폭격 한줄평 기준 확인 |
 | `docs/layers/ui/screens/` | 화면별 기획, route, child screen, API 후보 확인 |
@@ -78,7 +78,7 @@
 | 시세/커뮤니티/지표/에이전트/원장 데이터 | 해당 도메인 `AGENTS.md`, `README.md`, API contract, DB entity/snapshot |
 | 장애와 기술 결정 근거 | `docs/governance/TECHNICAL_RISK_REGISTER.md`, Notion 개발자 기술 경험 DB |
 
-새 인덱스 문서는 같은 lookup을 여러 트랙이 반복할 때만 만듭니다. 인덱스는 상세 설명을 복제하지 않고 정본 위치, ID/key, 상태, source/asOf만 짧게 가리킵니다.
+새 인덱스 문서는 같은 lookup을 여러 작업 영역이 반복할 때만 만듭니다. 인덱스는 상세 설명을 복제하지 않고 정본 위치, ID/key, 상태, source/asOf만 짧게 가리킵니다.
 
 ## 핵심 위주 작성 기준
 
@@ -93,7 +93,7 @@
 
 토큰 문제는 필수 작업을 줄여 해결하지 않습니다. 같은 일을 하되 큰 입력과 큰 출력을 막습니다.
 
-- 시작 입력: 트랙이 명확하면 루트 `AGENTS.md`, `docs/current/HANDOFF.md`, 담당 도메인/layer `AGENTS.md`의 관련 줄만 봅니다. 세부 색인이 필요할 때만 README를 봅니다.
+- 시작 입력: 작업 영역이 명확하면 루트 `AGENTS.md`, `docs/current/HANDOFF.md`, 담당 도메인/layer `AGENTS.md`의 관련 줄만 봅니다. 세부 색인이 필요할 때만 README를 봅니다.
 - 스킬 입력: 적용할 스킬이 정해진 뒤 필요한 절차만 읽습니다. Browser/Figma/Stitch/gstack/Superpowers 전문은 시작 루틴이 아닙니다.
 - archive 입력: archive는 현재 handoff가 부족할 때만 파일 1개와 키워드 1개로 좁혀 검색합니다.
 - 로그 출력: 세션 JSONL, 브라우저 콘솔, DOM, Notion 페이지 전문은 대화에 붙이지 않고 오류명, 파일명, 수치만 남깁니다.
@@ -112,11 +112,11 @@
 
 목표 예산:
 
-- 트랙이 명확한 새 채팅의 시작 확인은 3k-5k 토큰 안에 끝냅니다.
+- 작업 영역이 명확한 새 채팅의 시작 확인은 3k-5k 토큰 안에 끝냅니다.
 - 항상 후보가 되는 시작 문서는 파일당 1.5k 토큰 아래를 목표로 합니다.
 - `docs/current/HANDOFF.md`는 1.2k 토큰 안팎을 유지합니다.
 - `docs/current/TASKS.md`는 미완료 체크박스를 보존하고, 완료 상세 이력만 요약합니다.
-- front Screen Brief는 일반 화면 150줄 이하, 복잡한 부모 화면 220줄 이하를 목표로 하고 변경 로그는 최근 5개만 유지합니다.
+- ui Screen Brief는 일반 화면 150줄 이하, 복잡한 부모 화면 220줄 이하를 목표로 하고 변경 로그는 최근 5개만 유지합니다.
 
 초과하면 전체 삭제가 아니라 `rg` 검색, 섹션 읽기, 완료 이력 요약, 출력 요약으로 줄입니다.
 
@@ -127,16 +127,16 @@
 | 상황 | 갱신할 곳 |
 | --- | --- |
 | 제품 방향이나 범위 변경 | `docs/product/FINAL_PRODUCT_PLAN.md`, `docs/current/HANDOFF.md` |
-| front 화면 구조, route, child detail, 화면별 API 후보 변경 | `docs/layers/ui/screens/` |
+| ui 화면 구조, route, child detail, 화면별 API 후보 변경 | `docs/layers/ui/screens/` |
 | 커뮤니티 분석 용어/수집 전략 변경 | `docs/domains/community/REACTION_GUIDE.md`, `docs/product/FINAL_PRODUCT_PLAN.md`, `docs/product/PROJECT_BRIEF.md` |
 | 최종 기획상 새 기술/제품/운영 리스크 발견 | `docs/governance/TECHNICAL_RISK_REGISTER.md`, 필요 시 관련 도메인 `AGENTS.md`/`README.md` |
 | 작업 방식이나 라벨 기준 변경 | `docs/layers/ops/WORKFLOW.md`, `docs/layers/ops/GIT_CONVENTION.md`, `docs/layers/ops/LABEL_GUIDE.md` |
 | 브랜치 생명주기나 worktree 정리 기준 변경 | `docs/layers/ops/GIT_CONVENTION.md`, `docs/layers/ops/WORKFLOW.md`, `docs/current/HANDOFF.md` |
 | 다음 작업 후보 변경 | `docs/current/TASKS.md`, `docs/current/HANDOFF.md` |
-| 새 트랙 경계 | `docs/layers/ops/TRACKS.md` |
+| 새 작업 영역 경계 | `docs/layers/ops/WORK_AREAS.md` |
 | 제품 개발/운영 문제, 개선, 기술 결정 | Notion 개발자 기술 경험 DB, 필요 시 관련 가이드 |
 | Codex/Notion/PR/문서 운영 사고 | Notion 에이전트 운영 로그 DB |
 | PR 종료 | Notion 작업일지, 필요 시 `docs/archive/work-units/items/` |
 | 채팅 시작 방식 변경 | `docs/layers/ops/CHAT_START_GUIDE.md`, `docs/layers/ops/WORKFLOW.md`, `docs/current/HANDOFF.md` |
 
-front 화면 작업은 사용자가 별도로 기록을 지시하지 않아도 Screen Brief를 갱신합니다. 다만 Screen Brief는 현재 기준 문서이므로 긴 작업 과정, 폐기된 시안, 전체 피드백 전문을 누적하지 않고 최신 결론과 열린 질문만 남깁니다.
+ui 화면 작업은 사용자가 별도로 기록을 지시하지 않아도 Screen Brief를 갱신합니다. 다만 Screen Brief는 현재 기준 문서이므로 긴 작업 과정, 폐기된 시안, 전체 피드백 전문을 누적하지 않고 최신 결론과 열린 질문만 남깁니다.

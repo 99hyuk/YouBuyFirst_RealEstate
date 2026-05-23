@@ -4,24 +4,26 @@
 
 ## 완료 요약
 
-- ingestion MVP, 협업/PR 기반, 운영 기록 체계, 트랙/라벨 기준, front shell은 main에 반영되어 있습니다.
+- ingestion MVP, 협업/PR 기반, 운영 기록 체계, 작업 영역/legacy 라벨 기준, ui/front shell은 main에 반영되어 있습니다.
 - 최근 완료 상세는 PR/Notion 작업 로그와 `docs/archive/work-units/items/`에서 찾습니다.
 
 ## 지금 가장 가까운 작업
 
-- [ ] front shell 브라우저 QA와 기획자 확인 필요 항목 정리
-- [ ] front 메인 대시보드 와이어프레임 보강
-- [ ] front 관심종목 브리핑과 종목 이벤트 타임라인 와이어프레임 설계
+- [ ] ui/front shell 브라우저 QA와 기획자 확인 필요 항목 정리
+- [ ] ui 메인 대시보드 와이어프레임 보강
+- [ ] ui 관심종목 브리핑과 종목 이벤트 타임라인 와이어프레임 설계
 - [ ] 관심종목, 최신 기사/공시, 신호 신뢰도 API 후보 설계
 - [ ] 유튜브/신뢰 블로그/인기글 링크 카드와 종목 이벤트 타임라인 field 후보 설계
 - [ ] pipeline이 backend `CrawlTarget` API를 사용하되 static target fallback을 유지하도록 연결
 - [ ] admin target pause/resume/clear-backoff API와 화면 액션 연결
 - [ ] 열린 브랜치/worktree를 active, review, blocked, stale, close-candidate로 분류하고 정리 후보 점검
-- [ ] `market` 트랙에서 chart candles, quote snapshot, investor flows provider 안정화
-- [ ] `trade` 트랙에서 `simulation` 도메인의 모의 계좌, 주문, 체결, 원장 트랜잭션 최소 설계
-- [ ] `agent` 트랙에서 역발상 페르소나 입력 contract와 판단 key/idempotency 설계
-- [ ] `crawl` 트랙에서 뽐뿌 증권포럼, 디시 미국주식/주식갤러리/국내주식 계열 source registry 후보 정리
-- [ ] `crawl` 트랙에서 인기글/개념글 확산 레이어와 신뢰 블로그 whitelist 후보 정리
+- [ ] ops에서 PR 제목, GitHub 라벨, Notion `트랙` 속성을 작업 영역 기준으로 마이그레이션하는 별도 PR 설계
+- [ ] ops에서 legacy `track:*` 라벨을 `area:*` 또는 `domain:*`/`layer:*`로 바꿀지 결정
+- [ ] `market` 영역에서 chart candles, quote snapshot, investor flows provider 안정화
+- [ ] `simulation` 영역에서 모의 계좌, 주문, 체결, 원장 트랜잭션 최소 설계
+- [ ] `agent` 영역에서 역발상 페르소나 입력 contract와 판단 key/idempotency 설계
+- [ ] `community` 영역에서 뽐뿌 증권포럼, 디시 미국주식/주식갤러리/국내주식 계열 source registry 후보 정리
+- [ ] `community` 영역에서 인기글/개념글 확산 레이어와 신뢰 블로그 whitelist 후보 정리
 - [ ] 성능/품질 개선 사례가 실제로 생기면 개선 전후 수치와 측정 방법 기록
 - [ ] backend 도메인 패키지 `instrument/sentiment/metrics`를 `stock/analysis/indicator`로 리네임
 - [ ] pipeline 종목 매칭 모듈을 `stock` 기준 이름으로 정리
@@ -68,4 +70,4 @@
 - 작업을 시작하면 `codex/<task-name>` 브랜치에서 진행합니다.
 - 구현 전에 관련 테스트를 먼저 추가하거나 기존 테스트를 확장합니다.
 - PR 설명에는 변경 범위, 사람이 읽기 쉬운 검증 결과, 남은 리스크를 포함합니다.
-- 병렬 작업은 관련 도메인/layer `AGENTS.md`의 관련 섹션을 먼저 확인하고, 세부 색인이 필요할 때만 README를 봅니다. 트랙 경계가 헷갈릴 때만 `docs/layers/ops/TRACKS.md`를 봅니다.
+- 병렬 작업은 관련 도메인/layer `AGENTS.md`의 관련 섹션을 먼저 확인하고, 세부 색인이 필요할 때만 README를 봅니다. 작업 영역 경계가 헷갈릴 때만 `docs/layers/ops/WORK_AREAS.md`를 봅니다.

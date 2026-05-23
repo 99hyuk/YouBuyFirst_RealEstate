@@ -1,12 +1,12 @@
 # ops layer 작업 지침
 
-ops layer는 문서 구조, Git/PR, Notion 기록, 트랙/라벨, 브랜치/worktree 생명주기, 컨텍스트 예산을 소유합니다.
+ops layer는 문서 구조, Git/PR, Notion 기록, 작업 영역/legacy 라벨, 브랜치/worktree 생명주기, 컨텍스트 예산을 소유합니다.
 
 ## 시작
 
 - 문서 구조와 읽기 게이트는 `DOCUMENTATION_GUIDE.md`를 봅니다.
 - 브랜치, PR, 템플릿, 라벨 작업은 `GIT_CONVENTION.md`와 `LABEL_GUIDE.md`의 관련 섹션만 봅니다.
-- 트랙 경계가 헷갈리면 `TRACKS.md`를 봅니다.
+- 작업 영역 경계가 헷갈리면 `WORK_AREAS.md`를 봅니다.
 - 빈 채팅 시작 방식은 `CHAT_START_GUIDE.md`를 봅니다.
 
 ## 경계
@@ -20,7 +20,7 @@ ops layer는 문서 구조, Git/PR, Notion 기록, 트랙/라벨, 브랜치/work
 
 - Notion 루트, 홈카드, 주요 DB 페이지, 제품 기획, 작업 진행, 기술 경험 기록, 에이전트 운영 로그, Archive 변경은 사용자용 정보 구조 변경입니다. 변경 전 대상과 child link 보존 여부를 확인합니다.
 - PR/브랜치/라벨/템플릿 작업은 `GIT_CONVENTION.md`와 `LABEL_GUIDE.md`를 기준으로 하고, 문서만 바꿔도 `git diff --check`를 실행합니다.
-- 시작 문서나 트랙 문서를 바꾸면 `DOCUMENTATION_GUIDE.md`의 컨텍스트 예산 기준을 확인합니다.
+- 시작 문서나 작업 영역 문서를 바꾸면 `DOCUMENTATION_GUIDE.md`의 컨텍스트 예산 기준을 확인합니다.
 
 ## 기록
 

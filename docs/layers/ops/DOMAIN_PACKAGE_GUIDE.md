@@ -1,13 +1,13 @@
 # 도메인 패키지 이름 가이드
 
-이 문서는 병렬 작업 트랙과 코드 패키지 이름을 구분하기 위한 기준입니다. 트랙은 작업 관리 단위이고, 패키지는 제품 도메인 단위입니다.
+이 문서는 작업 영역과 코드 패키지 이름을 구분하기 위한 기준입니다. 작업 영역은 PR 범위와 문서 읽기 경계를 정하는 단위이고, 패키지는 코드 안에서 책임을 나누는 단위입니다.
 
 ## 핵심 원칙
 
-- 트랙 이름은 PR, 브랜치, Notion, 작업 분배에 사용합니다.
+- 작업 영역 이름은 PR 범위, 브랜치 이름, Notion 기록, 작업 분배에 사용합니다.
 - 코드 패키지는 사용자가 이해하기 쉬운 제품 도메인 이름을 사용합니다.
-- 트랙 이름을 그대로 패키지 이름으로 쓰지 않습니다. 특히 `data`는 코드 패키지명으로 너무 넓고 모호합니다.
-- 다른 트랙의 패키지를 바꿔야 하면 구현 PR에 섞지 말고 계약 변경 또는 작은 리네임 PR로 분리합니다.
+- legacy track 이름을 그대로 패키지 이름으로 쓰지 않습니다. 특히 `data`, `front`, `trade`는 코드 패키지명으로 너무 넓거나 현재 제품 책임과 다릅니다.
+- 다른 작업 영역의 패키지를 바꿔야 하면 구현 PR에 섞지 말고 계약 변경 또는 작은 리네임 PR로 분리합니다.
 
 ## 추천 도메인 패키지
 
@@ -45,19 +45,20 @@ pipeline/
 | `instrument` | `stock` | 이 프로젝트에서 사용자가 이해하는 핵심 단어는 종목입니다. |
 | `sentiment` | `analysis` | legacy 이름입니다. 목표 용어는 커뮤니티 반응 분석이며, 판단, 근거, confidence까지 포함합니다. |
 | `metrics` | `indicator` | 집계 결과가 투자 참고 지표로 쓰입니다. |
-| `data` | 패키지명으로 사용하지 않음 | 트랙명으로는 괜찮지만 코드 도메인으로는 너무 넓습니다. |
+| `data` | 패키지명으로 사용하지 않음 | legacy track alias로만 보고, 코드 도메인은 `stock`, `analysis`, `indicator`로 나눕니다. |
 
-## 트랙과 패키지 매핑
+## 작업 영역과 패키지 매핑
 
-| 트랙 | 주 소유 패키지 | 비고 |
-| --- | --- | --- |
-| `crawl` | `pipeline/crawlers`, `backend/crawl`, `backend/ingestion` 일부 | 수집 입력과 실행 상태를 담당합니다. |
-| `data` | `stock`, `analysis`, `indicator` | 종목 인식, 분석, 지표화까지 담당합니다. 매매 판단은 하지 않습니다. |
-| `market` | `market` | 시세/호가와 quote cache만 담당합니다. |
-| `trade` | `simulation` | 가상 계좌, 주문, 체결, 포트폴리오를 담당합니다. |
-| `agent` | `agent` | stock/analysis/indicator/market/simulation 결과를 읽어 전략 판단과 결정 로그를 만듭니다. |
-| `front` | frontend app | 화면과 API 연동을 담당합니다. |
-| `ops` | `docs`, `.github`, Notion, CI/운영 문서 | 제품 조율과 운영 기준을 담당합니다. |
+| 작업 영역 | 주 소유 패키지 | legacy alias | 비고 |
+| --- | --- | --- | --- |
+| `community` | `pipeline/crawlers`, `backend/crawl`, `backend/ingestion` 일부, `post` | `crawl` | 수집 입력, source policy, 제한 원문 저장을 담당합니다. |
+| `stock` | `stock` | `data` 일부 | 종목 master, symbol, alias, 종목 식별을 담당합니다. |
+| `indicator` | `analysis`, `indicator` | `data` 일부 | 반응 방향 분석과 지표화를 담당합니다. 매매 판단은 하지 않습니다. |
+| `market` | `market` | `market` | 시세/호가, chart candle, provider/cache를 담당합니다. |
+| `simulation` | `simulation` | `trade` | 가상 계좌, 주문, 체결, 원장, 포트폴리오를 담당합니다. |
+| `agent` | `agent` | `agent` | stock/analysis/indicator/market/simulation 결과를 읽어 전략 판단과 결정 로그를 만듭니다. |
+| `ui` | frontend app | `front` | 화면, 디자인 시스템, fixture/API 후보를 담당합니다. |
+| `ops` | `docs`, `.github`, Notion, CI/운영 문서 | `ops` | 제품 조율과 운영 기준을 담당합니다. |
 
 ## 경계 규칙
 
