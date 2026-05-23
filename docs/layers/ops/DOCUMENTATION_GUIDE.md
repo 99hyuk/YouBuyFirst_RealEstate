@@ -7,6 +7,12 @@
 
 `AGENTS.md`, `docs/current/HANDOFF.md`, `docs/current/TASKS.md`는 현재 작업자가 방향을 잡는 문서입니다. 오래된 상세 이력은 작업 단위 문서, PR, Notion 기록으로 넘깁니다.
 
+## AGENTS.md와 README.md 기준
+
+`AGENTS.md`는 자동으로 적용되어야 하는 작업 규칙, 금지 사항, 읽기 순서를 담는 파일입니다. `README.md`는 사람이 보거나 에이전트가 필요할 때 여는 도메인/layer 색인입니다.
+
+모든 폴더의 README를 AGENTS로 바꾸지 않습니다. 자동 적용이 꼭 필요한 코드 실행 경계나 하위 워크스페이스에만 짧은 `AGENTS.md`를 두고, 일반 도메인 설명과 문서 색인은 `README.md`를 유지합니다.
+
 ## 읽기 우선순위
 
 새 채팅은 전문 출력이 아니라 필요한 섹션 확인을 기본으로 합니다.

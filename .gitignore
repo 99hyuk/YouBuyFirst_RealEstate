@@ -20,3 +20,12 @@ front/dist/
 
 # Local QA/artifact output
 artifacts/
+.playwright-mcp/
+/human-indicator-*.png
+/human-indicator-snapshot.md
+/indicators-domestic-snapshot.md
+/simplystock-*.png
+/simplystock-*.json
+/stock-*.png
+/stock-detail-*.png
+/stock-005930-investor-flow-after-title-fix
