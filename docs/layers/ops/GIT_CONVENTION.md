@@ -204,7 +204,12 @@ if ($missing) { throw "PR template headings missing: $($missing -join ', ')" }
 - draft PR을 ready for review로 바꿀 때
 - PR 댓글에 `@codex review`를 포함할 때. 일회성 초점이 있으면 `@codex review for security regressions`처럼 추가 지시를 붙일 수 있습니다.
 
-자동 리뷰가 아직 달리지 않았는데 리뷰가 필요한 PR이면 merge 전에 `@codex review`로 수동 요청하거나, 자동 리뷰 미실행 사유를 PR 본문/완료 보고에 남깁니다.
+자동 리뷰가 아직 달리지 않았는데 리뷰가 필요한 PR이면 merge 전에 `@codex review`로 수동 요청하거나, 자동 리뷰 미실행 사유를 PR 본문/완료 보고에 남깁니다. 기본 정책은 아래입니다.
+
+- 코드, API, DB, 배치, crawler, chart/market data, front 동작이 바뀌는 PR은 Codex 리뷰를 남깁니다.
+- 문서만 바뀌는 아주 작은 PR은 선택 사항입니다. 다만 작업 규칙, 보안, 법적/데이터 정책, PR/merge 정책을 바꾸는 문서는 Codex 리뷰를 남깁니다.
+- 리뷰 지적은 바로 따르지 말고 먼저 타당성을 판단합니다.
+- 맞는 지적이면 고치고, 오탐이거나 이번 범위 밖이면 한국어로 이유를 남긴 뒤 merge할 수 있습니다.
 
 작업자는 merge 전 아래를 확인합니다.
 
