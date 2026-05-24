@@ -61,6 +61,10 @@ public class ChartCandleService {
             validateRangeAndInterval(range, interval);
             List<ChartCandleBarRequest> bars = boundedBars(request.bars(), range);
             String dataStatus = bars.isEmpty() ? "INSUFFICIENT" : normalizeUpper(request.dataStatus());
+            String refreshAttemptToken = trimToNull(request.refreshAttemptToken());
+            if (!refreshRequestService.canAcceptCompletion(symbol, range, interval, refreshAttemptToken)) {
+                continue;
+            }
 
             Optional<ChartCandleSet> existingCandleSet = repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
                     symbol,
@@ -84,7 +88,7 @@ public class ChartCandleService {
                     bars
             );
             repository.save(candleSet);
-            refreshRequestService.markCompleted(symbol, range, interval);
+            refreshRequestService.markCompleted(symbol, range, interval, refreshAttemptToken);
         }
     }
 
@@ -211,6 +215,13 @@ public class ChartCandleService {
 
     private static String normalizeUpper(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
 }

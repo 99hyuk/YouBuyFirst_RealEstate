@@ -132,6 +132,41 @@ async def test_board_stream_uses_duplicate_time_as_cutoff_when_watermark_has_no_
 
 
 @pytest.mark.anyio
+async def test_board_stream_preserves_explicit_cutoff_after_duplicate_hit():
+    requested_cursors: list[str | None] = []
+    pages = {
+        None: BoardPage(
+            cursor="1",
+            posts=[
+                _post("FMKOREA-4", "2026-05-24T02:04:00"),
+                _post("FMKOREA-1", "2026-05-24T02:00:00"),
+                _post("FMKOREA-2", "2026-05-24T01:55:00"),
+                _post("FMKOREA-0", "2026-05-24T01:49:00"),
+            ],
+            next_cursor="2",
+        ),
+        "2": BoardPage(cursor="2", posts=[_post("FMKOREA-next", "2026-05-24T01:48:00")]),
+    }
+
+    async def fetch_page(cursor: str | None) -> BoardPage:
+        requested_cursors.append(cursor)
+        return pages[cursor]
+
+    result = await BoardStreamCrawler().collect(
+        fetch_page,
+        BoardWatermark(
+            last_seen_external_id="FMKOREA-1",
+            cutoff_at=datetime(2026, 5, 24, 1, 50, tzinfo=timezone.utc),
+        ),
+    )
+
+    assert [post.external_id for post in result.posts] == ["FMKOREA-4", "FMKOREA-2"]
+    assert requested_cursors == [None]
+    assert result.coverage.duplicate_stop is True
+    assert result.coverage.cutoff_stop is True
+
+
+@pytest.mark.anyio
 async def test_board_stream_waits_between_page_requests():
     requested_cursors: list[str | None] = []
     slept_seconds: list[float] = []

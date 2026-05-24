@@ -64,25 +64,49 @@ public class ChartCandleRefreshRequestService {
                 .map(request -> new ChartCandleRefreshRequestResponse(
                         request.getSymbol(),
                         request.getRangeLabel(),
-                        request.getCandleInterval()
+                        request.getCandleInterval(),
+                        request.getAttemptToken()
                 ))
                 .toList();
         return new ChartCandleRefreshClaimResponse(items);
     }
 
     @Transactional
-    public void markCompleted(String symbol, String range, String interval) {
-        repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(symbol, range, interval)
+    public boolean canAcceptCompletion(String symbol, String range, String interval, String refreshAttemptToken) {
+        return repository.findLockedBySymbolAndRangeLabelAndCandleInterval(symbol, range, interval)
+                .map(request -> canAcceptCompletion(request, refreshAttemptToken))
+                .orElse(isBlank(refreshAttemptToken));
+    }
+
+    @Transactional
+    public void markCompleted(String symbol, String range, String interval, String refreshAttemptToken) {
+        repository.findLockedBySymbolAndRangeLabelAndCandleInterval(symbol, range, interval)
+                .filter(request -> canAcceptCompletion(request, refreshAttemptToken))
                 .ifPresent(request -> request.complete(Instant.now()));
     }
 
     @Transactional
     public void markFailed(ChartCandleRefreshFailureRequest failureRequest) {
-        repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
+        if (isBlank(failureRequest.refreshAttemptToken())) {
+            return;
+        }
+        repository.findLockedBySymbolAndRangeLabelAndCandleInterval(
                         failureRequest.symbol(),
                         failureRequest.range(),
                         failureRequest.interval()
                 )
+                .filter(request -> request.isActiveAttempt(failureRequest.refreshAttemptToken()))
                 .ifPresent(request -> request.fail(Instant.now(), failureRequest.errorMessage()));
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private static boolean canAcceptCompletion(ChartCandleRefreshRequest request, String refreshAttemptToken) {
+        if (isBlank(refreshAttemptToken)) {
+            return !request.hasActiveAttemptToken();
+        }
+        return request.isActiveAttempt(refreshAttemptToken);
     }
 }

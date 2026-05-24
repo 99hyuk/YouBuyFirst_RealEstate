@@ -1,5 +1,7 @@
 package com.youbuyfirst.backend;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.youbuyfirst.backend.market.ChartCandleRefreshRequest;
 import com.youbuyfirst.backend.market.ChartCandleRefreshRequestRepository;
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
@@ -51,6 +53,9 @@ class IngestionApiIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Autowired
     private ChartCandleRefreshRequestRepository chartCandleRefreshRequestRepository;
@@ -549,7 +554,124 @@ class IngestionApiIntegrationTest {
         assertThat(claim.getBody())
                 .contains("\"symbol\":\"JPM\"")
                 .contains("\"range\":\"1M\"")
-                .contains("\"interval\":\"1d\"");
+                .contains("\"interval\":\"1d\"")
+                .contains("\"refreshAttemptToken\":");
+    }
+
+    @Test
+    void ignoresStaleChartCandleRefreshAttemptReports() throws Exception {
+        jdbcTemplate.update("delete from chart_candle_refresh_requests where symbol = ?", "FENCE");
+        jdbcTemplate.update(
+                """
+                        insert into chart_candle_refresh_requests
+                            (symbol, range_label, candle_interval, status, requested_at, last_attempt_at)
+                        values (?, ?, ?, ?, ?, ?)
+                        """,
+                "FENCE",
+                "1M",
+                "1d",
+                ChartCandleRefreshRequest.STATUS_IN_PROGRESS,
+                Timestamp.from(Instant.parse("2026-05-24T00:00:00Z")),
+                Timestamp.from(Instant.now().minusSeconds(60L * 10L))
+        );
+
+        ResponseEntity<String> claim = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/claim",
+                Map.of("limit", 10),
+                String.class
+        );
+        JsonNode claimedItem = objectMapper.readTree(claim.getBody()).path("items").path(0);
+        String activeToken = claimedItem.path("refreshAttemptToken").asText();
+
+        ResponseEntity<Void> staleUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("symbol", "FENCE"),
+                        Map.entry("name", "Fence Test"),
+                        Map.entry("market", "US"),
+                        Map.entry("currency", "USD"),
+                        Map.entry("range", "1M"),
+                        Map.entry("interval", "1d"),
+                        Map.entry("provider", "test"),
+                        Map.entry("delayLabel", "test"),
+                        Map.entry("asOf", Instant.parse("2026-05-24T01:00:00Z").toString()),
+                        Map.entry("dataStatus", "OK"),
+                        Map.entry("refreshAttemptToken", "stale-token"),
+                        Map.entry("bars", List.of(Map.of(
+                                "date", "2026-05-24",
+                                "open", "10.00",
+                                "high", "11.00",
+                                "low", "9.00",
+                                "close", "10.50",
+                                "volume", 1000
+                        )))
+                ))),
+                Void.class
+        );
+        ResponseEntity<Void> staleFailure = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/fail",
+                Map.of(
+                        "symbol", "FENCE",
+                        "range", "1M",
+                        "interval", "1d",
+                        "refreshAttemptToken", "stale-token",
+                        "errorMessage", "late stale worker"
+                ),
+                Void.class
+        );
+
+        assertThat(claim.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(activeToken).isNotBlank();
+        assertThat(staleUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(staleFailure.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refreshStatus("FENCE", "1M", "1d")).isEqualTo(ChartCandleRefreshRequest.STATUS_IN_PROGRESS);
+        assertThat(refreshErrorMessage("FENCE", "1M", "1d")).isNull();
+        assertThat(refreshAttemptToken("FENCE", "1M", "1d")).isEqualTo(activeToken);
+
+        ResponseEntity<Void> tokenlessUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("symbol", "FENCE"),
+                        Map.entry("name", "Fence Test"),
+                        Map.entry("market", "US"),
+                        Map.entry("currency", "USD"),
+                        Map.entry("range", "1M"),
+                        Map.entry("interval", "1d"),
+                        Map.entry("provider", "test"),
+                        Map.entry("delayLabel", "test"),
+                        Map.entry("asOf", Instant.parse("2026-05-24T01:05:00Z").toString()),
+                        Map.entry("dataStatus", "OK"),
+                        Map.entry("bars", List.of(Map.of(
+                                "date", "2026-05-24",
+                                "open", "10.00",
+                                "high", "11.00",
+                                "low", "9.00",
+                                "close", "10.75",
+                                "volume", 1001
+                        )))
+                ))),
+                Void.class
+        );
+
+        assertThat(tokenlessUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refreshStatus("FENCE", "1M", "1d")).isEqualTo(ChartCandleRefreshRequest.STATUS_IN_PROGRESS);
+        assertThat(refreshAttemptToken("FENCE", "1M", "1d")).isEqualTo(activeToken);
+
+        ResponseEntity<Void> activeFailure = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/fail",
+                Map.of(
+                        "symbol", "FENCE",
+                        "range", "1M",
+                        "interval", "1d",
+                        "refreshAttemptToken", activeToken,
+                        "errorMessage", "active worker failed"
+                ),
+                Void.class
+        );
+
+        assertThat(activeFailure.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refreshStatus("FENCE", "1M", "1d")).isEqualTo(ChartCandleRefreshRequest.STATUS_FAILED);
+        assertThat(refreshErrorMessage("FENCE", "1M", "1d")).isEqualTo("active worker failed");
     }
 
     @Test
@@ -1044,6 +1166,48 @@ class IngestionApiIntegrationTest {
                     leased_until = null,
                     updated_at = current_timestamp(6)
                 """);
+    }
+
+    private String refreshStatus(String symbol, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select status
+                        from chart_candle_refresh_requests
+                        where symbol = ? and range_label = ? and candle_interval = ?
+                        """,
+                String.class,
+                symbol,
+                range,
+                interval
+        );
+    }
+
+    private String refreshErrorMessage(String symbol, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select error_message
+                        from chart_candle_refresh_requests
+                        where symbol = ? and range_label = ? and candle_interval = ?
+                        """,
+                String.class,
+                symbol,
+                range,
+                interval
+        );
+    }
+
+    private String refreshAttemptToken(String symbol, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select attempt_token
+                        from chart_candle_refresh_requests
+                        where symbol = ? and range_label = ? and candle_interval = ?
+                        """,
+                String.class,
+                symbol,
+                range,
+                interval
+        );
     }
 
     private static void sleep(long millis) {

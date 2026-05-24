@@ -124,6 +124,7 @@ class ChartCandleSet:
     data_status: str
     bars: list[ChartCandleBar]
     max_bars: int = 1260
+    refresh_attempt_token: str | None = None
 
     def to_api_dict(self) -> dict:
         return {
@@ -151,6 +152,8 @@ class ChartCandleSet:
         payload = self.to_api_dict()
         payload.pop("displayPolicy")
         payload.pop("stale")
+        if self.refresh_attempt_token:
+            payload["refreshAttemptToken"] = self.refresh_attempt_token
         return payload
 
 

@@ -27,6 +27,21 @@ public interface ChartCandleRefreshRequestRepository extends JpaRepository<Chart
     @Query("""
             select request
             from ChartCandleRefreshRequest request
+            where lower(request.symbol) = lower(:symbol)
+              and request.rangeLabel = :rangeLabel
+              and request.candleInterval = :candleInterval
+            """)
+    Optional<ChartCandleRefreshRequest> findLockedBySymbolAndRangeLabelAndCandleInterval(
+            @Param("symbol") String symbol,
+            @Param("rangeLabel") String rangeLabel,
+            @Param("candleInterval") String candleInterval
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("""
+            select request
+            from ChartCandleRefreshRequest request
             where request.status in :statuses
             order by request.requestedAt asc
             """)

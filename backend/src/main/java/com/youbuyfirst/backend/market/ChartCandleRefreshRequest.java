@@ -10,6 +10,7 @@ import jakarta.persistence.UniqueConstraint;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -54,6 +55,9 @@ public class ChartCandleRefreshRequest {
     @Column(name = "error_message", length = 500)
     private String errorMessage;
 
+    @Column(name = "attempt_token", length = 64)
+    private String attemptToken;
+
     protected ChartCandleRefreshRequest() {
     }
 
@@ -70,6 +74,7 @@ public class ChartCandleRefreshRequest {
         this.lastAttemptAt = null;
         this.completedAt = null;
         this.errorMessage = null;
+        this.attemptToken = null;
     }
 
     public void claim(Instant now) {
@@ -77,12 +82,14 @@ public class ChartCandleRefreshRequest {
         this.lastAttemptAt = now;
         this.completedAt = null;
         this.errorMessage = null;
+        this.attemptToken = UUID.randomUUID().toString();
     }
 
     public void complete(Instant now) {
         this.status = STATUS_SUCCESS;
         this.completedAt = now;
         this.errorMessage = null;
+        this.attemptToken = null;
     }
 
     public void fail(Instant now, String message) {
@@ -91,6 +98,7 @@ public class ChartCandleRefreshRequest {
         this.errorMessage = message == null || message.isBlank()
                 ? "chart candle refresh failed"
                 : message.substring(0, Math.min(message.length(), 500));
+        this.attemptToken = null;
     }
 
     public String getSymbol() {
@@ -109,9 +117,25 @@ public class ChartCandleRefreshRequest {
         return status;
     }
 
+    public String getAttemptToken() {
+        return attemptToken;
+    }
+
     public boolean isActiveInProgress(Instant now, Duration leaseDuration) {
         return STATUS_IN_PROGRESS.equals(status)
                 && lastAttemptAt != null
                 && lastAttemptAt.isAfter(now.minus(leaseDuration));
+    }
+
+    public boolean isActiveAttempt(String token) {
+        return STATUS_IN_PROGRESS.equals(status)
+                && attemptToken != null
+                && attemptToken.equals(token);
+    }
+
+    public boolean hasActiveAttemptToken() {
+        return STATUS_IN_PROGRESS.equals(status)
+                && attemptToken != null
+                && !attemptToken.isBlank();
     }
 }

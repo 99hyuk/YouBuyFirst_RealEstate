@@ -19,6 +19,7 @@ public record ChartCandleSetRequest(
         @NotBlank @Size(max = 120) String delayLabel,
         @NotNull Instant asOf,
         @NotBlank @Size(max = 30) String dataStatus,
-        @NotNull List<@Valid ChartCandleBarRequest> bars
+        @NotNull List<@Valid ChartCandleBarRequest> bars,
+        @Size(max = 64) String refreshAttemptToken
 ) {
 }

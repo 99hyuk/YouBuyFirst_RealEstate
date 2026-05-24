@@ -123,6 +123,7 @@ class SpringIngestionClient:
             "symbol": request.get("symbol", ""),
             "range": request.get("range", ""),
             "interval": request.get("interval", ""),
+            "refreshAttemptToken": request.get("refreshAttemptToken", ""),
             "errorMessage": error_message,
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
