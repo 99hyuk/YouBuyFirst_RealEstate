@@ -4,6 +4,7 @@ import com.youbuyfirst.backend.common.Hashing;
 import com.youbuyfirst.backend.crawl.CrawlRun;
 import com.youbuyfirst.backend.crawl.CrawlRunRepository;
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
+import com.youbuyfirst.backend.ingestion.dto.CommentCollectionTargetPayload;
 import com.youbuyfirst.backend.ingestion.dto.DiffusionPayload;
 import com.youbuyfirst.backend.ingestion.dto.IngestionRequest;
 import com.youbuyfirst.backend.ingestion.dto.IngestionResponse;
@@ -14,6 +15,8 @@ import com.youbuyfirst.backend.ingestion.dto.SentimentPayload;
 import com.youbuyfirst.backend.instrument.Instrument;
 import com.youbuyfirst.backend.instrument.InstrumentRepository;
 import com.youbuyfirst.backend.metrics.MetricSnapshotService;
+import com.youbuyfirst.backend.post.CommunityCommentCollectionTarget;
+import com.youbuyfirst.backend.post.CommunityCommentCollectionTargetRepository;
 import com.youbuyfirst.backend.post.CommunityPost;
 import com.youbuyfirst.backend.post.CommunityPostDiffusionEvent;
 import com.youbuyfirst.backend.post.CommunityPostDiffusionEventRepository;
@@ -34,6 +37,7 @@ public class IngestionService {
 
     private final CommunityPostRepository postRepository;
     private final CommunityPostDiffusionEventRepository diffusionEventRepository;
+    private final CommunityCommentCollectionTargetRepository commentCollectionTargetRepository;
     private final PostMentionRepository mentionRepository;
     private final SentimentAnalysisRepository sentimentRepository;
     private final InstrumentRepository instrumentRepository;
@@ -43,6 +47,7 @@ public class IngestionService {
     public IngestionService(
             CommunityPostRepository postRepository,
             CommunityPostDiffusionEventRepository diffusionEventRepository,
+            CommunityCommentCollectionTargetRepository commentCollectionTargetRepository,
             PostMentionRepository mentionRepository,
             SentimentAnalysisRepository sentimentRepository,
             InstrumentRepository instrumentRepository,
@@ -51,6 +56,7 @@ public class IngestionService {
     ) {
         this.postRepository = postRepository;
         this.diffusionEventRepository = diffusionEventRepository;
+        this.commentCollectionTargetRepository = commentCollectionTargetRepository;
         this.mentionRepository = mentionRepository;
         this.sentimentRepository = sentimentRepository;
         this.instrumentRepository = instrumentRepository;
@@ -96,6 +102,7 @@ public class IngestionService {
         }
 
         saveDiffusionEvents(source, request.runId(), request.diffusionEvents());
+        saveCommentCollectionTargets(source, request.runId(), request.commentCollectionTargets());
 
         crawlRunRepository.save(new CrawlRun(
                 source,
@@ -220,6 +227,58 @@ public class IngestionService {
                     trimTo(runId, 160),
                     createdAt
             ));
+        }
+    }
+
+    private void saveCommentCollectionTargets(String source, String runId, List<CommentCollectionTargetPayload> targets) {
+        if (targets == null || targets.isEmpty()) {
+            return;
+        }
+        Instant now = Instant.now();
+        for (CommentCollectionTargetPayload payload : targets) {
+            String externalId = payload.externalId().trim();
+            CommunityPost linkedPost = postRepository.findBySourceAndExternalId(source, externalId).orElse(null);
+            String resolvedBoardId = trimTo(payload.boardId(), 120);
+            if (resolvedBoardId == null && linkedPost != null) {
+                resolvedBoardId = linkedPost.getBoardId();
+            }
+            String boardId = resolvedBoardId;
+            String triggerReason = normalizeLower(payload.triggerReason());
+            Integer maxComments = payload.maxComments() == null ? 30 : payload.maxComments();
+            Integer priority = payload.priority() == null ? 100 : payload.priority();
+            String crawlRunId = trimTo(runId, 160);
+            commentCollectionTargetRepository.findBySourceAndExternalId(source, externalId).ifPresentOrElse(existing -> {
+                existing.refreshFrom(
+                        linkedPost,
+                        boardId,
+                        triggerReason,
+                        payload.triggeredAt(),
+                        maxComments,
+                        priority,
+                        payload.viewCount(),
+                        payload.recommendCount(),
+                        payload.commentCount(),
+                        crawlRunId,
+                        now
+                );
+                commentCollectionTargetRepository.save(existing);
+            }, () -> commentCollectionTargetRepository.save(new CommunityCommentCollectionTarget(
+                    linkedPost,
+                    source,
+                    externalId,
+                    boardId,
+                    triggerReason,
+                    payload.triggeredAt(),
+                    maxComments,
+                    priority,
+                    payload.viewCount(),
+                    payload.recommendCount(),
+                    payload.commentCount(),
+                    "PENDING",
+                    crawlRunId,
+                    now,
+                    now
+            )));
         }
     }
 

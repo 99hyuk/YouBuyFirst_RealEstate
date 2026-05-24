@@ -207,6 +207,93 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void recordsCommentCollectionTargetsFromIngestionPayload() {
+        List<Map<String, Object>> posts = List.of(Map.ofEntries(
+                Map.entry("externalId", "dc-us-comment-777"),
+                Map.entry("boardId", "stockus"),
+                Map.entry("url", "https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=777"),
+                Map.entry("title", "NVDA concept thread"),
+                Map.entry("contentSnippet", "limited snippet"),
+                Map.entry("authorDisplayName", "dc-user"),
+                Map.entry("publishedAt", "2026-05-24T00:58:00Z"),
+                Map.entry("viewCount", 2300),
+                Map.entry("recommendCount", 41),
+                Map.entry("commentCount", 86),
+                Map.entry("mentions", List.of()),
+                Map.entry("sentiments", List.of())
+        ));
+        Map<String, Object> firstRequest = Map.ofEntries(
+                Map.entry("source", "DCINSIDE"),
+                Map.entry("runId", "dc-us-comments-20260524-1000"),
+                Map.entry("batchStartedAt", "2026-05-24T01:00:00Z"),
+                Map.entry("batchFinishedAt", "2026-05-24T01:02:00Z"),
+                Map.entry("posts", posts),
+                Map.entry("commentCollectionTargets", List.of(Map.ofEntries(
+                        Map.entry("externalId", "dc-us-comment-777"),
+                        Map.entry("boardId", "stockus"),
+                        Map.entry("triggerReason", "high-engagement"),
+                        Map.entry("triggeredAt", "2026-05-24T01:01:00Z"),
+                        Map.entry("maxComments", 30),
+                        Map.entry("priority", 80),
+                        Map.entry("viewCount", 2300),
+                        Map.entry("recommendCount", 41),
+                        Map.entry("commentCount", 86)
+                )))
+        );
+        Map<String, Object> upgradedRequest = Map.ofEntries(
+                Map.entry("source", "DCINSIDE"),
+                Map.entry("runId", "dc-us-comments-20260524-1010"),
+                Map.entry("batchStartedAt", "2026-05-24T01:10:00Z"),
+                Map.entry("batchFinishedAt", "2026-05-24T01:12:00Z"),
+                Map.entry("posts", posts),
+                Map.entry("commentCollectionTargets", List.of(Map.ofEntries(
+                        Map.entry("externalId", "dc-us-comment-777"),
+                        Map.entry("boardId", "stockus"),
+                        Map.entry("triggerReason", "diffusion"),
+                        Map.entry("triggeredAt", "2026-05-24T01:11:00Z"),
+                        Map.entry("maxComments", 50),
+                        Map.entry("priority", 50),
+                        Map.entry("viewCount", 2400),
+                        Map.entry("recommendCount", 51),
+                        Map.entry("commentCount", 92)
+                )))
+        );
+
+        ResponseEntity<IngestionResponse> first = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                firstRequest,
+                IngestionResponse.class
+        );
+        ResponseEntity<IngestionResponse> upgraded = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                upgradedRequest,
+                IngestionResponse.class
+        );
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(upgraded.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String targets = restTemplate.getForObject("/admin/comment-collection-targets?source=DCINSIDE&limit=5", String.class);
+        assertThat(targets)
+                .contains("\"source\":\"DCINSIDE\"")
+                .contains("\"boardId\":\"stockus\"")
+                .contains("\"externalId\":\"dc-us-comment-777\"")
+                .contains("\"triggerReason\":\"diffusion\"")
+                .contains("\"maxComments\":50")
+                .contains("\"priority\":50")
+                .contains("\"commentCount\":92")
+                .contains("\"status\":\"PENDING\"")
+                .contains("\"crawlRunId\":\"dc-us-comments-20260524-1010\"");
+        Integer targetCount = jdbcTemplate.queryForObject(
+                "select count(*) from community_comment_collection_targets where source = ? and external_id = ?",
+                Integer.class,
+                "DCINSIDE",
+                "dc-us-comment-777"
+        );
+        assertThat(targetCount).isEqualTo(1);
+    }
+
+    @Test
     void rejectsInvalidSentimentPayloads() {
         IngestionRequest request = new IngestionRequest(
                 "NAVER",

@@ -8,7 +8,7 @@ import httpx
 from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardWatermark
 from youbuyfirst_pipeline.market_investor_flows import InvestorFlowSnapshot
 from youbuyfirst_pipeline.market_quotes import ChartCandleSet, QuoteSnapshot
-from youbuyfirst_pipeline.models import DiffusionEvent, EnrichedPost
+from youbuyfirst_pipeline.models import CommentCollectionTarget, DiffusionEvent, EnrichedPost
 
 
 class SpringIngestionClient:
@@ -31,6 +31,7 @@ class SpringIngestionClient:
         posts: Iterable[EnrichedPost],
         coverage: dict | BoardCoverage | None = None,
         diffusion_events: Iterable[DiffusionEvent] | None = None,
+        comment_collection_targets: Iterable[CommentCollectionTarget] | None = None,
     ) -> dict:
         payload = {
             "source": source,
@@ -39,6 +40,10 @@ class SpringIngestionClient:
             "batchFinishedAt": _iso(batch_finished_at),
             "posts": [self._post_payload(post) for post in posts],
             "diffusionEvents": [self._diffusion_payload(event) for event in diffusion_events or []],
+            "commentCollectionTargets": [
+                self._comment_collection_target_payload(target)
+                for target in comment_collection_targets or []
+            ],
             **_coverage_payload(coverage),
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
@@ -187,6 +192,20 @@ class SpringIngestionClient:
             "recommendCount": event.recommend_count,
             "commentCount": event.comment_count,
             "diffusionOnly": event.diffusion_only,
+        }
+
+    @staticmethod
+    def _comment_collection_target_payload(target: CommentCollectionTarget) -> dict:
+        return {
+            "externalId": target.external_id,
+            "boardId": target.board_id,
+            "triggerReason": target.trigger_reason,
+            "triggeredAt": _iso(target.triggered_at),
+            "maxComments": target.max_comments,
+            "priority": target.priority,
+            "viewCount": target.view_count,
+            "recommendCount": target.recommend_count,
+            "commentCount": target.comment_count,
         }
 
 
