@@ -73,8 +73,8 @@ class IngestionApiIntegrationTest {
                 List.of(new PostPayload(
                         "fmk-1",
                         "https://www.fmkorea.com/stock/1",
-                        "테슬라랑 엔비디아 오늘 강하다",
-                        "TSLA NVDA 둘 다 실적 기대감 때문에 매수세가 붙는 듯합니다.",
+                        "TSLA and NVDA are strong today",
+                        "TSLA NVDA earnings expectation talk is driving board reactions.",
                         "anonymous",
                         Instant.parse("2026-05-13T00:05:00Z"),
                         "stock",
@@ -82,12 +82,12 @@ class IngestionApiIntegrationTest {
                         3,
                         7,
                         List.of(
-                                new MentionPayload("US", "TSLA", "테슬라"),
-                                new MentionPayload("US", "NVDA", "엔비디아")
+                                new MentionPayload("US", "TSLA", "TSLA"),
+                                new MentionPayload("US", "NVDA", "NVDA")
                         ),
                         List.of(
-                                new SentimentPayload("US", "TSLA", SentimentLabel.BULLISH, 0.91, "실적 기대감 언급", "mock"),
-                                new SentimentPayload("US", "NVDA", SentimentLabel.BULLISH, 0.87, "매수세 언급", "mock")
+                                new SentimentPayload("US", "TSLA", SentimentLabel.BULLISH, 0.91, "earnings expectation mentioned", "mock"),
+                                new SentimentPayload("US", "NVDA", SentimentLabel.BULLISH, 0.87, "buying pressure mentioned", "mock")
                         )
                 ))
         );
@@ -204,6 +204,72 @@ class IngestionApiIntegrationTest {
                 "dc-us-777"
         );
         assertThat(eventCount).isEqualTo(1);
+    }
+
+    @Test
+    void recordsAliasCandidatesWithoutCreatingConfirmedMentions() {
+        Map<String, Object> request = Map.ofEntries(
+                Map.entry("source", "DCINSIDE"),
+                Map.entry("runId", "dc-us-alias-20260525-1000"),
+                Map.entry("batchStartedAt", "2026-05-25T01:00:00Z"),
+                Map.entry("batchFinishedAt", "2026-05-25T01:02:00Z"),
+                Map.entry("posts", List.of()),
+                Map.entry("aliasCandidates", List.of(Map.ofEntries(
+                        Map.entry("alias", "슬라"),
+                        Map.entry("suggestedMarket", "US"),
+                        Map.entry("suggestedSymbol", "TSLA"),
+                        Map.entry("reason", "review-alias"),
+                        Map.entry("contextSnippet", "슬라 실적 기대감 때문에 오늘 게시판에서 계속 언급됨"),
+                        Map.entry("sampleUrl", "https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888"),
+                        Map.entry("observedAt", "2026-05-25T01:00:00Z")
+                )))
+        );
+
+        ResponseEntity<IngestionResponse> first = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                request,
+                IngestionResponse.class
+        );
+        ResponseEntity<IngestionResponse> second = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                request,
+                IngestionResponse.class
+        );
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(second.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String candidates = restTemplate.getForObject("/admin/alias-candidates?source=DCINSIDE&limit=5", String.class);
+        assertThat(candidates)
+                .contains("\"source\":\"DCINSIDE\"")
+                .contains("\"alias\":\"슬라\"")
+                .contains("\"normalizedAlias\":\"슬라\"")
+                .contains("\"suggestedMarket\":\"US\"")
+                .contains("\"suggestedSymbol\":\"TSLA\"")
+                .contains("\"reason\":\"review-alias\"")
+                .contains("\"status\":\"PENDING\"")
+                .contains("\"occurrenceCount\":2");
+        Integer candidateCount = jdbcTemplate.queryForObject(
+                "select count(*) from instrument_alias_candidates where source = ? and normalized_alias = ?",
+                Integer.class,
+                "DCINSIDE",
+                "슬라"
+        );
+        assertThat(candidateCount).isEqualTo(1);
+        Integer mentionCount = jdbcTemplate.queryForObject(
+                "select count(*) from post_mentions pm join instruments i on i.id = pm.instrument_id where i.market = ? and i.symbol = ?",
+                Integer.class,
+                "US",
+                "TSLA"
+        );
+        assertThat(mentionCount).isEqualTo(0);
+
+        String aliases = restTemplate.getForObject("/admin/instrument-aliases?market=US&limit=20", String.class);
+        assertThat(aliases)
+                .contains("\"symbol\":\"TSLA\"")
+                .contains("\"alias\":\"TSLA\"")
+                .contains("\"status\":\"ACCEPTED\"")
+                .contains("\"confidence\":1.0");
     }
 
     @Test

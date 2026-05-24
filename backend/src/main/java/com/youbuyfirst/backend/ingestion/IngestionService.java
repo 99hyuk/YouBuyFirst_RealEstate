@@ -4,6 +4,7 @@ import com.youbuyfirst.backend.common.Hashing;
 import com.youbuyfirst.backend.crawl.CrawlRun;
 import com.youbuyfirst.backend.crawl.CrawlRunRepository;
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
+import com.youbuyfirst.backend.ingestion.dto.AliasCandidatePayload;
 import com.youbuyfirst.backend.ingestion.dto.CommentCollectionTargetPayload;
 import com.youbuyfirst.backend.ingestion.dto.DiffusionPayload;
 import com.youbuyfirst.backend.ingestion.dto.IngestionRequest;
@@ -13,6 +14,8 @@ import com.youbuyfirst.backend.ingestion.dto.MentionPayload;
 import com.youbuyfirst.backend.ingestion.dto.PostPayload;
 import com.youbuyfirst.backend.ingestion.dto.SentimentPayload;
 import com.youbuyfirst.backend.instrument.Instrument;
+import com.youbuyfirst.backend.instrument.InstrumentAliasCandidate;
+import com.youbuyfirst.backend.instrument.InstrumentAliasCandidateRepository;
 import com.youbuyfirst.backend.instrument.InstrumentRepository;
 import com.youbuyfirst.backend.metrics.MetricSnapshotService;
 import com.youbuyfirst.backend.post.CommunityCommentCollectionTarget;
@@ -31,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class IngestionService {
@@ -41,6 +45,7 @@ public class IngestionService {
     private final PostMentionRepository mentionRepository;
     private final SentimentAnalysisRepository sentimentRepository;
     private final InstrumentRepository instrumentRepository;
+    private final InstrumentAliasCandidateRepository aliasCandidateRepository;
     private final CrawlRunRepository crawlRunRepository;
     private final MetricSnapshotService metricSnapshotService;
 
@@ -51,6 +56,7 @@ public class IngestionService {
             PostMentionRepository mentionRepository,
             SentimentAnalysisRepository sentimentRepository,
             InstrumentRepository instrumentRepository,
+            InstrumentAliasCandidateRepository aliasCandidateRepository,
             CrawlRunRepository crawlRunRepository,
             MetricSnapshotService metricSnapshotService
     ) {
@@ -60,6 +66,7 @@ public class IngestionService {
         this.mentionRepository = mentionRepository;
         this.sentimentRepository = sentimentRepository;
         this.instrumentRepository = instrumentRepository;
+        this.aliasCandidateRepository = aliasCandidateRepository;
         this.crawlRunRepository = crawlRunRepository;
         this.metricSnapshotService = metricSnapshotService;
     }
@@ -102,6 +109,7 @@ public class IngestionService {
         }
 
         saveDiffusionEvents(source, request.runId(), request.diffusionEvents());
+        saveAliasCandidates(source, request.aliasCandidates());
         saveCommentCollectionTargets(source, request.runId(), request.commentCollectionTargets());
 
         crawlRunRepository.save(new CrawlRun(
@@ -230,6 +238,42 @@ public class IngestionService {
         }
     }
 
+    private void saveAliasCandidates(String source, List<AliasCandidatePayload> aliasCandidates) {
+        if (aliasCandidates == null || aliasCandidates.isEmpty()) {
+            return;
+        }
+        Instant now = Instant.now();
+        for (AliasCandidatePayload payload : aliasCandidates) {
+            String alias = trimTo(payload.alias(), 200);
+            String normalizedAlias = normalizeAlias(alias);
+            String suggestedMarket = trimTo(normalize(payload.suggestedMarket()), 20);
+            String suggestedSymbol = trimTo(normalize(payload.suggestedSymbol()), 40);
+            String reason = trimTo(normalizeLower(payload.reason()), 80);
+            String contextSnippet = trimTo(payload.contextSnippet(), 500);
+            String sampleUrl = trimTo(payload.sampleUrl(), 1000);
+            aliasCandidateRepository.findBySourceAndNormalizedAliasAndSuggestedMarketAndSuggestedSymbol(
+                    source,
+                    normalizedAlias,
+                    suggestedMarket,
+                    suggestedSymbol
+            ).ifPresentOrElse(existing -> {
+                existing.recordSeen(reason, contextSnippet, sampleUrl, payload.observedAt(), now);
+                aliasCandidateRepository.save(existing);
+            }, () -> aliasCandidateRepository.save(new InstrumentAliasCandidate(
+                    source,
+                    alias,
+                    normalizedAlias,
+                    suggestedMarket,
+                    suggestedSymbol,
+                    reason,
+                    contextSnippet,
+                    sampleUrl,
+                    payload.observedAt(),
+                    now
+            )));
+        }
+    }
+
     private void saveCommentCollectionTargets(String source, String runId, List<CommentCollectionTargetPayload> targets) {
         if (targets == null || targets.isEmpty()) {
             return;
@@ -291,6 +335,10 @@ public class IngestionService {
 
     private static String normalize(String value) {
         return value == null ? "" : value.trim().toUpperCase();
+    }
+
+    private static String normalizeAlias(String value) {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }
 
     private static String normalizeLower(String value) {

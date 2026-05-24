@@ -1,0 +1,8 @@
+market,symbol,alias,status,confidence,ambiguous,source,notes
+KR,005930,삼전,ACCEPTED,1.0,false,seed,common Samsung Electronics shorthand
+KR,005930,삼성전자,ACCEPTED,1.0,false,seed,official Korean display name
+KR,000660,하닉,ACCEPTED,1.0,false,seed,common SK hynix shorthand
+US,NVDA,엔비디아,ACCEPTED,1.0,false,seed,official Korean display name
+US,NVDA,엔비,ACCEPTED,0.9,false,seed,common NVIDIA shorthand
+US,TSLA,슬라,REVIEW,0.45,false,community-seed,slang candidate that should not count until approved
+US,AAPL,사과,BLOCKED,0.2,true,seed,common noun collision

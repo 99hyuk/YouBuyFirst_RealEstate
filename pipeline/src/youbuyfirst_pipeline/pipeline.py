@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 from uuid import uuid4
@@ -226,6 +227,16 @@ class CommunityPipeline:
     def _enrich(self, post: RawPost) -> EnrichedPost:
         text = f"{post.title}\n{post.content}"
         candidates = self.matcher.match(text)
+        find_alias_candidates = getattr(self.matcher, "alias_candidates", None)
+        alias_candidates = [
+            replace(
+                candidate,
+                context_snippet=_trim_to(text, 500),
+                sample_url=post.url,
+                observed_at=post.published_at,
+            )
+            for candidate in (find_alias_candidates(text) if find_alias_candidates else [])
+        ]
         decisions = self.llm_provider.resolve_mentions(post.title, post.content, candidates)
         accepted_decisions = _accepted_decisions(candidates, decisions)
         mentions = [
@@ -257,6 +268,7 @@ class CommunityPipeline:
             comment_count=post.comment_count,
             mentions=mentions,
             analyses=analyses,
+            alias_candidates=alias_candidates,
         )
 
     def _safe_record_run(
@@ -296,6 +308,10 @@ def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecisi
         seen.add(key)
         accepted.append(decision)
     return accepted
+
+
+def _trim_to(value: str, max_length: int) -> str:
+    return value if len(value) <= max_length else value[:max_length]
 
 
 async def _fetch_adapter_result(

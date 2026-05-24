@@ -1,5 +1,5 @@
 ﻿from youbuyfirst_pipeline.matcher import InstrumentMatcher
-from youbuyfirst_pipeline.models import Instrument
+from youbuyfirst_pipeline.models import Instrument, InstrumentAliasRule
 
 
 def test_matches_korean_aliases_and_us_tickers_without_duplicates():
@@ -49,3 +49,54 @@ def test_ascii_tickers_require_token_boundaries():
     assert [(m.market, m.symbol, m.matched_text) for m in mentions] == [
         ("US", "TSLA", "TSLA"),
     ]
+
+
+def test_review_aliases_are_candidates_not_confirmed_mentions():
+    matcher = InstrumentMatcher(
+        [
+            Instrument(market="US", symbol="TSLA", name="Tesla", aliases=["테슬라"]),
+        ],
+        review_aliases=[
+            InstrumentAliasRule(
+                market="US",
+                symbol="TSLA",
+                alias="슬라",
+                status="REVIEW",
+                confidence=0.45,
+                ambiguous=False,
+                source="community-seed",
+            )
+        ],
+    )
+
+    text = "슬라 실적 기대감 때문에 오늘 게시판에서 계속 언급됨"
+
+    assert matcher.match(text) == []
+    candidates = matcher.alias_candidates(text)
+    assert [(candidate.alias, candidate.suggested_market, candidate.suggested_symbol, candidate.reason) for candidate in candidates] == [
+        ("슬라", "US", "TSLA", "review-alias")
+    ]
+
+
+def test_blocked_aliases_are_not_candidates_even_when_ambiguous():
+    matcher = InstrumentMatcher(
+        [
+            Instrument(market="US", symbol="AAPL", name="Apple", aliases=["애플"]),
+        ],
+        review_aliases=[
+            InstrumentAliasRule(
+                market="US",
+                symbol="AAPL",
+                alias="사과",
+                status="BLOCKED",
+                confidence=0.2,
+                ambiguous=True,
+                source="seed",
+            )
+        ],
+    )
+
+    assert [(mention.market, mention.symbol, mention.matched_text) for mention in matcher.match("사과 먹고 애플은 관망")] == [
+        ("US", "AAPL", "애플")
+    ]
+    assert matcher.alias_candidates("사과 먹고 애플은 관망") == []

@@ -8,7 +8,7 @@ import httpx
 from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardWatermark
 from youbuyfirst_pipeline.market_investor_flows import InvestorFlowSnapshot
 from youbuyfirst_pipeline.market_quotes import ChartCandleSet, QuoteSnapshot
-from youbuyfirst_pipeline.models import CommentCollectionTarget, DiffusionEvent, EnrichedPost
+from youbuyfirst_pipeline.models import AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost
 
 
 class SpringIngestionClient:
@@ -33,13 +33,19 @@ class SpringIngestionClient:
         diffusion_events: Iterable[DiffusionEvent] | None = None,
         comment_collection_targets: Iterable[CommentCollectionTarget] | None = None,
     ) -> dict:
+        post_list = list(posts)
         payload = {
             "source": source,
             "runId": run_id,
             "batchStartedAt": _iso(batch_started_at),
             "batchFinishedAt": _iso(batch_finished_at),
-            "posts": [self._post_payload(post) for post in posts],
+            "posts": [self._post_payload(post) for post in post_list],
             "diffusionEvents": [self._diffusion_payload(event) for event in diffusion_events or []],
+            "aliasCandidates": [
+                self._alias_candidate_payload(candidate)
+                for post in post_list
+                for candidate in post.alias_candidates
+            ],
             "commentCollectionTargets": [
                 self._comment_collection_target_payload(target)
                 for target in comment_collection_targets or []
@@ -192,6 +198,18 @@ class SpringIngestionClient:
             "recommendCount": event.recommend_count,
             "commentCount": event.comment_count,
             "diffusionOnly": event.diffusion_only,
+        }
+
+    @staticmethod
+    def _alias_candidate_payload(candidate: AliasCandidate) -> dict:
+        return {
+            "alias": candidate.alias,
+            "suggestedMarket": candidate.suggested_market,
+            "suggestedSymbol": candidate.suggested_symbol,
+            "reason": candidate.reason,
+            "contextSnippet": candidate.context_snippet,
+            "sampleUrl": candidate.sample_url,
+            "observedAt": _iso(candidate.observed_at) if candidate.observed_at else None,
         }
 
     @staticmethod
