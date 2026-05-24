@@ -70,6 +70,19 @@ class DiffusionEvent:
 
 
 @dataclass(frozen=True)
+class CommentCollectionTarget:
+    external_id: str
+    board_id: str | None
+    trigger_reason: str
+    triggered_at: datetime
+    max_comments: int
+    priority: int
+    view_count: int | None = None
+    recommend_count: int | None = None
+    comment_count: int | None = None
+
+
+@dataclass(frozen=True)
 class EnrichedPost(RawPost):
     mentions: list[Mention] = field(default_factory=list)
     analyses: list[Analysis] = field(default_factory=list)
