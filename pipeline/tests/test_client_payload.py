@@ -6,7 +6,7 @@ import respx
 
 from youbuyfirst_pipeline.board_stream import BoardWatermark
 from youbuyfirst_pipeline.client import SpringIngestionClient
-from youbuyfirst_pipeline.models import DiffusionEvent, EnrichedPost
+from youbuyfirst_pipeline.models import AliasCandidate, DiffusionEvent, EnrichedPost
 
 
 def test_post_payload_includes_board_and_engagement_counts():
@@ -86,6 +86,58 @@ def test_ingest_sends_diffusion_events_as_separate_layer():
             "recommendCount": 41,
             "commentCount": 86,
             "diffusionOnly": False,
+        }
+    ]
+
+
+@respx.mock
+def test_ingest_sends_alias_candidates_as_review_queue():
+    route = respx.post("http://backend/internal/ingestions/community-posts").mock(
+        return_value=httpx.Response(
+            200,
+            json={"source": "DCINSIDE", "runId": "run-1", "seenPosts": 1, "acceptedPosts": 1, "duplicatePosts": 0},
+        )
+    )
+    post = EnrichedPost(
+        source="DCINSIDE",
+        external_id="dc-us-888",
+        board_id="stockus",
+        url="https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888",
+        title="슬라 오늘 언급 많음",
+        content="슬라 실적 기대감",
+        author="dc-user",
+        published_at=datetime(2026, 5, 25, 1, 0, tzinfo=timezone.utc),
+        alias_candidates=[
+            AliasCandidate(
+                alias="슬라",
+                suggested_market="US",
+                suggested_symbol="TSLA",
+                reason="review-alias",
+                context_snippet="슬라 오늘 언급 많음",
+                sample_url="https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888",
+                observed_at=datetime(2026, 5, 25, 1, 0, tzinfo=timezone.utc),
+            )
+        ],
+    )
+
+    SpringIngestionClient("http://backend").ingest(
+        "DCINSIDE",
+        "run-1",
+        datetime(2026, 5, 25, 1, 0, tzinfo=timezone.utc),
+        datetime(2026, 5, 25, 1, 2, tzinfo=timezone.utc),
+        [post],
+    )
+
+    payload = json.loads(route.calls.last.request.content)
+    assert payload["aliasCandidates"] == [
+        {
+            "alias": "슬라",
+            "suggestedMarket": "US",
+            "suggestedSymbol": "TSLA",
+            "reason": "review-alias",
+            "contextSnippet": "슬라 오늘 언급 많음",
+            "sampleUrl": "https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888",
+            "observedAt": "2026-05-25T01:00:00Z",
         }
     ]
 

@@ -1,5 +1,21 @@
 # stock
 
+## Alias Registry와 후보 큐
+
+종목 언급 집계는 raw text를 바로 세지 않고 `market + symbol` canonical key로 확정된 mention만 사용합니다.
+
+- `instrument_aliases`: 승인된 alias registry입니다. `status=ACCEPTED`이고 `ambiguous=false`인 alias만 종목 mention 후보로 씁니다.
+- `status=REVIEW` 또는 `ambiguous=true`인 alias는 종목 mention으로 확정하지 않고 후보로만 기록합니다.
+- `status=BLOCKED` alias는 일반명사 충돌처럼 오탐 위험이 큰 표현입니다. 집계와 후보 큐 모두에서 제외합니다.
+- `instrument_alias_candidates`: 커뮤니티에서 관찰된 은어/별칭 후보 큐입니다. 같은 `source + normalizedAlias + suggestedMarket + suggestedSymbol`은 occurrence를 누적합니다.
+- pipeline은 `INSTRUMENT_ALIAS_CSV_PATH`로 alias rule CSV를 읽고, review alias가 보이면 `aliasCandidates` ingestion payload로 backend에 보냅니다.
+
+운영 원칙:
+
+- 새 은어는 바로 `post_mentions`에 넣지 않습니다.
+- 후보의 occurrence, sampleUrl, contextSnippet을 보고 승인할 때만 alias registry에서 `ACCEPTED`로 승격합니다.
+- 승인 전 후보는 급증 종목/반응 방향/개미 심리 지수의 정식 count에 섞지 않습니다.
+
 ## 역할
 
 종목을 식별하고 여러 도메인이 같은 종목을 같은 키로 다루게 만드는 기준 도메인입니다. 커뮤니티 글, 시세 provider, 화면 검색, 에이전트 판단이 모두 이 도메인의 종목 기준을 참조합니다.

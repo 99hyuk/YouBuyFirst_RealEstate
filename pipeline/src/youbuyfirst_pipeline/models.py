@@ -13,10 +13,33 @@ class Instrument:
 
 
 @dataclass(frozen=True)
+class InstrumentAliasRule:
+    market: str
+    symbol: str
+    alias: str
+    status: str = "ACCEPTED"
+    confidence: float = 1.0
+    ambiguous: bool = False
+    source: str | None = None
+    notes: str | None = None
+
+
+@dataclass(frozen=True)
 class Mention:
     market: str
     symbol: str
     matched_text: str
+
+
+@dataclass(frozen=True)
+class AliasCandidate:
+    alias: str
+    suggested_market: str | None
+    suggested_symbol: str | None
+    reason: str
+    context_snippet: str | None = None
+    sample_url: str | None = None
+    observed_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -73,3 +96,4 @@ class DiffusionEvent:
 class EnrichedPost(RawPost):
     mentions: list[Mention] = field(default_factory=list)
     analyses: list[Analysis] = field(default_factory=list)
+    alias_candidates: list[AliasCandidate] = field(default_factory=list)

@@ -3,6 +3,8 @@ package com.youbuyfirst.backend.admin;
 import com.youbuyfirst.backend.crawl.CrawlRunRepository;
 import com.youbuyfirst.backend.crawl.CrawlTargetRepository;
 import com.youbuyfirst.backend.crawl.dto.CrawlTargetView;
+import com.youbuyfirst.backend.instrument.InstrumentAliasCandidateRepository;
+import com.youbuyfirst.backend.instrument.InstrumentAliasRepository;
 import com.youbuyfirst.backend.instrument.InstrumentRepository;
 import com.youbuyfirst.backend.metrics.MetricSnapshotRepository;
 import com.youbuyfirst.backend.post.CommunityPostDiffusionEventRepository;
@@ -26,6 +28,8 @@ public class AdminController {
     private final CommunityPostRepository postRepository;
     private final CommunityPostDiffusionEventRepository diffusionEventRepository;
     private final InstrumentRepository instrumentRepository;
+    private final InstrumentAliasRepository instrumentAliasRepository;
+    private final InstrumentAliasCandidateRepository aliasCandidateRepository;
     private final MetricSnapshotRepository metricSnapshotRepository;
 
     public AdminController(
@@ -34,6 +38,8 @@ public class AdminController {
             CommunityPostRepository postRepository,
             CommunityPostDiffusionEventRepository diffusionEventRepository,
             InstrumentRepository instrumentRepository,
+            InstrumentAliasRepository instrumentAliasRepository,
+            InstrumentAliasCandidateRepository aliasCandidateRepository,
             MetricSnapshotRepository metricSnapshotRepository
     ) {
         this.crawlRunRepository = crawlRunRepository;
@@ -41,6 +47,8 @@ public class AdminController {
         this.postRepository = postRepository;
         this.diffusionEventRepository = diffusionEventRepository;
         this.instrumentRepository = instrumentRepository;
+        this.instrumentAliasRepository = instrumentAliasRepository;
+        this.aliasCandidateRepository = aliasCandidateRepository;
         this.metricSnapshotRepository = metricSnapshotRepository;
     }
 
@@ -80,6 +88,64 @@ public class AdminController {
         }
         return diffusionEventRepository.findBySourceOrderByObservedAtDesc(source.trim().toUpperCase(), PageRequest.of(0, clamp(limit))).stream()
                 .map(PostDiffusionEventView::from)
+                .toList();
+    }
+
+    @GetMapping("/instrument-aliases")
+    @Transactional(readOnly = true)
+    public List<InstrumentAliasView> instrumentAliases(
+            @RequestParam(required = false) String market,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        PageRequest page = PageRequest.of(0, clamp(limit));
+        if (market != null && !market.isBlank() && status != null && !status.isBlank()) {
+            return instrumentAliasRepository.findByInstrumentMarketIgnoreCaseAndStatusIgnoreCaseOrderByAliasAsc(market.trim(), status.trim(), page).stream()
+                    .map(InstrumentAliasView::from)
+                    .toList();
+        }
+        if (market != null && !market.isBlank()) {
+            return instrumentAliasRepository.findByInstrumentMarketIgnoreCaseOrderByAliasAsc(market.trim(), page).stream()
+                    .map(InstrumentAliasView::from)
+                    .toList();
+        }
+        if (status != null && !status.isBlank()) {
+            return instrumentAliasRepository.findByStatusIgnoreCaseOrderByAliasAsc(status.trim(), page).stream()
+                    .map(InstrumentAliasView::from)
+                    .toList();
+        }
+        return instrumentAliasRepository.findByOrderByAliasAsc(page).stream()
+                .map(InstrumentAliasView::from)
+                .toList();
+    }
+
+    @GetMapping("/alias-candidates")
+    @Transactional(readOnly = true)
+    public List<InstrumentAliasCandidateView> aliasCandidates(
+            @RequestParam(required = false) String source,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        PageRequest page = PageRequest.of(0, clamp(limit));
+        String normalizedSource = source == null ? null : source.trim().toUpperCase();
+        String normalizedStatus = status == null ? null : status.trim().toUpperCase();
+        if (normalizedSource != null && !normalizedSource.isBlank() && normalizedStatus != null && !normalizedStatus.isBlank()) {
+            return aliasCandidateRepository.findBySourceAndStatusOrderByLastSeenAtDesc(normalizedSource, normalizedStatus, page).stream()
+                    .map(InstrumentAliasCandidateView::from)
+                    .toList();
+        }
+        if (normalizedSource != null && !normalizedSource.isBlank()) {
+            return aliasCandidateRepository.findBySourceOrderByLastSeenAtDesc(normalizedSource, page).stream()
+                    .map(InstrumentAliasCandidateView::from)
+                    .toList();
+        }
+        if (normalizedStatus != null && !normalizedStatus.isBlank()) {
+            return aliasCandidateRepository.findByStatusOrderByLastSeenAtDesc(normalizedStatus, page).stream()
+                    .map(InstrumentAliasCandidateView::from)
+                    .toList();
+        }
+        return aliasCandidateRepository.findByOrderByLastSeenAtDesc(page).stream()
+                .map(InstrumentAliasCandidateView::from)
                 .toList();
     }
 

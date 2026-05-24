@@ -11,6 +11,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.time.Instant;
+
 @Entity
 @Table(
         name = "instrument_aliases",
@@ -29,12 +31,43 @@ public class InstrumentAlias {
     @Column(nullable = false, length = 200)
     private String alias;
 
+    @Column(name = "normalized_alias", nullable = false, length = 200)
+    private String normalizedAlias;
+
+    @Column(nullable = false, length = 80)
+    private String source;
+
+    @Column(nullable = false)
+    private Double confidence;
+
+    @Column(nullable = false, length = 40)
+    private String status;
+
+    @Column(nullable = false)
+    private Boolean ambiguous;
+
+    @Column(length = 500)
+    private String notes;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     protected InstrumentAlias() {
     }
 
     public InstrumentAlias(Instrument instrument, String alias) {
         this.instrument = instrument;
         this.alias = alias;
+        this.normalizedAlias = normalizeAlias(alias);
+        this.source = "seed";
+        this.confidence = 1.0;
+        this.status = "ACCEPTED";
+        this.ambiguous = false;
+        this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
     }
 
     public Long getId() {
@@ -48,5 +81,40 @@ public class InstrumentAlias {
     public String getAlias() {
         return alias;
     }
-}
 
+    public String getNormalizedAlias() {
+        return normalizedAlias;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public Double getConfidence() {
+        return confidence;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public Boolean getAmbiguous() {
+        return ambiguous;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    private static String normalizeAlias(String value) {
+        return value == null ? "" : value.trim().toUpperCase();
+    }
+}

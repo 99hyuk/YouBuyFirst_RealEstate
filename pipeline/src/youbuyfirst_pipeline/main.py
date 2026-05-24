@@ -18,7 +18,7 @@ from youbuyfirst_pipeline.crawlers.dcinside import DcinsideAdapter
 from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
 from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
 from youbuyfirst_pipeline.crawlers.ppomppu import PpomppuAdapter
-from youbuyfirst_pipeline.instruments import load_instruments
+from youbuyfirst_pipeline.instruments import load_alias_rules, load_instruments, review_alias_rules
 from youbuyfirst_pipeline.llm import build_llm_provider
 from youbuyfirst_pipeline.market_investor_flows import (
     DEFAULT_INVESTOR_FLOW_PROVIDER,
@@ -54,7 +54,9 @@ def build_pipeline() -> CommunityPipeline:
     fetcher = BrowserCapableFetcher(user_agent=user_agent, timeout_seconds=float(os.getenv("CRAWLER_TIMEOUT_SECONDS", "10")))
 
     instrument_path = Path(os.getenv("INSTRUMENT_CSV_PATH", "data/instruments.sample.csv"))
-    instruments = load_instruments(instrument_path)
+    alias_path = Path(os.getenv("INSTRUMENT_ALIAS_CSV_PATH", "data/instrument_aliases.sample.csv"))
+    alias_rules = load_alias_rules(alias_path)
+    instruments = load_instruments(instrument_path, alias_rules)
 
     targets = default_crawl_targets(
         instruments,
@@ -63,7 +65,7 @@ def build_pipeline() -> CommunityPipeline:
     )
     adapters = _adapters_from_targets(targets, fetcher, stream_crawler=_stream_crawler_from_env())
 
-    matcher = InstrumentMatcher(instruments)
+    matcher = InstrumentMatcher(instruments, review_aliases=review_alias_rules(alias_rules))
     client = _spring_client()
     return CommunityPipeline(
         adapters=adapters,
