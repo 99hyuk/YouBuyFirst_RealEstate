@@ -7,14 +7,14 @@
 PR 전후에 아래는 생략하지 않습니다.
 
 1. 브랜치: `codex/<short-task-name>`
-2. 제목: `[작업영역][타입] 명사형 요약`
+2. 제목: `[작업영역][타입] 한국어 명사형 요약`
 3. 라벨: `track:<작업영역>`, `type:*`, `size:*`, 필요 시 `part:*`
 4. 본문: `.github/pull_request_template.md` 복사본 + UTF-8 no BOM 파일 + `gh --body-file`
 5. 검증: 관련 테스트 + `git diff --check`
 6. 본문 확인: `gh pr view --json body --jq .body`
 7. 템플릿 감사: 현재 PR 템플릿의 `##` 섹션이 모두 남아 있는지 확인
 8. 한글 깨짐 확인: `??` 검색
-9. 리뷰 확인: 사람 리뷰와 `chatgpt-codex-connector`의 actionable 의견 확인
+9. 리뷰 대기/확인: 필요한 PR은 review 상태로 두고 사람 리뷰와 `chatgpt-codex-connector`의 actionable 의견 재확인
 10. 기록: Notion 기록 여부와 이유 명시
 11. 종료: merge/close 후 브랜치와 worktree 정리 여부 확인
 
@@ -81,17 +81,19 @@ codex/<work-area>-<task>
 형식:
 
 ```text
-[작업영역][타입] 명사형 요약
+[작업영역][타입] 한국어 명사형 요약
 ```
 
 예:
 
-- `[community][feat] CrawlTarget queue API`
+- `[community][feat] 공개 게시글 수집 대상 큐 추가`
 - `[stock][fix] 별칭 중첩 매칭 보강`
-- `[ui][feat] 대시보드 shell`
+- `[ui][feat] 대시보드 셸 구성`
 - `[ops][docs] 채팅 안정성 규칙`
 
-제목은 `~한다`, `~했다`, `~함`으로 끝내지 않습니다.
+제목의 요약 부분은 한국어로 씁니다. `API`, `DB`, `CrawlTarget`, provider 이름처럼 바꾸면 오히려 헷갈리는 기술 고유명사만 영어로 남깁니다.
+
+제목은 `~한다`, `~했다`, `~함`으로 끝내지 않습니다. 영어 제목으로 PR을 만들었다면 ready/merge 전에 `gh pr edit <number> --title "<한국어 제목>"`로 고칩니다.
 
 ## 태그와 라벨
 
@@ -204,10 +206,11 @@ if ($missing) { throw "PR template headings missing: $($missing -join ', ')" }
 - draft PR을 ready for review로 바꿀 때
 - PR 댓글에 `@codex review`를 포함할 때. 일회성 초점이 있으면 `@codex review for security regressions`처럼 추가 지시를 붙일 수 있습니다.
 
-자동 리뷰가 아직 달리지 않았는데 리뷰가 필요한 PR이면 merge 전에 `@codex review`로 수동 요청하거나, 자동 리뷰 미실행 사유를 PR 본문/완료 보고에 남깁니다. 기본 정책은 아래입니다.
+자동 리뷰가 아직 달리지 않았는데 리뷰가 필요한 PR이면 merge 전에 `@codex review`로 수동 요청하거나, 자동 리뷰 미실행 사유를 PR 본문/완료 보고에 남깁니다. PR 생성 또는 draft 해제 직후에는 바로 merge/close/완료 처리하지 않고, review 상태로 두어 자동 리뷰와 사람 리뷰가 도착할 시간을 확보합니다. 기본 정책은 아래입니다.
 
 - 코드, API, DB, 배치, crawler, chart/market data, front 동작이 바뀌는 PR은 Codex 리뷰를 남깁니다.
 - 문서만 바뀌는 아주 작은 PR은 선택 사항입니다. 다만 작업 규칙, 보안, 법적/데이터 정책, PR/merge 정책을 바꾸는 문서는 Codex 리뷰를 남깁니다.
+- 리뷰가 필요한 PR은 PR 생성/ready 후 5-10분 뒤 `gh pr view <number> --comments`와 `gh pr view <number> --json reviews,comments`로 한 번 더 봅니다. 같은 세션에서 기다릴 수 없으면 Codex 앱의 heartbeat/reminder처럼 사용 가능한 후속 확인 장치를 잡고, 완료 보고와 PR 본문에 `리뷰 재확인 필요`를 남깁니다.
 - 리뷰 지적은 바로 따르지 말고 먼저 타당성을 판단합니다.
 - 맞는 지적이면 고치고, 오탐이거나 이번 범위 밖이면 한국어로 이유를 남긴 뒤 merge할 수 있습니다.
 

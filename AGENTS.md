@@ -50,7 +50,7 @@
 - 실제 수정/PR 후보가 생길 때만 브랜치를 엽니다. 기본 이름은 `codex/<short-task-name>`입니다.
 - 작업은 작게 나누되, 사용자 승인이 꼭 필요한 결정이 아니면 구현하고 검증합니다.
 - 문서만 바꿔도 `git diff --check`를 실행합니다. 코드 변경은 해당 테스트/빌드/스모크 테스트를 실행하고, front/UI 변경은 가능한 경우 Browser/gstack으로 확인합니다.
-- PR 생성/ready/merge 전에는 사람 리뷰와 `chatgpt-codex-connector` 같은 자동 리뷰의 actionable 의견을 확인합니다. 처리 기준은 `docs/layers/ops/GIT_CONVENTION.md`의 리뷰 확인 규칙을 따릅니다.
+- PR 제목과 merge 제목은 기술 고유명사를 제외하고 한국어 명사형으로 씁니다. PR 생성/ready/merge 전에는 사람 리뷰와 `chatgpt-codex-connector` 같은 자동 리뷰의 actionable 의견을 확인하고, 리뷰가 필요한 PR은 생성 직후 바로 처리하지 말고 review 상태로 둔 뒤 재확인합니다. 처리 기준은 `docs/layers/ops/GIT_CONVENTION.md`의 리뷰 확인 규칙을 따릅니다.
 - 현재 상태는 `docs/current/`, 제품 결정은 `docs/product/`, 도메인 contract는 `docs/domains/`, UI 화면 기준은 `docs/layers/ui/screens/`, 운영 규칙은 `docs/layers/ops/`, 리스크는 `docs/governance/`에 둡니다.
 - front 화면 구조나 문구 기준이 바뀌면 사용자의 별도 기록 지시가 없어도 해당 Screen Brief를 갱신합니다.
 - 개발자 취업/포트폴리오에 쓸 수 있는 제품 개발 문제해결, 성능/품질 개선, 기술 의사결정은 `docs/layers/ops/ENGINEERING_EVIDENCE_GUIDE.md` 기준으로 Notion 개발자 기술 경험 DB에 남깁니다.
