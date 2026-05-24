@@ -55,14 +55,27 @@ class FakeClient:
         self.ingested_batches: list[dict] = []
         self.watermarks: dict[tuple[str, str], BoardWatermark] = {}
 
-    def ingest(self, source, run_id, batch_started_at, batch_finished_at, posts, coverage=None, diffusion_events=None):
+    def ingest(
+        self,
+        source,
+        run_id,
+        batch_started_at,
+        batch_finished_at,
+        posts,
+        coverage=None,
+        diffusion_events=None,
+        comment_collection_targets=None,
+    ):
         post_list = list(posts)
         event_list = list(diffusion_events or [])
+        comment_target_list = list(comment_collection_targets or [])
         payload = {"source": source, "runId": run_id, "acceptedPosts": len(post_list), "posts": post_list}
         if coverage is not None:
             payload["coverage"] = coverage
         if event_list:
             payload["diffusionEvents"] = event_list
+        if comment_target_list:
+            payload["commentCollectionTargets"] = comment_target_list
         self.ingested_batches.append(payload)
         return {"source": source, "runId": run_id, "acceptedPosts": len(post_list)}
 
@@ -477,6 +490,84 @@ def test_diffusion_target_generates_list_position_diffusion_events_from_list_pos
     assert event.observed_at == datetime(2026, 5, 24, 3, 5, tzinfo=timezone.utc)
     assert event.view_count == 1500
     assert event.diffusion_only is True
+    comment_target = client.ingested_batches[0]["commentCollectionTargets"][0]
+    assert comment_target.external_id == "SAFE-100"
+    assert comment_target.trigger_reason == "diffusion"
+    assert comment_target.max_comments == 50
+    assert comment_target.priority == 50
+    assert comment_target.comment_count == 44
+
+
+def test_latest_board_generates_limited_comment_targets_only_for_high_engagement_posts():
+    quiet_post = RawPost(
+        source="SAFE",
+        board_id="stock",
+        external_id="SAFE-quiet",
+        url="https://example.com/quiet",
+        title="quiet thread",
+        content="",
+        author="anon",
+        published_at=datetime(2026, 5, 24, 3, 1, tzinfo=timezone.utc),
+        view_count=120,
+        recommend_count=1,
+        comment_count=2,
+    )
+    high_comment_post = RawPost(
+        source="SAFE",
+        board_id="stock",
+        external_id="SAFE-hot-comments",
+        url="https://example.com/hot-comments",
+        title="discussion is moving fast",
+        content="",
+        author="anon",
+        published_at=datetime(2026, 5, 24, 3, 2, tzinfo=timezone.utc),
+        view_count=700,
+        recommend_count=4,
+        comment_count=35,
+    )
+    adapter = FakeStreamAdapter(
+        "SAFE",
+        BoardStreamResult(
+            posts=[quiet_post, high_comment_post],
+            coverage=BoardCoverage(
+                pages_fetched=1,
+                rows_seen=2,
+                ignored_pinned_count=0,
+                duplicate_stop=False,
+                cutoff_stop=False,
+                oldest_seen_at=quiet_post.published_at,
+                newest_seen_at=high_comment_post.published_at,
+                last_cursor="1",
+                coverage_status="complete",
+            ),
+        ),
+    )
+    adapter.target = CrawlTarget.community_board("SAFE", board_id="stock", url="https://example.com/stock")
+    registry = SourcePolicyRegistry(
+        {
+            "SAFE": SourcePolicy("SAFE", SourceStatus.ENABLED, "review complete"),
+        }
+    )
+    client = FakeClient()
+    pipeline = CommunityPipeline(
+        adapters=[adapter],
+        matcher=FakeMatcher(),
+        llm_provider=FakeLLMProvider(),
+        client=client,
+        source_policy_registry=registry,
+        runtime_environment=CrawlRuntimeEnvironment.PUBLIC,
+        now_provider=lambda: datetime(2026, 5, 24, 3, 5, tzinfo=timezone.utc),
+    )
+
+    results = asyncio.run(pipeline.run_once())
+
+    assert results[0]["commentCollectionTargetCount"] == 1
+    assert [target.external_id for target in client.ingested_batches[0]["commentCollectionTargets"]] == ["SAFE-hot-comments"]
+    target = client.ingested_batches[0]["commentCollectionTargets"][0]
+    assert target.trigger_reason == "high-engagement"
+    assert target.max_comments == 30
+    assert target.priority == 80
+    assert target.comment_count == 35
 
 
 def test_diffusion_target_ignores_latest_watermark_but_filters_posts_older_than_24_hours():

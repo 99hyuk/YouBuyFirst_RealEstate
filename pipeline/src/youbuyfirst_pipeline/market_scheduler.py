@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 
 from youbuyfirst_pipeline.client import SpringIngestionClient
@@ -194,6 +194,7 @@ class ChartCandleOnDemandRefreshJob:
                 continue
             try:
                 candle_sets = self.provider.charts(symbols, chart_range=chart_range, interval=interval)
+                candle_sets = _attach_refresh_attempt_tokens(candle_sets, group)
                 self.client.publish_chart_candles(candle_sets)
                 count += len(candle_sets)
             except Exception as exc:
@@ -256,6 +257,23 @@ def build_investor_flow_refresh_job(
         symbols=symbols,
         limit=limit,
     )
+
+
+def _attach_refresh_attempt_tokens(candle_sets: list[ChartCandleSet], requests: list[dict]) -> list[ChartCandleSet]:
+    tokens_by_symbol: dict[str, str] = {}
+    for request in requests:
+        token = str(request.get("refreshAttemptToken", "")).strip()
+        symbol = str(request.get("symbol", "")).strip().upper()
+        if token and symbol:
+            tokens_by_symbol[symbol] = token
+    if not tokens_by_symbol:
+        return candle_sets
+    return [
+        replace(candle_set, refresh_attempt_token=tokens_by_symbol.get(candle_set.symbol.upper()))
+        if tokens_by_symbol.get(candle_set.symbol.upper())
+        else candle_set
+        for candle_set in candle_sets
+    ]
 
 
 def build_chart_candle_on_demand_refresh_job(

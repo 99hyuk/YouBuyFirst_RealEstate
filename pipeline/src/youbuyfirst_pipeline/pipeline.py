@@ -12,7 +12,15 @@ from youbuyfirst_pipeline.crawl_targets import CrawlTargetKind
 from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedError
 from youbuyfirst_pipeline.llm import LLMProvider
 from youbuyfirst_pipeline.matcher import InstrumentMatcher
-from youbuyfirst_pipeline.models import Analysis, DiffusionEvent, EnrichedPost, Mention, MentionDecision, RawPost
+from youbuyfirst_pipeline.models import (
+    Analysis,
+    CommentCollectionTarget,
+    DiffusionEvent,
+    EnrichedPost,
+    Mention,
+    MentionDecision,
+    RawPost,
+)
 from youbuyfirst_pipeline.source_policy import (
     CrawlRuntimeEnvironment,
     SourcePolicyDecision,
@@ -34,6 +42,11 @@ class CommunityPipeline:
         now_provider: Callable[[], datetime] | None = None,
         default_board_lookback_hours: float | None = 24,
         diffusion_max_age_hours: float | None = 24,
+        comment_trigger_min_comments: int = 30,
+        comment_trigger_min_recommends: int = 30,
+        comment_trigger_min_views: int = 5000,
+        high_engagement_max_comments: int = 30,
+        diffusion_max_comments: int = 50,
     ) -> None:
         self.adapters = adapters
         self.matcher = matcher
@@ -45,6 +58,11 @@ class CommunityPipeline:
         self.now_provider = now_provider or _utc_now
         self.default_board_lookback_hours = default_board_lookback_hours
         self.diffusion_max_age_hours = diffusion_max_age_hours
+        self.comment_trigger_min_comments = comment_trigger_min_comments
+        self.comment_trigger_min_recommends = comment_trigger_min_recommends
+        self.comment_trigger_min_views = comment_trigger_min_views
+        self.high_engagement_max_comments = high_engagement_max_comments
+        self.diffusion_max_comments = diffusion_max_comments
         self._active_backoffs: dict[str, CrawlBackoffDecision] = {}
 
     async def run_once(self) -> list[dict]:
@@ -119,9 +137,20 @@ class CommunityPipeline:
                     diffusion_events = stream_result.diffusion_events
                 coverage = _coverage_result_fields(stream_result.coverage)
                 enriched = [self._enrich(post) for post in raw_posts]
+                comment_collection_targets = _comment_collection_targets_for_run(
+                    adapter,
+                    raw_posts,
+                    diffusion_events,
+                    started,
+                    min_comments=self.comment_trigger_min_comments,
+                    min_recommends=self.comment_trigger_min_recommends,
+                    min_views=self.comment_trigger_min_views,
+                    high_engagement_max_comments=self.high_engagement_max_comments,
+                    diffusion_max_comments=self.diffusion_max_comments,
+                )
                 finished = self.now_provider()
                 self._active_backoffs.pop(backoff_key, None)
-                if enriched or diffusion_events:
+                if enriched or diffusion_events or comment_collection_targets:
                     result = self.client.ingest(
                         adapter.source,
                         run_id,
@@ -130,11 +159,14 @@ class CommunityPipeline:
                         enriched,
                         coverage,
                         diffusion_events=diffusion_events,
+                        comment_collection_targets=comment_collection_targets,
                     )
                     if coverage:
                         result["coverage"] = coverage
                     if diffusion_events:
                         result["diffusionEventCount"] = len(diffusion_events)
+                    if comment_collection_targets:
+                        result["commentCollectionTargetCount"] = len(comment_collection_targets)
                     results.append({**result_context, **result})
                 else:
                     record_error = self._safe_record_run(
@@ -399,6 +431,88 @@ def _diffusion_events_for_adapter(adapter: CommunityAdapter, positioned_posts: l
             )
         )
     return events
+
+
+def _comment_collection_targets_for_run(
+    adapter: CommunityAdapter,
+    posts: list[RawPost],
+    diffusion_events: list[DiffusionEvent],
+    triggered_at: datetime,
+    min_comments: int,
+    min_recommends: int,
+    min_views: int,
+    high_engagement_max_comments: int,
+    diffusion_max_comments: int,
+) -> list[CommentCollectionTarget]:
+    target_map: dict[str, CommentCollectionTarget] = {}
+    for event in diffusion_events:
+        if not _has_comments(event.comment_count):
+            continue
+        _add_comment_collection_target(
+            target_map,
+            CommentCollectionTarget(
+                external_id=event.external_id,
+                board_id=event.board_id,
+                trigger_reason="diffusion",
+                triggered_at=event.observed_at,
+                max_comments=diffusion_max_comments,
+                priority=50,
+                view_count=event.view_count,
+                recommend_count=event.recommend_count,
+                comment_count=event.comment_count,
+            ),
+        )
+
+    if _is_diffusion_adapter(adapter):
+        return list(target_map.values())
+
+    for post in posts:
+        if not _is_high_engagement_post(post, min_comments, min_recommends, min_views):
+            continue
+        _add_comment_collection_target(
+            target_map,
+            CommentCollectionTarget(
+                external_id=post.external_id,
+                board_id=post.board_id,
+                trigger_reason="high-engagement",
+                triggered_at=triggered_at,
+                max_comments=high_engagement_max_comments,
+                priority=80,
+                view_count=post.view_count,
+                recommend_count=post.recommend_count,
+                comment_count=post.comment_count,
+            ),
+        )
+    return list(target_map.values())
+
+
+def _add_comment_collection_target(target_map: dict[str, CommentCollectionTarget], target: CommentCollectionTarget) -> None:
+    current = target_map.get(target.external_id)
+    if current is None or target.priority < current.priority:
+        target_map[target.external_id] = target
+
+
+def _is_high_engagement_post(post: RawPost, min_comments: int, min_recommends: int, min_views: int) -> bool:
+    if not _has_comments(post.comment_count):
+        return False
+    return (
+        _at_least(post.comment_count, min_comments)
+        or _at_least(post.recommend_count, min_recommends)
+        or _at_least(post.view_count, min_views)
+    )
+
+
+def _has_comments(value: int | None) -> bool:
+    return value is not None and value > 0
+
+
+def _at_least(value: int | None, threshold: int) -> bool:
+    return threshold > 0 and value is not None and value >= threshold
+
+
+def _is_diffusion_adapter(adapter: CommunityAdapter) -> bool:
+    target = getattr(adapter, "target", None)
+    return target is not None and target.kind == CrawlTargetKind.GENERAL_BOARD_DIFFUSION
 
 
 def _diffusion_cutoff_at(observed_at: datetime, max_age_hours: float | None) -> datetime | None:

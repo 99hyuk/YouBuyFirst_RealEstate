@@ -125,10 +125,17 @@ Claim response:
 ```json
 {
   "items": [
-    { "symbol": "MSFT", "range": "1M", "interval": "1d" }
+    {
+      "symbol": "MSFT",
+      "range": "1M",
+      "interval": "1d",
+      "refreshAttemptToken": "9b5e9ad5-0db7-49b2-8c1e-5e6f84377bcb"
+    }
   ]
 }
 ```
+
+Pipeline must echo `refreshAttemptToken` back when it reports failure through `/internal/market/chart-candle-refresh-requests/fail`, and attach it to the matching candle-set item when it pushes on-demand results to `/internal/market/chart-candles`. Spring ignores stale completion/failure reports whose token no longer matches the active claim, so a slow worker cannot overwrite a newer retry's queue state.
 
 The internal endpoint remains the ingestion/write surface. On-demand reads do not create a new public download API; they only fill the bounded display cache for one requested stock-detail symbol.
 
@@ -159,7 +166,7 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 - Pipeline refresh cadence: every 10 minutes by default through the market refresh job registered by `python -m youbuyfirst_pipeline.main serve`.
 - Periodic refresh is for popular/watchlist symbols only. Do not refresh every stock master row on a schedule.
 - First-open and long-tail symbols rely on the public GET on-demand path to enqueue a refresh request. Pipeline consumes that queue every 60 seconds by default through `MARKET_CHART_ON_DEMAND_REFRESH_INTERVAL_SECONDS`.
-- `chart_candle_refresh_requests` is the MVP DB-backed queue. Claim uses a database write lock so two workers do not select the same pending row, and an `IN_PROGRESS` request older than the 5-minute lease is claimable again.
+- `chart_candle_refresh_requests` is the MVP DB-backed queue. Claim uses a database write lock so two workers do not select the same pending row, an `IN_PROGRESS` request older than the 5-minute lease is claimable again, and each claim has an attempt token so late reports from an older lease cannot overwrite the current queue state.
 - A broker queue with DLQ can be introduced later if chart refresh volume, worker fan-out, or operations monitoring outgrow this table. It is not required for the current bounded stock-detail refresh path because writes remain idempotent at `symbol + range + interval`.
 - Public response max bars: `1260` daily bars, roughly five trading years.
 - `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.

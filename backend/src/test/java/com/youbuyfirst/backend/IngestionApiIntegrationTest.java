@@ -1,5 +1,7 @@
 package com.youbuyfirst.backend;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.youbuyfirst.backend.market.ChartCandleRefreshRequest;
 import com.youbuyfirst.backend.market.ChartCandleRefreshRequestRepository;
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
@@ -53,6 +55,9 @@ class IngestionApiIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
     private ChartCandleRefreshRequestRepository chartCandleRefreshRequestRepository;
 
     @Autowired
@@ -68,8 +73,8 @@ class IngestionApiIntegrationTest {
                 List.of(new PostPayload(
                         "fmk-1",
                         "https://www.fmkorea.com/stock/1",
-                        "테슬라랑 엔비디아 오늘 강하다",
-                        "TSLA NVDA 둘 다 실적 기대감 때문에 매수세가 붙는 듯합니다.",
+                        "TSLA and NVDA are strong today",
+                        "TSLA NVDA earnings expectation talk is driving board reactions.",
                         "anonymous",
                         Instant.parse("2026-05-13T00:05:00Z"),
                         "stock",
@@ -77,12 +82,12 @@ class IngestionApiIntegrationTest {
                         3,
                         7,
                         List.of(
-                                new MentionPayload("US", "TSLA", "테슬라"),
-                                new MentionPayload("US", "NVDA", "엔비디아")
+                                new MentionPayload("US", "TSLA", "TSLA"),
+                                new MentionPayload("US", "NVDA", "NVDA")
                         ),
                         List.of(
-                                new SentimentPayload("US", "TSLA", SentimentLabel.BULLISH, 0.91, "실적 기대감 언급", "mock"),
-                                new SentimentPayload("US", "NVDA", SentimentLabel.BULLISH, 0.87, "매수세 언급", "mock")
+                                new SentimentPayload("US", "TSLA", SentimentLabel.BULLISH, 0.91, "earnings expectation mentioned", "mock"),
+                                new SentimentPayload("US", "NVDA", SentimentLabel.BULLISH, 0.87, "buying pressure mentioned", "mock")
                         )
                 ))
         );
@@ -265,6 +270,93 @@ class IngestionApiIntegrationTest {
                 .contains("\"alias\":\"TSLA\"")
                 .contains("\"status\":\"ACCEPTED\"")
                 .contains("\"confidence\":1.0");
+    }
+
+    @Test
+    void recordsCommentCollectionTargetsFromIngestionPayload() {
+        List<Map<String, Object>> posts = List.of(Map.ofEntries(
+                Map.entry("externalId", "dc-us-comment-777"),
+                Map.entry("boardId", "stockus"),
+                Map.entry("url", "https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=777"),
+                Map.entry("title", "NVDA concept thread"),
+                Map.entry("contentSnippet", "limited snippet"),
+                Map.entry("authorDisplayName", "dc-user"),
+                Map.entry("publishedAt", "2026-05-24T00:58:00Z"),
+                Map.entry("viewCount", 2300),
+                Map.entry("recommendCount", 41),
+                Map.entry("commentCount", 86),
+                Map.entry("mentions", List.of()),
+                Map.entry("sentiments", List.of())
+        ));
+        Map<String, Object> firstRequest = Map.ofEntries(
+                Map.entry("source", "DCINSIDE"),
+                Map.entry("runId", "dc-us-comments-20260524-1000"),
+                Map.entry("batchStartedAt", "2026-05-24T01:00:00Z"),
+                Map.entry("batchFinishedAt", "2026-05-24T01:02:00Z"),
+                Map.entry("posts", posts),
+                Map.entry("commentCollectionTargets", List.of(Map.ofEntries(
+                        Map.entry("externalId", "dc-us-comment-777"),
+                        Map.entry("boardId", "stockus"),
+                        Map.entry("triggerReason", "high-engagement"),
+                        Map.entry("triggeredAt", "2026-05-24T01:01:00Z"),
+                        Map.entry("maxComments", 30),
+                        Map.entry("priority", 80),
+                        Map.entry("viewCount", 2300),
+                        Map.entry("recommendCount", 41),
+                        Map.entry("commentCount", 86)
+                )))
+        );
+        Map<String, Object> upgradedRequest = Map.ofEntries(
+                Map.entry("source", "DCINSIDE"),
+                Map.entry("runId", "dc-us-comments-20260524-1010"),
+                Map.entry("batchStartedAt", "2026-05-24T01:10:00Z"),
+                Map.entry("batchFinishedAt", "2026-05-24T01:12:00Z"),
+                Map.entry("posts", posts),
+                Map.entry("commentCollectionTargets", List.of(Map.ofEntries(
+                        Map.entry("externalId", "dc-us-comment-777"),
+                        Map.entry("boardId", "stockus"),
+                        Map.entry("triggerReason", "diffusion"),
+                        Map.entry("triggeredAt", "2026-05-24T01:11:00Z"),
+                        Map.entry("maxComments", 50),
+                        Map.entry("priority", 50),
+                        Map.entry("viewCount", 2400),
+                        Map.entry("recommendCount", 51),
+                        Map.entry("commentCount", 92)
+                )))
+        );
+
+        ResponseEntity<IngestionResponse> first = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                firstRequest,
+                IngestionResponse.class
+        );
+        ResponseEntity<IngestionResponse> upgraded = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                upgradedRequest,
+                IngestionResponse.class
+        );
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(upgraded.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String targets = restTemplate.getForObject("/admin/comment-collection-targets?source=DCINSIDE&limit=5", String.class);
+        assertThat(targets)
+                .contains("\"source\":\"DCINSIDE\"")
+                .contains("\"boardId\":\"stockus\"")
+                .contains("\"externalId\":\"dc-us-comment-777\"")
+                .contains("\"triggerReason\":\"diffusion\"")
+                .contains("\"maxComments\":50")
+                .contains("\"priority\":50")
+                .contains("\"commentCount\":92")
+                .contains("\"status\":\"PENDING\"")
+                .contains("\"crawlRunId\":\"dc-us-comments-20260524-1010\"");
+        Integer targetCount = jdbcTemplate.queryForObject(
+                "select count(*) from community_comment_collection_targets where source = ? and external_id = ?",
+                Integer.class,
+                "DCINSIDE",
+                "dc-us-comment-777"
+        );
+        assertThat(targetCount).isEqualTo(1);
     }
 
     @Test
@@ -615,7 +707,124 @@ class IngestionApiIntegrationTest {
         assertThat(claim.getBody())
                 .contains("\"symbol\":\"JPM\"")
                 .contains("\"range\":\"1M\"")
-                .contains("\"interval\":\"1d\"");
+                .contains("\"interval\":\"1d\"")
+                .contains("\"refreshAttemptToken\":");
+    }
+
+    @Test
+    void ignoresStaleChartCandleRefreshAttemptReports() throws Exception {
+        jdbcTemplate.update("delete from chart_candle_refresh_requests where symbol = ?", "FENCE");
+        jdbcTemplate.update(
+                """
+                        insert into chart_candle_refresh_requests
+                            (symbol, range_label, candle_interval, status, requested_at, last_attempt_at)
+                        values (?, ?, ?, ?, ?, ?)
+                        """,
+                "FENCE",
+                "1M",
+                "1d",
+                ChartCandleRefreshRequest.STATUS_IN_PROGRESS,
+                Timestamp.from(Instant.parse("2026-05-24T00:00:00Z")),
+                Timestamp.from(Instant.now().minusSeconds(60L * 10L))
+        );
+
+        ResponseEntity<String> claim = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/claim",
+                Map.of("limit", 10),
+                String.class
+        );
+        JsonNode claimedItem = objectMapper.readTree(claim.getBody()).path("items").path(0);
+        String activeToken = claimedItem.path("refreshAttemptToken").asText();
+
+        ResponseEntity<Void> staleUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("symbol", "FENCE"),
+                        Map.entry("name", "Fence Test"),
+                        Map.entry("market", "US"),
+                        Map.entry("currency", "USD"),
+                        Map.entry("range", "1M"),
+                        Map.entry("interval", "1d"),
+                        Map.entry("provider", "test"),
+                        Map.entry("delayLabel", "test"),
+                        Map.entry("asOf", Instant.parse("2026-05-24T01:00:00Z").toString()),
+                        Map.entry("dataStatus", "OK"),
+                        Map.entry("refreshAttemptToken", "stale-token"),
+                        Map.entry("bars", List.of(Map.of(
+                                "date", "2026-05-24",
+                                "open", "10.00",
+                                "high", "11.00",
+                                "low", "9.00",
+                                "close", "10.50",
+                                "volume", 1000
+                        )))
+                ))),
+                Void.class
+        );
+        ResponseEntity<Void> staleFailure = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/fail",
+                Map.of(
+                        "symbol", "FENCE",
+                        "range", "1M",
+                        "interval", "1d",
+                        "refreshAttemptToken", "stale-token",
+                        "errorMessage", "late stale worker"
+                ),
+                Void.class
+        );
+
+        assertThat(claim.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(activeToken).isNotBlank();
+        assertThat(staleUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(staleFailure.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refreshStatus("FENCE", "1M", "1d")).isEqualTo(ChartCandleRefreshRequest.STATUS_IN_PROGRESS);
+        assertThat(refreshErrorMessage("FENCE", "1M", "1d")).isNull();
+        assertThat(refreshAttemptToken("FENCE", "1M", "1d")).isEqualTo(activeToken);
+
+        ResponseEntity<Void> tokenlessUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("symbol", "FENCE"),
+                        Map.entry("name", "Fence Test"),
+                        Map.entry("market", "US"),
+                        Map.entry("currency", "USD"),
+                        Map.entry("range", "1M"),
+                        Map.entry("interval", "1d"),
+                        Map.entry("provider", "test"),
+                        Map.entry("delayLabel", "test"),
+                        Map.entry("asOf", Instant.parse("2026-05-24T01:05:00Z").toString()),
+                        Map.entry("dataStatus", "OK"),
+                        Map.entry("bars", List.of(Map.of(
+                                "date", "2026-05-24",
+                                "open", "10.00",
+                                "high", "11.00",
+                                "low", "9.00",
+                                "close", "10.75",
+                                "volume", 1001
+                        )))
+                ))),
+                Void.class
+        );
+
+        assertThat(tokenlessUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refreshStatus("FENCE", "1M", "1d")).isEqualTo(ChartCandleRefreshRequest.STATUS_IN_PROGRESS);
+        assertThat(refreshAttemptToken("FENCE", "1M", "1d")).isEqualTo(activeToken);
+
+        ResponseEntity<Void> activeFailure = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/fail",
+                Map.of(
+                        "symbol", "FENCE",
+                        "range", "1M",
+                        "interval", "1d",
+                        "refreshAttemptToken", activeToken,
+                        "errorMessage", "active worker failed"
+                ),
+                Void.class
+        );
+
+        assertThat(activeFailure.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refreshStatus("FENCE", "1M", "1d")).isEqualTo(ChartCandleRefreshRequest.STATUS_FAILED);
+        assertThat(refreshErrorMessage("FENCE", "1M", "1d")).isEqualTo("active worker failed");
     }
 
     @Test
@@ -1110,6 +1319,48 @@ class IngestionApiIntegrationTest {
                     leased_until = null,
                     updated_at = current_timestamp(6)
                 """);
+    }
+
+    private String refreshStatus(String symbol, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select status
+                        from chart_candle_refresh_requests
+                        where symbol = ? and range_label = ? and candle_interval = ?
+                        """,
+                String.class,
+                symbol,
+                range,
+                interval
+        );
+    }
+
+    private String refreshErrorMessage(String symbol, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select error_message
+                        from chart_candle_refresh_requests
+                        where symbol = ? and range_label = ? and candle_interval = ?
+                        """,
+                String.class,
+                symbol,
+                range,
+                interval
+        );
+    }
+
+    private String refreshAttemptToken(String symbol, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select attempt_token
+                        from chart_candle_refresh_requests
+                        where symbol = ? and range_label = ? and candle_interval = ?
+                        """,
+                String.class,
+                symbol,
+                range,
+                interval
+        );
     }
 
     private static void sleep(long millis) {

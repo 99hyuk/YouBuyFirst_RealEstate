@@ -76,6 +76,11 @@ def build_pipeline() -> CommunityPipeline:
         runtime_environment=runtime_environment,
         default_board_lookback_hours=float(os.getenv("CRAWLER_LATEST_LOOKBACK_HOURS", "24")),
         diffusion_max_age_hours=float(os.getenv("CRAWLER_DIFFUSION_MAX_AGE_HOURS", "24")),
+        comment_trigger_min_comments=int(os.getenv("CRAWLER_COMMENT_TRIGGER_MIN_COMMENTS", "30")),
+        comment_trigger_min_recommends=int(os.getenv("CRAWLER_COMMENT_TRIGGER_MIN_RECOMMENDS", "30")),
+        comment_trigger_min_views=int(os.getenv("CRAWLER_COMMENT_TRIGGER_MIN_VIEWS", "5000")),
+        high_engagement_max_comments=int(os.getenv("CRAWLER_HIGH_ENGAGEMENT_MAX_COMMENTS", "30")),
+        diffusion_max_comments=int(os.getenv("CRAWLER_DIFFUSION_MAX_COMMENTS", "50")),
     )
 
 

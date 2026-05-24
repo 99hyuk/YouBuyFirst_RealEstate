@@ -24,7 +24,8 @@ public record IngestionRequest(
         String lastCursor,
         String coverageStatus,
         List<@Valid DiffusionPayload> diffusionEvents,
-        List<@Valid AliasCandidatePayload> aliasCandidates
+        List<@Valid AliasCandidatePayload> aliasCandidates,
+        List<@Valid CommentCollectionTargetPayload> commentCollectionTargets
 ) {
     public IngestionRequest(
             String source,
@@ -33,7 +34,7 @@ public record IngestionRequest(
             Instant batchFinishedAt,
             List<@Valid PostPayload> posts
     ) {
-        this(source, runId, batchStartedAt, batchFinishedAt, posts, null, null, null, null, null, null, null, null, null, null, null);
+        this(source, runId, batchStartedAt, batchFinishedAt, posts, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public IngestionRequest(
@@ -44,7 +45,7 @@ public record IngestionRequest(
             List<@Valid PostPayload> posts,
             List<@Valid DiffusionPayload> diffusionEvents
     ) {
-        this(source, runId, batchStartedAt, batchFinishedAt, posts, null, null, null, null, null, null, null, null, null, diffusionEvents, null);
+        this(source, runId, batchStartedAt, batchFinishedAt, posts, null, null, null, null, null, null, null, null, null, diffusionEvents, null, null);
     }
 
     public IngestionRequest(
@@ -63,6 +64,6 @@ public record IngestionRequest(
             String lastCursor,
             String coverageStatus
     ) {
-        this(source, runId, batchStartedAt, batchFinishedAt, posts, pagesFetched, rowsSeen, ignoredPinnedCount, duplicateStop, cutoffStop, oldestSeenAt, newestSeenAt, lastCursor, coverageStatus, null, null);
+        this(source, runId, batchStartedAt, batchFinishedAt, posts, pagesFetched, rowsSeen, ignoredPinnedCount, duplicateStop, cutoffStop, oldestSeenAt, newestSeenAt, lastCursor, coverageStatus, null, null, null);
     }
 }

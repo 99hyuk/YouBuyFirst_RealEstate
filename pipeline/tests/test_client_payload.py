@@ -6,7 +6,7 @@ import respx
 
 from youbuyfirst_pipeline.board_stream import BoardWatermark
 from youbuyfirst_pipeline.client import SpringIngestionClient
-from youbuyfirst_pipeline.models import AliasCandidate, DiffusionEvent, EnrichedPost
+from youbuyfirst_pipeline.models import AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost
 
 
 def test_post_payload_includes_board_and_engagement_counts():
@@ -15,7 +15,7 @@ def test_post_payload_includes_board_and_engagement_counts():
         board_id="stock",
         external_id="PPOMPPU-stock-359353",
         url="https://www.ppomppu.co.kr/zboard/view.php?id=stock&no=359353",
-        title="삼성전자 노조 여전함",
+        title="Samsung union update",
         content="limited snippet",
         author="sample",
         published_at=datetime(2026, 5, 24, 0, 57, tzinfo=timezone.utc),
@@ -138,6 +138,51 @@ def test_ingest_sends_alias_candidates_as_review_queue():
             "contextSnippet": "슬라 오늘 언급 많음",
             "sampleUrl": "https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888",
             "observedAt": "2026-05-25T01:00:00Z",
+        }
+    ]
+
+
+@respx.mock
+def test_ingest_sends_comment_collection_targets_as_limited_queue():
+    route = respx.post("http://backend/internal/ingestions/community-posts").mock(
+        return_value=httpx.Response(
+            200,
+            json={"source": "DCINSIDE", "runId": "run-1", "seenPosts": 0, "acceptedPosts": 0, "duplicatePosts": 0},
+        )
+    )
+    target = CommentCollectionTarget(
+        external_id="dc-us-777",
+        board_id="stockus",
+        trigger_reason="diffusion",
+        triggered_at=datetime(2026, 5, 24, 1, 1, tzinfo=timezone.utc),
+        max_comments=50,
+        priority=50,
+        view_count=2300,
+        recommend_count=41,
+        comment_count=86,
+    )
+
+    SpringIngestionClient("http://backend").ingest(
+        "DCINSIDE",
+        "run-1",
+        datetime(2026, 5, 24, 1, 0, tzinfo=timezone.utc),
+        datetime(2026, 5, 24, 1, 2, tzinfo=timezone.utc),
+        [],
+        comment_collection_targets=[target],
+    )
+
+    payload = json.loads(route.calls.last.request.content)
+    assert payload["commentCollectionTargets"] == [
+        {
+            "externalId": "dc-us-777",
+            "boardId": "stockus",
+            "triggerReason": "diffusion",
+            "triggeredAt": "2026-05-24T01:01:00Z",
+            "maxComments": 50,
+            "priority": 50,
+            "viewCount": 2300,
+            "recommendCount": 41,
+            "commentCount": 86,
         }
     ]
 

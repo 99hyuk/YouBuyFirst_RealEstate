@@ -7,6 +7,7 @@ import com.youbuyfirst.backend.instrument.InstrumentAliasCandidateRepository;
 import com.youbuyfirst.backend.instrument.InstrumentAliasRepository;
 import com.youbuyfirst.backend.instrument.InstrumentRepository;
 import com.youbuyfirst.backend.metrics.MetricSnapshotRepository;
+import com.youbuyfirst.backend.post.CommunityCommentCollectionTargetRepository;
 import com.youbuyfirst.backend.post.CommunityPostDiffusionEventRepository;
 import com.youbuyfirst.backend.post.CommunityPostRepository;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +28,7 @@ public class AdminController {
     private final CrawlTargetRepository crawlTargetRepository;
     private final CommunityPostRepository postRepository;
     private final CommunityPostDiffusionEventRepository diffusionEventRepository;
+    private final CommunityCommentCollectionTargetRepository commentCollectionTargetRepository;
     private final InstrumentRepository instrumentRepository;
     private final InstrumentAliasRepository instrumentAliasRepository;
     private final InstrumentAliasCandidateRepository aliasCandidateRepository;
@@ -37,6 +39,7 @@ public class AdminController {
             CrawlTargetRepository crawlTargetRepository,
             CommunityPostRepository postRepository,
             CommunityPostDiffusionEventRepository diffusionEventRepository,
+            CommunityCommentCollectionTargetRepository commentCollectionTargetRepository,
             InstrumentRepository instrumentRepository,
             InstrumentAliasRepository instrumentAliasRepository,
             InstrumentAliasCandidateRepository aliasCandidateRepository,
@@ -46,6 +49,7 @@ public class AdminController {
         this.crawlTargetRepository = crawlTargetRepository;
         this.postRepository = postRepository;
         this.diffusionEventRepository = diffusionEventRepository;
+        this.commentCollectionTargetRepository = commentCollectionTargetRepository;
         this.instrumentRepository = instrumentRepository;
         this.instrumentAliasRepository = instrumentAliasRepository;
         this.aliasCandidateRepository = aliasCandidateRepository;
@@ -146,6 +150,19 @@ public class AdminController {
         }
         return aliasCandidateRepository.findByOrderByLastSeenAtDesc(page).stream()
                 .map(InstrumentAliasCandidateView::from)
+                .toList();
+    }
+
+    @GetMapping("/comment-collection-targets")
+    @Transactional(readOnly = true)
+    public List<CommentCollectionTargetView> commentCollectionTargets(@RequestParam(required = false) String source, @RequestParam(defaultValue = "50") int limit) {
+        if (source == null || source.isBlank()) {
+            return commentCollectionTargetRepository.findByOrderByPriorityAscCreatedAtAsc(PageRequest.of(0, clamp(limit))).stream()
+                    .map(CommentCollectionTargetView::from)
+                    .toList();
+        }
+        return commentCollectionTargetRepository.findBySourceOrderByPriorityAscCreatedAtAsc(source.trim().toUpperCase(), PageRequest.of(0, clamp(limit))).stream()
+                .map(CommentCollectionTargetView::from)
                 .toList();
     }
 

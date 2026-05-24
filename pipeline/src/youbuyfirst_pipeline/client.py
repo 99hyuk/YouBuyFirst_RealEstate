@@ -8,7 +8,7 @@ import httpx
 from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardWatermark
 from youbuyfirst_pipeline.market_investor_flows import InvestorFlowSnapshot
 from youbuyfirst_pipeline.market_quotes import ChartCandleSet, QuoteSnapshot
-from youbuyfirst_pipeline.models import AliasCandidate, DiffusionEvent, EnrichedPost
+from youbuyfirst_pipeline.models import AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost
 
 
 class SpringIngestionClient:
@@ -31,6 +31,7 @@ class SpringIngestionClient:
         posts: Iterable[EnrichedPost],
         coverage: dict | BoardCoverage | None = None,
         diffusion_events: Iterable[DiffusionEvent] | None = None,
+        comment_collection_targets: Iterable[CommentCollectionTarget] | None = None,
     ) -> dict:
         post_list = list(posts)
         payload = {
@@ -44,6 +45,10 @@ class SpringIngestionClient:
                 self._alias_candidate_payload(candidate)
                 for post in post_list
                 for candidate in post.alias_candidates
+            ],
+            "commentCollectionTargets": [
+                self._comment_collection_target_payload(target)
+                for target in comment_collection_targets or []
             ],
             **_coverage_payload(coverage),
         }
@@ -129,6 +134,7 @@ class SpringIngestionClient:
             "symbol": request.get("symbol", ""),
             "range": request.get("range", ""),
             "interval": request.get("interval", ""),
+            "refreshAttemptToken": request.get("refreshAttemptToken", ""),
             "errorMessage": error_message,
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
@@ -204,6 +210,20 @@ class SpringIngestionClient:
             "contextSnippet": candidate.context_snippet,
             "sampleUrl": candidate.sample_url,
             "observedAt": _iso(candidate.observed_at) if candidate.observed_at else None,
+        }
+
+    @staticmethod
+    def _comment_collection_target_payload(target: CommentCollectionTarget) -> dict:
+        return {
+            "externalId": target.external_id,
+            "boardId": target.board_id,
+            "triggerReason": target.trigger_reason,
+            "triggeredAt": _iso(target.triggered_at),
+            "maxComments": target.max_comments,
+            "priority": target.priority,
+            "viewCount": target.view_count,
+            "recommendCount": target.recommend_count,
+            "commentCount": target.comment_count,
         }
 
 

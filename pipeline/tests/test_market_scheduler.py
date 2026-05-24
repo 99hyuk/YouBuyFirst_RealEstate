@@ -1,3 +1,7 @@
+from datetime import datetime, timezone
+from decimal import Decimal
+
+from youbuyfirst_pipeline.market_quotes import ChartCandleBar, ChartCandleSet
 from youbuyfirst_pipeline.market_scheduler import ChartCandleOnDemandRefreshJob, InvestorFlowRefreshJob, MarketRefreshJob
 from youbuyfirst_pipeline.scheduler import configure_scheduler
 
@@ -24,6 +28,36 @@ class _ChartProvider:
         if self.fail:
             raise RuntimeError("chart provider failed")
         return [f"chart:{symbol}:{chart_range}:{interval}" for symbol in symbols]
+
+
+class _RealChartProvider:
+    def charts(self, symbols: list[str], chart_range: str, interval: str) -> list[ChartCandleSet]:
+        return [
+            ChartCandleSet(
+                symbol=symbol,
+                name=symbol,
+                market="US",
+                currency="USD",
+                chart_range=chart_range,
+                interval=interval,
+                provider="test",
+                delay_label="test",
+                as_of=datetime(2026, 5, 24, tzinfo=timezone.utc),
+                stale=False,
+                data_status="OK",
+                bars=[
+                    ChartCandleBar(
+                        date="2026-05-24",
+                        open=Decimal("10.00"),
+                        high=Decimal("11.00"),
+                        low=Decimal("9.00"),
+                        close=Decimal("10.50"),
+                        volume=1000,
+                    )
+                ],
+            )
+            for symbol in symbols
+        ]
 
 
 class _InvestorFlowProvider:
@@ -197,6 +231,21 @@ def test_chart_candle_on_demand_refresh_job_marks_claimed_requests_failed_on_pro
             "errorMessage": "chart provider failed",
         }
     ]
+
+
+def test_chart_candle_on_demand_refresh_job_attaches_attempt_tokens_to_pushed_candles():
+    client = _Client()
+    client.chart_refresh_requests = [
+        {"symbol": "MSFT", "range": "1M", "interval": "1d", "refreshAttemptToken": "token-msft"},
+    ]
+    job = ChartCandleOnDemandRefreshJob(provider=_RealChartProvider(), client=client, claim_limit=20)
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert result.count == 1
+    assert client.chart_batches[0][0].refresh_attempt_token == "token-msft"
+    assert client.chart_batches[0][0].to_request_dict()["refreshAttemptToken"] == "token-msft"
 
 
 def test_chart_candle_on_demand_refresh_job_skips_when_claim_endpoint_is_unavailable():

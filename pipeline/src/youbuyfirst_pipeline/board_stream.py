@@ -101,7 +101,8 @@ class BoardStreamCrawler:
                 newest_seen_at = _max_datetime(newest_seen_at, post.published_at)
                 if post.external_id == watermark.last_seen_external_id:
                     duplicate_stop = True
-                    effective_cutoff_at = _max_datetime(effective_cutoff_at, post.published_at)
+                    if watermark.cutoff_at is None:
+                        effective_cutoff_at = _max_datetime(effective_cutoff_at, post.published_at)
                     continue
                 if effective_cutoff_at is not None and post.published_at < effective_cutoff_at:
                     if watermark.cutoff_at is not None and post.published_at < watermark.cutoff_at:
