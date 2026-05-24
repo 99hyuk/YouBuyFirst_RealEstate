@@ -40,6 +40,12 @@ class MarketRefreshClient(Protocol):
     def publish_investor_flows(self, snapshots: list[InvestorFlowSnapshot]) -> None:
         ...
 
+    def claim_chart_candle_refresh_requests(self, limit: int) -> list[dict]:
+        ...
+
+    def mark_chart_candle_refresh_failed(self, request: dict, error_message: str) -> None:
+        ...
+
 
 @dataclass(frozen=True)
 class MarketRefreshResult:
@@ -51,6 +57,12 @@ class MarketRefreshResult:
 
 @dataclass(frozen=True)
 class InvestorFlowRefreshResult:
+    status: str
+    count: int
+
+
+@dataclass(frozen=True)
+class ChartCandleOnDemandRefreshResult:
     status: str
     count: int
 
@@ -148,6 +160,58 @@ class InvestorFlowRefreshJob:
         return result
 
 
+class ChartCandleOnDemandRefreshJob:
+    def __init__(
+            self,
+            provider: ChartCandleProvider,
+            client: MarketRefreshClient,
+            claim_limit: int,
+    ) -> None:
+        self.provider = provider
+        self.client = client
+        self.claim_limit = claim_limit
+
+    def run_once(self) -> ChartCandleOnDemandRefreshResult:
+        try:
+            requests = self.client.claim_chart_candle_refresh_requests(self.claim_limit)
+        except Exception as exc:
+            logger.warning("market chart on-demand refresh claim skipped; backend unavailable: %s", exc)
+            return ChartCandleOnDemandRefreshResult(status="CLIENT_ERROR", count=0)
+
+        if not requests:
+            return ChartCandleOnDemandRefreshResult(status="OK", count=0)
+
+        status = "OK"
+        count = 0
+        grouped: dict[tuple[str, str], list[dict]] = {}
+        for request in requests:
+            key = (str(request.get("range", "3M")), str(request.get("interval", "1d")))
+            grouped.setdefault(key, []).append(request)
+
+        for (chart_range, interval), group in grouped.items():
+            symbols = [str(request.get("symbol", "")).strip().upper() for request in group if request.get("symbol")]
+            if not symbols:
+                continue
+            try:
+                candle_sets = self.provider.charts(symbols, chart_range=chart_range, interval=interval)
+                self.client.publish_chart_candles(candle_sets)
+                count += len(candle_sets)
+            except Exception as exc:
+                status = "PROVIDER_ERROR"
+                logger.exception("market chart on-demand refresh failed")
+                for request in group:
+                    self.client.mark_chart_candle_refresh_failed(request, str(exc))
+
+        result = ChartCandleOnDemandRefreshResult(status=status, count=count)
+        logger.info(
+            "market chart on-demand refresh finished; status=%s count=%s claimed=%s",
+            result.status,
+            result.count,
+            len(requests),
+        )
+        return result
+
+
 def build_market_refresh_job(
         *,
         client: SpringIngestionClient,
@@ -191,4 +255,21 @@ def build_investor_flow_refresh_job(
         client=client,
         symbols=symbols,
         limit=limit,
+    )
+
+
+def build_chart_candle_on_demand_refresh_job(
+        *,
+        client: SpringIngestionClient,
+        claim_limit: int,
+        chart_cache_ttl_seconds: int,
+        chart_stale_after_hours: int,
+) -> ChartCandleOnDemandRefreshJob:
+    return ChartCandleOnDemandRefreshJob(
+        provider=MarketChartCandleProvider(
+            cache_ttl_seconds=chart_cache_ttl_seconds,
+            stale_after_hours=chart_stale_after_hours,
+        ),
+        client=client,
+        claim_limit=claim_limit,
     )

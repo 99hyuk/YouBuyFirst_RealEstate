@@ -38,6 +38,14 @@ type StockDetailFixture = {
   yesterday: string[];
 };
 
+type StockCatalogItem = {
+  symbol: string;
+  apiSymbol: string;
+  name: string;
+  market: string;
+  providerSymbol: string;
+};
+
 type ApiQuoteSnapshot = {
   symbol: string;
   name: string;
@@ -84,6 +92,24 @@ type ApiChartCandles = {
   };
 };
 
+type ApiTechnicalIndicators = {
+  symbol: string;
+  provider: string;
+  sourceProvider: string;
+  asOf: string;
+  stale: boolean;
+  dataStatus: string;
+  rsi: {
+    period: number;
+    points: { date: string; value: number | null }[];
+  };
+  bollingerBands: {
+    period: number;
+    multiplier: number;
+    points: { date: string; upper: number | null; middle: number | null; lower: number | null }[];
+  };
+};
+
 type ApiInvestorFlowLeg = {
   netAmount: number | null;
   netVolume: number;
@@ -125,6 +151,7 @@ const stockFixtures = stockDetailFixtureSet.items as StockDetailFixture[];
 const quoteSnapshots = ref<ApiQuoteSnapshot[]>(quoteSnapshotFixtureSet.items as ApiQuoteSnapshot[]);
 const quoteLoadState = ref<'fixture' | 'api' | 'error'>('fixture');
 const chartCandles = ref<ApiChartCandles | null>(null);
+const technicalIndicators = ref<ApiTechnicalIndicators | null>(null);
 const chartLoadState = ref<'idle' | 'loading' | 'api' | 'hidden' | 'error'>('idle');
 const chartBlockReason = ref('차트 API 응답을 기다리고 있습니다.');
 const investorFlows = ref<ApiInvestorFlowSnapshot[]>([]);
@@ -134,9 +161,80 @@ const quoteApiBaseUrl = '';
 const hiddenChartStatuses = new Set(['INSUFFICIENT', 'PROVIDER_ERROR', 'MOCK']);
 const visibleInvestorFlowStatuses = new Set(['OK', 'STALE']);
 
+const stockCatalog: StockCatalogItem[] = [
+  { symbol: '005930', apiSymbol: '005930.KS', name: 'Samsung Electronics', market: 'KRX', providerSymbol: 'KRX:005930' },
+  { symbol: '000660', apiSymbol: '000660.KS', name: 'SK hynix', market: 'KRX', providerSymbol: 'KRX:000660' },
+  { symbol: '069500', apiSymbol: '069500.KS', name: 'KODEX 200', market: 'ETF', providerSymbol: 'KRX:069500' },
+  { symbol: '454910', apiSymbol: '454910.KS', name: 'Doosan Robotics', market: 'KRX', providerSymbol: 'KRX:454910' },
+  { symbol: '035420', apiSymbol: '035420.KS', name: 'NAVER', market: 'KRX', providerSymbol: 'KRX:035420' },
+  { symbol: '086520', apiSymbol: '086520.KQ', name: 'Ecopro', market: 'KOSDAQ', providerSymbol: 'KOSDAQ:086520' },
+  { symbol: '042700', apiSymbol: '042700.KS', name: 'Hanmi Semiconductor', market: 'KRX', providerSymbol: 'KRX:042700' },
+  { symbol: '066570', apiSymbol: '066570.KS', name: 'LG Electronics', market: 'KRX', providerSymbol: 'KRX:066570' },
+  { symbol: '005380', apiSymbol: '005380.KS', name: 'Hyundai Motor', market: 'KRX', providerSymbol: 'KRX:005380' },
+  { symbol: '006400', apiSymbol: '006400.KS', name: 'Samsung SDI', market: 'KRX', providerSymbol: 'KRX:006400' },
+  { symbol: 'TSLA', apiSymbol: 'TSLA', name: 'Tesla', market: 'NASDAQ', providerSymbol: 'NASDAQ:TSLA' },
+  { symbol: 'NVDA', apiSymbol: 'NVDA', name: 'NVIDIA', market: 'NASDAQ', providerSymbol: 'NASDAQ:NVDA' },
+  { symbol: 'SOFI', apiSymbol: 'SOFI', name: 'SoFi Technologies', market: 'NASDAQ', providerSymbol: 'NASDAQ:SOFI' },
+  { symbol: 'PLTR', apiSymbol: 'PLTR', name: 'Palantir', market: 'NYSE', providerSymbol: 'NYSE:PLTR' },
+  { symbol: 'AMD', apiSymbol: 'AMD', name: 'Advanced Micro Devices', market: 'NASDAQ', providerSymbol: 'NASDAQ:AMD' },
+  { symbol: 'AAPL', apiSymbol: 'AAPL', name: 'Apple', market: 'NASDAQ', providerSymbol: 'NASDAQ:AAPL' },
+  { symbol: 'SOXS', apiSymbol: 'SOXS', name: 'SOXS', market: 'ETF', providerSymbol: 'NYSE:SOXS' },
+  { symbol: 'MSFU', apiSymbol: 'MSFU', name: 'MSFU', market: 'ETF', providerSymbol: 'NASDAQ:MSFU' },
+  { symbol: 'TSM', apiSymbol: 'TSM', name: 'Taiwan Semiconductor Manufacturing', market: 'NYSE', providerSymbol: 'NYSE:TSM' },
+  { symbol: 'SMR', apiSymbol: 'SMR', name: 'NuScale Power', market: 'NYSE', providerSymbol: 'NYSE:SMR' },
+  { symbol: 'MSFT', apiSymbol: 'MSFT', name: 'Microsoft', market: 'NASDAQ', providerSymbol: 'NASDAQ:MSFT' },
+  { symbol: 'AMZN', apiSymbol: 'AMZN', name: 'Amazon', market: 'NASDAQ', providerSymbol: 'NASDAQ:AMZN' },
+  { symbol: 'GOOGL', apiSymbol: 'GOOGL', name: 'Alphabet', market: 'NASDAQ', providerSymbol: 'NASDAQ:GOOGL' },
+  { symbol: 'META', apiSymbol: 'META', name: 'Meta Platforms', market: 'NASDAQ', providerSymbol: 'NASDAQ:META' },
+  { symbol: 'QQQ', apiSymbol: 'QQQ', name: 'Invesco QQQ Trust', market: 'ETF', providerSymbol: 'NASDAQ:QQQ' },
+  { symbol: 'SPY', apiSymbol: 'SPY', name: 'SPDR S&P 500 ETF Trust', market: 'ETF', providerSymbol: 'NYSE:SPY' }
+];
+
 const routeSymbol = computed(() => String(route.params.symbol ?? stockFixtures[0].symbol).toUpperCase());
 const quoteApiSymbolFor = (item: StockDetailFixture) =>
-  item.market === 'KRX' && /^\d{6}$/.test(item.symbol) ? `${item.symbol}.KS` : item.symbol;
+  item.providerSymbol.startsWith('KOSDAQ:') && /^\d{6}$/.test(item.symbol)
+    ? `${item.symbol}.KQ`
+    : (item.providerSymbol.startsWith('KRX:') || item.market === 'KRX') && /^\d{6}$/.test(item.symbol)
+      ? `${item.symbol}.KS`
+      : item.symbol;
+const matchingCatalogItem = computed(() =>
+  stockCatalog.find(
+    (item) =>
+      item.symbol.toUpperCase() === routeSymbol.value.replace(/\.(KS|KQ)$/, '') ||
+      item.apiSymbol.toUpperCase() === routeSymbol.value ||
+      item.providerSymbol.toUpperCase() === routeSymbol.value
+  )
+);
+const fallbackStockFor = (item: StockCatalogItem): StockDetailFixture => {
+  const template = item.apiSymbol.endsWith('.KS') || item.apiSymbol.endsWith('.KQ') ? stockFixtures[0] : (stockFixtures[1] ?? stockFixtures[0]);
+
+  return {
+    ...template,
+    symbol: item.symbol,
+    name: item.name,
+    market: item.market,
+    provider: 'Yahoo Finance',
+    providerSymbol: item.providerSymbol,
+    quoteSnapshot: {
+      ...template.quoteSnapshot,
+      price: '-',
+      change: '0.00%',
+      changeTone: 'up',
+      volume: '-',
+      asOf: 'chart-candles on demand',
+      stale: true,
+      dataStatus: 'api-pending',
+      latencyLabel: 'provider delayed'
+    },
+    brief: {
+      ...template.brief,
+      headline: `${item.name} price reaction check`,
+      summary: `${item.apiSymbol} chart-candles API, quote snapshot, community reaction, and investor-flow slices are loaded separately.`,
+      scoreLine: 'Reference-only market display. Not an investment signal.',
+      riskNote: 'Provider-delayed observation data. Not advice.'
+    }
+  };
+};
 const stock = computed(
   () =>
     stockFixtures.find(
@@ -144,12 +242,15 @@ const stock = computed(
         item.symbol.toUpperCase() === routeSymbol.value.replace(/\.KS$/, '') ||
         item.providerSymbol.toUpperCase() === routeSymbol.value ||
         quoteApiSymbolFor(item).toUpperCase() === routeSymbol.value
-    ) ?? stockFixtures[0]
+    ) ?? (matchingCatalogItem.value ? fallbackStockFor(matchingCatalogItem.value) : stockFixtures[0])
 );
-const quoteApiSymbol = computed(() => quoteApiSymbolFor(stock.value));
-const quoteRequestSymbols = computed(() => Array.from(new Set(['005930.KS', 'AAPL', 'NVDA', quoteApiSymbol.value])));
+const quoteApiSymbol = computed(() => matchingCatalogItem.value?.apiSymbol ?? quoteApiSymbolFor(stock.value));
+const quoteRequestSymbols = computed(() => Array.from(new Set(['005930.KS', '000660.KS', '069500.KS', 'AAPL', 'NVDA', 'TSLA', 'MSFT', quoteApiSymbol.value])));
 const quoteApiUrl = computed(() => `${quoteApiBaseUrl}/api/quotes?symbols=${quoteRequestSymbols.value.join(',')}`);
 const chartApiRequestUrl = computed(() => `/api/market/chart-candles?symbol=${quoteApiSymbol.value}&range=5Y&interval=1d`);
+const technicalIndicatorApiRequestUrl = computed(
+  () => `/api/market/technical-indicators?symbol=${quoteApiSymbol.value}&range=5Y&interval=1d&rsiPeriod=14&bollingerPeriod=20&bollingerMultiplier=2`
+);
 const investorFlowApiRequestUrl = computed(
   () => `/api/market/investor-flows/history?symbol=${encodeURIComponent(quoteApiSymbol.value)}&limit=20`
 );
@@ -164,7 +265,15 @@ const chartFixture = computed(
       (item) =>
         item.symbol.toUpperCase() === stock.value.symbol.toUpperCase() ||
         item.providerSymbol.toUpperCase() === stock.value.providerSymbol.toUpperCase()
-    ) ?? stockChartFixtures[0]
+    ) ?? {
+      ...stockChartFixtures[0],
+      symbol: stock.value.symbol,
+      providerSymbol: stock.value.providerSymbol,
+      currency: quoteApiSymbol.value.endsWith('.KS') || quoteApiSymbol.value.endsWith('.KQ') ? 'KRW' : 'USD',
+      priceUnit: quoteApiSymbol.value.endsWith('.KS') || quoteApiSymbol.value.endsWith('.KQ') ? '원' : '달러',
+      flowUnit: quoteApiSymbol.value.endsWith('.KS') || quoteApiSymbol.value.endsWith('.KQ') ? '억원' : '백만달러',
+      chartSource: 'market chart-candles API pending'
+    }
 );
 
 const formatCurrency = (value: number, currency: ApiQuoteSnapshot['currency']) =>
@@ -564,6 +673,35 @@ const loadChartCandles = async () => {
   }
 };
 
+const loadTechnicalIndicators = async () => {
+  technicalIndicators.value = null;
+
+  if (isTestMode) {
+    return;
+  }
+
+  try {
+    const response = await fetch(technicalIndicatorApiRequestUrl.value, {
+      headers: { Accept: 'application/json' }
+    });
+    if (!response.ok) {
+      throw new Error(`technical indicators request failed: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+      throw new Error('technical indicators response is not JSON');
+    }
+
+    const payload = (await response.json()) as ApiTechnicalIndicators;
+    if (payload.symbol.toUpperCase() === quoteApiSymbol.value.toUpperCase() && payload.dataStatus.toUpperCase() !== 'INSUFFICIENT') {
+      technicalIndicators.value = payload;
+    }
+  } catch {
+    technicalIndicators.value = null;
+  }
+};
+
 const loadInvestorFlows = async () => {
   investorFlows.value = [];
 
@@ -616,6 +754,7 @@ const loadInvestorFlows = async () => {
 const loadMarketSlices = () => {
   void loadQuoteSnapshots();
   void loadChartCandles();
+  void loadTechnicalIndicators();
   void loadInvestorFlows();
 };
 
@@ -734,6 +873,7 @@ watch(quoteApiSymbol, () => {
         :snapshot-status="chartStatusLabel"
         data-mode="actual"
         :show-flow-summary="false"
+        :technical-indicators="technicalIndicators"
       />
 
       <div v-else class="chart-api-blocker" role="note" aria-label="실제 차트 API 요청">

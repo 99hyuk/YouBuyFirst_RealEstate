@@ -12,9 +12,15 @@ from youbuyfirst_pipeline.models import EnrichedPost
 
 
 class SpringIngestionClient:
-    def __init__(self, base_url: str, timeout_seconds: float = 10.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        timeout_seconds: float = 60.0,
+        chart_candle_batch_size: int = 4,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.chart_candle_batch_size = max(1, chart_candle_batch_size)
 
     def ingest(
         self,
@@ -87,11 +93,35 @@ class SpringIngestionClient:
             response.raise_for_status()
 
     def publish_chart_candles(self, candle_sets: Iterable[ChartCandleSet]) -> None:
+        items = [candle_set.to_request_dict() for candle_set in candle_sets]
+        if not items:
+            return
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            for start in range(0, len(items), self.chart_candle_batch_size):
+                payload = {
+                    "items": items[start:start + self.chart_candle_batch_size],
+                }
+                response = client.post(f"{self.base_url}/internal/market/chart-candles", json=payload)
+                response.raise_for_status()
+
+    def claim_chart_candle_refresh_requests(self, limit: int) -> list[dict]:
+        payload = {"limit": limit}
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(f"{self.base_url}/internal/market/chart-candle-refresh-requests/claim", json=payload)
+            response.raise_for_status()
+            data = response.json()
+        items = data.get("items", []) if isinstance(data, dict) else []
+        return [item for item in items if isinstance(item, dict)]
+
+    def mark_chart_candle_refresh_failed(self, request: dict, error_message: str) -> None:
         payload = {
-            "items": [candle_set.to_request_dict() for candle_set in candle_sets],
+            "symbol": request.get("symbol", ""),
+            "range": request.get("range", ""),
+            "interval": request.get("interval", ""),
+            "errorMessage": error_message,
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
-            response = client.post(f"{self.base_url}/internal/market/chart-candles", json=payload)
+            response = client.post(f"{self.base_url}/internal/market/chart-candle-refresh-requests/fail", json=payload)
             response.raise_for_status()
 
     def publish_investor_flows(self, snapshots: Iterable[InvestorFlowSnapshot]) -> None:

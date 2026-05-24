@@ -16,6 +16,7 @@ import {
 } from 'lightweight-charts';
 
 import type { StockChartCandle } from '../fixtures/stock-detail-chart';
+import { calculateBollingerBands, calculateRsi } from '../lib/technical-indicators';
 
 type ChartRange = '1M' | '3M' | '6M' | '1Y' | '3Y' | '5Y';
 type CandleMode = '일' | '주' | '월';
@@ -25,6 +26,32 @@ type MovingAverageOption = {
   window: number;
   color: string;
   group: 'short' | 'long';
+};
+type TechnicalIndicatorPoint = {
+  date: string;
+  value: number | null;
+};
+type BollingerBandIndicatorPoint = {
+  date: string;
+  upper: number | null;
+  middle: number | null;
+  lower: number | null;
+};
+type StockTechnicalIndicators = {
+  provider: string;
+  sourceProvider: string;
+  asOf: string;
+  stale: boolean;
+  dataStatus: string;
+  rsi: {
+    period: number;
+    points: TechnicalIndicatorPoint[];
+  };
+  bollingerBands: {
+    period: number;
+    multiplier: number;
+    points: BollingerBandIndicatorPoint[];
+  };
 };
 
 const props = defineProps<{
@@ -42,6 +69,7 @@ const props = defineProps<{
   snapshotStatus?: string;
   dataMode?: 'fixture' | 'actual';
   showFlowSummary?: boolean;
+  technicalIndicators?: StockTechnicalIndicators | null;
 }>();
 
 const chartEl = ref<HTMLDivElement | null>(null);
@@ -49,6 +77,8 @@ const selectedRange = ref<ChartRange>('3M');
 const candleMode = ref<CandleMode>('일');
 const scaleMode = ref<'log' | 'linear'>('log');
 const showSignals = ref(true);
+const showRsi = ref(true);
+const showBollingerBands = ref(true);
 const flowView = ref<'aggregate' | 'subjects'>('aggregate');
 const activeShortMa = ref(new Set([5, 20]));
 const activeLongMa = ref(new Set<number>());
@@ -388,6 +418,43 @@ const movingAverageLegend = computed(() =>
   }))
 );
 
+const backendRsiPoints = computed(() =>
+  props.technicalIndicators?.rsi?.points?.map((point) => ({
+    time: point.date,
+    value: point.value
+  })) ?? []
+);
+const rsiPoints = computed(() => (backendRsiPoints.value.length ? backendRsiPoints.value : calculateRsi(chartCandles.value)));
+const rsiLineData = computed(() =>
+  rsiPoints.value
+    .filter((point): point is { time: string; value: number } => point.value !== null)
+    .map((point) => ({ time: point.time as Time, value: point.value }))
+);
+const backendBollingerBands = computed(() =>
+  props.technicalIndicators?.bollingerBands?.points?.map((point) => ({
+    time: point.date,
+    upper: point.upper,
+    middle: point.middle,
+    lower: point.lower
+  })) ?? []
+);
+const bollingerBands = computed(() =>
+  backendBollingerBands.value.length ? backendBollingerBands.value : calculateBollingerBands(chartCandles.value)
+);
+const bollingerLineData = (field: 'upper' | 'middle' | 'lower') =>
+  bollingerBands.value
+    .filter((point): point is { time: string; upper: number; middle: number; lower: number } => point[field] !== null)
+    .map((point) => ({ time: point.time as Time, value: point[field] }));
+const latestRsiLabel = computed(() => {
+  const latestPoint = [...rsiPoints.value].reverse().find((point) => point.value !== null);
+  return latestPoint?.value === undefined || latestPoint.value === null ? '-' : latestPoint.value.toFixed(1);
+});
+const latestBollingerLabel = computed(() => {
+  const latestBand = [...bollingerBands.value].reverse().find((point) => point.middle !== null);
+  if (!latestBand || latestBand.middle === null || latestBand.upper === null || latestBand.lower === null) return '-';
+  return `${formatPrice(latestBand.lower)} / ${formatPrice(latestBand.middle)} / ${formatPrice(latestBand.upper)}`;
+});
+
 const signalMarkers = computed<SeriesMarker<Time>[]>(() => {
   if (!showSignals.value) return [];
 
@@ -615,6 +682,37 @@ const renderChart = async () => {
     series?.setData(movingAverage(chartCandles.value, line.window));
   });
 
+  if (showBollingerBands.value) {
+    [
+      { field: 'upper' as const, color: '#0f9f6e' },
+      { field: 'middle' as const, color: '#64748b' },
+      { field: 'lower' as const, color: '#0f9f6e' }
+    ].forEach((line) => {
+      const series = chart?.addSeries(LineSeries, {
+        color: line.color,
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+      series?.setData(bollingerLineData(line.field));
+    });
+  }
+
+  if (showRsi.value) {
+    const rsiSeries = chart.addSeries(LineSeries, {
+      color: '#7c3aed',
+      lineWidth: 1,
+      priceScaleId: 'rsi',
+      priceLineVisible: false,
+      lastValueVisible: false
+    });
+    chart.priceScale('rsi').applyOptions({
+      visible: false,
+      scaleMargins: { top: 0.6, bottom: 0.18 }
+    });
+    rsiSeries.setData(rsiLineData.value);
+  }
+
   chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
     visibleLogicalRange.value = range ? { from: range.from, to: range.to } : null;
   });
@@ -653,6 +751,8 @@ watch(
     selectedRange,
     scaleMode,
     showSignals,
+    showRsi,
+    showBollingerBands,
     activeShortMa,
     activeLongMa
   ],
@@ -746,6 +846,13 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </div>
+      <div class="chart-feature-group">
+        <span class="chart-feature-label">IND</span>
+        <div class="chart-feature-controls">
+          <button type="button" :class="{ active: showRsi }" @click="showRsi = !showRsi">RSI</button>
+          <button type="button" :class="{ active: showBollingerBands }" @click="showBollingerBands = !showBollingerBands">BB</button>
+        </div>
+      </div>
     </div>
 
     <div class="chart-ma-legend" aria-label="이동평균선 색상">
@@ -756,6 +863,11 @@ onBeforeUnmount(() => {
       >
         <i :style="{ backgroundColor: line.color }"></i>{{ line.label }}
       </span>
+    </div>
+
+    <div class="chart-ma-legend" aria-label="technical indicators">
+      <span :class="{ muted: !showRsi }"><i style="background-color: #7c3aed"></i>RSI {{ latestRsiLabel }}</span>
+      <span :class="{ muted: !showBollingerBands }"><i style="background-color: #0f9f6e"></i>BB {{ latestBollingerLabel }}</span>
     </div>
 
     <div v-if="showSignals" class="chart-signal-legend" aria-label="B/S 관찰 신호 설명">

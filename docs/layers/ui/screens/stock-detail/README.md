@@ -4,7 +4,7 @@
 
 - Parent: `stocks`
 - Route 후보: `/stocks/:symbol`
-- 현재 API 예시: `005930.KS`, `NVDA`. 현재가/등락률/거래량은 `GET /api/quotes`, 메인 차트는 `GET /api/market/chart-candles`, 국내 거래일별 수급은 `GET /api/market/investor-flows/history`를 사용한다.
+- 현재 API 예시: `005930.KS`, `KRX:005930`, `NVDA`, `NASDAQ:MSFT`. 현재가/등락률/거래량은 `GET /api/quotes`, 메인 차트는 `GET /api/market/chart-candles`, 국내 거래일별 수급은 `GET /api/market/investor-flows/history`를 사용한다. chart-candles cache가 없거나 stale이면 backend는 refresh request를 기록하고, pipeline serve가 provider adapter로 조회해 기존 internal endpoint로 갱신한다.
 - Child screens:
   - `stock-news-detail`: 뉴스/공시/리포트 링크 상세 또는 drawer
   - `stock-community-post`: 커뮤니티 원문 snippet/출처 상세
@@ -18,7 +18,7 @@
 
 - 팩트폭격 상단 패널: 종목명, 티커, 한줄평, 보조 시황 문장, 근거 keyword chips
 - 종목 헤더: 종목명, 시장, quote snapshot 기반 현재가/등락률/거래량/asOf/stale 상태
-- 메인 가격 차트: `StockPriceChart` 기반 자체 UI shell. `GET /api/market/chart-candles`를 사용하고, 기본 화면 범위는 3M, 선택지는 `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y`로 둔다.
+- 메인 가격 차트: `StockPriceChart` 기반 자체 UI shell. `GET /api/market/chart-candles`를 사용하고, 기본 화면 범위는 3M, 선택지는 `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y`로 둔다. RSI와 Bollinger Bands는 `GET /api/market/technical-indicators`의 backend-derived 값을 우선 사용하고, API가 없을 때만 chart bars 기반 프론트 계산을 fallback으로 둔다.
 - quote snapshot 영역: `GET /api/quotes` 응답을 가격 근처에 표시한다. 현재가/등락률/거래량은 차트에서 긁지 않는다.
 - 거래일별 수급 영역: 국내 종목/ETF만 `GET /api/market/investor-flows/history` 응답으로 표시한다. 미국 종목은 숨긴다.
 - 데이터 상태: quote/chart/수급 각각 provider, delayLabel, asOf, stale, dataStatus를 노출한다. 실패나 빈 배열을 0값처럼 보이게 만들지 않는다.
@@ -45,7 +45,8 @@
 | --- | --- | --- |
 | `symbol`, `name`, `market` | stock/backend | 종목 식별과 표시명 |
 | `quoteSnapshot` | market | `GET /api/quotes` 응답. 가격 근처에 provider/asOf/delayLabel/stale/dataStatus를 함께 표시한다. |
-| `chartCandles` | market | `GET /api/market/chart-candles` 응답. 빈 bars 또는 실패 상태면 차트를 숨긴다. 거래일 key와 표시 정책은 `docs/domains/market/CHART_CANDLES.md`를 따른다. |
+| `chartCandles` | market | `GET /api/market/chart-candles` 응답. 빈 bars 또는 실패 상태면 차트를 숨긴다. cache miss/stale이면 backend가 refresh request를 queue에 남기고, pipeline이 비동기로 provider 조회 후 cache를 갱신한다. 거래일 key와 표시 정책은 `docs/domains/market/CHART_CANDLES.md`를 따른다. |
+| `technicalIndicators` | market | `GET /api/market/technical-indicators` 응답. cached chart bars에서 backend가 RSI와 Bollinger Bands를 계산한다. agent 판단에 재사용할 수 있도록 frontend-only 계산을 정본으로 두지 않는다. |
 | `investorFlowHistory` | market | `GET /api/market/investor-flows/history` 응답. 국내 종목/ETF의 거래일별 수급만 표시한다. `derived=true` 값은 직접 관찰값처럼 보이지 않게 라벨링한다. |
 | `headlineTone`, `headline`, `subtitle`, `scoreLine`, `riskNote` | agent/backend | 상단 팩트폭격 카피와 보조 문구 |
 | `headlineEvidence` | market/indicator/agent | 한줄평 근거 chip 배열 |
@@ -74,3 +75,4 @@
 - 2026-05-22: chart-candles 요청 범위를 5Y로 두고 기본 화면 범위만 3M으로 제한해 장기 이평선과 확대/축소 축을 실제 bars 기준으로 계산한다. 축 라벨은 zoom/scroll과 봉 단위에 맞춰 여러 날짜 tick이 일/월/년 단위로 바뀌도록 보정했다.
 - 2026-05-22: 국내 종목/ETF 수급은 `GET /api/market/investor-flows/history` 단일 public API로 정리했다. 최신 1건 public API는 두지 않고, 가격/차트 API에는 개인/외국인/기관 수급을 넣지 않는다.
 - 2026-05-22: 수급 provider는 `naver-finance` 기본값으로 바꿨다. 외국인/기관은 순매수 수량 관찰값, 개인은 잔차 추정값(`derived=true`)이며, 금액이 없으면 `netAmount=null`이다.
+- 2026-05-24: chart-candles cache miss/stale은 backend refresh queue와 pipeline on-demand provider 조회로 처리한다. `StockPriceChart`는 backend-derived RSI/Bollinger Bands를 우선 사용하고, chart bars 기반 프론트 계산은 fallback으로만 둔다.

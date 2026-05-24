@@ -13,6 +13,7 @@ from youbuyfirst_pipeline.market_quotes import (
     QuoteBar,
     YFinanceChartCandleClient,
     YFinanceHistoryClient,
+    configured_quote_symbols,
 )
 
 
@@ -158,6 +159,24 @@ def test_yfinance_history_client_defaults_to_intraday_quote_bars():
 
     assert client.period == "1d"
     assert client.interval == "5m"
+
+
+def test_default_market_symbols_cover_popular_and_watchlist_refresh_targets():
+    symbols = set(configured_quote_symbols(None))
+
+    assert {
+        "005930.KS",
+        "000660.KS",
+        "069500.KS",
+        "035420.KS",
+        "086520.KQ",
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "TSLA",
+        "SPY",
+        "QQQ",
+    }.issubset(symbols)
 
 
 def test_market_chart_candle_provider_builds_display_only_contract():

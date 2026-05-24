@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -335,6 +336,139 @@ class IngestionApiIntegrationTest {
                 .doesNotContain("individual")
                 .doesNotContain("foreign")
                 .doesNotContain("institution");
+    }
+
+    @Test
+    void queuesChartCandleRefreshWhenCacheIsMissingInsteadOfCallingYahooFromBackend() {
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=NASDAQ:MSFT&range=1M&interval=1d",
+                String.class
+        );
+        ResponseEntity<String> claim = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/claim",
+                Map.of("limit", 10),
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(claim.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"symbol\":\"MSFT\"")
+                .contains("\"name\":\"Microsoft\"")
+                .contains("\"market\":\"US\"")
+                .contains("\"currency\":\"USD\"")
+                .contains("\"provider\":\"yfinance\"")
+                .contains("\"delayLabel\":\"Yahoo Finance 10 min refresh snapshot\"")
+                .contains("\"stale\":true")
+                .contains("\"dataStatus\":\"INSUFFICIENT\"")
+                .contains("\"bars\":[]")
+                .contains("\"maxBars\":22");
+        assertThat(claim.getBody())
+                .contains("\"symbol\":\"MSFT\"")
+                .contains("\"range\":\"1M\"")
+                .contains("\"interval\":\"1d\"");
+    }
+
+    @Test
+    void returnsStaleChartCandlesAndQueuesPipelineRefreshWhenCacheIsStale() {
+        Instant staleAsOf = Instant.now().minusSeconds(60L * 60L * 72L);
+
+        ResponseEntity<Void> staleUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(
+                        Map.ofEntries(
+                                Map.entry("symbol", "TSLA"),
+                                Map.entry("name", "Tesla"),
+                                Map.entry("market", "US"),
+                                Map.entry("currency", "USD"),
+                                Map.entry("range", "3M"),
+                                Map.entry("interval", "1d"),
+                                Map.entry("provider", "yfinance"),
+                                Map.entry("delayLabel", "Yahoo Finance 10 min refresh snapshot"),
+                                Map.entry("asOf", staleAsOf.toString()),
+                                Map.entry("dataStatus", "OK"),
+                                Map.entry("bars", List.of(
+                                        Map.of(
+                                                "date", "2026-05-01",
+                                                "open", "160.00",
+                                                "high", "164.00",
+                                                "low", "158.00",
+                                                "close", "161.00",
+                                                "volume", 80100000
+                                        )
+                                ))
+                        )
+                )),
+                Void.class
+        );
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=TSLA&range=3M&interval=1d",
+                String.class
+        );
+        ResponseEntity<String> claim = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/claim",
+                Map.of("limit", 10),
+                String.class
+        );
+
+        assertThat(staleUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(claim.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"symbol\":\"TSLA\"")
+                .contains("\"name\":\"Tesla\"")
+                .contains("\"stale\":true")
+                .contains("\"dataStatus\":\"STALE\"")
+                .contains("\"date\":\"2026-05-01\"")
+                .contains("\"close\":161.00");
+        assertThat(claim.getBody())
+                .contains("\"symbol\":\"TSLA\"")
+                .contains("\"range\":\"3M\"")
+                .contains("\"interval\":\"1d\"");
+    }
+
+    @Test
+    void exposesBackendDerivedTechnicalIndicatorsFromCachedChartCandles() {
+        Instant asOf = Instant.now().minusSeconds(60);
+
+        ResponseEntity<Void> upsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(
+                        Map.ofEntries(
+                                Map.entry("symbol", "005930.KS"),
+                                Map.entry("name", "Samsung Electronics"),
+                                Map.entry("market", "KR"),
+                                Map.entry("currency", "KRW"),
+                                Map.entry("range", "3M"),
+                                Map.entry("interval", "1d"),
+                                Map.entry("provider", "yfinance+FinanceDataReader"),
+                                Map.entry("delayLabel", "Yahoo Finance delayed up to 30 min"),
+                                Map.entry("asOf", asOf.toString()),
+                                Map.entry("dataStatus", "OK"),
+                                Map.entry("bars", indicatorBars())
+                        )
+                )),
+                Void.class
+        );
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/market/technical-indicators?symbol=005930.KS&range=3M&interval=1d&rsiPeriod=14&bollingerPeriod=20&bollingerMultiplier=2",
+                String.class
+        );
+
+        assertThat(upsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody())
+                .contains("\"symbol\":\"005930.KS\"")
+                .contains("\"provider\":\"backend-derived\"")
+                .contains("\"sourceProvider\":\"yfinance+FinanceDataReader\"")
+                .contains("\"delayLabel\":\"Yahoo Finance delayed up to 30 min\"")
+                .contains("\"dataStatus\":\"OK\"")
+                .contains("\"rsi\":{\"period\":14")
+                .contains("\"date\":\"2026-05-15\",\"value\":100.00")
+                .contains("\"bollingerBands\":{\"period\":20,\"multiplier\":2.00")
+                .contains("\"date\":\"2026-05-20\",\"upper\":22.03,\"middle\":10.50,\"lower\":-1.03");
     }
 
     @Test
@@ -694,6 +828,19 @@ class IngestionApiIntegrationTest {
                 "close", close,
                 "volume", volume
         );
+    }
+
+    private static List<Map<String, Object>> indicatorBars() {
+        return java.util.stream.IntStream.rangeClosed(1, 20)
+                .mapToObj(day -> {
+                    String close = Integer.toString(day);
+                    return chartCandleBar(
+                            LocalDate.of(2026, 5, day).toString(),
+                            close,
+                            1000L + day
+                    );
+                })
+                .toList();
     }
 
     private void resetCrawlTargets() {

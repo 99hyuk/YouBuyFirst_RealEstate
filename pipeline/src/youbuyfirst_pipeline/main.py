@@ -27,7 +27,11 @@ from youbuyfirst_pipeline.market_investor_flows import (
     build_investor_flow_client,
     configured_investor_flow_symbols,
 )
-from youbuyfirst_pipeline.market_scheduler import build_investor_flow_refresh_job, build_market_refresh_job
+from youbuyfirst_pipeline.market_scheduler import (
+    build_chart_candle_on_demand_refresh_job,
+    build_investor_flow_refresh_job,
+    build_market_refresh_job,
+)
 from youbuyfirst_pipeline.market_quotes import (
     DEFAULT_QUOTE_CACHE_TTL_SECONDS,
     MarketChartCandleProvider,
@@ -60,7 +64,7 @@ def build_pipeline() -> CommunityPipeline:
     adapters = _adapters_from_targets(targets, fetcher, stream_crawler=_stream_crawler_from_env())
 
     matcher = InstrumentMatcher(instruments)
-    client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+    client = _spring_client()
     return CommunityPipeline(
         adapters=adapters,
         matcher=matcher,
@@ -169,6 +173,21 @@ async def async_main() -> None:
         default=os.getenv("MARKET_INVESTOR_FLOW_REFRESH_ENABLED", "true").lower() in {"0", "false", "no"},
     )
     parser.add_argument(
+        "--disable-chart-on-demand-refresh",
+        action="store_true",
+        default=os.getenv("MARKET_CHART_ON_DEMAND_REFRESH_ENABLED", "true").lower() in {"0", "false", "no"},
+    )
+    parser.add_argument(
+        "--chart-on-demand-refresh-interval-seconds",
+        type=int,
+        default=int(os.getenv("MARKET_CHART_ON_DEMAND_REFRESH_INTERVAL_SECONDS", "60")),
+    )
+    parser.add_argument(
+        "--chart-on-demand-claim-limit",
+        type=int,
+        default=int(os.getenv("MARKET_CHART_ON_DEMAND_CLAIM_LIMIT", "20")),
+    )
+    parser.add_argument(
         "--investor-flow-refresh-hour",
         type=int,
         default=int(os.getenv("MARKET_INVESTOR_FLOW_REFRESH_HOUR_LOCAL", "18")),
@@ -194,7 +213,7 @@ async def async_main() -> None:
         if args.command == "quote-snapshot":
             print(json.dumps({"items": [snapshot.to_api_dict() for snapshot in snapshots]}, ensure_ascii=False, indent=2))
             return
-        client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+        client = _spring_client()
         client.publish_quote_snapshots(snapshots)
         return
 
@@ -207,7 +226,7 @@ async def async_main() -> None:
         if args.command == "chart-candles":
             print(json.dumps({"items": [candle_set.to_api_dict() for candle_set in candle_sets]}, ensure_ascii=False, indent=2))
             return
-        client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+        client = _spring_client()
         client.publish_chart_candles(candle_sets)
         return
 
@@ -224,7 +243,7 @@ async def async_main() -> None:
         if args.command == "investor-flows":
             print(json.dumps({"items": [snapshot.to_api_dict() for snapshot in snapshots]}, ensure_ascii=False, indent=2))
             return
-        client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+        client = _spring_client()
         client.publish_investor_flows(snapshots)
         return
 
@@ -236,7 +255,8 @@ async def async_main() -> None:
     else:
         market_refresh_job = None
         investor_flow_refresh_job = None
-        market_client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
+        chart_on_demand_refresh_job = None
+        market_client = _spring_client()
         if not args.disable_market_refresh:
             market_refresh_job = build_market_refresh_job(
                 client=market_client,
@@ -256,6 +276,13 @@ async def async_main() -> None:
                 provider_name=args.investor_flow_provider,
                 stale_after_hours=int(os.getenv("MARKET_INVESTOR_FLOW_STALE_AFTER_HOURS", "96")),
             )
+        if not args.disable_chart_on_demand_refresh:
+            chart_on_demand_refresh_job = build_chart_candle_on_demand_refresh_job(
+                client=market_client,
+                claim_limit=args.chart_on_demand_claim_limit,
+                chart_cache_ttl_seconds=int(os.getenv("MARKET_CHART_CACHE_TTL_SECONDS", str(DEFAULT_QUOTE_CACHE_TTL_SECONDS))),
+                chart_stale_after_hours=int(os.getenv("MARKET_CHART_STALE_AFTER_HOURS", "36")),
+            )
         await serve(
             pipeline,
             interval_minutes=args.interval_minutes,
@@ -265,6 +292,8 @@ async def async_main() -> None:
             investor_flow_hour=args.investor_flow_refresh_hour,
             investor_flow_minute=args.investor_flow_refresh_minute,
             investor_flow_timezone=args.investor_flow_refresh_timezone,
+            chart_on_demand_refresh_job=chart_on_demand_refresh_job,
+            chart_on_demand_interval_seconds=args.chart_on_demand_refresh_interval_seconds,
         )
 
 
@@ -272,6 +301,14 @@ def _parse_trade_date(value: str | None) -> date | None:
     if not value:
         return None
     return date.fromisoformat(value)
+
+
+def _spring_client() -> SpringIngestionClient:
+    return SpringIngestionClient(
+        os.getenv("SPRING_BASE_URL", "http://localhost:8080"),
+        timeout_seconds=float(os.getenv("SPRING_CLIENT_TIMEOUT_SECONDS", "60")),
+        chart_candle_batch_size=int(os.getenv("SPRING_CHART_CANDLE_BATCH_SIZE", "4")),
+    )
 
 
 def main() -> None:

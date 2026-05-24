@@ -92,6 +92,7 @@
 - 날짜 축은 zoom/scroll 상태에 맞춰 일, 월, 년 단위가 자연스럽게 드러나야 하고, 날짜 요약은 화면에 보이는 logical range 기준으로 갱신합니다.
 - 날짜 축은 시작/끝 두 점만 보여주지 않고 zoom/scroll 상태에 맞춰 여러 tick을 보여줍니다. 좁은 구간은 일자, 중간 구간은 월, 장기 구간은 연도 중심으로 읽히게 합니다.
 - 이평선은 현재 화면에 보이는 bars만이 아니라 chart-candles 전체 bars로 계산해 visible range 안에서 선이 불필요하게 끊기지 않게 합니다.
+- RSI와 Bollinger Bands는 `GET /api/market/technical-indicators`의 backend-derived 값을 우선 표시합니다. 프론트 계산은 API가 없거나 fixture/demo 상태일 때만 fallback으로 두며, OHLCV 원천 응답에는 보조지표를 섞지 않습니다.
 - 이평선, 상승/하락, 긍정/부정처럼 색상이 의미를 가지는 요소는 차트 안팎에 짧은 범례를 둡니다.
 - 종목 상세 메인 차트는 `GET /api/market/chart-candles`의 display-only bars로만 렌더링합니다. 실제 일자별 차트 데이터가 없으면 fixture를 현재가에 맞춰 늘리거나 실제 차트처럼 보이게 하지 않고 API 필요 상태를 표시합니다.
 - 현재가, 등락률, 거래량, asOf, provider, delayLabel, stale, dataStatus는 quote snapshot 영역에서만 표시합니다.

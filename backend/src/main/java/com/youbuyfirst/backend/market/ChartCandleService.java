@@ -35,13 +35,19 @@ public class ChartCandleService {
     );
 
     private final ChartCandleSetRepository repository;
+    private final ChartCandleRefreshRequestService refreshRequestService;
+    private final MarketSymbolResolver symbolResolver;
     private final Duration staleAfter;
 
     public ChartCandleService(
             ChartCandleSetRepository repository,
+            ChartCandleRefreshRequestService refreshRequestService,
+            MarketSymbolResolver symbolResolver,
             @Value("${app.market.chart-candle-stale-minutes:2160}") long chartCandleStaleMinutes
     ) {
         this.repository = repository;
+        this.refreshRequestService = refreshRequestService;
+        this.symbolResolver = symbolResolver;
         this.staleAfter = Duration.ofMinutes(chartCandleStaleMinutes);
     }
 
@@ -78,23 +84,31 @@ public class ChartCandleService {
                     bars
             );
             repository.save(candleSet);
+            refreshRequestService.markCompleted(symbol, range, interval);
         }
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ChartCandleResponse get(String symbol, String range, String interval) {
-        String normalizedSymbol = normalizeRequiredSymbol(symbol);
+        String normalizedSymbol = symbolResolver.normalizeProviderSymbol(normalizeRequiredSymbol(symbol));
         String normalizedRange = normalizeRange(range == null || range.isBlank() ? "3M" : range);
         String normalizedInterval = normalizeInterval(interval == null || interval.isBlank() ? "1d" : interval);
         validateRangeAndInterval(normalizedRange, normalizedInterval);
 
-        return repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
-                        normalizedSymbol,
-                        normalizedRange,
-                        normalizedInterval
-                )
-                .map(this::toResponse)
-                .orElseGet(() -> insufficientResponse(normalizedSymbol, normalizedRange, normalizedInterval));
+        Optional<ChartCandleSet> existing = repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
+                normalizedSymbol,
+                normalizedRange,
+                normalizedInterval
+        );
+        if (existing.isPresent()) {
+            if (isStale(existing.get())) {
+                refreshRequestService.request(normalizedSymbol, normalizedRange, normalizedInterval);
+            }
+            return toResponse(existing.get());
+        }
+
+        refreshRequestService.request(normalizedSymbol, normalizedRange, normalizedInterval);
+        return insufficientResponse(normalizedSymbol, normalizedRange, normalizedInterval);
     }
 
     private ChartCandleResponse toResponse(ChartCandleSet candleSet) {
@@ -129,16 +143,16 @@ public class ChartCandleService {
     }
 
     private ChartCandleResponse insufficientResponse(String symbol, String range, String interval) {
-        String market = inferMarket(symbol);
+        MarketInstrument instrument = symbolResolver.resolve(symbol);
         return new ChartCandleResponse(
-                symbol,
-                symbol,
-                market,
-                "KR".equals(market) ? "KRW" : "USD",
+                instrument.symbol(),
+                instrument.name(),
+                instrument.market(),
+                instrument.currency(),
                 range,
                 interval,
-                "none",
-                "No chart candle data",
+                symbolResolver.providerName(instrument.market()),
+                symbolResolver.delayLabel(instrument),
                 Instant.EPOCH,
                 true,
                 "INSUFFICIENT",
@@ -199,10 +213,4 @@ public class ChartCandleService {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }
 
-    private static String inferMarket(String symbol) {
-        if (symbol.endsWith(".KS") || symbol.endsWith(".KQ") || symbol.replace(".", "").chars().allMatch(Character::isDigit)) {
-            return "KR";
-        }
-        return "US";
-    }
 }
