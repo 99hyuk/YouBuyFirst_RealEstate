@@ -86,6 +86,7 @@ class BoardStreamCrawler:
         oldest_seen_at: datetime | None = None
         newest_seen_at: datetime | None = None
         last_cursor: str | None = None
+        effective_cutoff_at = watermark.cutoff_at
 
         while pages_fetched < self.max_pages_per_run:
             await self._wait_between_pages(pages_fetched)
@@ -100,11 +101,11 @@ class BoardStreamCrawler:
                 newest_seen_at = _max_datetime(newest_seen_at, post.published_at)
                 if post.external_id == watermark.last_seen_external_id:
                     duplicate_stop = True
+                    effective_cutoff_at = _max_datetime(effective_cutoff_at, post.published_at)
                     continue
-                if watermark.cutoff_at is not None and post.published_at < watermark.cutoff_at:
-                    cutoff_stop = True
-                    continue
-                if watermark.cutoff_at is None and (duplicate_stop or cutoff_stop):
+                if effective_cutoff_at is not None and post.published_at < effective_cutoff_at:
+                    if watermark.cutoff_at is not None and post.published_at < watermark.cutoff_at:
+                        cutoff_stop = True
                     continue
                 posts.append(post)
                 if len(posts) >= self.max_posts_per_run:
