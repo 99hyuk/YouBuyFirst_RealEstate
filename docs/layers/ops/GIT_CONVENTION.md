@@ -14,8 +14,9 @@ PR 전후에 아래는 생략하지 않습니다.
 6. 본문 확인: `gh pr view --json body --jq .body`
 7. 템플릿 감사: 현재 PR 템플릿의 `##` 섹션이 모두 남아 있는지 확인
 8. 한글 깨짐 확인: `??` 검색
-9. 기록: Notion 기록 여부와 이유 명시
-10. 종료: merge/close 후 브랜치와 worktree 정리 여부 확인
+9. 리뷰 확인: 사람 리뷰와 `chatgpt-codex-connector`의 actionable 의견 확인
+10. 기록: Notion 기록 여부와 이유 명시
+11. 종료: merge/close 후 브랜치와 worktree 정리 여부 확인
 
 ## 브랜치
 
@@ -195,6 +196,25 @@ $missing = $required | Where-Object { -not $body.Contains($_) }
 if ($missing) { throw "PR template headings missing: $($missing -join ', ')" }
 ```
 
+## 리뷰 확인
+
+`chatgpt-codex-connector`는 GitHub PR에 붙는 Codex 자동 리뷰 앱입니다. 너나사 서비스 기능이 아니며, repo 코드 안에서 켜고 끄는 대상도 아닙니다. PR이 열리거나 draft에서 ready로 바뀌거나 `@codex review` 같은 트리거가 있을 때 리뷰가 달릴 수 있습니다.
+
+작업자는 merge 전 아래를 확인합니다.
+
+- 사람 리뷰와 자동 리뷰 댓글을 모두 봅니다.
+- P1/P2 또는 명확한 버그 지적은 기본적으로 merge 전 처리합니다.
+- 오탐이면 PR 본문이나 댓글에 왜 오탐인지 한국어로 남깁니다.
+- 당장 분리해야 하는 지적이면 후속 PR/TASKS/Notion 중 하나에 남기고, merge 보고에 이유를 적습니다.
+- 자동 리뷰가 영어로 달려도 봇 댓글 자체를 수정하려 하지 않습니다. 대신 핵심 지적과 처리 결과를 한국어로 요약합니다.
+
+확인 명령 예:
+
+```powershell
+gh pr view <number> --comments
+gh pr view <number> --json reviews,comments
+```
+
 ## 완료 보고
 
 사용자에게는 PR 본문보다 쉽게 보고합니다.
@@ -211,6 +231,7 @@ if ($missing) { throw "PR template headings missing: $($missing -join ', ')" }
 ## Merge
 
 - CI가 통과하면 squash merge합니다.
+- merge 전 사람 리뷰와 `chatgpt-codex-connector` 자동 리뷰의 P1/P2/actionable 의견이 처리됐는지 확인합니다.
 - merge 제목과 본문은 한국어로 정리합니다.
 - merge 후 브랜치는 삭제합니다.
 - merge 후 필요한 경우 Notion 작업일지에 핵심 변경과 검증 결과를 남깁니다.
