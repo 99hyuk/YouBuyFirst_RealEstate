@@ -198,7 +198,13 @@ if ($missing) { throw "PR template headings missing: $($missing -join ', ')" }
 
 ## 리뷰 확인
 
-`chatgpt-codex-connector`는 GitHub PR에 붙는 Codex 자동 리뷰 앱입니다. 너나사 서비스 기능이 아니며, repo 코드 안에서 켜고 끄는 대상도 아닙니다. PR이 열리거나 draft에서 ready로 바뀌거나 `@codex review` 같은 트리거가 있을 때 리뷰가 달릴 수 있습니다.
+`chatgpt-codex-connector`는 GitHub PR에 붙는 Codex 자동 리뷰 앱입니다. 너나사 서비스 기능이 아니며, repo 코드 안에서 켜고 끄는 대상도 아닙니다. 현재 Codex GitHub code review 안내 기준의 발동 조건은 아래입니다.
+
+- Codex code review가 켜진 repo에서 review 대상 PR을 열 때
+- draft PR을 ready for review로 바꿀 때
+- PR 댓글에 `@codex review`를 포함할 때. 일회성 초점이 있으면 `@codex review for security regressions`처럼 추가 지시를 붙일 수 있습니다.
+
+자동 리뷰가 아직 달리지 않았는데 리뷰가 필요한 PR이면 merge 전에 `@codex review`로 수동 요청하거나, 자동 리뷰 미실행 사유를 PR 본문/완료 보고에 남깁니다.
 
 작업자는 merge 전 아래를 확인합니다.
 
