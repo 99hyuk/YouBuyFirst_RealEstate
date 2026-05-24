@@ -36,7 +36,9 @@ class BrowserCapableFetcher:
     async def fetch_html(self, url: str, allow_browser_fallback: bool = True) -> FetchResult:
         try:
             return await self._fetch_http(url)
-        except (httpx.HTTPError, SourceBlockedError):
+        except SourceBlockedError:
+            raise
+        except httpx.HTTPError:
             if not allow_browser_fallback:
                 raise
             return await self._fetch_browser(url)
@@ -51,7 +53,9 @@ class BrowserCapableFetcher:
             if response.status_code in {403, 429}:
                 raise SourceBlockedError(f"{url} returned {response.status_code}")
             response.raise_for_status()
-            return FetchResult(url=str(response.url), html=_decode_html(url, response), status_code=response.status_code)
+            html = _decode_html(url, response)
+            _raise_if_block_page(str(response.url), html)
+            return FetchResult(url=str(response.url), html=html, status_code=response.status_code)
 
     async def _fetch_browser(self, url: str) -> FetchResult:
         from playwright.async_api import async_playwright
@@ -65,6 +69,7 @@ class BrowserCapableFetcher:
             await browser.close()
             if status in {403, 429}:
                 raise SourceBlockedError(f"{url} returned {status} with browser fallback")
+            _raise_if_block_page(url, html)
             return FetchResult(url=url, html=html, status_code=status)
 
 
@@ -73,7 +78,16 @@ def parse_datetime(value: str | None) -> datetime:
     if not value:
         return datetime.now(timezone.utc)
     normalized = value.strip()
-    for fmt in ("%Y.%m.%d %H:%M", "%Y-%m-%d %H:%M", "%Y.%m.%d. %H:%M"):
+    for fmt in (
+        "%Y.%m.%d %H:%M:%S",
+        "%Y.%m.%d %H:%M",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y.%m.%d. %H:%M:%S",
+        "%Y.%m.%d. %H:%M",
+        "%y.%m.%d %H:%M:%S",
+        "%y.%m.%d %H:%M",
+    ):
         try:
             return datetime.strptime(normalized, fmt).replace(tzinfo=kst).astimezone(timezone.utc)
         except ValueError:
@@ -102,3 +116,9 @@ def _decode_html(url: str, response: httpx.Response) -> str:
     if "charset=utf-8" in content_type or "fmkorea.com" in url:
         return response.content.decode("utf-8", errors="replace")
     return response.text
+
+
+def _raise_if_block_page(url: str, html: str) -> None:
+    normalized = html.lower()
+    if "captcha" in normalized or "verify you are human" in normalized or "human verification" in normalized:
+        raise SourceBlockedError(f"{url} returned CAPTCHA or human verification page")

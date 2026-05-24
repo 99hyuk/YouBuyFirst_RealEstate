@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Callable
 from uuid import uuid4
 
+from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardStreamResult, BoardWatermark
 from youbuyfirst_pipeline.backoff import CrawlBackoffDecision, CrawlBackoffPolicy, format_utc
 from youbuyfirst_pipeline.client import SpringIngestionClient
 from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedError
@@ -89,26 +90,31 @@ class CommunityPipeline:
                 results.append(result)
                 continue
             try:
-                raw_posts = await adapter.fetch_posts()
+                stream_result = await _fetch_adapter_result(adapter, self.client)
+                raw_posts = stream_result.posts
+                coverage = _coverage_result_fields(stream_result.coverage)
                 enriched = [self._enrich(post) for post in raw_posts]
                 finished = self.now_provider()
                 self._active_backoffs.pop(backoff_key, None)
                 if enriched:
-                    result = self.client.ingest(adapter.source, run_id, started, finished, enriched)
+                    result = self.client.ingest(adapter.source, run_id, started, finished, enriched, coverage)
+                    if coverage:
+                        result["coverage"] = coverage
                     results.append({**result_context, **result})
                 else:
                     record_error = self._safe_record_run(
-                        adapter.source, run_id, started, finished, "SUCCESS", 0, 0, None
+                        adapter.source, run_id, started, finished, "SUCCESS", coverage.get("rowsSeen", 0), 0, None, coverage
                     )
-                    results.append(
-                        {
-                            "source": adapter.source,
-                            **result_context,
-                            "runId": run_id,
-                            "seenPosts": 0,
-                            "acceptedPosts": 0,
-                        }
-                    )
+                    empty_result = {
+                        "source": adapter.source,
+                        **result_context,
+                        "runId": run_id,
+                        "seenPosts": coverage.get("rowsSeen", 0),
+                        "acceptedPosts": 0,
+                    }
+                    if coverage:
+                        empty_result["coverage"] = coverage
+                    results.append(empty_result)
                     if record_error:
                         results[-1]["recordError"] = record_error
             except SourceBlockedError as exc:
@@ -173,12 +179,16 @@ class CommunityPipeline:
         ]
         return EnrichedPost(
             source=post.source,
+            board_id=post.board_id,
             external_id=post.external_id,
             url=post.url,
             title=post.title,
             content=post.content,
             author=post.author,
             published_at=post.published_at,
+            view_count=post.view_count,
+            recommend_count=post.recommend_count,
+            comment_count=post.comment_count,
             mentions=mentions,
             analyses=analyses,
         )
@@ -193,10 +203,11 @@ class CommunityPipeline:
         posts_seen: int,
         posts_accepted: int,
         error_message: str | None,
+        coverage: dict | None = None,
     ) -> str | None:
         try:
             self.client.record_crawl_run(
-                source, run_id, started, finished, status, posts_seen, posts_accepted, error_message
+                source, run_id, started, finished, status, posts_seen, posts_accepted, error_message, coverage
             )
             return None
         except Exception as exc:
@@ -214,6 +225,40 @@ def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecisi
         seen.add(key)
         accepted.append(decision)
     return accepted
+
+
+async def _fetch_adapter_result(adapter: CommunityAdapter, client: SpringIngestionClient) -> BoardStreamResult:
+    fetch_stream = getattr(adapter, "fetch_stream", None)
+    if fetch_stream:
+        return await fetch_stream(_watermark_for_adapter(adapter, client))
+    return BoardStreamResult(posts=await adapter.fetch_posts(), coverage=None)
+
+
+def _watermark_for_adapter(adapter: CommunityAdapter, client: SpringIngestionClient) -> BoardWatermark | None:
+    target = getattr(adapter, "target", None)
+    board_id = getattr(target, "board_id", None)
+    if not board_id:
+        return None
+    get_board_watermark = getattr(client, "get_board_watermark", None)
+    if not get_board_watermark:
+        return None
+    return get_board_watermark(adapter.source, board_id)
+
+
+def _coverage_result_fields(coverage: BoardCoverage | None) -> dict:
+    if coverage is None:
+        return {}
+    return {
+        "pagesFetched": coverage.pages_fetched,
+        "rowsSeen": coverage.rows_seen,
+        "ignoredPinnedCount": coverage.ignored_pinned_count,
+        "duplicateStop": coverage.duplicate_stop,
+        "cutoffStop": coverage.cutoff_stop,
+        "oldestSeenAt": format_utc(coverage.oldest_seen_at) if coverage.oldest_seen_at else None,
+        "newestSeenAt": format_utc(coverage.newest_seen_at) if coverage.newest_seen_at else None,
+        "lastCursor": coverage.last_cursor,
+        "coverageStatus": coverage.coverage_status,
+    }
 
 
 def _target_result_context(adapter: CommunityAdapter) -> dict:

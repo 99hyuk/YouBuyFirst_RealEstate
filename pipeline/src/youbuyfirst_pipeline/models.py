@@ -50,6 +50,10 @@ class RawPost:
     content: str
     author: str
     published_at: datetime
+    board_id: str | None = None
+    view_count: int | None = None
+    recommend_count: int | None = None
+    comment_count: int | None = None
 
 
 @dataclass(frozen=True)

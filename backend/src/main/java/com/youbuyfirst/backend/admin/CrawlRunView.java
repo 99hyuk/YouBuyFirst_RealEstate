@@ -20,7 +20,16 @@ public record CrawlRunView(
         String backoffCategory,
         Instant backoffUntil,
         String backoffReason,
-        String skipReason
+        String skipReason,
+        Integer pagesFetched,
+        Integer rowsSeen,
+        Integer ignoredPinnedCount,
+        Boolean duplicateStop,
+        Boolean cutoffStop,
+        Instant oldestSeenAt,
+        Instant newestSeenAt,
+        String lastCursor,
+        String coverageStatus
 ) {
     public static CrawlRunView from(CrawlRun run) {
         return new CrawlRunView(
@@ -38,7 +47,16 @@ public record CrawlRunView(
                 run.getBackoffCategory(),
                 run.getBackoffUntil(),
                 run.getBackoffReason(),
-                run.getSkipReason()
+                run.getSkipReason(),
+                run.getPagesFetched(),
+                run.getRowsSeen(),
+                run.getIgnoredPinnedCount(),
+                run.getDuplicateStop(),
+                run.getCutoffStop(),
+                run.getOldestSeenAt(),
+                run.getNewestSeenAt(),
+                run.getLastCursor(),
+                run.getCoverageStatus()
         );
     }
 }

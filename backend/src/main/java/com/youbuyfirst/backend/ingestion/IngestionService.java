@@ -72,6 +72,10 @@ public class IngestionService {
                     payload.url(),
                     payload.title().trim(),
                     trimTo(payload.contentSnippet(), 1000),
+                    trimTo(payload.boardId(), 120),
+                    payload.viewCount(),
+                    payload.recommendCount(),
+                    payload.commentCount(),
                     Hashing.sha256(nullToEmpty(payload.authorDisplayName()).trim()),
                     payload.publishedAt(),
                     Hashing.sha256(source + "|" + externalId + "|" + payload.url() + "|" + payload.title() + "|" + nullToEmpty(payload.contentSnippet())),
@@ -93,7 +97,22 @@ public class IngestionService {
                 CrawlRunStatus.SUCCESS,
                 request.posts().size(),
                 accepted,
-                null
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                request.pagesFetched(),
+                request.rowsSeen(),
+                request.ignoredPinnedCount(),
+                request.duplicateStop(),
+                request.cutoffStop(),
+                request.oldestSeenAt(),
+                request.newestSeenAt(),
+                trimTo(request.lastCursor(), 120),
+                trimTo(request.coverageStatus(), 40)
         ));
 
         metricSnapshotService.rebuildWindowsTouchedBy(acceptedPublishedTimes);
@@ -116,7 +135,16 @@ public class IngestionService {
                 trimTo(request.backoffCategory(), 40),
                 request.backoffUntil(),
                 trimTo(request.backoffReason(), 500),
-                trimTo(request.skipReason(), 500)
+                trimTo(request.skipReason(), 500),
+                request.pagesFetched(),
+                request.rowsSeen(),
+                request.ignoredPinnedCount(),
+                request.duplicateStop(),
+                request.cutoffStop(),
+                request.oldestSeenAt(),
+                request.newestSeenAt(),
+                trimTo(request.lastCursor(), 120),
+                trimTo(request.coverageStatus(), 40)
         ));
     }
 

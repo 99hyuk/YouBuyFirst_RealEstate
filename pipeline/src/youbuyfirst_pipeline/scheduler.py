@@ -31,6 +31,8 @@ def configure_scheduler(
         minutes=crawl_interval_minutes,
         next_run_time=None,
         replace_existing=True,
+        max_instances=1,
+        coalesce=True,
     )
     if market_refresh_job is not None:
         scheduler.add_job(

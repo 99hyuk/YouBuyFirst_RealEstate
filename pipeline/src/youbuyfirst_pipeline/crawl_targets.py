@@ -7,6 +7,10 @@ from typing import Iterable
 from youbuyfirst_pipeline.models import Instrument
 
 FMKOREA_STOCK_BOARD_URL = "https://www.fmkorea.com/stock"
+DCINSIDE_US_STOCK_BOARD_URL = "https://gall.dcinside.com/mini/board/lists/?id=nyse"
+DCINSIDE_STOCK_BOARD_URL = "https://gall.dcinside.com/board/lists/?id=neostock"
+DCINSIDE_KOREA_STOCK_BOARD_URL = "https://gall.dcinside.com/mini/board/lists/?id=koreastock"
+PPOMPPU_STOCK_BOARD_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=stock"
 
 
 class CrawlTargetKind(str, Enum):
@@ -21,6 +25,7 @@ class CrawlTarget:
     kind: CrawlTargetKind
     priority: int = 100
     label: str = ""
+    board_id: str | None = None
     market: str | None = None
     symbol: str | None = None
     url: str | None = None
@@ -67,17 +72,25 @@ class CrawlTarget:
     def community_board(
         cls,
         source: str,
+        board_id: str | None = None,
         url: str | None = None,
         priority: int = 200,
         label: str | None = None,
     ) -> CrawlTarget:
         normalized_source = source.strip().upper()
+        normalized_board_id = board_id.strip() if board_id else None
+        target_id = (
+            f"{normalized_source}:{normalized_board_id}"
+            if normalized_board_id and not (normalized_source == "FMKOREA" and normalized_board_id == "stock")
+            else f"{normalized_source}:community-board"
+        )
         return cls(
             source=normalized_source,
-            target_id=f"{normalized_source}:community-board",
+            target_id=target_id,
             kind=CrawlTargetKind.COMMUNITY_BOARD,
             priority=priority,
-            label=label or f"{normalized_source} community board",
+            label=label or f"{normalized_source} {normalized_board_id or 'community'} board",
+            board_id=normalized_board_id,
             url=url,
         )
 
@@ -99,10 +112,43 @@ def default_crawl_targets(
     targets.append(
         CrawlTarget.community_board(
             "FMKOREA",
+            board_id="stock",
             url=fmkorea_url or FMKOREA_STOCK_BOARD_URL,
             priority=200,
             label="FMKOREA stock board",
         )
+    )
+    targets.extend(
+        [
+            CrawlTarget.community_board(
+                "DCINSIDE",
+                board_id="nyse",
+                url=DCINSIDE_US_STOCK_BOARD_URL,
+                priority=210,
+                label="DCInside US stock mini gallery",
+            ),
+            CrawlTarget.community_board(
+                "DCINSIDE",
+                board_id="neostock",
+                url=DCINSIDE_STOCK_BOARD_URL,
+                priority=220,
+                label="DCInside stock gallery",
+            ),
+            CrawlTarget.community_board(
+                "DCINSIDE",
+                board_id="koreastock",
+                url=DCINSIDE_KOREA_STOCK_BOARD_URL,
+                priority=230,
+                label="DCInside domestic stock mini gallery",
+            ),
+            CrawlTarget.community_board(
+                "PPOMPPU",
+                board_id="stock",
+                url=PPOMPPU_STOCK_BOARD_URL,
+                priority=240,
+                label="PPOMPPU stock forum",
+            ),
+        ]
     )
     return targets
 

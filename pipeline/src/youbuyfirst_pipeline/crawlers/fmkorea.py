@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlparse
 
 from bs4 import BeautifulSoup
 
+from youbuyfirst_pipeline.board_stream import BoardPage, BoardStreamCrawler, BoardStreamResult, BoardWatermark
 from youbuyfirst_pipeline.crawl_targets import CrawlTarget
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher, parse_datetime
 from youbuyfirst_pipeline.models import RawPost
@@ -13,17 +14,34 @@ class FmkoreaAdapter:
     source = "FMKOREA"
     default_url = "https://www.fmkorea.com/stock"
 
-    def __init__(self, fetcher: BrowserCapableFetcher, url: str | None = None, target: CrawlTarget | None = None) -> None:
+    def __init__(
+        self,
+        fetcher: BrowserCapableFetcher,
+        url: str | None = None,
+        target: CrawlTarget | None = None,
+        stream_crawler: BoardStreamCrawler | None = None,
+    ) -> None:
         self.fetcher = fetcher
         self.url = url or self.default_url
         self.target = target or CrawlTarget.community_board(self.source, url=self.url, label="FMKOREA stock board")
+        self.stream_crawler = stream_crawler or BoardStreamCrawler()
 
     async def fetch_posts(self) -> list[RawPost]:
         result = await self.fetcher.fetch_html(self.url)
-        return self.parse_list_html(result.html)
+        return self.parse_list_html(result.html, board_id=self.target.board_id or "stock")
+
+    async def fetch_stream(self, watermark: BoardWatermark | None = None) -> BoardStreamResult:
+        return await self.stream_crawler.collect(self._fetch_page, watermark)
+
+    async def _fetch_page(self, cursor: str | None) -> BoardPage:
+        result = await self.fetcher.fetch_html(_page_url(self.url, cursor))
+        posts = self.parse_list_html(result.html, board_id=self.target.board_id or "stock")
+        current_page = cursor or "1"
+        next_cursor = str(int(current_page) + 1) if posts else None
+        return BoardPage(cursor=current_page, posts=posts, next_cursor=next_cursor)
 
     @staticmethod
-    def parse_list_html(html: str) -> list[RawPost]:
+    def parse_list_html(html: str, board_id: str = "stock") -> list[RawPost]:
         soup = BeautifulSoup(html, "html.parser")
         posts: list[RawPost] = []
         seen: set[str] = set()
@@ -53,12 +71,16 @@ class FmkoreaAdapter:
             posts.append(
                 RawPost(
                     source=FmkoreaAdapter.source,
+                    board_id=board_id,
                     external_id=f"FMKOREA-{post_id}",
                     url=url,
                     title=title,
                     content="",
                     author=author or "",
                     published_at=parse_datetime(date_text),
+                    view_count=_parse_count(_first_text(container, ["td.m_no:not(.m_no_voted)", ".view_count"])),
+                    recommend_count=_parse_reaction_count(_first_text(container, ["td.m_no_voted", ".recommend_count"])),
+                    comment_count=_comment_count(container),
                 )
             )
         return posts
@@ -91,3 +113,29 @@ def _first_text(container, selectors: list[str]) -> str | None:
             if text:
                 return text
     return None
+
+
+def _parse_count(value: str | None) -> int | None:
+    if not value:
+        return None
+    normalized = value.replace(",", "").replace("\xa0", " ").strip()
+    return int(normalized) if normalized.isdigit() else None
+
+
+def _parse_reaction_count(value: str | None) -> int:
+    return _parse_count(value) or 0
+
+
+def _comment_count(container) -> int:
+    node = container.select_one(".replyNum")
+    if not node:
+        return 0
+    text = node.get_text("", strip=True).strip("[]")
+    return int(text) if text.isdigit() else 0
+
+
+def _page_url(base_url: str, cursor: str | None) -> str:
+    if cursor is None or cursor == "1":
+        return base_url
+    separator = "&" if "?" in base_url else "?"
+    return f"{base_url}{separator}page={cursor}"

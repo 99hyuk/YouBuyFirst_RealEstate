@@ -10,11 +10,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from youbuyfirst_pipeline.board_stream import BoardStreamCrawler
 from youbuyfirst_pipeline.client import SpringIngestionClient
 from youbuyfirst_pipeline.crawl_targets import CrawlTarget, CrawlTargetKind, default_crawl_targets
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher
+from youbuyfirst_pipeline.crawlers.dcinside import DcinsideAdapter
 from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
 from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
+from youbuyfirst_pipeline.crawlers.ppomppu import PpomppuAdapter
 from youbuyfirst_pipeline.instruments import load_instruments
 from youbuyfirst_pipeline.llm import build_llm_provider
 from youbuyfirst_pipeline.market_investor_flows import (
@@ -54,7 +57,7 @@ def build_pipeline() -> CommunityPipeline:
         naver_stock_codes=_configured_naver_codes(os.getenv("NAVER_STOCK_CODES")),
         fmkorea_url=os.getenv("FMKOREA_STOCK_URL"),
     )
-    adapters = _adapters_from_targets(targets, fetcher)
+    adapters = _adapters_from_targets(targets, fetcher, stream_crawler=_stream_crawler_from_env())
 
     matcher = InstrumentMatcher(instruments)
     client = SpringIngestionClient(os.getenv("SPRING_BASE_URL", "http://localhost:8080"))
@@ -74,7 +77,20 @@ def _configured_naver_codes(value: str | None) -> list[str] | None:
     return [code.strip() for code in value.split(",") if code.strip()]
 
 
-def _adapters_from_targets(targets: list[CrawlTarget], fetcher: BrowserCapableFetcher) -> list:
+def _stream_crawler_from_env() -> BoardStreamCrawler:
+    return BoardStreamCrawler(
+        max_pages_per_run=int(os.getenv("CRAWLER_MAX_PAGES_PER_RUN", "20")),
+        max_posts_per_run=int(os.getenv("CRAWLER_MAX_POSTS_PER_RUN", "500")),
+        page_delay_min_seconds=float(os.getenv("CRAWLER_PAGE_DELAY_MIN_SECONDS", "1.5")),
+        page_delay_max_seconds=float(os.getenv("CRAWLER_PAGE_DELAY_MAX_SECONDS", "4.0")),
+    )
+
+
+def _adapters_from_targets(
+    targets: list[CrawlTarget],
+    fetcher: BrowserCapableFetcher,
+    stream_crawler: BoardStreamCrawler | None = None,
+) -> list:
     adapters = []
     for target in targets:
         if target.source == "NAVER" and target.kind == CrawlTargetKind.STOCK_BOARD:
@@ -83,7 +99,13 @@ def _adapters_from_targets(targets: list[CrawlTarget], fetcher: BrowserCapableFe
             adapters.append(NaverBoardAdapter(fetcher, stock_code=target.symbol, target=target))
             continue
         if target.source == "FMKOREA" and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
-            adapters.append(FmkoreaAdapter(fetcher, url=target.url, target=target))
+            adapters.append(FmkoreaAdapter(fetcher, url=target.url, target=target, stream_crawler=stream_crawler))
+            continue
+        if target.source == "DCINSIDE" and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
+            adapters.append(DcinsideAdapter(fetcher, target=target, stream_crawler=stream_crawler))
+            continue
+        if target.source == "PPOMPPU" and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
+            adapters.append(PpomppuAdapter(fetcher, target=target, stream_crawler=stream_crawler))
             continue
         raise ValueError(f"unsupported crawl target: {target.target_id}")
     return adapters

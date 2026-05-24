@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 
+from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardStreamResult, BoardWatermark
 from youbuyfirst_pipeline.crawl_targets import CrawlTarget
 from youbuyfirst_pipeline.models import RawPost
 from youbuyfirst_pipeline.pipeline import CommunityPipeline
@@ -26,6 +27,18 @@ class FakeAdapter:
         return self.posts
 
 
+class FakeStreamAdapter(FakeAdapter):
+    def __init__(self, source: str, result: BoardStreamResult) -> None:
+        super().__init__(source)
+        self.result = result
+        self.received_watermark: BoardWatermark | None = None
+
+    async def fetch_stream(self, watermark: BoardWatermark | None = None) -> BoardStreamResult:
+        self.called = True
+        self.received_watermark = watermark
+        return self.result
+
+
 class FakeMatcher:
     def match(self, text: str) -> list:
         return []
@@ -40,11 +53,15 @@ class FakeClient:
     def __init__(self) -> None:
         self.recorded_runs: list[dict] = []
         self.ingested_batches: list[dict] = []
+        self.watermarks: dict[tuple[str, str], BoardWatermark] = {}
 
-    def ingest(self, source, run_id, batch_started_at, batch_finished_at, posts):
-        payload = {"source": source, "runId": run_id, "acceptedPosts": len(list(posts))}
+    def ingest(self, source, run_id, batch_started_at, batch_finished_at, posts, coverage=None):
+        post_list = list(posts)
+        payload = {"source": source, "runId": run_id, "acceptedPosts": len(post_list), "posts": post_list}
+        if coverage is not None:
+            payload["coverage"] = coverage
         self.ingested_batches.append(payload)
-        return payload
+        return {"source": source, "runId": run_id, "acceptedPosts": len(post_list)}
 
     def record_crawl_run(
         self,
@@ -56,17 +73,22 @@ class FakeClient:
         posts_seen,
         posts_accepted,
         error_message=None,
+        coverage=None,
     ):
-        self.recorded_runs.append(
-            {
-                "source": source,
-                "runId": run_id,
-                "status": status,
-                "postsSeen": posts_seen,
-                "postsAccepted": posts_accepted,
-                "errorMessage": error_message,
-            }
-        )
+        recorded = {
+            "source": source,
+            "runId": run_id,
+            "status": status,
+            "postsSeen": posts_seen,
+            "postsAccepted": posts_accepted,
+            "errorMessage": error_message,
+        }
+        if coverage is not None:
+            recorded["coverage"] = coverage
+        self.recorded_runs.append(recorded)
+
+    def get_board_watermark(self, source, board_id):
+        return self.watermarks.get((source, board_id))
 
 
 def _pipeline(
@@ -194,3 +216,108 @@ def test_enabled_source_still_ingests_enriched_posts():
     assert results[0]["source"] == "SAFE"
     assert results[0]["targetId"] == "SAFE:KR:005930"
     assert results[0]["acceptedPosts"] == 1
+
+
+def test_board_stream_adapter_records_coverage_when_no_new_posts():
+    coverage = BoardCoverage(
+        pages_fetched=2,
+        rows_seen=43,
+        ignored_pinned_count=1,
+        duplicate_stop=True,
+        cutoff_stop=False,
+        oldest_seen_at=datetime(2026, 5, 24, 1, 30, tzinfo=timezone.utc),
+        newest_seen_at=datetime(2026, 5, 24, 2, 0, tzinfo=timezone.utc),
+        last_cursor="2",
+        coverage_status="complete",
+    )
+    adapter = FakeStreamAdapter("SAFE", BoardStreamResult(posts=[], coverage=coverage))
+    registry = SourcePolicyRegistry(
+        {
+            "SAFE": SourcePolicy("SAFE", SourceStatus.ENABLED, "review complete"),
+        }
+    )
+    client = FakeClient()
+    pipeline = _pipeline(adapter, registry, CrawlRuntimeEnvironment.PUBLIC, client)
+
+    results = asyncio.run(pipeline.run_once())
+
+    assert adapter.called is True
+    assert results[0]["coverage"]["pagesFetched"] == 2
+    assert results[0]["coverage"]["rowsSeen"] == 43
+    assert client.recorded_runs[0]["coverage"]["coverageStatus"] == "complete"
+
+
+def test_board_stream_adapter_receives_db_watermark_for_board_target():
+    adapter = FakeStreamAdapter(
+        "SAFE",
+        BoardStreamResult(
+            posts=[],
+            coverage=BoardCoverage(
+                pages_fetched=1,
+                rows_seen=1,
+                ignored_pinned_count=0,
+                duplicate_stop=True,
+                cutoff_stop=False,
+                oldest_seen_at=datetime(2026, 5, 24, 1, 30, tzinfo=timezone.utc),
+                newest_seen_at=datetime(2026, 5, 24, 1, 30, tzinfo=timezone.utc),
+                last_cursor="1",
+                coverage_status="complete",
+            ),
+        ),
+    )
+    adapter.target = CrawlTarget.community_board("SAFE", board_id="stock", url="https://example.com/stock")
+    registry = SourcePolicyRegistry(
+        {
+            "SAFE": SourcePolicy("SAFE", SourceStatus.ENABLED, "review complete"),
+        }
+    )
+    client = FakeClient()
+    client.watermarks[("SAFE", "stock")] = BoardWatermark(last_seen_external_id="SAFE-stock-100")
+    pipeline = _pipeline(adapter, registry, CrawlRuntimeEnvironment.PUBLIC, client)
+
+    results = asyncio.run(pipeline.run_once())
+
+    assert results[0]["coverage"]["duplicateStop"] is True
+    assert adapter.received_watermark == BoardWatermark(last_seen_external_id="SAFE-stock-100")
+
+
+def test_board_stream_adapter_passes_coverage_to_ingest_for_new_posts():
+    post = RawPost(
+        source="SAFE",
+        board_id="stock",
+        external_id="SAFE-1",
+        url="https://example.com/1",
+        title="테스트",
+        content="",
+        author="anon",
+        published_at=datetime(2026, 5, 24, 2, 0, tzinfo=timezone.utc),
+        view_count=10,
+        recommend_count=2,
+        comment_count=1,
+    )
+    coverage = BoardCoverage(
+        pages_fetched=1,
+        rows_seen=1,
+        ignored_pinned_count=0,
+        duplicate_stop=False,
+        cutoff_stop=False,
+        oldest_seen_at=post.published_at,
+        newest_seen_at=post.published_at,
+        last_cursor="1",
+        coverage_status="complete",
+    )
+    adapter = FakeStreamAdapter("SAFE", BoardStreamResult(posts=[post], coverage=coverage))
+    registry = SourcePolicyRegistry(
+        {
+            "SAFE": SourcePolicy("SAFE", SourceStatus.ENABLED, "review complete"),
+        }
+    )
+    client = FakeClient()
+    pipeline = _pipeline(adapter, registry, CrawlRuntimeEnvironment.PUBLIC, client)
+
+    results = asyncio.run(pipeline.run_once())
+
+    assert results[0]["coverage"]["rowsSeen"] == 1
+    assert client.ingested_batches[0]["coverage"]["rowsSeen"] == 1
+    assert client.ingested_batches[0]["posts"][0].board_id == "stock"
+    assert client.ingested_batches[0]["posts"][0].view_count == 10

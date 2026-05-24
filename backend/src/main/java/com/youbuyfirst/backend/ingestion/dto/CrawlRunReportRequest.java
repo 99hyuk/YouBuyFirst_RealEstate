@@ -21,7 +21,16 @@ public record CrawlRunReportRequest(
         String backoffCategory,
         Instant backoffUntil,
         String backoffReason,
-        String skipReason
+        String skipReason,
+        @Min(0) Integer pagesFetched,
+        @Min(0) Integer rowsSeen,
+        @Min(0) Integer ignoredPinnedCount,
+        Boolean duplicateStop,
+        Boolean cutoffStop,
+        Instant oldestSeenAt,
+        Instant newestSeenAt,
+        String lastCursor,
+        String coverageStatus
 ) {
     public CrawlRunReportRequest(
             String source,
@@ -33,6 +42,6 @@ public record CrawlRunReportRequest(
             int postsAccepted,
             String errorMessage
     ) {
-        this(source, runId, batchStartedAt, batchFinishedAt, status, postsSeen, postsAccepted, errorMessage, null, null, null, null, null, null);
+        this(source, runId, batchStartedAt, batchFinishedAt, status, postsSeen, postsAccepted, errorMessage, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
     }
 }

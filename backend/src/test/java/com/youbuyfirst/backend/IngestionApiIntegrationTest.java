@@ -48,6 +48,10 @@ class IngestionApiIntegrationTest {
                         "TSLA NVDA 둘 다 실적 기대감 때문에 매수세가 붙는 듯합니다.",
                         "anonymous",
                         Instant.parse("2026-05-13T00:05:00Z"),
+                        "stock",
+                        1200,
+                        3,
+                        7,
                         List.of(
                                 new MentionPayload("US", "TSLA", "테슬라"),
                                 new MentionPayload("US", "NVDA", "엔비디아")
@@ -82,6 +86,24 @@ class IngestionApiIntegrationTest {
         assertThat(metrics).contains("\"mentionCount\":1");
         assertThat(metrics).contains("\"bullishCount\":1");
         assertThat(metrics).contains("\"netSentiment\":1.0");
+
+        String posts = restTemplate.getForObject("/admin/posts?source=FMKOREA&limit=5", String.class);
+        assertThat(posts)
+                .contains("\"boardId\":\"stock\"")
+                .contains("\"viewCount\":1200")
+                .contains("\"recommendCount\":3")
+                .contains("\"commentCount\":7");
+
+        ResponseEntity<String> watermark = restTemplate.getForEntity(
+                "/internal/crawl-watermarks?source=FMKOREA&boardId=stock",
+                String.class
+        );
+        assertThat(watermark.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(watermark.getBody())
+                .contains("\"source\":\"FMKOREA\"")
+                .contains("\"boardId\":\"stock\"")
+                .contains("\"lastSeenExternalId\":\"fmk-1\"")
+                .contains("\"lastSeenPublishedAt\":\"2026-05-13T00:05:00Z\"");
     }
 
     @Test
@@ -129,7 +151,16 @@ class IngestionApiIntegrationTest {
                 "policy-denied",
                 backoffUntil,
                 "public runtime policy denied",
-                "policy denied"
+                "policy denied",
+                2,
+                43,
+                1,
+                true,
+                false,
+                Instant.parse("2026-05-15T00:00:00Z"),
+                Instant.parse("2026-05-15T00:29:00Z"),
+                "2",
+                "complete"
         );
 
         ResponseEntity<Void> response = restTemplate.postForEntity(
@@ -148,6 +179,13 @@ class IngestionApiIntegrationTest {
         assertThat(runs).contains("\"backoffCategory\":\"policy-denied\"");
         assertThat(runs).contains("\"backoffUntil\":\"2026-05-15T06:00:00Z\"");
         assertThat(runs).contains("\"skipReason\":\"policy denied\"");
+        assertThat(runs).contains("\"pagesFetched\":2");
+        assertThat(runs).contains("\"rowsSeen\":43");
+        assertThat(runs).contains("\"ignoredPinnedCount\":1");
+        assertThat(runs).contains("\"duplicateStop\":true");
+        assertThat(runs).contains("\"cutoffStop\":false");
+        assertThat(runs).contains("\"lastCursor\":\"2\"");
+        assertThat(runs).contains("\"coverageStatus\":\"complete\"");
     }
 
     @Test

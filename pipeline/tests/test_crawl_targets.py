@@ -1,4 +1,5 @@
 from youbuyfirst_pipeline.crawl_targets import CrawlTarget, CrawlTargetKind, default_crawl_targets
+from youbuyfirst_pipeline import main
 from youbuyfirst_pipeline.main import _adapters_from_targets
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher
 from youbuyfirst_pipeline.models import Instrument
@@ -39,10 +40,21 @@ def test_default_crawl_targets_use_selected_naver_codes_and_fmkorea_board():
         "NAVER:KR:005930",
         "NAVER:KR:000660",
         "FMKOREA:community-board",
+        "DCINSIDE:nyse",
+        "DCINSIDE:neostock",
+        "DCINSIDE:koreastock",
+        "PPOMPPU:stock",
     ]
     assert targets[0].kind == CrawlTargetKind.STOCK_BOARD
     assert targets[2].kind == CrawlTargetKind.COMMUNITY_BOARD
     assert targets[2].url == "https://example.com/stock"
+    assert [(target.source, target.board_id) for target in targets[2:]] == [
+        ("FMKOREA", "stock"),
+        ("DCINSIDE", "nyse"),
+        ("DCINSIDE", "neostock"),
+        ("DCINSIDE", "koreastock"),
+        ("PPOMPPU", "stock"),
+    ]
 
 
 def test_default_crawl_targets_use_all_kr_instruments_when_codes_are_not_configured():
@@ -56,6 +68,10 @@ def test_default_crawl_targets_use_all_kr_instruments_when_codes_are_not_configu
     assert [target.target_id for target in targets] == [
         "NAVER:KR:005930",
         "FMKOREA:community-board",
+        "DCINSIDE:nyse",
+        "DCINSIDE:neostock",
+        "DCINSIDE:koreastock",
+        "PPOMPPU:stock",
     ]
     assert targets[1].url == "https://www.fmkorea.com/stock"
 
@@ -64,13 +80,34 @@ def test_adapters_are_created_from_targets_with_target_metadata():
     fetcher = BrowserCapableFetcher(user_agent="test")
     targets = [
         CrawlTarget.stock_board("NAVER", market="KR", symbol="005930"),
-        CrawlTarget.community_board("FMKOREA", url="https://example.com/stock"),
+        CrawlTarget.community_board("FMKOREA", board_id="stock", url="https://example.com/stock"),
+        CrawlTarget.community_board("DCINSIDE", board_id="nyse", url="https://example.com/dc"),
+        CrawlTarget.community_board("PPOMPPU", board_id="stock", url="https://example.com/ppomppu"),
     ]
 
     adapters = _adapters_from_targets(targets, fetcher)
 
-    assert [adapter.source for adapter in adapters] == ["NAVER", "FMKOREA"]
+    assert [adapter.source for adapter in adapters] == ["NAVER", "FMKOREA", "DCINSIDE", "PPOMPPU"]
     assert [adapter.target.target_id for adapter in adapters] == [
         "NAVER:KR:005930",
         "FMKOREA:community-board",
+        "DCINSIDE:nyse",
+        "PPOMPPU:stock",
     ]
+
+
+def test_stream_crawler_from_env_configures_limits_and_page_delay(monkeypatch):
+    monkeypatch.setenv("CRAWLER_MAX_PAGES_PER_RUN", "7")
+    monkeypatch.setenv("CRAWLER_MAX_POSTS_PER_RUN", "120")
+    monkeypatch.setenv("CRAWLER_PAGE_DELAY_MIN_SECONDS", "1.25")
+    monkeypatch.setenv("CRAWLER_PAGE_DELAY_MAX_SECONDS", "3.5")
+
+    factory = getattr(main, "_stream_crawler_from_env", None)
+    assert factory is not None
+
+    crawler = factory()
+
+    assert crawler.max_pages_per_run == 7
+    assert crawler.max_posts_per_run == 120
+    assert crawler.page_delay_min_seconds == 1.25
+    assert crawler.page_delay_max_seconds == 3.5

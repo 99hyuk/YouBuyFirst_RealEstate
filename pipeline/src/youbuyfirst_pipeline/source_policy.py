@@ -85,6 +85,16 @@ def default_source_policy_registry() -> SourcePolicyRegistry:
                 status=SourceStatus.LOCAL_RESEARCH_ONLY,
                 reason="MVP source allowed only for local research before public review",
             ),
+            "DCINSIDE": SourcePolicy(
+                source="DCINSIDE",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="MVP source allowed only for local research before public review",
+            ),
+            "PPOMPPU": SourcePolicy(
+                source="PPOMPPU",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="MVP source allowed only for local research before public review",
+            ),
         }
     )
 

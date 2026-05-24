@@ -57,6 +57,7 @@ class FakeClient:
         posts_seen,
         posts_accepted,
         error_message=None,
+        coverage=None,
     ):
         self.recorded_runs.append(
             {

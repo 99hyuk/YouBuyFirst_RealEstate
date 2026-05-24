@@ -11,6 +11,10 @@ public record PostView(
         String url,
         String title,
         String contentSnippet,
+        String boardId,
+        Integer viewCount,
+        Integer recommendCount,
+        Integer commentCount,
         String authorHash,
         Instant publishedAt,
         String contentHash,
@@ -24,6 +28,10 @@ public record PostView(
                 post.getUrl(),
                 post.getTitle(),
                 post.getContentSnippet(),
+                post.getBoardId(),
+                post.getViewCount(),
+                post.getRecommendCount(),
+                post.getCommentCount(),
                 post.getAuthorHash(),
                 post.getPublishedAt(),
                 post.getContentHash(),
@@ -31,4 +39,3 @@ public record PostView(
         );
     }
 }
-

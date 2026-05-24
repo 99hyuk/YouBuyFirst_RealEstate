@@ -36,6 +36,18 @@ public class CommunityPost {
     @Column(name = "content_snippet", length = 1000)
     private String contentSnippet;
 
+    @Column(name = "board_id", length = 120)
+    private String boardId;
+
+    @Column(name = "view_count")
+    private Integer viewCount;
+
+    @Column(name = "recommend_count")
+    private Integer recommendCount;
+
+    @Column(name = "comment_count")
+    private Integer commentCount;
+
     @Column(name = "author_hash", nullable = false, length = 64)
     private String authorHash;
 
@@ -52,11 +64,33 @@ public class CommunityPost {
     }
 
     public CommunityPost(String source, String externalId, String url, String title, String contentSnippet, String authorHash, Instant publishedAt, String contentHash, Instant crawledAt) {
+        this(source, externalId, url, title, contentSnippet, null, null, null, null, authorHash, publishedAt, contentHash, crawledAt);
+    }
+
+    public CommunityPost(
+            String source,
+            String externalId,
+            String url,
+            String title,
+            String contentSnippet,
+            String boardId,
+            Integer viewCount,
+            Integer recommendCount,
+            Integer commentCount,
+            String authorHash,
+            Instant publishedAt,
+            String contentHash,
+            Instant crawledAt
+    ) {
         this.source = source;
         this.externalId = externalId;
         this.url = url;
         this.title = title;
         this.contentSnippet = contentSnippet;
+        this.boardId = boardId;
+        this.viewCount = viewCount;
+        this.recommendCount = recommendCount;
+        this.commentCount = commentCount;
         this.authorHash = authorHash;
         this.publishedAt = publishedAt;
         this.contentHash = contentHash;
@@ -87,6 +121,22 @@ public class CommunityPost {
         return contentSnippet;
     }
 
+    public String getBoardId() {
+        return boardId;
+    }
+
+    public Integer getViewCount() {
+        return viewCount;
+    }
+
+    public Integer getRecommendCount() {
+        return recommendCount;
+    }
+
+    public Integer getCommentCount() {
+        return commentCount;
+    }
+
     public String getAuthorHash() {
         return authorHash;
     }
@@ -103,4 +153,3 @@ public class CommunityPost {
         return crawledAt;
     }
 }
-
