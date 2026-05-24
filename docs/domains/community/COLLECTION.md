@@ -66,6 +66,8 @@
 | `DCINSIDE` | 국내주식 갤러리 | 국내 종목 중심 반응 |
 | `PPOMPPU` | 증권포럼 | 국내 투자자 일반 반응, 추천/조회 확산 |
 
+pipeline의 `community_board_registry()`는 위 1차 대상의 최신글 URL, source 안의 `boardId`, 표시명, 시장 범위, 기본 우선순위를 한곳에서 관리합니다. 기본 최신글 target은 5개 게시판 모두 활성화합니다.
+
 source 활성화 상태가 `enabled` 또는 허용된 로컬 환경의 `local-research-only`가 아니면 외부 요청을 보내지 않습니다. 로그인, CAPTCHA, 프록시 회전, fingerprint 위장은 하지 않고, 공개 HTTP 목록 수집을 우선합니다. Playwright는 정적 HTTP로 공개 목록을 읽을 수 없지만 정책상 허용되는 렌더링 fallback일 때만 사용합니다.
 
 ### 순회 방식
@@ -158,7 +160,19 @@ watermark는 run이 성공적으로 끝났거나 partial이라도 저장된 새 
 - 원 최신글 게시물과 연결되는 `postKey`
 - 최신글 run에서 보지 못한 글이면 `diffusionOnly=true`
 
-현재 구현은 backend `community_post_diffusion_events` 저장소와 ingestion `diffusionEvents` payload를 제공합니다. Python pipeline은 `general-board-diffusion` target의 목록 노출 위치를 `listPosition`으로 변환해 같은 ingestion run에 전달할 수 있습니다. 확산 target은 최신글 watermark를 쓰지 않고 매 run마다 정해진 목록을 다시 관측하되, 기본적으로 작성 후 24시간(`CRAWLER_DIFFUSION_MAX_AGE_HOURS`)을 넘긴 글은 현재 분위기 입력에서 제외합니다. `popular`, `concept`, `recommended`는 우리가 순위를 계산했다는 뜻이 아니라 source가 정한 조건을 만족해 별도 목록에 노출됐다는 관찰 라벨입니다. 같은 글의 목록 노출 여부, 조회수, 추천수, 댓글수 변화는 `observedAt`별로 남깁니다. Source별 인기글/개념글 URL registry와 기본 활성화 여부는 별도 작업으로 남겨 둡니다.
+현재 구현은 backend `community_post_diffusion_events` 저장소와 ingestion `diffusionEvents` payload를 제공합니다. Python pipeline은 `general-board-diffusion` target의 목록 노출 위치를 `listPosition`으로 변환해 같은 ingestion run에 전달할 수 있습니다. 확산 target은 최신글 watermark를 쓰지 않고 매 run마다 정해진 목록을 다시 관측하되, 기본적으로 작성 후 24시간(`CRAWLER_DIFFUSION_MAX_AGE_HOURS`)을 넘긴 글은 현재 분위기 입력에서 제외합니다. `popular`, `concept`, `recommended`는 우리가 순위를 계산했다는 뜻이 아니라 source가 정한 조건을 만족해 별도 목록에 노출됐다는 관찰 라벨입니다. 같은 글의 목록 노출 여부, 조회수, 추천수, 댓글수 변화는 `observedAt`별로 남깁니다.
+
+기본 확산 target 활성화 기준:
+
+| source | boardId | diffusionType | 기본 상태 | 기준 |
+| --- | --- | --- | --- | --- |
+| `DCINSIDE` | `nyse` | `concept` | enabled | 공개 목록에서 `exception_mode=recommend` 개념글 목록 확인 |
+| `DCINSIDE` | `neostock` | `concept` | enabled | 공개 목록에서 `exception_mode=recommend` 개념글 목록 확인 |
+| `DCINSIDE` | `koreastock` | `concept` | enabled | 공개 목록에서 `exception_mode=recommend` 개념글 목록 확인 |
+| `FMKOREA` | `stock` | `popular` | disabled | 인기글 URL과 공개 HTTP 접근성을 별도 확인한 뒤 활성화 |
+| `PPOMPPU` | `stock` | `popular` | disabled | 핫/인기 category URL과 공개 HTTP 접근성을 별도 확인한 뒤 활성화 |
+
+disabled 확산 후보는 registry에 남기지만 `default_crawl_targets()`에서는 target으로 만들지 않습니다. URL이 불확실하거나 공개 HTTP 접근이 불안정한 상태에서 crawler가 임의 요청을 보내지 않게 하기 위한 기준입니다.
 
 댓글은 처음부터 전체 수집하지 않습니다. 아래 조건 중 하나 이상을 만족하는 글만 제한적으로 수집합니다.
 

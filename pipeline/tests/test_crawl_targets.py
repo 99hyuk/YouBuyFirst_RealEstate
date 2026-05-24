@@ -1,4 +1,9 @@
-from youbuyfirst_pipeline.crawl_targets import CrawlTarget, CrawlTargetKind, default_crawl_targets
+from youbuyfirst_pipeline.crawl_targets import (
+    CrawlTarget,
+    CrawlTargetKind,
+    community_board_registry,
+    default_crawl_targets,
+)
 from youbuyfirst_pipeline import main
 from youbuyfirst_pipeline.main import _adapters_from_targets
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher
@@ -44,17 +49,46 @@ def test_default_crawl_targets_use_selected_naver_codes_and_fmkorea_board():
         "DCINSIDE:neostock",
         "DCINSIDE:koreastock",
         "PPOMPPU:stock",
+        "DCINSIDE:nyse:diffusion:concept",
+        "DCINSIDE:neostock:diffusion:concept",
+        "DCINSIDE:koreastock:diffusion:concept",
     ]
     assert targets[0].kind == CrawlTargetKind.STOCK_BOARD
     assert targets[2].kind == CrawlTargetKind.COMMUNITY_BOARD
     assert targets[2].url == "https://example.com/stock"
-    assert [(target.source, target.board_id) for target in targets[2:]] == [
+    latest_targets = [target for target in targets[2:] if target.kind == CrawlTargetKind.COMMUNITY_BOARD]
+    assert [(target.source, target.board_id) for target in latest_targets] == [
         ("FMKOREA", "stock"),
         ("DCINSIDE", "nyse"),
         ("DCINSIDE", "neostock"),
         ("DCINSIDE", "koreastock"),
         ("PPOMPPU", "stock"),
     ]
+    diffusion_targets = [target for target in targets if target.kind == CrawlTargetKind.GENERAL_BOARD_DIFFUSION]
+    assert [(target.board_id, target.diffusion_type, target.url) for target in diffusion_targets] == [
+        ("nyse", "concept", "https://gall.dcinside.com/mini/board/lists/?id=nyse&exception_mode=recommend"),
+        ("neostock", "concept", "https://gall.dcinside.com/board/lists/?id=neostock&exception_mode=recommend"),
+        ("koreastock", "concept", "https://gall.dcinside.com/mini/board/lists/?id=koreastock&exception_mode=recommend"),
+    ]
+    assert [target.priority for target in diffusion_targets] == [260, 270, 280]
+
+
+def test_community_board_registry_keeps_disabled_diffusion_candidates_out_of_default_targets():
+    registry = community_board_registry(fmkorea_url="https://example.com/stock")
+
+    assert [entry.board_id for entry in registry] == ["stock", "nyse", "neostock", "koreastock", "stock"]
+    assert [(entry.source, entry.display_name, entry.market_scope) for entry in registry] == [
+        ("FMKOREA", "FMKOREA stock board", "KR_US"),
+        ("DCINSIDE", "DCInside US stock gallery", "US"),
+        ("DCINSIDE", "DCInside stock gallery", "KR_GENERAL"),
+        ("DCINSIDE", "DCInside domestic stock gallery", "KR"),
+        ("PPOMPPU", "PPOMPPU stock forum", "KR_US"),
+    ]
+    assert registry[0].latest_url == "https://example.com/stock"
+    assert registry[0].diffusion_boards[0].diffusion_type == "popular"
+    assert registry[0].diffusion_boards[0].enabled_by_default is False
+    assert registry[-1].diffusion_boards[0].diffusion_type == "popular"
+    assert registry[-1].diffusion_boards[0].enabled_by_default is False
 
 
 def test_community_diffusion_target_builds_separate_target_identity():
@@ -90,6 +124,9 @@ def test_default_crawl_targets_use_all_kr_instruments_when_codes_are_not_configu
         "DCINSIDE:neostock",
         "DCINSIDE:koreastock",
         "PPOMPPU:stock",
+        "DCINSIDE:nyse:diffusion:concept",
+        "DCINSIDE:neostock:diffusion:concept",
+        "DCINSIDE:koreastock:diffusion:concept",
     ]
     assert targets[1].url == "https://www.fmkorea.com/stock"
 

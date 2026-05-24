@@ -127,6 +127,110 @@ class CrawlTarget:
         )
 
 
+@dataclass(frozen=True)
+class DiffusionBoardRegistryEntry:
+    diffusion_type: str
+    url: str | None
+    enabled_by_default: bool = False
+    priority_offset: int = 50
+    note: str = ""
+
+
+@dataclass(frozen=True)
+class CommunityBoardRegistryEntry:
+    source: str
+    board_id: str
+    display_name: str
+    market_scope: str
+    latest_url: str
+    latest_priority: int
+    enabled_by_default: bool = True
+    crawl_policy: str = "general-board-latest"
+    diffusion_boards: tuple[DiffusionBoardRegistryEntry, ...] = ()
+
+
+def community_board_registry(fmkorea_url: str | None = None) -> tuple[CommunityBoardRegistryEntry, ...]:
+    return (
+        CommunityBoardRegistryEntry(
+            source="FMKOREA",
+            board_id="stock",
+            display_name="FMKOREA stock board",
+            market_scope="KR_US",
+            latest_url=fmkorea_url or FMKOREA_STOCK_BOARD_URL,
+            latest_priority=200,
+            diffusion_boards=(
+                DiffusionBoardRegistryEntry(
+                    diffusion_type="popular",
+                    url=None,
+                    enabled_by_default=False,
+                    note="Verify FMKOREA popular-board URL before enabling.",
+                ),
+            ),
+        ),
+        CommunityBoardRegistryEntry(
+            source="DCINSIDE",
+            board_id="nyse",
+            display_name="DCInside US stock gallery",
+            market_scope="US",
+            latest_url=DCINSIDE_US_STOCK_BOARD_URL,
+            latest_priority=210,
+            diffusion_boards=(
+                DiffusionBoardRegistryEntry(
+                    diffusion_type="concept",
+                    url="https://gall.dcinside.com/mini/board/lists/?id=nyse&exception_mode=recommend",
+                    enabled_by_default=True,
+                ),
+            ),
+        ),
+        CommunityBoardRegistryEntry(
+            source="DCINSIDE",
+            board_id="neostock",
+            display_name="DCInside stock gallery",
+            market_scope="KR_GENERAL",
+            latest_url=DCINSIDE_STOCK_BOARD_URL,
+            latest_priority=220,
+            diffusion_boards=(
+                DiffusionBoardRegistryEntry(
+                    diffusion_type="concept",
+                    url="https://gall.dcinside.com/board/lists/?id=neostock&exception_mode=recommend",
+                    enabled_by_default=True,
+                ),
+            ),
+        ),
+        CommunityBoardRegistryEntry(
+            source="DCINSIDE",
+            board_id="koreastock",
+            display_name="DCInside domestic stock gallery",
+            market_scope="KR",
+            latest_url=DCINSIDE_KOREA_STOCK_BOARD_URL,
+            latest_priority=230,
+            diffusion_boards=(
+                DiffusionBoardRegistryEntry(
+                    diffusion_type="concept",
+                    url="https://gall.dcinside.com/mini/board/lists/?id=koreastock&exception_mode=recommend",
+                    enabled_by_default=True,
+                ),
+            ),
+        ),
+        CommunityBoardRegistryEntry(
+            source="PPOMPPU",
+            board_id="stock",
+            display_name="PPOMPPU stock forum",
+            market_scope="KR_US",
+            latest_url=PPOMPPU_STOCK_BOARD_URL,
+            latest_priority=240,
+            diffusion_boards=(
+                DiffusionBoardRegistryEntry(
+                    diffusion_type="popular",
+                    url=None,
+                    enabled_by_default=False,
+                    note="Verify PPOMPPU hot/popular category URL before enabling.",
+                ),
+            ),
+        ),
+    )
+
+
 def default_crawl_targets(
     instruments: Iterable[Instrument],
     naver_stock_codes: Iterable[str] | None = None,
@@ -141,47 +245,40 @@ def default_crawl_targets(
         CrawlTarget.stock_board("NAVER", market="KR", symbol=code)
         for code in _unique_non_empty(naver_codes)
     ]
-    targets.append(
-        CrawlTarget.community_board(
-            "FMKOREA",
-            board_id="stock",
-            url=fmkorea_url or FMKOREA_STOCK_BOARD_URL,
-            priority=200,
-            label="FMKOREA stock board",
+    community_entries = [
+        entry for entry in community_board_registry(fmkorea_url=fmkorea_url)
+        if entry.enabled_by_default
+    ]
+    for entry in community_entries:
+        targets.append(
+            CrawlTarget.community_board(
+                entry.source,
+                board_id=entry.board_id,
+                url=entry.latest_url,
+                priority=entry.latest_priority,
+                label=entry.display_name,
+            )
         )
-    )
-    targets.extend(
-        [
-            CrawlTarget.community_board(
-                "DCINSIDE",
-                board_id="nyse",
-                url=DCINSIDE_US_STOCK_BOARD_URL,
-                priority=210,
-                label="DCInside US stock mini gallery",
-            ),
-            CrawlTarget.community_board(
-                "DCINSIDE",
-                board_id="neostock",
-                url=DCINSIDE_STOCK_BOARD_URL,
-                priority=220,
-                label="DCInside stock gallery",
-            ),
-            CrawlTarget.community_board(
-                "DCINSIDE",
-                board_id="koreastock",
-                url=DCINSIDE_KOREA_STOCK_BOARD_URL,
-                priority=230,
-                label="DCInside domestic stock mini gallery",
-            ),
-            CrawlTarget.community_board(
-                "PPOMPPU",
-                board_id="stock",
-                url=PPOMPPU_STOCK_BOARD_URL,
-                priority=240,
-                label="PPOMPPU stock forum",
-            ),
-        ]
-    )
+    for entry in community_entries:
+        targets.extend(_default_diffusion_targets(entry))
+    return targets
+
+
+def _default_diffusion_targets(entry: CommunityBoardRegistryEntry) -> list[CrawlTarget]:
+    targets: list[CrawlTarget] = []
+    for diffusion_board in entry.diffusion_boards:
+        if not diffusion_board.enabled_by_default or not diffusion_board.url:
+            continue
+        targets.append(
+            CrawlTarget.community_diffusion_board(
+                entry.source,
+                board_id=entry.board_id,
+                diffusion_type=diffusion_board.diffusion_type,
+                url=diffusion_board.url,
+                priority=entry.latest_priority + diffusion_board.priority_offset,
+                label=f"{entry.display_name} {diffusion_board.diffusion_type}",
+            )
+        )
     return targets
 
 
