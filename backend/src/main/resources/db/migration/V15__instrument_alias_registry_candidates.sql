@@ -17,10 +17,10 @@ alter table instrument_aliases
     add column notes varchar(500);
 
 alter table instrument_aliases
-    add column created_at datetime(6) not null default current_timestamp;
+    add column created_at datetime(6) not null default current_timestamp(6);
 
 alter table instrument_aliases
-    add column updated_at datetime(6) not null default current_timestamp;
+    add column updated_at datetime(6) not null default current_timestamp(6);
 
 update instrument_aliases
 set normalized_alias = upper(alias)
