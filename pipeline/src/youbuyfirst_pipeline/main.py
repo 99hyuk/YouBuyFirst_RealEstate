@@ -72,6 +72,8 @@ def build_pipeline() -> CommunityPipeline:
         client=client,
         source_policy_registry=default_source_policy_registry(),
         runtime_environment=runtime_environment,
+        default_board_lookback_hours=float(os.getenv("CRAWLER_LATEST_LOOKBACK_HOURS", "24")),
+        diffusion_max_age_hours=float(os.getenv("CRAWLER_DIFFUSION_MAX_AGE_HOURS", "24")),
     )
 
 
@@ -102,13 +104,22 @@ def _adapters_from_targets(
                 raise ValueError(f"{target.target_id} is missing symbol")
             adapters.append(NaverBoardAdapter(fetcher, stock_code=target.symbol, target=target))
             continue
-        if target.source == "FMKOREA" and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
+        if target.source == "FMKOREA" and target.kind in {
+            CrawlTargetKind.COMMUNITY_BOARD,
+            CrawlTargetKind.GENERAL_BOARD_DIFFUSION,
+        }:
             adapters.append(FmkoreaAdapter(fetcher, url=target.url, target=target, stream_crawler=stream_crawler))
             continue
-        if target.source == "DCINSIDE" and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
+        if target.source == "DCINSIDE" and target.kind in {
+            CrawlTargetKind.COMMUNITY_BOARD,
+            CrawlTargetKind.GENERAL_BOARD_DIFFUSION,
+        }:
             adapters.append(DcinsideAdapter(fetcher, target=target, stream_crawler=stream_crawler))
             continue
-        if target.source == "PPOMPPU" and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
+        if target.source == "PPOMPPU" and target.kind in {
+            CrawlTargetKind.COMMUNITY_BOARD,
+            CrawlTargetKind.GENERAL_BOARD_DIFFUSION,
+        }:
             adapters.append(PpomppuAdapter(fetcher, target=target, stream_crawler=stream_crawler))
             continue
         raise ValueError(f"unsupported crawl target: {target.target_id}")

@@ -2,6 +2,7 @@ package com.youbuyfirst.backend;
 
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
 import com.youbuyfirst.backend.ingestion.dto.CrawlRunReportRequest;
+import com.youbuyfirst.backend.ingestion.dto.DiffusionPayload;
 import com.youbuyfirst.backend.ingestion.dto.IngestionRequest;
 import com.youbuyfirst.backend.ingestion.dto.IngestionResponse;
 import com.youbuyfirst.backend.ingestion.dto.MentionPayload;
@@ -105,6 +106,77 @@ class IngestionApiIntegrationTest {
                 .contains("\"boardId\":\"stock\"")
                 .contains("\"lastSeenExternalId\":\"fmk-1\"")
                 .contains("\"lastSeenPublishedAt\":\"2026-05-13T00:05:00Z\"");
+    }
+
+    @Test
+    void recordsDiffusionEventsSeparatelyFromPostDeduplication() {
+        IngestionRequest request = new IngestionRequest(
+                "DCINSIDE",
+                "dc-us-popular-20260524-1000",
+                Instant.parse("2026-05-24T01:00:00Z"),
+                Instant.parse("2026-05-24T01:02:00Z"),
+                List.of(new PostPayload(
+                        "dc-us-777",
+                        "https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=777",
+                        "NVDA concept thread",
+                        "NVDA earnings talk is spreading on the board.",
+                        "dc-user",
+                        Instant.parse("2026-05-24T00:58:00Z"),
+                        "stockus",
+                        2300,
+                        41,
+                        86,
+                        List.of(new MentionPayload("US", "NVDA", "NVDA")),
+                        List.of(new SentimentPayload("US", "NVDA", SentimentLabel.BULLISH, 0.72, "earnings expectation mentioned", "mock"))
+                )),
+                List.of(new DiffusionPayload(
+                        "dc-us-777",
+                        "stockus",
+                        "concept",
+                        1,
+                        Instant.parse("2026-05-24T01:01:00Z"),
+                        2300,
+                        41,
+                        86,
+                        false
+                ))
+        );
+
+        ResponseEntity<IngestionResponse> first = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                request,
+                IngestionResponse.class
+        );
+        ResponseEntity<IngestionResponse> duplicate = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                request,
+                IngestionResponse.class
+        );
+
+        assertThat(first.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(duplicate.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(duplicate.getBody()).isNotNull();
+        assertThat(duplicate.getBody().duplicatePosts()).isEqualTo(1);
+
+        String events = restTemplate.getForObject("/admin/diffusion-events?source=DCINSIDE&limit=5", String.class);
+        assertThat(events)
+                .contains("\"source\":\"DCINSIDE\"")
+                .contains("\"boardId\":\"stockus\"")
+                .contains("\"externalId\":\"dc-us-777\"")
+                .contains("\"diffusionType\":\"concept\"")
+                .contains("\"listPosition\":1")
+                .contains("\"viewCount\":2300")
+                .contains("\"recommendCount\":41")
+                .contains("\"commentCount\":86")
+                .contains("\"diffusionOnly\":false")
+                .contains("\"crawlRunId\":\"dc-us-popular-20260524-1000\"");
+        Integer eventCount = jdbcTemplate.queryForObject(
+                "select count(*) from community_post_diffusion_events where source = ? and external_id = ?",
+                Integer.class,
+                "DCINSIDE",
+                "dc-us-777"
+        );
+        assertThat(eventCount).isEqualTo(1);
     }
 
     @Test

@@ -57,6 +57,24 @@ def test_default_crawl_targets_use_selected_naver_codes_and_fmkorea_board():
     ]
 
 
+def test_community_diffusion_target_builds_separate_target_identity():
+    target = CrawlTarget.community_diffusion_board(
+        "dcinside",
+        board_id="stockus",
+        diffusion_type="Concept",
+        url="https://example.com/concept",
+        priority=215,
+    )
+
+    assert target.source == "DCINSIDE"
+    assert target.kind == CrawlTargetKind.GENERAL_BOARD_DIFFUSION
+    assert target.target_id == "DCINSIDE:stockus:diffusion:concept"
+    assert target.board_id == "stockus"
+    assert target.diffusion_type == "concept"
+    assert target.url == "https://example.com/concept"
+    assert target.priority == 215
+
+
 def test_default_crawl_targets_use_all_kr_instruments_when_codes_are_not_configured():
     instruments = [
         Instrument(market="KR", symbol="005930", name="Samsung", aliases=[]),
@@ -81,16 +99,18 @@ def test_adapters_are_created_from_targets_with_target_metadata():
     targets = [
         CrawlTarget.stock_board("NAVER", market="KR", symbol="005930"),
         CrawlTarget.community_board("FMKOREA", board_id="stock", url="https://example.com/stock"),
+        CrawlTarget.community_diffusion_board("DCINSIDE", board_id="nyse", diffusion_type="concept", url="https://example.com/concept"),
         CrawlTarget.community_board("DCINSIDE", board_id="nyse", url="https://example.com/dc"),
         CrawlTarget.community_board("PPOMPPU", board_id="stock", url="https://example.com/ppomppu"),
     ]
 
     adapters = _adapters_from_targets(targets, fetcher)
 
-    assert [adapter.source for adapter in adapters] == ["NAVER", "FMKOREA", "DCINSIDE", "PPOMPPU"]
+    assert [adapter.source for adapter in adapters] == ["NAVER", "FMKOREA", "DCINSIDE", "DCINSIDE", "PPOMPPU"]
     assert [adapter.target.target_id for adapter in adapters] == [
         "NAVER:KR:005930",
         "FMKOREA:community-board",
+        "DCINSIDE:nyse:diffusion:concept",
         "DCINSIDE:nyse",
         "PPOMPPU:stock",
     ]

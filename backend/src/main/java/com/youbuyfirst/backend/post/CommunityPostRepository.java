@@ -11,6 +11,8 @@ public interface CommunityPostRepository extends JpaRepository<CommunityPost, Lo
 
     boolean existsBySourceAndExternalId(String source, String externalId);
 
+    Optional<CommunityPost> findBySourceAndExternalId(String source, String externalId);
+
     List<CommunityPost> findByOrderByPublishedAtDesc(Pageable pageable);
 
     List<CommunityPost> findBySourceOrderByPublishedAtDesc(String source, Pageable pageable);

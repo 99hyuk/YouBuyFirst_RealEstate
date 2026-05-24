@@ -5,6 +5,7 @@ import com.youbuyfirst.backend.crawl.CrawlTargetRepository;
 import com.youbuyfirst.backend.crawl.dto.CrawlTargetView;
 import com.youbuyfirst.backend.instrument.InstrumentRepository;
 import com.youbuyfirst.backend.metrics.MetricSnapshotRepository;
+import com.youbuyfirst.backend.post.CommunityPostDiffusionEventRepository;
 import com.youbuyfirst.backend.post.CommunityPostRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +24,22 @@ public class AdminController {
     private final CrawlRunRepository crawlRunRepository;
     private final CrawlTargetRepository crawlTargetRepository;
     private final CommunityPostRepository postRepository;
+    private final CommunityPostDiffusionEventRepository diffusionEventRepository;
     private final InstrumentRepository instrumentRepository;
     private final MetricSnapshotRepository metricSnapshotRepository;
 
-    public AdminController(CrawlRunRepository crawlRunRepository, CrawlTargetRepository crawlTargetRepository, CommunityPostRepository postRepository, InstrumentRepository instrumentRepository, MetricSnapshotRepository metricSnapshotRepository) {
+    public AdminController(
+            CrawlRunRepository crawlRunRepository,
+            CrawlTargetRepository crawlTargetRepository,
+            CommunityPostRepository postRepository,
+            CommunityPostDiffusionEventRepository diffusionEventRepository,
+            InstrumentRepository instrumentRepository,
+            MetricSnapshotRepository metricSnapshotRepository
+    ) {
         this.crawlRunRepository = crawlRunRepository;
         this.crawlTargetRepository = crawlTargetRepository;
         this.postRepository = postRepository;
+        this.diffusionEventRepository = diffusionEventRepository;
         this.instrumentRepository = instrumentRepository;
         this.metricSnapshotRepository = metricSnapshotRepository;
     }
@@ -57,6 +67,19 @@ public class AdminController {
         }
         return postRepository.findBySourceOrderByPublishedAtDesc(source.trim().toUpperCase(), PageRequest.of(0, clamp(limit))).stream()
                 .map(PostView::from)
+                .toList();
+    }
+
+    @GetMapping("/diffusion-events")
+    @Transactional(readOnly = true)
+    public List<PostDiffusionEventView> diffusionEvents(@RequestParam(required = false) String source, @RequestParam(defaultValue = "50") int limit) {
+        if (source == null || source.isBlank()) {
+            return diffusionEventRepository.findByOrderByObservedAtDesc(PageRequest.of(0, clamp(limit))).stream()
+                    .map(PostDiffusionEventView::from)
+                    .toList();
+        }
+        return diffusionEventRepository.findBySourceOrderByObservedAtDesc(source.trim().toUpperCase(), PageRequest.of(0, clamp(limit))).stream()
+                .map(PostDiffusionEventView::from)
                 .toList();
     }
 

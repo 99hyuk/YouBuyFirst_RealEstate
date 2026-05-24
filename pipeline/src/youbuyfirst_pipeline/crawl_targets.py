@@ -16,6 +16,7 @@ PPOMPPU_STOCK_BOARD_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=stock"
 class CrawlTargetKind(str, Enum):
     STOCK_BOARD = "stock-board"
     COMMUNITY_BOARD = "community-board"
+    GENERAL_BOARD_DIFFUSION = "general-board-diffusion"
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class CrawlTarget:
     market: str | None = None
     symbol: str | None = None
     url: str | None = None
+    diffusion_type: str | None = None
 
     def __post_init__(self) -> None:
         normalized_source = self.source.strip().upper()
@@ -92,6 +94,36 @@ class CrawlTarget:
             label=label or f"{normalized_source} {normalized_board_id or 'community'} board",
             board_id=normalized_board_id,
             url=url,
+        )
+
+    @classmethod
+    def community_diffusion_board(
+        cls,
+        source: str,
+        board_id: str,
+        diffusion_type: str,
+        url: str,
+        priority: int = 260,
+        label: str | None = None,
+    ) -> CrawlTarget:
+        normalized_source = source.strip().upper()
+        normalized_board_id = board_id.strip()
+        normalized_diffusion_type = diffusion_type.strip().lower()
+        if not normalized_board_id:
+            raise ValueError("board_id is required for diffusion targets")
+        if not normalized_diffusion_type:
+            raise ValueError("diffusion_type is required for diffusion targets")
+        if not url or not url.strip():
+            raise ValueError("url is required for diffusion targets")
+        return cls(
+            source=normalized_source,
+            target_id=f"{normalized_source}:{normalized_board_id}:diffusion:{normalized_diffusion_type}",
+            kind=CrawlTargetKind.GENERAL_BOARD_DIFFUSION,
+            priority=priority,
+            label=label or f"{normalized_source} {normalized_board_id} {normalized_diffusion_type} diffusion",
+            board_id=normalized_board_id,
+            url=url.strip(),
+            diffusion_type=normalized_diffusion_type,
         )
 
 

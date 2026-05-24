@@ -103,7 +103,7 @@ source 활성화 상태가 `enabled` 또는 허용된 로컬 환경의 `local-re
 
 watermark는 run이 성공적으로 끝났거나 partial이라도 저장된 새 글과 coverage가 일관될 때만 전진시킵니다. 차단, 파싱 실패, 시간 초과로 게시판 앞부분을 확인하지 못한 run은 최신 watermark를 전진시키지 않습니다.
 
-현재 MVP 구현은 간단 버전 watermark를 사용합니다. crawler가 시작할 때 backend가 `community_posts`에서 `source + boardId`별 최신 저장 글을 조회해 `lastSeenExternalId`와 `lastSeenPublishedAt`을 돌려주고, crawler는 해당 글을 만나면 중단합니다. 별도 watermark 테이블은 아직 두지 않습니다.
+현재 MVP 구현은 간단 버전 watermark를 사용합니다. crawler가 시작할 때 backend가 `community_posts`에서 `source + boardId`별 최신 저장 글을 조회해 `lastSeenExternalId`와 `lastSeenPublishedAt`을 돌려주고, crawler는 해당 글을 만나거나 `lastSeenPublishedAt`보다 오래된 글을 만나면 다음 page/cursor로 넘어가지 않습니다. DB watermark가 없거나 너무 오래됐을 때는 기본 24시간 lookback(`CRAWLER_LATEST_LOOKBACK_HOURS`)을 cutoff로 사용합니다. 별도 watermark 테이블은 아직 두지 않습니다.
 
 운영 버전 후속 과제:
 
@@ -152,11 +152,13 @@ watermark는 run이 성공적으로 끝났거나 partial이라도 저장된 새 
 확산 레이어는 아래 정보를 기록합니다.
 
 - `diffusionType`: `popular`, `recommended`, `concept`, `top-viewed` 등 source별 원천 라벨
-- `rank` 또는 목록 내 위치
+- `listPosition`: 인기 순위가 아니라 해당 source 목록에서 노출된 줄 위치
 - `observedAt`
 - `viewCount`, `recommendCount`, `commentCount`
 - 원 최신글 게시물과 연결되는 `postKey`
 - 최신글 run에서 보지 못한 글이면 `diffusionOnly=true`
+
+현재 구현은 backend `community_post_diffusion_events` 저장소와 ingestion `diffusionEvents` payload를 제공합니다. Python pipeline은 `general-board-diffusion` target의 목록 노출 위치를 `listPosition`으로 변환해 같은 ingestion run에 전달할 수 있습니다. 확산 target은 최신글 watermark를 쓰지 않고 매 run마다 정해진 목록을 다시 관측하되, 기본적으로 작성 후 24시간(`CRAWLER_DIFFUSION_MAX_AGE_HOURS`)을 넘긴 글은 현재 분위기 입력에서 제외합니다. `popular`, `concept`, `recommended`는 우리가 순위를 계산했다는 뜻이 아니라 source가 정한 조건을 만족해 별도 목록에 노출됐다는 관찰 라벨입니다. 같은 글의 목록 노출 여부, 조회수, 추천수, 댓글수 변화는 `observedAt`별로 남깁니다. Source별 인기글/개념글 URL registry와 기본 활성화 여부는 별도 작업으로 남겨 둡니다.
 
 댓글은 처음부터 전체 수집하지 않습니다. 아래 조건 중 하나 이상을 만족하는 글만 제한적으로 수집합니다.
 

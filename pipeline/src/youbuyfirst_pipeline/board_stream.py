@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import random
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
-from youbuyfirst_pipeline.models import RawPost
+from youbuyfirst_pipeline.models import DiffusionEvent, RawPost
 
 
 FetchBoardPage = Callable[[str | None], Awaitable["BoardPage"]]
@@ -45,6 +45,7 @@ class BoardCoverage:
 class BoardStreamResult:
     posts: list[RawPost]
     coverage: BoardCoverage | None
+    diffusion_events: list[DiffusionEvent] = field(default_factory=list)
 
 
 class BoardStreamCrawler:
@@ -103,7 +104,7 @@ class BoardStreamCrawler:
                 if watermark.cutoff_at is not None and post.published_at < watermark.cutoff_at:
                     cutoff_stop = True
                     continue
-                if duplicate_stop or cutoff_stop:
+                if watermark.cutoff_at is None and (duplicate_stop or cutoff_stop):
                     continue
                 posts.append(post)
                 if len(posts) >= self.max_posts_per_run:

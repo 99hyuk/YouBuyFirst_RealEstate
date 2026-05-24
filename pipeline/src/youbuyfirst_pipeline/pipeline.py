@@ -1,16 +1,17 @@
 ﻿from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Callable
 from uuid import uuid4
 
 from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardStreamResult, BoardWatermark
 from youbuyfirst_pipeline.backoff import CrawlBackoffDecision, CrawlBackoffPolicy, format_utc
 from youbuyfirst_pipeline.client import SpringIngestionClient
+from youbuyfirst_pipeline.crawl_targets import CrawlTargetKind
 from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedError
 from youbuyfirst_pipeline.llm import LLMProvider
 from youbuyfirst_pipeline.matcher import InstrumentMatcher
-from youbuyfirst_pipeline.models import Analysis, EnrichedPost, Mention, MentionDecision, RawPost
+from youbuyfirst_pipeline.models import Analysis, DiffusionEvent, EnrichedPost, Mention, MentionDecision, RawPost
 from youbuyfirst_pipeline.source_policy import (
     CrawlRuntimeEnvironment,
     SourcePolicyDecision,
@@ -30,6 +31,8 @@ class CommunityPipeline:
         runtime_environment: CrawlRuntimeEnvironment = CrawlRuntimeEnvironment.PUBLIC,
         backoff_policy: CrawlBackoffPolicy | None = None,
         now_provider: Callable[[], datetime] | None = None,
+        default_board_lookback_hours: float | None = 24,
+        diffusion_max_age_hours: float | None = 24,
     ) -> None:
         self.adapters = adapters
         self.matcher = matcher
@@ -39,6 +42,8 @@ class CommunityPipeline:
         self.runtime_environment = runtime_environment
         self.backoff_policy = backoff_policy or CrawlBackoffPolicy()
         self.now_provider = now_provider or _utc_now
+        self.default_board_lookback_hours = default_board_lookback_hours
+        self.diffusion_max_age_hours = diffusion_max_age_hours
         self._active_backoffs: dict[str, CrawlBackoffDecision] = {}
 
     async def run_once(self) -> list[dict]:
@@ -90,16 +95,45 @@ class CommunityPipeline:
                 results.append(result)
                 continue
             try:
-                stream_result = await _fetch_adapter_result(adapter, self.client)
+                stream_result = await _fetch_adapter_result(
+                    adapter,
+                    self.client,
+                    default_cutoff_at=self._default_cutoff_at(started),
+                )
                 raw_posts = stream_result.posts
+                diffusion_positioned_posts = _positioned_diffusion_posts_for_adapter(
+                    adapter,
+                    raw_posts,
+                    started,
+                    self.diffusion_max_age_hours,
+                )
+                if diffusion_positioned_posts is not None:
+                    raw_posts = [post for _list_position, post in diffusion_positioned_posts]
+                    diffusion_events = stream_result.diffusion_events or _diffusion_events_for_adapter(
+                        adapter,
+                        diffusion_positioned_posts,
+                        started,
+                    )
+                else:
+                    diffusion_events = stream_result.diffusion_events
                 coverage = _coverage_result_fields(stream_result.coverage)
                 enriched = [self._enrich(post) for post in raw_posts]
                 finished = self.now_provider()
                 self._active_backoffs.pop(backoff_key, None)
-                if enriched:
-                    result = self.client.ingest(adapter.source, run_id, started, finished, enriched, coverage)
+                if enriched or diffusion_events:
+                    result = self.client.ingest(
+                        adapter.source,
+                        run_id,
+                        started,
+                        finished,
+                        enriched,
+                        coverage,
+                        diffusion_events=diffusion_events,
+                    )
                     if coverage:
                         result["coverage"] = coverage
+                    if diffusion_events:
+                        result["diffusionEventCount"] = len(diffusion_events)
                     results.append({**result_context, **result})
                 else:
                     record_error = self._safe_record_run(
@@ -213,6 +247,11 @@ class CommunityPipeline:
         except Exception as exc:
             return str(exc)
 
+    def _default_cutoff_at(self, started: datetime) -> datetime | None:
+        if self.default_board_lookback_hours is None or self.default_board_lookback_hours <= 0:
+            return None
+        return started - timedelta(hours=self.default_board_lookback_hours)
+
 
 def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecision]) -> list[MentionDecision]:
     candidate_keys = {(candidate.market.upper(), candidate.symbol.upper(), candidate.matched_text) for candidate in candidates}
@@ -227,22 +266,42 @@ def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecisi
     return accepted
 
 
-async def _fetch_adapter_result(adapter: CommunityAdapter, client: SpringIngestionClient) -> BoardStreamResult:
+async def _fetch_adapter_result(
+    adapter: CommunityAdapter,
+    client: SpringIngestionClient,
+    default_cutoff_at: datetime | None = None,
+) -> BoardStreamResult:
     fetch_stream = getattr(adapter, "fetch_stream", None)
     if fetch_stream:
-        return await fetch_stream(_watermark_for_adapter(adapter, client))
+        return await fetch_stream(_watermark_for_adapter(adapter, client, default_cutoff_at))
     return BoardStreamResult(posts=await adapter.fetch_posts(), coverage=None)
 
 
-def _watermark_for_adapter(adapter: CommunityAdapter, client: SpringIngestionClient) -> BoardWatermark | None:
+def _watermark_for_adapter(
+    adapter: CommunityAdapter,
+    client: SpringIngestionClient,
+    default_cutoff_at: datetime | None = None,
+) -> BoardWatermark | None:
     target = getattr(adapter, "target", None)
+    if target is not None and target.kind == CrawlTargetKind.GENERAL_BOARD_DIFFUSION:
+        return None
     board_id = getattr(target, "board_id", None)
     if not board_id:
         return None
     get_board_watermark = getattr(client, "get_board_watermark", None)
-    if not get_board_watermark:
-        return None
-    return get_board_watermark(adapter.source, board_id)
+    watermark = get_board_watermark(adapter.source, board_id) if get_board_watermark else None
+    cutoff_at = _later_datetime(watermark.cutoff_at if watermark else None, default_cutoff_at)
+    if watermark is None:
+        return BoardWatermark(cutoff_at=cutoff_at) if cutoff_at else None
+    return BoardWatermark(last_seen_external_id=watermark.last_seen_external_id, cutoff_at=cutoff_at)
+
+
+def _later_datetime(left: datetime | None, right: datetime | None) -> datetime | None:
+    if left is None:
+        return right
+    if right is None:
+        return left
+    return max(left, right)
 
 
 def _coverage_result_fields(coverage: BoardCoverage | None) -> dict:
@@ -276,7 +335,66 @@ def _target_result_context(adapter: CommunityAdapter) -> dict:
         context["targetSymbol"] = target.symbol
     if target.url:
         context["targetUrl"] = target.url
+    if getattr(target, "diffusion_type", None):
+        context["diffusionType"] = target.diffusion_type
     return context
+
+
+def _positioned_diffusion_posts_for_adapter(
+    adapter: CommunityAdapter,
+    posts: list[RawPost],
+    observed_at: datetime,
+    max_age_hours: float | None,
+) -> list[tuple[int, RawPost]] | None:
+    target = getattr(adapter, "target", None)
+    if target is None or target.kind != CrawlTargetKind.GENERAL_BOARD_DIFFUSION:
+        return None
+    cutoff_at = _diffusion_cutoff_at(observed_at, max_age_hours)
+    positioned_posts = list(enumerate(posts, start=1))
+    if cutoff_at is None:
+        return positioned_posts
+    return [
+        (list_position, post)
+        for list_position, post in positioned_posts
+        if _as_utc(post.published_at) >= cutoff_at
+    ]
+
+
+def _diffusion_events_for_adapter(adapter: CommunityAdapter, positioned_posts: list[tuple[int, RawPost]], observed_at: datetime) -> list[DiffusionEvent]:
+    target = getattr(adapter, "target", None)
+    if target is None or target.kind != CrawlTargetKind.GENERAL_BOARD_DIFFUSION:
+        return []
+    diffusion_type = getattr(target, "diffusion_type", None)
+    if not diffusion_type:
+        return []
+    events: list[DiffusionEvent] = []
+    for list_position, post in positioned_posts:
+        events.append(
+            DiffusionEvent(
+                external_id=post.external_id,
+                board_id=post.board_id or target.board_id,
+                diffusion_type=diffusion_type,
+                list_position=list_position,
+                observed_at=observed_at,
+                view_count=post.view_count,
+                recommend_count=post.recommend_count,
+                comment_count=post.comment_count,
+                diffusion_only=True,
+            )
+        )
+    return events
+
+
+def _diffusion_cutoff_at(observed_at: datetime, max_age_hours: float | None) -> datetime | None:
+    if max_age_hours is None or max_age_hours <= 0:
+        return None
+    return _as_utc(observed_at) - timedelta(hours=max_age_hours)
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
 
 
 def _skip_record_message(result_context: dict, policy_decision: SourcePolicyDecision) -> str:

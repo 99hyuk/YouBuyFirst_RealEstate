@@ -57,6 +57,19 @@ class RawPost:
 
 
 @dataclass(frozen=True)
+class DiffusionEvent:
+    external_id: str
+    board_id: str | None
+    diffusion_type: str
+    list_position: int | None
+    observed_at: datetime
+    view_count: int | None = None
+    recommend_count: int | None = None
+    comment_count: int | None = None
+    diffusion_only: bool = False
+
+
+@dataclass(frozen=True)
 class EnrichedPost(RawPost):
     mentions: list[Mention] = field(default_factory=list)
     analyses: list[Analysis] = field(default_factory=list)

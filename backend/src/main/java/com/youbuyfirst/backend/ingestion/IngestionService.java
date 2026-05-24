@@ -4,6 +4,7 @@ import com.youbuyfirst.backend.common.Hashing;
 import com.youbuyfirst.backend.crawl.CrawlRun;
 import com.youbuyfirst.backend.crawl.CrawlRunRepository;
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
+import com.youbuyfirst.backend.ingestion.dto.DiffusionPayload;
 import com.youbuyfirst.backend.ingestion.dto.IngestionRequest;
 import com.youbuyfirst.backend.ingestion.dto.IngestionResponse;
 import com.youbuyfirst.backend.ingestion.dto.CrawlRunReportRequest;
@@ -14,6 +15,8 @@ import com.youbuyfirst.backend.instrument.Instrument;
 import com.youbuyfirst.backend.instrument.InstrumentRepository;
 import com.youbuyfirst.backend.metrics.MetricSnapshotService;
 import com.youbuyfirst.backend.post.CommunityPost;
+import com.youbuyfirst.backend.post.CommunityPostDiffusionEvent;
+import com.youbuyfirst.backend.post.CommunityPostDiffusionEventRepository;
 import com.youbuyfirst.backend.post.CommunityPostRepository;
 import com.youbuyfirst.backend.post.PostMention;
 import com.youbuyfirst.backend.post.PostMentionRepository;
@@ -30,6 +33,7 @@ import java.util.List;
 public class IngestionService {
 
     private final CommunityPostRepository postRepository;
+    private final CommunityPostDiffusionEventRepository diffusionEventRepository;
     private final PostMentionRepository mentionRepository;
     private final SentimentAnalysisRepository sentimentRepository;
     private final InstrumentRepository instrumentRepository;
@@ -38,6 +42,7 @@ public class IngestionService {
 
     public IngestionService(
             CommunityPostRepository postRepository,
+            CommunityPostDiffusionEventRepository diffusionEventRepository,
             PostMentionRepository mentionRepository,
             SentimentAnalysisRepository sentimentRepository,
             InstrumentRepository instrumentRepository,
@@ -45,6 +50,7 @@ public class IngestionService {
             MetricSnapshotService metricSnapshotService
     ) {
         this.postRepository = postRepository;
+        this.diffusionEventRepository = diffusionEventRepository;
         this.mentionRepository = mentionRepository;
         this.sentimentRepository = sentimentRepository;
         this.instrumentRepository = instrumentRepository;
@@ -57,9 +63,9 @@ public class IngestionService {
         int accepted = 0;
         int duplicates = 0;
         List<Instant> acceptedPublishedTimes = new ArrayList<>();
+        String source = normalize(request.source());
 
         for (PostPayload payload : request.posts()) {
-            String source = normalize(request.source());
             String externalId = payload.externalId().trim();
             if (postRepository.existsBySourceAndExternalId(source, externalId)) {
                 duplicates++;
@@ -89,8 +95,10 @@ public class IngestionService {
             accepted++;
         }
 
+        saveDiffusionEvents(source, request.runId(), request.diffusionEvents());
+
         crawlRunRepository.save(new CrawlRun(
-                normalize(request.source()),
+                source,
                 request.runId().trim(),
                 request.batchStartedAt(),
                 request.batchFinishedAt(),
@@ -116,7 +124,7 @@ public class IngestionService {
         ));
 
         metricSnapshotService.rebuildWindowsTouchedBy(acceptedPublishedTimes);
-        return new IngestionResponse(normalize(request.source()), request.runId(), request.posts().size(), accepted, duplicates);
+        return new IngestionResponse(source, request.runId(), request.posts().size(), accepted, duplicates);
     }
 
     @Transactional
@@ -176,6 +184,45 @@ public class IngestionService {
         sentimentRepository.saveAll(entities);
     }
 
+    private void saveDiffusionEvents(String source, String runId, List<DiffusionPayload> diffusionEvents) {
+        if (diffusionEvents == null || diffusionEvents.isEmpty()) {
+            return;
+        }
+        Instant createdAt = Instant.now();
+        for (DiffusionPayload payload : diffusionEvents) {
+            String externalId = payload.externalId().trim();
+            String diffusionType = normalizeLower(payload.diffusionType());
+            if (diffusionEventRepository.existsBySourceAndExternalIdAndDiffusionTypeAndObservedAt(
+                    source,
+                    externalId,
+                    diffusionType,
+                    payload.observedAt()
+            )) {
+                continue;
+            }
+            CommunityPost linkedPost = postRepository.findBySourceAndExternalId(source, externalId).orElse(null);
+            String boardId = trimTo(payload.boardId(), 120);
+            if (boardId == null && linkedPost != null) {
+                boardId = linkedPost.getBoardId();
+            }
+            diffusionEventRepository.save(new CommunityPostDiffusionEvent(
+                    linkedPost,
+                    source,
+                    externalId,
+                    boardId,
+                    diffusionType,
+                    payload.listPosition(),
+                    payload.observedAt(),
+                    payload.viewCount(),
+                    payload.recommendCount(),
+                    payload.commentCount(),
+                    Boolean.TRUE.equals(payload.diffusionOnly()),
+                    trimTo(runId, 160),
+                    createdAt
+            ));
+        }
+    }
+
     private Instrument getOrCreateInstrument(String market, String symbol) {
         String normalizedMarket = normalize(market);
         String normalizedSymbol = normalize(symbol);
@@ -185,6 +232,10 @@ public class IngestionService {
 
     private static String normalize(String value) {
         return value == null ? "" : value.trim().toUpperCase();
+    }
+
+    private static String normalizeLower(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
     }
 
     private static String trimTo(String value, int maxLength) {
