@@ -1,5 +1,7 @@
 package com.youbuyfirst.backend;
 
+import com.youbuyfirst.backend.market.ChartCandleRefreshRequest;
+import com.youbuyfirst.backend.market.ChartCandleRefreshRequestRepository;
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
 import com.youbuyfirst.backend.ingestion.dto.CrawlRunReportRequest;
 import com.youbuyfirst.backend.ingestion.dto.DiffusionPayload;
@@ -13,16 +15,30 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import jakarta.persistence.LockModeType;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Collection;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,6 +51,12 @@ class IngestionApiIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private ChartCandleRefreshRequestRepository chartCandleRefreshRequestRepository;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @Test
     void ingestsCommunityPostsIdempotentlyAndCreatesMetrics() {
@@ -501,6 +523,97 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void reclaimsTimedOutChartCandleRefreshRequests() {
+        jdbcTemplate.update("delete from chart_candle_refresh_requests");
+        jdbcTemplate.update(
+                """
+                insert into chart_candle_refresh_requests
+                    (symbol, range_label, candle_interval, status, requested_at, last_attempt_at)
+                values (?, ?, ?, ?, ?, ?)
+                """,
+                "JPM",
+                "1M",
+                "1d",
+                ChartCandleRefreshRequest.STATUS_IN_PROGRESS,
+                Timestamp.from(Instant.parse("2026-05-24T00:00:00Z")),
+                Timestamp.from(Instant.now().minusSeconds(60L * 10L))
+        );
+
+        ResponseEntity<String> claim = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/claim",
+                Map.of("limit", 10),
+                String.class
+        );
+
+        assertThat(claim.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(claim.getBody())
+                .contains("\"symbol\":\"JPM\"")
+                .contains("\"range\":\"1M\"")
+                .contains("\"interval\":\"1d\"");
+    }
+
+    @Test
+    void locksPendingChartCandleRefreshRequestsSoConcurrentClaimersCannotReadTheSameRow() throws Exception {
+        jdbcTemplate.update("delete from chart_candle_refresh_requests");
+        jdbcTemplate.update(
+                """
+                insert into chart_candle_refresh_requests
+                    (symbol, range_label, candle_interval, status, requested_at)
+                values (?, ?, ?, ?, ?)
+                """,
+                "LOCKTEST",
+                "1M",
+                "1d",
+                ChartCandleRefreshRequest.STATUS_PENDING,
+                Timestamp.from(Instant.parse("2026-05-24T00:00:00Z"))
+        );
+
+        CountDownLatch firstTransactionSelected = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+
+        try {
+            Future<List<String>> firstWorker = executor.submit(() -> transactionTemplate.execute(status -> {
+                List<ChartCandleRefreshRequest> requests = chartCandleRefreshRequestRepository.findClaimable(
+                        Set.of(ChartCandleRefreshRequest.STATUS_PENDING),
+                        PageRequest.of(0, 1)
+                );
+                firstTransactionSelected.countDown();
+                sleep(300);
+                requests.forEach(request -> request.claim(Instant.now()));
+                return requests.stream().map(ChartCandleRefreshRequest::getSymbol).toList();
+            }));
+
+            assertThat(firstTransactionSelected.await(10, TimeUnit.SECONDS)).isTrue();
+
+            Future<List<String>> secondWorker = executor.submit(() -> transactionTemplate.execute(status ->
+                    chartCandleRefreshRequestRepository.findClaimable(
+                                    Set.of(ChartCandleRefreshRequest.STATUS_PENDING),
+                                    PageRequest.of(0, 1)
+                            )
+                            .stream()
+                            .map(ChartCandleRefreshRequest::getSymbol)
+                            .toList()
+            ));
+
+            assertThat(firstWorker.get(10, TimeUnit.SECONDS)).containsExactly("LOCKTEST");
+            assertThat(secondWorker.get(10, TimeUnit.SECONDS)).doesNotContain("LOCKTEST");
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    void claimableChartCandleRefreshRequestsAreSelectedWithDatabaseWriteLocks() throws Exception {
+        Lock lock = ChartCandleRefreshRequestRepository.class
+                .getMethod("findClaimable", Collection.class, Pageable.class)
+                .getAnnotation(Lock.class);
+
+        assertThat(lock).isNotNull();
+        assertThat(lock.value()).isEqualTo(LockModeType.PESSIMISTIC_WRITE);
+    }
+
+    @Test
     void exposesBackendDerivedTechnicalIndicatorsFromCachedChartCandles() {
         Instant asOf = Instant.now().minusSeconds(60);
 
@@ -931,5 +1044,14 @@ class IngestionApiIntegrationTest {
                     leased_until = null,
                     updated_at = current_timestamp(6)
                 """);
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(exception);
+        }
     }
 }

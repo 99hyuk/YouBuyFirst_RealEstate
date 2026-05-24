@@ -7,7 +7,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -16,6 +18,7 @@ public class ChartCandleRefreshRequestService {
 
     private static final int DEFAULT_CLAIM_LIMIT = 20;
     private static final int MAX_CLAIM_LIMIT = 100;
+    private static final Duration CLAIM_LEASE_DURATION = Duration.ofMinutes(5);
     private static final Set<String> CLAIMABLE_STATUSES = Set.of(
             ChartCandleRefreshRequest.STATUS_PENDING,
             ChartCandleRefreshRequest.STATUS_FAILED
@@ -34,7 +37,7 @@ public class ChartCandleRefreshRequestService {
                 .findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(symbol, range, interval)
                 .orElseGet(() -> new ChartCandleRefreshRequest(symbol, range, interval, now));
         if (!ChartCandleRefreshRequest.STATUS_PENDING.equals(request.getStatus())
-                && !ChartCandleRefreshRequest.STATUS_IN_PROGRESS.equals(request.getStatus())) {
+                && !request.isActiveInProgress(now, CLAIM_LEASE_DURATION)) {
             request.requestAgain(now);
         }
         repository.save(request);
@@ -44,8 +47,18 @@ public class ChartCandleRefreshRequestService {
     public ChartCandleRefreshClaimResponse claim(Integer requestedLimit) {
         int limit = Math.max(1, Math.min(requestedLimit == null ? DEFAULT_CLAIM_LIMIT : requestedLimit, MAX_CLAIM_LIMIT));
         Instant now = Instant.now();
-        List<ChartCandleRefreshRequestResponse> items = repository
-                .findClaimable(CLAIMABLE_STATUSES, PageRequest.of(0, limit))
+        List<ChartCandleRefreshRequest> requests = new ArrayList<>(
+                repository.findClaimable(CLAIMABLE_STATUSES, PageRequest.of(0, limit))
+        );
+        if (requests.size() < limit) {
+            requests.addAll(repository.findTimedOutInProgress(
+                    ChartCandleRefreshRequest.STATUS_IN_PROGRESS,
+                    now.minus(CLAIM_LEASE_DURATION),
+                    PageRequest.of(0, limit - requests.size())
+            ));
+        }
+
+        List<ChartCandleRefreshRequestResponse> items = requests
                 .stream()
                 .peek(request -> request.claim(now))
                 .map(request -> new ChartCandleRefreshRequestResponse(

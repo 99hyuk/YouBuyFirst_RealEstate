@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Entity
@@ -66,6 +67,7 @@ public class ChartCandleRefreshRequest {
     public void requestAgain(Instant now) {
         this.status = STATUS_PENDING;
         this.requestedAt = now;
+        this.lastAttemptAt = null;
         this.completedAt = null;
         this.errorMessage = null;
     }
@@ -73,6 +75,8 @@ public class ChartCandleRefreshRequest {
     public void claim(Instant now) {
         this.status = STATUS_IN_PROGRESS;
         this.lastAttemptAt = now;
+        this.completedAt = null;
+        this.errorMessage = null;
     }
 
     public void complete(Instant now) {
@@ -103,5 +107,11 @@ public class ChartCandleRefreshRequest {
 
     public String getStatus() {
         return status;
+    }
+
+    public boolean isActiveInProgress(Instant now, Duration leaseDuration) {
+        return STATUS_IN_PROGRESS.equals(status)
+                && lastAttemptAt != null
+                && lastAttemptAt.isAfter(now.minus(leaseDuration));
     }
 }

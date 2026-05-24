@@ -159,6 +159,8 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 - Pipeline refresh cadence: every 10 minutes by default through the market refresh job registered by `python -m youbuyfirst_pipeline.main serve`.
 - Periodic refresh is for popular/watchlist symbols only. Do not refresh every stock master row on a schedule.
 - First-open and long-tail symbols rely on the public GET on-demand path to enqueue a refresh request. Pipeline consumes that queue every 60 seconds by default through `MARKET_CHART_ON_DEMAND_REFRESH_INTERVAL_SECONDS`.
+- `chart_candle_refresh_requests` is the MVP DB-backed queue. Claim uses a database write lock so two workers do not select the same pending row, and an `IN_PROGRESS` request older than the 5-minute lease is claimable again.
+- A broker queue with DLQ can be introduced later if chart refresh volume, worker fan-out, or operations monitoring outgrow this table. It is not required for the current bounded stock-detail refresh path because writes remain idempotent at `symbol + range + interval`.
 - Public response max bars: `1260` daily bars, roughly five trading years.
 - `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.
 - Backend stale threshold candidate: 36 hours until a market-calendar slice exists. During holidays/weekends this prevents normal closed-market data from looking broken too quickly.

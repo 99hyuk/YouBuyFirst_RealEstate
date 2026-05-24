@@ -746,6 +746,7 @@ onMounted(renderChart);
 watch(
   [
     () => props.candles,
+    () => props.technicalIndicators,
     () => props.providerSymbol,
     candleMode,
     selectedRange,
