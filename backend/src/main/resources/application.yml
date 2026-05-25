@@ -30,6 +30,6 @@ app:
     post-days: ${POST_RETENTION_DAYS:30}
     cleanup-cron: ${POST_RETENTION_CLEANUP_CRON:0 15 3 * * *}
   market:
-    quote-stale-minutes: ${QUOTE_STALE_MINUTES:2160}
-    chart-candle-stale-minutes: ${CHART_CANDLE_STALE_MINUTES:2160}
+    quote-stale-minutes: ${QUOTE_STALE_MINUTES:30}
+    chart-candle-stale-minutes: ${CHART_CANDLE_STALE_MINUTES:30}
     investor-flow-stale-minutes: ${INVESTOR_FLOW_STALE_MINUTES:5760}

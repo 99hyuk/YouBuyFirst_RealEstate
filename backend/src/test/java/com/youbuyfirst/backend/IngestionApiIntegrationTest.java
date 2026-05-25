@@ -453,7 +453,7 @@ class IngestionApiIntegrationTest {
     @Test
     void exposesQuoteSnapshotsWithFrontendContractAndStaleState() {
         Instant freshAsOf = Instant.now().minusSeconds(60);
-        Instant staleAsOf = Instant.now().minusSeconds(60L * 60L * 48L);
+        Instant staleAsOf = Instant.now().minusSeconds(60L * 31L);
 
         ResponseEntity<Void> upsert = restTemplate.postForEntity(
                 "/internal/market/quote-snapshots",
@@ -622,8 +622,8 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
-    void returnsStaleChartCandlesAndQueuesPipelineRefreshWhenCacheIsStale() {
-        Instant staleAsOf = Instant.now().minusSeconds(60L * 60L * 72L);
+    void returnsStaleChartCandlesAndQueuesPipelineRefreshWhenCacheIsOlderThanThirtyMinutes() {
+        Instant staleAsOf = Instant.now().minusSeconds(60L * 31L);
 
         ResponseEntity<Void> staleUpsert = restTemplate.postForEntity(
                 "/internal/market/chart-candles",

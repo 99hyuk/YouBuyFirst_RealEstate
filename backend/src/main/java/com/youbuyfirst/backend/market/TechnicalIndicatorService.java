@@ -33,7 +33,7 @@ public class TechnicalIndicatorService {
     public TechnicalIndicatorService(
             ChartCandleSetRepository chartCandleSetRepository,
             MarketSymbolResolver symbolResolver,
-            @Value("${app.market.chart-candle-stale-minutes:2160}") long chartCandleStaleMinutes
+            @Value("${app.market.chart-candle-stale-minutes:30}") long chartCandleStaleMinutes
     ) {
         this.chartCandleSetRepository = chartCandleSetRepository;
         this.symbolResolver = symbolResolver;

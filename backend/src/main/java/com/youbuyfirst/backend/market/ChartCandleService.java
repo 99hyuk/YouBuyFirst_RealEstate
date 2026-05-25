@@ -43,7 +43,7 @@ public class ChartCandleService {
             ChartCandleSetRepository repository,
             ChartCandleRefreshRequestService refreshRequestService,
             MarketSymbolResolver symbolResolver,
-            @Value("${app.market.chart-candle-stale-minutes:2160}") long chartCandleStaleMinutes
+            @Value("${app.market.chart-candle-stale-minutes:30}") long chartCandleStaleMinutes
     ) {
         this.repository = repository;
         this.refreshRequestService = refreshRequestService;

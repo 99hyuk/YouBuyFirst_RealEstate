@@ -26,7 +26,7 @@ public class QuoteSnapshotService {
 
     public QuoteSnapshotService(
             QuoteSnapshotRepository repository,
-            @Value("${app.market.quote-stale-minutes:2160}") long quoteStaleMinutes
+            @Value("${app.market.quote-stale-minutes:30}") long quoteStaleMinutes
     ) {
         this.repository = repository;
         this.staleAfter = Duration.ofMinutes(quoteStaleMinutes);

@@ -166,11 +166,11 @@ Redis can be added later if chart requests become hot or if WebSocket/STOMP mark
 - Pipeline refresh cadence: every 10 minutes by default through the market refresh job registered by `python -m youbuyfirst_pipeline.main serve`.
 - Periodic refresh is for popular/watchlist symbols only. Do not refresh every stock master row on a schedule.
 - First-open and long-tail symbols rely on the public GET on-demand path to enqueue a refresh request. Pipeline consumes that queue every 60 seconds by default through `MARKET_CHART_ON_DEMAND_REFRESH_INTERVAL_SECONDS`.
-- `chart_candle_refresh_requests` is the MVP DB-backed queue. Claim uses a database write lock so two workers do not select the same pending row, an `IN_PROGRESS` request older than the 5-minute lease is claimable again, and each claim has an attempt token so late reports from an older lease cannot overwrite the current queue state.
+- `chart_candle_refresh_requests` is the MVP DB-backed queue. Claim uses a database write lock so two workers do not select the same pending row, `FAILED` requests are claimable again on the next claim cycle, an `IN_PROGRESS` request older than the 5-minute lease is claimable again, and each claim has an attempt token so late reports from an older lease cannot overwrite the current queue state.
 - A broker queue with DLQ can be introduced later if chart refresh volume, worker fan-out, or operations monitoring outgrow this table. It is not required for the current bounded stock-detail refresh path because writes remain idempotent at `symbol + range + interval`.
 - Public response max bars: `1260` daily bars, roughly five trading years.
 - `1M`, `3M`, `6M`, `1Y`, `3Y`, `5Y` should stay bounded and should not expose arbitrary `from`/`to` download behavior.
-- Backend stale threshold candidate: 36 hours until a market-calendar slice exists. During holidays/weekends this prevents normal closed-market data from looking broken too quickly.
+- Backend stale threshold: `CHART_CANDLE_STALE_MINUTES`, default `30` minutes. After that, the public API returns the cached candle set as `STALE` and enqueues an on-demand refresh request.
 - `asOf` should be the latest provider bar timestamp converted to UTC.
 - `date` should be the exchange-local trading date for the candle, formatted as `YYYY-MM-DD`. Do not derive `bars[].date` from the UTC-converted timestamp. For Korean daily bars, a provider index such as `2026-05-15 00:00:00+09:00` must stay `2026-05-15`, even though the UTC instant is `2026-05-14T15:00:00Z`.
 - `asOf` may be UTC, but `bars[].date` is a trading-day key used to match investor-flow `tradeDate`.

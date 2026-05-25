@@ -86,7 +86,7 @@ Required frontend fields are exactly:
 - US exchange timing differs by exchange, so US quotes are labeled as a 10-minute refresh snapshot, not as a guaranteed 10-minute delayed feed.
 - Pipeline provider cache TTL: `MARKET_QUOTE_CACHE_TTL_SECONDS`, default `600` seconds. This is the app refresh cadence, not proof that the upstream data is exactly 10 minutes old for every exchange.
 - Backend latest-snapshot cache: one row per `symbol` in `quote_snapshots`; upsert replaces the public snapshot.
-- Backend stale threshold: `QUOTE_STALE_MINUTES`, default `2160` minutes (36 hours), so after-hours and holiday snapshots do not immediately look broken. A later market-calendar slice can tighten this during open market hours.
+- Backend stale threshold: `QUOTE_STALE_MINUTES`, default `30` minutes. After that, the backend returns the cached row as stale instead of presenting it as fresh.
 - If `asOf + threshold < now`, backend returns `stale: true` and `dataStatus: "STALE"` even if the collected payload said `OK`.
 - Public UI must show `delayLabel`, `provider`, `asOf`, `stale`, and `dataStatus` near displayed prices.
 
