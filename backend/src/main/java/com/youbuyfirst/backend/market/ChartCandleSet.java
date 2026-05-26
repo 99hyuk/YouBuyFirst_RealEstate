@@ -31,6 +31,9 @@ public class ChartCandleSet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "instrument_id")
+    private Long instrumentId;
+
     @Column(nullable = false, length = 40)
     private String symbol;
 
@@ -72,12 +75,18 @@ public class ChartCandleSet {
     }
 
     public ChartCandleSet(String symbol, String rangeLabel, String candleInterval) {
+        this(null, symbol, rangeLabel, candleInterval);
+    }
+
+    public ChartCandleSet(Long instrumentId, String symbol, String rangeLabel, String candleInterval) {
+        this.instrumentId = instrumentId;
         this.symbol = symbol;
         this.rangeLabel = rangeLabel;
         this.candleInterval = candleInterval;
     }
 
     public void update(
+            Long instrumentId,
             String name,
             String market,
             String currency,
@@ -88,6 +97,7 @@ public class ChartCandleSet {
             Instant collectedAt,
             List<ChartCandleBarRequest> newBars
     ) {
+        this.instrumentId = instrumentId;
         this.name = name;
         this.market = market;
         this.currency = currency;
@@ -109,6 +119,10 @@ public class ChartCandleSet {
                         bar.volume()
                 ))
                 .forEach(this.bars::add);
+    }
+
+    public Long getInstrumentId() {
+        return instrumentId;
     }
 
     public void clearBars() {

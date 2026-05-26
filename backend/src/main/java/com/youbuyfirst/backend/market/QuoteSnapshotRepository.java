@@ -10,7 +10,11 @@ import java.util.Optional;
 
 public interface QuoteSnapshotRepository extends JpaRepository<QuoteSnapshot, Long> {
 
+    Optional<QuoteSnapshot> findFirstByInstrumentId(Long instrumentId);
+
     Optional<QuoteSnapshot> findBySymbolIgnoreCase(String symbol);
+
+    List<QuoteSnapshot> findByInstrumentIdIn(Collection<Long> instrumentIds);
 
     @Query("select snapshot from QuoteSnapshot snapshot where lower(snapshot.symbol) in :symbols")
     List<QuoteSnapshot> findBySymbolsIgnoreCase(@Param("symbols") Collection<String> symbols);

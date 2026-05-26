@@ -55,28 +55,31 @@ public class ChartCandleService {
     public void upsertAll(List<ChartCandleSetRequest> requests) {
         Instant collectedAt = Instant.now();
         for (ChartCandleSetRequest request : requests) {
-            String symbol = normalizeUpper(request.symbol());
+            MarketInstrument instrument = symbolResolver.resolve(request.symbol());
+            String symbol = instrument.symbol();
             String range = normalizeRange(request.range());
             String interval = normalizeInterval(request.interval());
             validateRangeAndInterval(range, interval);
             List<ChartCandleBarRequest> bars = boundedBars(request.bars(), range);
             String dataStatus = bars.isEmpty() ? "INSUFFICIENT" : normalizeUpper(request.dataStatus());
             String refreshAttemptToken = trimToNull(request.refreshAttemptToken());
-            if (!refreshRequestService.canAcceptCompletion(symbol, range, interval, refreshAttemptToken)) {
+            if (!refreshRequestService.canAcceptCompletion(instrument, range, interval, refreshAttemptToken)) {
                 continue;
             }
 
-            Optional<ChartCandleSet> existingCandleSet = repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
+            Optional<ChartCandleSet> existingCandleSet = findExisting(instrument, range, interval);
+            ChartCandleSet candleSet = existingCandleSet.orElseGet(() -> new ChartCandleSet(
+                    instrument.instrumentId(),
                     symbol,
                     range,
                     interval
-            );
-            ChartCandleSet candleSet = existingCandleSet.orElseGet(() -> new ChartCandleSet(symbol, range, interval));
+            ));
             if (existingCandleSet.isPresent()) {
                 candleSet.clearBars();
                 repository.saveAndFlush(candleSet);
             }
             candleSet.update(
+                    instrument.instrumentId(),
                     request.name().trim(),
                     normalizeUpper(request.market()),
                     normalizeUpper(request.currency()),
@@ -88,31 +91,27 @@ public class ChartCandleService {
                     bars
             );
             repository.save(candleSet);
-            refreshRequestService.markCompleted(symbol, range, interval, refreshAttemptToken);
+            refreshRequestService.markCompleted(instrument, range, interval, refreshAttemptToken);
         }
     }
 
     @Transactional
     public ChartCandleResponse get(String symbol, String range, String interval) {
-        String normalizedSymbol = symbolResolver.normalizeProviderSymbol(normalizeRequiredSymbol(symbol));
+        MarketInstrument instrument = symbolResolver.resolve(normalizeRequiredSymbol(symbol));
         String normalizedRange = normalizeRange(range == null || range.isBlank() ? "3M" : range);
         String normalizedInterval = normalizeInterval(interval == null || interval.isBlank() ? "1d" : interval);
         validateRangeAndInterval(normalizedRange, normalizedInterval);
 
-        Optional<ChartCandleSet> existing = repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
-                normalizedSymbol,
-                normalizedRange,
-                normalizedInterval
-        );
+        Optional<ChartCandleSet> existing = findExisting(instrument, normalizedRange, normalizedInterval);
         if (existing.isPresent()) {
             if (isStale(existing.get())) {
-                refreshRequestService.request(normalizedSymbol, normalizedRange, normalizedInterval);
+                refreshRequestService.request(instrument, normalizedRange, normalizedInterval);
             }
             return toResponse(existing.get());
         }
 
-        refreshRequestService.request(normalizedSymbol, normalizedRange, normalizedInterval);
-        return insufficientResponse(normalizedSymbol, normalizedRange, normalizedInterval);
+        refreshRequestService.request(instrument, normalizedRange, normalizedInterval);
+        return insufficientResponse(instrument, normalizedRange, normalizedInterval);
     }
 
     private ChartCandleResponse toResponse(ChartCandleSet candleSet) {
@@ -130,6 +129,7 @@ public class ChartCandleService {
                 .toList();
         String dataStatus = bars.isEmpty() ? "INSUFFICIENT" : (stale ? "STALE" : candleSet.getDataStatus());
         return new ChartCandleResponse(
+                candleSet.getInstrumentId(),
                 candleSet.getSymbol(),
                 candleSet.getName(),
                 candleSet.getMarket(),
@@ -146,9 +146,9 @@ public class ChartCandleService {
         );
     }
 
-    private ChartCandleResponse insufficientResponse(String symbol, String range, String interval) {
-        MarketInstrument instrument = symbolResolver.resolve(symbol);
+    private ChartCandleResponse insufficientResponse(MarketInstrument instrument, String range, String interval) {
         return new ChartCandleResponse(
+                instrument.instrumentId(),
                 instrument.symbol(),
                 instrument.name(),
                 instrument.market(),
@@ -162,6 +162,24 @@ public class ChartCandleService {
                 "INSUFFICIENT",
                 List.of(),
                 displayPolicy(range)
+        );
+    }
+
+    private Optional<ChartCandleSet> findExisting(MarketInstrument instrument, String range, String interval) {
+        if (instrument.instrumentId() != null) {
+            Optional<ChartCandleSet> byInstrument = repository.findFirstByInstrumentIdAndRangeLabelAndCandleInterval(
+                    instrument.instrumentId(),
+                    range,
+                    interval
+            );
+            if (byInstrument.isPresent()) {
+                return byInstrument;
+            }
+        }
+        return repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
+                instrument.symbol(),
+                range,
+                interval
         );
     }
 

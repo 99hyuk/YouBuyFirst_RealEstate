@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 public record InvestorFlowSnapshotResponse(
+        Long instrumentId,
         String symbol,
         String name,
         String market,

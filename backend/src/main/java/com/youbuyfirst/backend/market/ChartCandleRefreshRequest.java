@@ -31,6 +31,9 @@ public class ChartCandleRefreshRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "instrument_id")
+    private Long instrumentId;
+
     @Column(nullable = false, length = 40)
     private String symbol;
 
@@ -62,10 +65,20 @@ public class ChartCandleRefreshRequest {
     }
 
     public ChartCandleRefreshRequest(String symbol, String rangeLabel, String candleInterval, Instant now) {
+        this(null, symbol, rangeLabel, candleInterval, now);
+    }
+
+    public ChartCandleRefreshRequest(Long instrumentId, String symbol, String rangeLabel, String candleInterval, Instant now) {
+        this.instrumentId = instrumentId;
         this.symbol = symbol;
         this.rangeLabel = rangeLabel;
         this.candleInterval = candleInterval;
         requestAgain(now);
+    }
+
+    public void bindInstrument(Long instrumentId, String symbol) {
+        this.instrumentId = instrumentId;
+        this.symbol = symbol;
     }
 
     public void requestAgain(Instant now) {
@@ -103,6 +116,10 @@ public class ChartCandleRefreshRequest {
 
     public String getSymbol() {
         return symbol;
+    }
+
+    public Long getInstrumentId() {
+        return instrumentId;
     }
 
     public String getRangeLabel() {

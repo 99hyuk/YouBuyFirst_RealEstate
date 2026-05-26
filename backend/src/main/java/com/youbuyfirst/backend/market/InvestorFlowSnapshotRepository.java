@@ -10,7 +10,15 @@ import java.util.Optional;
 
 public interface InvestorFlowSnapshotRepository extends JpaRepository<InvestorFlowSnapshot, Long> {
 
+    Optional<InvestorFlowSnapshot> findFirstByInstrumentIdAndTradeDate(Long instrumentId, LocalDate tradeDate);
+
     Optional<InvestorFlowSnapshot> findBySymbolIgnoreCaseAndTradeDate(String symbol, LocalDate tradeDate);
+
+    List<InvestorFlowSnapshot> findByInstrumentIdAndDataStatusInOrderByTradeDateDesc(
+            Long instrumentId,
+            Collection<String> dataStatuses,
+            Pageable pageable
+    );
 
     List<InvestorFlowSnapshot> findBySymbolIgnoreCaseAndDataStatusInOrderByTradeDateDesc(
             String symbol,

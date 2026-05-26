@@ -16,10 +16,31 @@ import java.util.Optional;
 
 public interface ChartCandleRefreshRequestRepository extends JpaRepository<ChartCandleRefreshRequest, Long> {
 
+    Optional<ChartCandleRefreshRequest> findFirstByInstrumentIdAndRangeLabelAndCandleInterval(
+            Long instrumentId,
+            String rangeLabel,
+            String candleInterval
+    );
+
     Optional<ChartCandleRefreshRequest> findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
             String symbol,
             String rangeLabel,
             String candleInterval
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("""
+            select request
+            from ChartCandleRefreshRequest request
+            where request.instrumentId = :instrumentId
+              and request.rangeLabel = :rangeLabel
+              and request.candleInterval = :candleInterval
+            """)
+    Optional<ChartCandleRefreshRequest> findLockedByInstrumentIdAndRangeLabelAndCandleInterval(
+            @Param("instrumentId") Long instrumentId,
+            @Param("rangeLabel") String rangeLabel,
+            @Param("candleInterval") String candleInterval
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

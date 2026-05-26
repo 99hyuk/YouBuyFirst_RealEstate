@@ -27,6 +27,9 @@ public class InvestorFlowSnapshot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "instrument_id")
+    private Long instrumentId;
+
     @Column(nullable = false, length = 40)
     private String symbol;
 
@@ -91,10 +94,16 @@ public class InvestorFlowSnapshot {
     }
 
     public InvestorFlowSnapshot(String symbol) {
+        this(null, symbol);
+    }
+
+    public InvestorFlowSnapshot(Long instrumentId, String symbol) {
+        this.instrumentId = instrumentId;
         this.symbol = symbol;
     }
 
     public void update(
+            Long instrumentId,
             String name,
             String market,
             String currency,
@@ -109,6 +118,7 @@ public class InvestorFlowSnapshot {
             InvestorFlowLegRequest foreign,
             InvestorFlowLegRequest institution
     ) {
+        this.instrumentId = instrumentId;
         this.name = name;
         this.market = market;
         this.currency = currency;
@@ -128,6 +138,10 @@ public class InvestorFlowSnapshot {
         this.institutionNetAmount = institution.netAmount();
         this.institutionNetVolume = institution.netVolume();
         this.institutionDerived = Boolean.TRUE.equals(institution.derived());
+    }
+
+    public Long getInstrumentId() {
+        return instrumentId;
     }
 
     public String getSymbol() {

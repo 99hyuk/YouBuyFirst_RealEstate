@@ -778,6 +778,127 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void marketCachesResolveKnownProviderAliasesToInstrumentId() {
+        Long samsungId = instrumentId("KR", "005930");
+        Instant asOf = Instant.now().minusSeconds(60);
+
+        ResponseEntity<Void> quoteUpsert = restTemplate.postForEntity(
+                "/internal/market/quote-snapshots",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("symbol", "005930"),
+                        Map.entry("name", "Samsung Electronics"),
+                        Map.entry("market", "KR"),
+                        Map.entry("currency", "KRW"),
+                        Map.entry("price", "78200"),
+                        Map.entry("change", "600"),
+                        Map.entry("changePct", "0.77"),
+                        Map.entry("volume", 18400000),
+                        Map.entry("asOf", asOf.toString()),
+                        Map.entry("provider", "yfinance+FinanceDataReader"),
+                        Map.entry("delayLabel", "Provider-delayed snapshot"),
+                        Map.entry("dataStatus", "OK")
+                ))),
+                Void.class
+        );
+        ResponseEntity<String> quote = restTemplate.getForEntity(
+                "/api/quotes?symbols=005930.KS",
+                String.class
+        );
+
+        ResponseEntity<Void> chartUpsert = restTemplate.postForEntity(
+                "/internal/market/chart-candles",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("symbol", "005930"),
+                        Map.entry("name", "Samsung Electronics"),
+                        Map.entry("market", "KR"),
+                        Map.entry("currency", "KRW"),
+                        Map.entry("range", "1M"),
+                        Map.entry("interval", "1d"),
+                        Map.entry("provider", "yfinance+FinanceDataReader"),
+                        Map.entry("delayLabel", "Yahoo Finance delayed up to 30 min"),
+                        Map.entry("asOf", asOf.toString()),
+                        Map.entry("dataStatus", "OK"),
+                        Map.entry("bars", List.of(chartCandleBar("2026-05-20", "78200", 18400000)))
+                ))),
+                Void.class
+        );
+        ResponseEntity<String> chart = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=005930.KS&range=1M&interval=1d",
+                String.class
+        );
+
+        ResponseEntity<Void> flowUpsert = restTemplate.postForEntity(
+                "/internal/market/investor-flows",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("symbol", "005930"),
+                        Map.entry("name", "Samsung Electronics"),
+                        Map.entry("market", "KR"),
+                        Map.entry("currency", "KRW"),
+                        Map.entry("tradeDate", "2026-05-21"),
+                        Map.entry("asOf", asOf.toString()),
+                        Map.entry("provider", "pykrx"),
+                        Map.entry("sourceLabel", "KRX investor trading by date via pykrx"),
+                        Map.entry("delayLabel", "Previous trading day investor flow"),
+                        Map.entry("dataStatus", "OK"),
+                        Map.entry("individual", Map.of("netAmount", "125000000000", "netVolume", 1700000)),
+                        Map.entry("foreign", Map.of("netAmount", "-90000000000", "netVolume", -1100000)),
+                        Map.entry("institution", Map.of("netAmount", "-35000000000", "netVolume", -600000))
+                ))),
+                Void.class
+        );
+        ResponseEntity<String> flow = restTemplate.getForEntity(
+                "/api/market/investor-flows/history?symbol=005930.KS&limit=5",
+                String.class
+        );
+
+        assertThat(quoteUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(chartUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(flowUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(quote.getBody())
+                .contains("\"instrumentId\":" + samsungId)
+                .contains("\"symbol\":\"005930.KS\"");
+        assertThat(chart.getBody())
+                .contains("\"instrumentId\":" + samsungId)
+                .contains("\"symbol\":\"005930.KS\"");
+        assertThat(flow.getBody())
+                .contains("\"instrumentId\":" + samsungId)
+                .contains("\"symbol\":\"005930.KS\"");
+        assertThat(tableInstrumentIdCount("quote_snapshots", samsungId)).isEqualTo(1);
+        assertThat(chartCandleSetInstrumentIdCount(samsungId, "1M", "1d")).isEqualTo(1);
+        assertThat(investorFlowInstrumentIdCount(samsungId, LocalDate.parse("2026-05-21"))).isEqualTo(1);
+    }
+
+    @Test
+    void chartRefreshRequestsAndNaverCrawlTargetsCarryInstrumentId() {
+        Long samsungId = instrumentId("KR", "005930");
+
+        ResponseEntity<String> chart = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=005930&range=6M&interval=1d",
+                String.class
+        );
+        ResponseEntity<String> claim = restTemplate.postForEntity(
+                "/internal/market/chart-candle-refresh-requests/claim",
+                Map.of("limit", 10),
+                String.class
+        );
+        String targets = restTemplate.getForObject("/admin/crawl-targets", String.class);
+
+        assertThat(chart.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(claim.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(chart.getBody())
+                .contains("\"instrumentId\":" + samsungId)
+                .contains("\"symbol\":\"005930.KS\"");
+        assertThat(claim.getBody())
+                .contains("\"instrumentId\":" + samsungId)
+                .contains("\"symbol\":\"005930.KS\"");
+        assertThat(targets)
+                .contains("\"targetId\":\"NAVER:KR:005930\"")
+                .contains("\"instrumentId\":" + samsungId);
+        assertThat(chartRefreshInstrumentIdCount(samsungId, "6M", "1d")).isEqualTo(1);
+        assertThat(tableInstrumentIdCount("crawl_targets", samsungId)).isEqualTo(1);
+    }
+
+    @Test
     void exposesChartCandlesWithDisplayOnlyContract() {
         Instant asOf = Instant.now().minusSeconds(60);
 
@@ -1656,6 +1777,60 @@ class IngestionApiIntegrationTest {
                 normalizedIdentifier,
                 purpose,
                 instrumentId
+        );
+    }
+
+    private int tableInstrumentIdCount(String tableName, Long instrumentId) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from " + tableName + " where instrument_id = ?",
+                Integer.class,
+                instrumentId
+        );
+    }
+
+    private int chartCandleSetInstrumentIdCount(Long instrumentId, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select count(*)
+                        from chart_candle_sets
+                        where instrument_id = ?
+                          and range_label = ?
+                          and candle_interval = ?
+                        """,
+                Integer.class,
+                instrumentId,
+                range,
+                interval
+        );
+    }
+
+    private int chartRefreshInstrumentIdCount(Long instrumentId, String range, String interval) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select count(*)
+                        from chart_candle_refresh_requests
+                        where instrument_id = ?
+                          and range_label = ?
+                          and candle_interval = ?
+                        """,
+                Integer.class,
+                instrumentId,
+                range,
+                interval
+        );
+    }
+
+    private int investorFlowInstrumentIdCount(Long instrumentId, LocalDate tradeDate) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select count(*)
+                        from investor_flow_snapshots
+                        where instrument_id = ?
+                          and trade_date = ?
+                        """,
+                Integer.class,
+                instrumentId,
+                tradeDate
         );
     }
 

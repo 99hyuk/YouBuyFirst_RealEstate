@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 
 public record ChartCandleResponse(
+        Long instrumentId,
         String symbol,
         String name,
         String market,

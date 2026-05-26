@@ -22,6 +22,9 @@ public class QuoteSnapshot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "instrument_id")
+    private Long instrumentId;
+
     @Column(nullable = false, length = 40)
     private String symbol;
 
@@ -65,10 +68,16 @@ public class QuoteSnapshot {
     }
 
     public QuoteSnapshot(String symbol) {
+        this(null, symbol);
+    }
+
+    public QuoteSnapshot(Long instrumentId, String symbol) {
+        this.instrumentId = instrumentId;
         this.symbol = symbol;
     }
 
     public void update(
+            Long instrumentId,
             String name,
             String market,
             String currency,
@@ -82,6 +91,7 @@ public class QuoteSnapshot {
             String dataStatus,
             Instant collectedAt
     ) {
+        this.instrumentId = instrumentId;
         this.name = name;
         this.market = market;
         this.currency = currency;
@@ -94,6 +104,10 @@ public class QuoteSnapshot {
         this.delayLabel = delayLabel;
         this.dataStatus = dataStatus;
         this.collectedAt = collectedAt;
+    }
+
+    public Long getInstrumentId() {
+        return instrumentId;
     }
 
     public String getSymbol() {

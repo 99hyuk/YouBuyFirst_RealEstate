@@ -33,6 +33,9 @@ public class CrawlTarget {
     @Column(nullable = false, length = 20)
     private CrawlTargetStatus status;
 
+    @Column(name = "instrument_id")
+    private Long instrumentId;
+
     @Column(length = 20)
     private String market;
 
@@ -158,6 +161,10 @@ public class CrawlTarget {
 
     public CrawlTargetStatus getStatus() {
         return status;
+    }
+
+    public Long getInstrumentId() {
+        return instrumentId;
     }
 
     public String getMarket() {

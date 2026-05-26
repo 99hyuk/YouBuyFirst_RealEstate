@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class InvestorFlowSnapshotService {
@@ -23,13 +24,16 @@ public class InvestorFlowSnapshotService {
     private static final int MAX_LIMIT = 120;
 
     private final InvestorFlowSnapshotRepository repository;
+    private final MarketSymbolResolver symbolResolver;
     private final Duration staleAfter;
 
     public InvestorFlowSnapshotService(
             InvestorFlowSnapshotRepository repository,
+            MarketSymbolResolver symbolResolver,
             @Value("${app.market.investor-flow-stale-minutes:5760}") long investorFlowStaleMinutes
     ) {
         this.repository = repository;
+        this.symbolResolver = symbolResolver;
         this.staleAfter = Duration.ofMinutes(investorFlowStaleMinutes);
     }
 
@@ -41,10 +45,11 @@ public class InvestorFlowSnapshotService {
             if (!PUBLIC_HISTORY_STATUSES.contains(dataStatus)) {
                 continue;
             }
-            String symbol = normalize(request.symbol());
-            InvestorFlowSnapshot snapshot = repository.findBySymbolIgnoreCaseAndTradeDate(symbol, request.tradeDate())
-                    .orElseGet(() -> new InvestorFlowSnapshot(symbol));
+            MarketInstrument instrument = symbolResolver.resolve(request.symbol());
+            InvestorFlowSnapshot snapshot = findExisting(instrument, request.tradeDate())
+                    .orElseGet(() -> new InvestorFlowSnapshot(instrument.instrumentId(), instrument.symbol()));
             snapshot.update(
+                    instrument.instrumentId(),
                     request.name().trim(),
                     normalize(request.market()),
                     normalize(request.currency()),
@@ -65,11 +70,19 @@ public class InvestorFlowSnapshotService {
 
     @Transactional(readOnly = true)
     public List<InvestorFlowSnapshotResponse> history(String symbol, Integer limit) {
-        return repository.findBySymbolIgnoreCaseAndDataStatusInOrderByTradeDateDesc(
-                        normalize(symbol),
+        MarketInstrument instrument = symbolResolver.resolve(symbol);
+        List<InvestorFlowSnapshot> snapshots = instrument.instrumentId() == null
+                ? repository.findBySymbolIgnoreCaseAndDataStatusInOrderByTradeDateDesc(
+                        instrument.symbol(),
                         PUBLIC_HISTORY_STATUSES,
                         PageRequest.of(0, boundedLimit(limit))
-                ).stream()
+                )
+                : repository.findByInstrumentIdAndDataStatusInOrderByTradeDateDesc(
+                        instrument.instrumentId(),
+                        PUBLIC_HISTORY_STATUSES,
+                        PageRequest.of(0, boundedLimit(limit))
+                );
+        return snapshots.stream()
                 .filter(snapshot -> PUBLIC_HISTORY_STATUSES.contains(normalize(snapshot.getDataStatus())))
                 .map(this::toResponse)
                 .toList();
@@ -78,6 +91,7 @@ public class InvestorFlowSnapshotService {
     private InvestorFlowSnapshotResponse toResponse(InvestorFlowSnapshot snapshot) {
         boolean stale = isStale(snapshot);
         return new InvestorFlowSnapshotResponse(
+                snapshot.getInstrumentId(),
                 snapshot.getSymbol(),
                 snapshot.getName(),
                 snapshot.getMarket(),
@@ -112,6 +126,19 @@ public class InvestorFlowSnapshotService {
             return true;
         }
         return snapshot.getAsOf().plus(staleAfter).isBefore(Instant.now());
+    }
+
+    private Optional<InvestorFlowSnapshot> findExisting(MarketInstrument instrument, java.time.LocalDate tradeDate) {
+        if (instrument.instrumentId() != null) {
+            Optional<InvestorFlowSnapshot> byInstrument = repository.findFirstByInstrumentIdAndTradeDate(
+                    instrument.instrumentId(),
+                    tradeDate
+            );
+            if (byInstrument.isPresent()) {
+                return byInstrument;
+            }
+        }
+        return repository.findBySymbolIgnoreCaseAndTradeDate(instrument.symbol(), tradeDate);
     }
 
     private static int boundedLimit(Integer limit) {

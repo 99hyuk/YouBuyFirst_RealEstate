@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -25,17 +26,31 @@ public class ChartCandleRefreshRequestService {
     );
 
     private final ChartCandleRefreshRequestRepository repository;
+    private final MarketSymbolResolver symbolResolver;
 
-    public ChartCandleRefreshRequestService(ChartCandleRefreshRequestRepository repository) {
+    public ChartCandleRefreshRequestService(
+            ChartCandleRefreshRequestRepository repository,
+            MarketSymbolResolver symbolResolver
+    ) {
         this.repository = repository;
+        this.symbolResolver = symbolResolver;
     }
 
     @Transactional
     public void request(String symbol, String range, String interval) {
+        request(symbolResolver.resolve(symbol), range, interval);
+    }
+
+    @Transactional
+    public void request(MarketInstrument instrument, String range, String interval) {
         Instant now = Instant.now();
-        ChartCandleRefreshRequest request = repository
-                .findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(symbol, range, interval)
-                .orElseGet(() -> new ChartCandleRefreshRequest(symbol, range, interval, now));
+        Optional<ChartCandleRefreshRequest> existingByInstrument = instrument.instrumentId() == null
+                ? Optional.empty()
+                : repository.findFirstByInstrumentIdAndRangeLabelAndCandleInterval(instrument.instrumentId(), range, interval);
+        ChartCandleRefreshRequest request = existingByInstrument
+                .or(() -> repository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(instrument.symbol(), range, interval))
+                .orElseGet(() -> new ChartCandleRefreshRequest(instrument.instrumentId(), instrument.symbol(), range, interval, now));
+        request.bindInstrument(instrument.instrumentId(), instrument.symbol());
         if (!ChartCandleRefreshRequest.STATUS_PENDING.equals(request.getStatus())
                 && !request.isActiveInProgress(now, CLAIM_LEASE_DURATION)) {
             request.requestAgain(now);
@@ -62,6 +77,7 @@ public class ChartCandleRefreshRequestService {
                 .stream()
                 .peek(request -> request.claim(now))
                 .map(request -> new ChartCandleRefreshRequestResponse(
+                        request.getInstrumentId(),
                         request.getSymbol(),
                         request.getRangeLabel(),
                         request.getCandleInterval(),
@@ -73,14 +89,24 @@ public class ChartCandleRefreshRequestService {
 
     @Transactional
     public boolean canAcceptCompletion(String symbol, String range, String interval, String refreshAttemptToken) {
-        return repository.findLockedBySymbolAndRangeLabelAndCandleInterval(symbol, range, interval)
+        return canAcceptCompletion(symbolResolver.resolve(symbol), range, interval, refreshAttemptToken);
+    }
+
+    @Transactional
+    public boolean canAcceptCompletion(MarketInstrument instrument, String range, String interval, String refreshAttemptToken) {
+        return findLocked(instrument, range, interval)
                 .map(request -> canAcceptCompletion(request, refreshAttemptToken))
                 .orElse(isBlank(refreshAttemptToken));
     }
 
     @Transactional
     public void markCompleted(String symbol, String range, String interval, String refreshAttemptToken) {
-        repository.findLockedBySymbolAndRangeLabelAndCandleInterval(symbol, range, interval)
+        markCompleted(symbolResolver.resolve(symbol), range, interval, refreshAttemptToken);
+    }
+
+    @Transactional
+    public void markCompleted(MarketInstrument instrument, String range, String interval, String refreshAttemptToken) {
+        findLocked(instrument, range, interval)
                 .filter(request -> canAcceptCompletion(request, refreshAttemptToken))
                 .ifPresent(request -> request.complete(Instant.now()));
     }
@@ -90,13 +116,24 @@ public class ChartCandleRefreshRequestService {
         if (isBlank(failureRequest.refreshAttemptToken())) {
             return;
         }
-        repository.findLockedBySymbolAndRangeLabelAndCandleInterval(
-                        failureRequest.symbol(),
-                        failureRequest.range(),
-                        failureRequest.interval()
-                )
+        MarketInstrument instrument = symbolResolver.resolve(failureRequest.symbol());
+        findLocked(instrument, failureRequest.range(), failureRequest.interval())
                 .filter(request -> request.isActiveAttempt(failureRequest.refreshAttemptToken()))
                 .ifPresent(request -> request.fail(Instant.now(), failureRequest.errorMessage()));
+    }
+
+    private Optional<ChartCandleRefreshRequest> findLocked(MarketInstrument instrument, String range, String interval) {
+        if (instrument.instrumentId() != null) {
+            Optional<ChartCandleRefreshRequest> byInstrument = repository.findLockedByInstrumentIdAndRangeLabelAndCandleInterval(
+                    instrument.instrumentId(),
+                    range,
+                    interval
+            );
+            if (byInstrument.isPresent()) {
+                return byInstrument;
+            }
+        }
+        return repository.findLockedBySymbolAndRangeLabelAndCandleInterval(instrument.symbol(), range, interval);
     }
 
     private static boolean isBlank(String value) {

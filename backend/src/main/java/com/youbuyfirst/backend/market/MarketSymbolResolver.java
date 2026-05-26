@@ -1,10 +1,14 @@
 package com.youbuyfirst.backend.market;
 
+import com.youbuyfirst.backend.instrument.Instrument;
+import com.youbuyfirst.backend.instrument.InstrumentIdentifier;
+import com.youbuyfirst.backend.instrument.InstrumentIdentifierRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -20,9 +24,17 @@ public class MarketSymbolResolver {
     private static final Map<String, MarketInstrument> KNOWN_INSTRUMENTS = knownInstruments();
     private static final Map<String, String> SYMBOL_ALIASES = symbolAliases();
 
+    private final InstrumentIdentifierRepository identifierRepository;
+
+    public MarketSymbolResolver(InstrumentIdentifierRepository identifierRepository) {
+        this.identifierRepository = identifierRepository;
+    }
+
     public MarketInstrument resolve(String value) {
         String symbol = normalizeProviderSymbol(value);
-        return KNOWN_INSTRUMENTS.getOrDefault(symbol, infer(symbol));
+        return findMarketDataIdentifier(symbol)
+                .map(this::toMarketInstrument)
+                .orElseGet(() -> KNOWN_INSTRUMENTS.getOrDefault(symbol, infer(symbol)));
     }
 
     public String normalizeProviderSymbol(String value) {
@@ -80,6 +92,32 @@ public class MarketSymbolResolver {
 
     private static String normalizeKey(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT).replace(" ", "");
+    }
+
+    private Optional<InstrumentIdentifier> findMarketDataIdentifier(String symbol) {
+        return identifierRepository.findByNamespaceIgnoreCaseAndNormalizedIdentifierAndPurposeIgnoreCaseAndEnabledTrue(
+                "YFINANCE",
+                InstrumentIdentifier.normalizeIdentifier(symbol),
+                "MARKET_DATA"
+        );
+    }
+
+    private MarketInstrument toMarketInstrument(InstrumentIdentifier identifier) {
+        Instrument instrument = identifier.getInstrument();
+        String name = instrument.getNameEn() == null || instrument.getNameEn().isBlank()
+                ? instrument.getNameKo()
+                : instrument.getNameEn();
+        return new MarketInstrument(
+                instrument.getId(),
+                identifier.getIdentifier(),
+                name,
+                instrument.getMarket(),
+                currencyFor(instrument.getMarket())
+        );
+    }
+
+    private static String currencyFor(String market) {
+        return "KR".equalsIgnoreCase(market) ? "KRW" : "USD";
     }
 
     private static Map<String, MarketInstrument> knownInstruments() {
