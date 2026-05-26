@@ -18,6 +18,9 @@ public record InstrumentAliasCandidateView(
         Instant lastSeenAt,
         Integer occurrenceCount,
         String status,
+        String reviewer,
+        String reviewNotes,
+        Instant reviewedAt,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -36,6 +39,9 @@ public record InstrumentAliasCandidateView(
                 candidate.getLastSeenAt(),
                 candidate.getOccurrenceCount(),
                 candidate.getStatus(),
+                candidate.getReviewer(),
+                candidate.getReviewNotes(),
+                candidate.getReviewedAt(),
                 candidate.getCreatedAt(),
                 candidate.getUpdatedAt()
         );

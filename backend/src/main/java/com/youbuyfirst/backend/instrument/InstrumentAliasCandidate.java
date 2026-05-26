@@ -60,6 +60,15 @@ public class InstrumentAliasCandidate {
     @Column(nullable = false, length = 40)
     private String status;
 
+    @Column(length = 80)
+    private String reviewer;
+
+    @Column(name = "review_notes", length = 500)
+    private String reviewNotes;
+
+    @Column(name = "reviewed_at")
+    private Instant reviewedAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -115,6 +124,18 @@ public class InstrumentAliasCandidate {
         this.updatedAt = updatedAt;
     }
 
+    public void markReviewed(String status, String reviewer, String reviewNotes, Instant reviewedAt) {
+        this.status = status;
+        this.reviewer = reviewer;
+        this.reviewNotes = reviewNotes;
+        this.reviewedAt = reviewedAt;
+        this.updatedAt = reviewedAt;
+    }
+
+    public void markPromoted(String reviewer, String reviewNotes, Instant reviewedAt) {
+        markReviewed("PROMOTED", reviewer, reviewNotes, reviewedAt);
+    }
+
     public Long getId() {
         return id;
     }
@@ -165,6 +186,18 @@ public class InstrumentAliasCandidate {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getReviewer() {
+        return reviewer;
+    }
+
+    public String getReviewNotes() {
+        return reviewNotes;
+    }
+
+    public Instant getReviewedAt() {
+        return reviewedAt;
     }
 
     public Instant getCreatedAt() {

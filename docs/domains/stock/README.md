@@ -9,12 +9,15 @@
 - `status=BLOCKED` alias는 일반명사 충돌처럼 오탐 위험이 큰 표현입니다. 집계와 후보 큐 모두에서 제외합니다.
 - `instrument_alias_candidates`: 커뮤니티에서 관찰된 은어/별칭 후보 큐입니다. 같은 `source + normalizedAlias + suggestedMarket + suggestedSymbol`은 occurrence를 누적합니다.
 - pipeline은 `INSTRUMENT_ALIAS_CSV_PATH`로 alias rule CSV를 읽고, review alias가 보이면 `aliasCandidates` ingestion payload로 backend에 보냅니다.
+- 후보 상태는 `PENDING -> SUGGESTED/REJECTED/PROMOTED` 흐름으로 봅니다. `SUGGESTED`는 AI/사람이 "그럴듯함"으로 판정한 상태일 뿐이고, `PROMOTED`가 되어 `instrument_aliases(status=ACCEPTED, ambiguous=false)`에 들어가기 전까지는 집계에 쓰지 않습니다.
+- 운영용 API는 `POST /admin/alias-candidates/{candidateId}/review`로 `SUGGESTED` 또는 `REJECTED` 판정을 저장하고, `POST /admin/alias-candidates/{candidateId}/promote`로 승인 후보를 정식 alias로 승격합니다.
 
 운영 원칙:
 
 - 새 은어는 바로 `post_mentions`에 넣지 않습니다.
 - 후보의 occurrence, sampleUrl, contextSnippet을 보고 승인할 때만 alias registry에서 `ACCEPTED`로 승격합니다.
 - 승인 전 후보는 급증 종목/반응 방향/개미 심리 지수의 정식 count에 섞지 않습니다.
+- 같은 normalized alias가 이미 다른 종목의 확정 alias로 있으면 자동 승격하지 않습니다.
 
 ## 역할
 

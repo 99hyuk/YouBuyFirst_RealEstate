@@ -86,6 +86,7 @@
 
 - [ ] 국내/미국 종목 master seed와 provider symbol 매핑
 - [x] alias registry와 은어 후보 관리: 확정 alias와 후보 alias를 분리하고, 후보는 집계에 바로 넣지 않고 `instrument_alias_candidates`로 누적
+- [x] alias 후보 심사/승격 흐름: `SUGGESTED/REJECTED/PROMOTED` 상태와 admin review/promote API로 승인 alias만 집계에 반영
 - [ ] 커뮤니티 종목 후보와 market provider symbol을 같은 canonical key로 연결: 전체 국내/미국 master 확장과 provider suffix 정렬은 후속 작업
 
 ### community

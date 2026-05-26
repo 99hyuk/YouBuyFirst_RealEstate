@@ -70,6 +70,28 @@ public class InstrumentAlias {
         this.updatedAt = this.createdAt;
     }
 
+    public InstrumentAlias(
+            Instrument instrument,
+            String alias,
+            String source,
+            Double confidence,
+            String status,
+            Boolean ambiguous,
+            String notes,
+            Instant createdAt
+    ) {
+        this.instrument = instrument;
+        this.alias = alias;
+        this.normalizedAlias = normalizeAlias(alias);
+        this.source = source;
+        this.confidence = confidence;
+        this.status = status;
+        this.ambiguous = ambiguous;
+        this.notes = notes;
+        this.createdAt = createdAt;
+        this.updatedAt = createdAt;
+    }
+
     public Long getId() {
         return id;
     }

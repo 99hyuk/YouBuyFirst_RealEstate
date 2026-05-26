@@ -18,4 +18,6 @@ public interface InstrumentAliasRepository extends JpaRepository<InstrumentAlias
             String status,
             Pageable pageable
     );
+
+    List<InstrumentAlias> findByNormalizedAliasAndStatusIgnoreCaseAndAmbiguousFalse(String normalizedAlias, String status);
 }
