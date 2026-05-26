@@ -19,6 +19,18 @@
 - 승인 전 후보는 급증 종목/반응 방향/개미 심리 지수의 정식 count에 섞지 않습니다.
 - 같은 normalized alias가 이미 다른 종목의 확정 alias로 있으면 자동 승격하지 않습니다.
 
+## Instrument Identifiers
+
+`instruments.id`는 서비스 내부의 종목 기준 ID입니다. `instrument_identifiers`는 이 종목이 외부 제공처나 수집 대상에서 어떤 값으로 불리는지 연결합니다.
+
+- `namespace`: 식별자 체계입니다. 예: `YFINANCE`, `KRX_TICKER`, `US_TICKER`, `NAVER_STOCK_BOARD`.
+- `identifier`: 제공처/게시판에서 쓰는 원문 값입니다. 예: `005930.KS`, `005930`, `TSLA`.
+- `normalized_identifier`: 중복 비교용 정규화 값입니다. 대소문자와 공백 차이 때문에 같은 종목이 둘로 갈라지는 일을 막습니다.
+- `purpose`: 사용 목적입니다. 예: `MARKET_DATA`, `EXCHANGE_REFERENCE`, `COMMUNITY_BOARD`.
+- `source`: 이 매핑을 넣은 출처입니다. 예: `seed`, `admin`, `crawler_candidate`, `ai_review`.
+
+식별자는 시세/차트/수급/종목형 게시판처럼 외부 시스템에 접근하기 위한 키입니다. 커뮤니티 은어와 별칭은 `instrument_aliases`와 `instrument_alias_candidates`에서 관리합니다.
+
 ## 역할
 
 종목을 식별하고 여러 도메인이 같은 종목을 같은 키로 다루게 만드는 기준 도메인입니다. 커뮤니티 글, 시세 provider, 화면 검색, 에이전트 판단이 모두 이 도메인의 종목 기준을 참조합니다.
@@ -36,16 +48,17 @@
 
 | 항목 | 기준 |
 | --- | --- |
-| 종목 key | 시장 suffix를 포함한 provider-safe symbol을 우선 사용합니다. 예: `005930.KS`, `AAPL` |
+| 내부 종목 key | `instruments.id`를 우선 사용합니다. |
+| 외부 식별자 | `instrument_identifiers.namespace + normalized_identifier + purpose`로 찾습니다. |
 | 별칭 | 승인된 alias registry와 후보 alias를 구분합니다. |
 | 불확실한 매칭 | 추측으로 확정하지 않고 confidence와 후보 상태를 둡니다. |
 
 ## 다른 도메인과의 접점
 
 - `community`: 글에서 종목 후보를 찾을 때 stock 기준을 씁니다.
-- `market`: quote/chart/investor flow provider symbol과 매핑합니다.
-- `indicator`: 30분 snapshot과 지표를 같은 symbol 기준으로 집계합니다.
-- `agent`: 판단 key와 결정 로그의 symbol 기준으로 씁니다.
+- `market`: quote/chart/investor flow provider symbol과 `instrument_id`를 매핑합니다.
+- `indicator`: 30분 snapshot과 지표를 같은 `instrument_id` 기준으로 집계합니다.
+- `agent`: 판단 key와 결정 로그에서 같은 `instrument_id`를 씁니다.
 - `layers/ui`: 검색창, 종목 카드, 상세 route에서 표시 이름과 symbol을 사용합니다.
 
 ## 하지 않는 일

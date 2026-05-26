@@ -43,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -62,6 +63,24 @@ class IngestionApiIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Test
+    void seedsProviderIdentifiersByNamespaceAndPurpose() {
+        Long samsungId = instrumentId("KR", "005930");
+        Long teslaId = instrumentId("US", "TSLA");
+
+        assertThat(identifierCount("YFINANCE", "005930.KS", "MARKET_DATA", samsungId)).isEqualTo(1);
+        assertThat(identifierCount("KRX_TICKER", "005930", "EXCHANGE_REFERENCE", samsungId)).isEqualTo(1);
+        assertThat(identifierCount("NAVER_STOCK_BOARD", "005930", "COMMUNITY_BOARD", samsungId)).isEqualTo(1);
+        assertThat(identifierCount("YFINANCE", "TSLA", "MARKET_DATA", teslaId)).isEqualTo(1);
+        assertThat(identifierCount("US_TICKER", "TSLA", "EXCHANGE_REFERENCE", teslaId)).isEqualTo(1);
+
+        insertInstrumentIdentifier(samsungId, "NAVER_STOCK_BOARD", "005930", "005930", "SEARCH", "test");
+        assertThat(identifierCount("NAVER_STOCK_BOARD", "005930", "SEARCH", samsungId)).isEqualTo(1);
+
+        assertThatThrownBy(() -> insertInstrumentIdentifier(teslaId, "NAVER_STOCK_BOARD", "005930", "005930", "COMMUNITY_BOARD", "test"))
+                .isInstanceOf(Exception.class);
+    }
 
     @Test
     void ingestsCommunityPostsIdempotentlyAndCreatesMetrics() {
@@ -1619,6 +1638,49 @@ class IngestionApiIntegrationTest {
                 Long.class,
                 market,
                 symbol
+        );
+    }
+
+    private int identifierCount(String namespace, String normalizedIdentifier, String purpose, Long instrumentId) {
+        return jdbcTemplate.queryForObject(
+                """
+                        select count(*)
+                        from instrument_identifiers
+                        where namespace = ?
+                          and normalized_identifier = ?
+                          and purpose = ?
+                          and instrument_id = ?
+                        """,
+                Integer.class,
+                namespace,
+                normalizedIdentifier,
+                purpose,
+                instrumentId
+        );
+    }
+
+    private void insertInstrumentIdentifier(
+            Long instrumentId,
+            String namespace,
+            String identifier,
+            String normalizedIdentifier,
+            String purpose,
+            String source
+    ) {
+        jdbcTemplate.update(
+                """
+                        insert into instrument_identifiers
+                            (instrument_id, namespace, identifier, normalized_identifier, purpose, source, enabled, created_at, updated_at)
+                        values (?, ?, ?, ?, ?, ?, true, ?, ?)
+                        """,
+                instrumentId,
+                namespace,
+                identifier,
+                normalizedIdentifier,
+                purpose,
+                source,
+                Timestamp.from(Instant.parse("2026-01-01T00:00:00Z")),
+                Timestamp.from(Instant.parse("2026-01-01T00:00:00Z"))
         );
     }
 
