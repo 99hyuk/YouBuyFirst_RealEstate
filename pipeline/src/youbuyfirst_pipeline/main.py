@@ -12,7 +12,12 @@ from dotenv import load_dotenv
 
 from youbuyfirst_pipeline.board_stream import BoardStreamCrawler
 from youbuyfirst_pipeline.client import SpringIngestionClient
-from youbuyfirst_pipeline.crawl_targets import CrawlTarget, CrawlTargetKind, default_crawl_targets
+from youbuyfirst_pipeline.crawl_targets import (
+    DEFAULT_NAVER_STOCK_BOARD_TARGET_LIMIT,
+    CrawlTarget,
+    CrawlTargetKind,
+    default_crawl_targets,
+)
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher
 from youbuyfirst_pipeline.crawlers.dcinside import DcinsideAdapter
 from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
@@ -61,6 +66,11 @@ def build_pipeline() -> CommunityPipeline:
     targets = default_crawl_targets(
         instruments,
         naver_stock_codes=_configured_naver_codes(os.getenv("NAVER_STOCK_CODES")),
+        naver_watchlist_codes=_configured_naver_codes(os.getenv("NAVER_WATCHLIST_CODES")),
+        stock_board_target_limit=_configured_int(
+            os.getenv("NAVER_STOCK_TARGET_LIMIT"),
+            DEFAULT_NAVER_STOCK_BOARD_TARGET_LIMIT,
+        ),
         fmkorea_url=os.getenv("FMKOREA_STOCK_URL"),
     )
     adapters = _adapters_from_targets(targets, fetcher, stream_crawler=_stream_crawler_from_env())
@@ -88,6 +98,12 @@ def _configured_naver_codes(value: str | None) -> list[str] | None:
     if not value:
         return None
     return [code.strip() for code in value.split(",") if code.strip()]
+
+
+def _configured_int(value: str | None, default: int) -> int:
+    if not value:
+        return default
+    return int(value)
 
 
 def _stream_crawler_from_env() -> BoardStreamCrawler:

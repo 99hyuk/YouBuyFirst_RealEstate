@@ -25,6 +25,7 @@ class CrawlTarget:
     target_id: str
     kind: CrawlTargetKind
     priority: int = 100
+    crawl_interval_seconds: int = 1800
     label: str = ""
     board_id: str | None = None
     market: str | None = None
@@ -38,6 +39,8 @@ class CrawlTarget:
             raise ValueError("source is required")
         if self.priority < 0:
             raise ValueError("priority must be zero or greater")
+        if self.crawl_interval_seconds <= 0:
+            raise ValueError("crawl_interval_seconds must be greater than zero")
         object.__setattr__(self, "source", normalized_source)
         object.__setattr__(self, "kind", CrawlTargetKind(self.kind))
         object.__setattr__(self, "target_id", self.target_id.strip())
@@ -52,6 +55,7 @@ class CrawlTarget:
         symbol: str,
         priority: int = 100,
         label: str | None = None,
+        crawl_interval_seconds: int = 1800,
     ) -> CrawlTarget:
         normalized_source = source.strip().upper()
         normalized_market = market.strip().upper()
@@ -65,6 +69,7 @@ class CrawlTarget:
             target_id=f"{normalized_source}:{normalized_market}:{normalized_symbol}",
             kind=CrawlTargetKind.STOCK_BOARD,
             priority=priority,
+            crawl_interval_seconds=crawl_interval_seconds,
             label=label or f"{normalized_source} {normalized_market}:{normalized_symbol}",
             market=normalized_market,
             symbol=normalized_symbol,
@@ -78,6 +83,7 @@ class CrawlTarget:
         url: str | None = None,
         priority: int = 200,
         label: str | None = None,
+        crawl_interval_seconds: int = 1800,
     ) -> CrawlTarget:
         normalized_source = source.strip().upper()
         normalized_board_id = board_id.strip() if board_id else None
@@ -91,6 +97,7 @@ class CrawlTarget:
             target_id=target_id,
             kind=CrawlTargetKind.COMMUNITY_BOARD,
             priority=priority,
+            crawl_interval_seconds=crawl_interval_seconds,
             label=label or f"{normalized_source} {normalized_board_id or 'community'} board",
             board_id=normalized_board_id,
             url=url,
@@ -105,6 +112,7 @@ class CrawlTarget:
         url: str,
         priority: int = 260,
         label: str | None = None,
+        crawl_interval_seconds: int = 1800,
     ) -> CrawlTarget:
         normalized_source = source.strip().upper()
         normalized_board_id = board_id.strip()
@@ -120,11 +128,53 @@ class CrawlTarget:
             target_id=f"{normalized_source}:{normalized_board_id}:diffusion:{normalized_diffusion_type}",
             kind=CrawlTargetKind.GENERAL_BOARD_DIFFUSION,
             priority=priority,
+            crawl_interval_seconds=crawl_interval_seconds,
             label=label or f"{normalized_source} {normalized_board_id} {normalized_diffusion_type} diffusion",
             board_id=normalized_board_id,
             url=url.strip(),
             diffusion_type=normalized_diffusion_type,
         )
+
+
+@dataclass(frozen=True)
+class StockBoardTargetCandidate:
+    symbol: str
+    reason: str
+    priority: int = 120
+    crawl_interval_seconds: int = 3600
+    label: str | None = None
+
+
+NAVER_STOCK_BOARD_TARGET_HARD_LIMIT = 30
+DEFAULT_NAVER_STOCK_BOARD_TARGET_LIMIT = 25
+
+_DEFAULT_NAVER_STOCK_BOARD_CANDIDATES: tuple[StockBoardTargetCandidate, ...] = (
+    StockBoardTargetCandidate("005930", reason="core-large-cap", label="Samsung Electronics board"),
+    StockBoardTargetCandidate("000660", reason="core-large-cap", label="SK Hynix board"),
+    StockBoardTargetCandidate("069500", reason="core-etf", label="KODEX 200 board"),
+    StockBoardTargetCandidate("454910", reason="core-etf", label="KODEX KOSDAQ Global board"),
+    StockBoardTargetCandidate("035420", reason="core-large-cap", label="NAVER board"),
+    StockBoardTargetCandidate("005380", reason="core-large-cap", label="Hyundai Motor board"),
+    StockBoardTargetCandidate("207940", reason="core-large-cap", label="Samsung Biologics board"),
+    StockBoardTargetCandidate("068270", reason="core-large-cap", label="Celltrion board"),
+    StockBoardTargetCandidate("105560", reason="core-large-cap", label="KB Financial board"),
+    StockBoardTargetCandidate("055550", reason="core-large-cap", label="Shinhan Financial board"),
+    StockBoardTargetCandidate("035720", reason="core-large-cap", label="Kakao board"),
+    StockBoardTargetCandidate("051910", reason="core-large-cap", label="LG Chem board"),
+    StockBoardTargetCandidate("006400", reason="core-large-cap", label="Samsung SDI board"),
+    StockBoardTargetCandidate("005490", reason="core-large-cap", label="POSCO Holdings board"),
+    StockBoardTargetCandidate("042700", reason="core-large-cap", label="Hanmi Semiconductor board"),
+    StockBoardTargetCandidate("086520", reason="core-large-cap", label="Ecopro board"),
+    StockBoardTargetCandidate("247540", reason="core-large-cap", label="Ecopro BM board"),
+    StockBoardTargetCandidate("196170", reason="core-large-cap", label="Alteogen board"),
+    StockBoardTargetCandidate("035900", reason="core-large-cap", label="JYP Ent. board"),
+    StockBoardTargetCandidate("133690", reason="core-etf", label="TIGER NASDAQ 100 board"),
+    StockBoardTargetCandidate("102110", reason="core-etf", label="TIGER 200 board"),
+    StockBoardTargetCandidate("252670", reason="core-etf", label="KODEX 200 Futures Inverse 2X board"),
+    StockBoardTargetCandidate("251340", reason="core-etf", label="KODEX KOSDAQ150 Futures Inverse board"),
+    StockBoardTargetCandidate("229200", reason="core-etf", label="KODEX KOSDAQ150 board"),
+    StockBoardTargetCandidate("122630", reason="core-etf", label="KODEX Leverage board"),
+)
 
 
 @dataclass(frozen=True)
@@ -234,17 +284,19 @@ def community_board_registry(fmkorea_url: str | None = None) -> tuple[CommunityB
 def default_crawl_targets(
     instruments: Iterable[Instrument],
     naver_stock_codes: Iterable[str] | None = None,
+    naver_watchlist_codes: Iterable[str] | None = None,
+    stock_board_target_limit: int = DEFAULT_NAVER_STOCK_BOARD_TARGET_LIMIT,
     fmkorea_url: str | None = None,
+    extra_stock_board_candidates: Iterable[StockBoardTargetCandidate] | None = None,
 ) -> list[CrawlTarget]:
-    if naver_stock_codes is None:
-        naver_codes = [instrument.symbol for instrument in instruments if instrument.market.upper() == "KR"]
-    else:
-        naver_codes = list(naver_stock_codes)
+    _ = instruments
+    watchlist_codes = _first_non_empty(naver_watchlist_codes, naver_stock_codes)
 
-    targets = [
-        CrawlTarget.stock_board("NAVER", market="KR", symbol=code)
-        for code in _unique_non_empty(naver_codes)
-    ]
+    targets = build_naver_stock_board_targets(
+        watchlist_symbols=watchlist_codes,
+        extra_candidates=extra_stock_board_candidates,
+        max_targets=stock_board_target_limit,
+    )
     community_entries = [
         entry for entry in community_board_registry(fmkorea_url=fmkorea_url)
         if entry.enabled_by_default
@@ -261,6 +313,54 @@ def default_crawl_targets(
         )
     for entry in community_entries:
         targets.extend(_default_diffusion_targets(entry))
+    return targets
+
+
+def build_naver_stock_board_targets(
+    watchlist_symbols: Iterable[str] | None = None,
+    extra_candidates: Iterable[StockBoardTargetCandidate] | None = None,
+    max_targets: int = DEFAULT_NAVER_STOCK_BOARD_TARGET_LIMIT,
+) -> list[CrawlTarget]:
+    target_limit = min(max(max_targets, 0), NAVER_STOCK_BOARD_TARGET_HARD_LIMIT)
+    if target_limit == 0:
+        return []
+
+    candidates: list[StockBoardTargetCandidate] = []
+    for symbol in watchlist_symbols or ():
+        normalized_symbol = _normalize_naver_stock_code(symbol)
+        if not normalized_symbol:
+            continue
+        candidates.append(
+            StockBoardTargetCandidate(
+                symbol=normalized_symbol,
+                reason="watchlist",
+                priority=80,
+                crawl_interval_seconds=1800,
+                label=f"NAVER watchlist KR:{normalized_symbol}",
+            )
+        )
+    candidates.extend(extra_candidates or ())
+    candidates.extend(_DEFAULT_NAVER_STOCK_BOARD_CANDIDATES)
+
+    targets: list[CrawlTarget] = []
+    seen_symbols: set[str] = set()
+    for candidate in candidates:
+        symbol = _normalize_naver_stock_code(candidate.symbol)
+        if not symbol or symbol in seen_symbols:
+            continue
+        seen_symbols.add(symbol)
+        targets.append(
+            CrawlTarget.stock_board(
+                "NAVER",
+                market="KR",
+                symbol=symbol,
+                priority=candidate.priority,
+                label=candidate.label or f"NAVER {candidate.reason} KR:{symbol}",
+                crawl_interval_seconds=candidate.crawl_interval_seconds,
+            )
+        )
+        if len(targets) >= target_limit:
+            break
     return targets
 
 
@@ -282,13 +382,22 @@ def _default_diffusion_targets(entry: CommunityBoardRegistryEntry) -> list[Crawl
     return targets
 
 
-def _unique_non_empty(values: Iterable[str]) -> list[str]:
-    seen: set[str] = set()
-    unique: list[str] = []
+def _normalize_naver_stock_code(value: str) -> str:
+    normalized = value.strip().upper()
+    if normalized.startswith("KR:"):
+        normalized = normalized.removeprefix("KR:")
+    for suffix in (".KS", ".KQ", ".KR"):
+        if normalized.endswith(suffix):
+            normalized = normalized[: -len(suffix)]
+            break
+    return normalized.strip()
+
+
+def _first_non_empty(*values: Iterable[str] | None) -> list[str] | None:
     for value in values:
-        normalized = value.strip().upper()
-        if not normalized or normalized in seen:
+        if value is None:
             continue
-        seen.add(normalized)
-        unique.append(normalized)
-    return unique
+        items = [item for item in value if item.strip()]
+        if items:
+            return items
+    return None

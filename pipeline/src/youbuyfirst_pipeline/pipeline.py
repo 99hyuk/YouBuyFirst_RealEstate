@@ -376,6 +376,8 @@ def _target_result_context(adapter: CommunityAdapter) -> dict:
         "targetId": target.target_id,
         "targetKind": target.kind.value,
         "targetLabel": target.label,
+        "targetPriority": target.priority,
+        "targetIntervalSeconds": target.crawl_interval_seconds,
     }
     if target.market:
         context["targetMarket"] = target.market

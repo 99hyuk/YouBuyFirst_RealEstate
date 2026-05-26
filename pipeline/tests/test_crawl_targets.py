@@ -1,6 +1,8 @@
 from youbuyfirst_pipeline.crawl_targets import (
     CrawlTarget,
     CrawlTargetKind,
+    StockBoardTargetCandidate,
+    build_naver_stock_board_targets,
     community_board_registry,
     default_crawl_targets,
 )
@@ -17,6 +19,7 @@ def test_stock_board_target_normalizes_source_and_builds_stable_id():
         symbol="005930",
         priority=10,
         label="Samsung board",
+        crawl_interval_seconds=900,
     )
 
     assert target.source == "NAVER"
@@ -26,9 +29,10 @@ def test_stock_board_target_normalizes_source_and_builds_stable_id():
     assert target.target_id == "NAVER:KR:005930"
     assert target.priority == 10
     assert target.label == "Samsung board"
+    assert target.crawl_interval_seconds == 900
 
 
-def test_default_crawl_targets_use_selected_naver_codes_and_fmkorea_board():
+def test_default_crawl_targets_prioritize_watchlist_before_core_stock_board_targets():
     instruments = [
         Instrument(market="KR", symbol="005930", name="Samsung", aliases=[]),
         Instrument(market="KR", symbol="000660", name="SK Hynix", aliases=[]),
@@ -37,26 +41,24 @@ def test_default_crawl_targets_use_selected_naver_codes_and_fmkorea_board():
 
     targets = default_crawl_targets(
         instruments,
-        naver_stock_codes=["005930", "005930", "000660"],
+        naver_watchlist_codes=["000660", "005930.KS", "005930"],
+        stock_board_target_limit=5,
         fmkorea_url="https://example.com/stock",
     )
 
-    assert [target.target_id for target in targets] == [
-        "NAVER:KR:005930",
+    stock_targets = [target for target in targets if target.kind == CrawlTargetKind.STOCK_BOARD]
+    assert [target.target_id for target in stock_targets] == [
         "NAVER:KR:000660",
-        "FMKOREA:community-board",
-        "DCINSIDE:nyse",
-        "DCINSIDE:neostock",
-        "DCINSIDE:koreastock",
-        "PPOMPPU:stock",
-        "DCINSIDE:nyse:diffusion:concept",
-        "DCINSIDE:neostock:diffusion:concept",
-        "DCINSIDE:koreastock:diffusion:concept",
+        "NAVER:KR:005930",
+        "NAVER:KR:069500",
+        "NAVER:KR:454910",
+        "NAVER:KR:035420",
     ]
-    assert targets[0].kind == CrawlTargetKind.STOCK_BOARD
-    assert targets[2].kind == CrawlTargetKind.COMMUNITY_BOARD
-    assert targets[2].url == "https://example.com/stock"
-    latest_targets = [target for target in targets[2:] if target.kind == CrawlTargetKind.COMMUNITY_BOARD]
+    assert [target.priority for target in stock_targets] == [80, 80, 120, 120, 120]
+    assert [target.crawl_interval_seconds for target in stock_targets] == [1800, 1800, 3600, 3600, 3600]
+
+    latest_targets = [target for target in targets if target.kind == CrawlTargetKind.COMMUNITY_BOARD]
+    assert latest_targets[0].url == "https://example.com/stock"
     assert [(target.source, target.board_id) for target in latest_targets] == [
         ("FMKOREA", "stock"),
         ("DCINSIDE", "nyse"),
@@ -109,26 +111,73 @@ def test_community_diffusion_target_builds_separate_target_identity():
     assert target.priority == 215
 
 
-def test_default_crawl_targets_use_all_kr_instruments_when_codes_are_not_configured():
+def test_default_crawl_targets_do_not_expand_to_all_kr_instruments_when_watchlist_is_empty():
     instruments = [
         Instrument(market="KR", symbol="005930", name="Samsung", aliases=[]),
+        Instrument(market="KR", symbol="999999", name="Not in curated target list", aliases=[]),
         Instrument(market="US", symbol="AAPL", name="Apple", aliases=[]),
     ]
 
-    targets = default_crawl_targets(instruments)
+    targets = default_crawl_targets(instruments, stock_board_target_limit=3)
 
-    assert [target.target_id for target in targets] == [
+    stock_targets = [target for target in targets if target.kind == CrawlTargetKind.STOCK_BOARD]
+    assert [target.target_id for target in stock_targets] == [
         "NAVER:KR:005930",
-        "FMKOREA:community-board",
-        "DCINSIDE:nyse",
-        "DCINSIDE:neostock",
-        "DCINSIDE:koreastock",
-        "PPOMPPU:stock",
-        "DCINSIDE:nyse:diffusion:concept",
-        "DCINSIDE:neostock:diffusion:concept",
-        "DCINSIDE:koreastock:diffusion:concept",
+        "NAVER:KR:000660",
+        "NAVER:KR:069500",
     ]
-    assert targets[1].url == "https://www.fmkorea.com/stock"
+    assert "NAVER:KR:999999" not in [target.target_id for target in targets]
+    assert [target for target in targets if target.target_id == "FMKOREA:community-board"][0].url == "https://www.fmkorea.com/stock"
+
+
+def test_default_crawl_targets_falls_back_to_legacy_codes_when_watchlist_is_empty():
+    targets = default_crawl_targets(
+        [],
+        naver_stock_codes=["000660"],
+        naver_watchlist_codes=[],
+        stock_board_target_limit=2,
+    )
+
+    stock_targets = [target for target in targets if target.kind == CrawlTargetKind.STOCK_BOARD]
+    assert [target.target_id for target in stock_targets] == [
+        "NAVER:KR:000660",
+        "NAVER:KR:005930",
+    ]
+    assert stock_targets[0].priority == 80
+
+
+def test_naver_stock_board_target_limit_is_capped_to_thirty():
+    configured_codes = [f"{index:06d}" for index in range(1, 45)]
+
+    targets = build_naver_stock_board_targets(
+        watchlist_symbols=configured_codes,
+        max_targets=99,
+    )
+
+    assert len(targets) == 30
+    assert targets[0].target_id == "NAVER:KR:000001"
+    assert targets[-1].target_id == "NAVER:KR:000030"
+
+
+def test_naver_stock_board_builder_accepts_future_signal_candidates():
+    targets = build_naver_stock_board_targets(
+        extra_candidates=[
+            StockBoardTargetCandidate(
+                symbol="123456",
+                reason="surging-mention",
+                priority=60,
+                crawl_interval_seconds=900,
+                label="Surging mention sample",
+            )
+        ],
+        max_targets=1,
+    )
+
+    assert len(targets) == 1
+    assert targets[0].target_id == "NAVER:KR:123456"
+    assert targets[0].priority == 60
+    assert targets[0].crawl_interval_seconds == 900
+    assert targets[0].label == "Surging mention sample"
 
 
 def test_adapters_are_created_from_targets_with_target_metadata():

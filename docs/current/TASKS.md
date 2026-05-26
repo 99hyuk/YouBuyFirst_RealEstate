@@ -92,10 +92,12 @@
 
 - [ ] source/board registry와 `CrawlTarget` 우선순위 기준 정리
 - [ ] 일반 게시판형과 종목 게시판형 수집 정책 분리
+- [x] 네이버 종토방 target selector v1: 관심종목과 대형주/대표 ETF만 30개 이하로 만들고, 전체 국내 종목 전수 순회는 막음
 - [x] 인기글/개념글/조회수/추천수 확산 이벤트 저장/전달 계약 추가
 - [x] source별 인기글/개념글/추천글 URL registry와 기본 target 활성화 기준 정리
 - [x] 확산/고영향 글 기준 댓글 제한 수집 큐 구현
 - [ ] 급증 종목 댓글 trigger를 indicator output과 연결
+- [ ] 일반 게시판 언급 급증 종목, 포트폴리오 종목, 시장 영향 후보를 네이버 종토방 target selector의 `extra_candidates`로 연결
 - [ ] 제목, 제한 snippet, URL, 작성자 hash, 작성 시각, 원문 hash 저장 정책 점검
 
 ### indicator
