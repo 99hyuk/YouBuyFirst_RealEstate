@@ -106,8 +106,9 @@
 
 ### indicator
 
-- [ ] `CommunityMetricSnapshot`와 `RetailSentimentIndex` 응답 shape 설계
-- [ ] 30분/1일/1주 window 집계 테스트 추가
+- [x] `CommunityIndicatorSnapshot` 30분 baseline 응답/API 구현: `marketMood`, `sourceMoods`, `stockMentionCounts`, `topKeywords`
+- [ ] `RetailSentimentIndex` 응답 shape 설계
+- [ ] 1일/1주 window 집계 테스트 추가
 - [ ] 소스 다양성, 표본 수, 신뢰도 배지 산식 분리
 - [ ] 과거 유사 반응 상황 검색 후보 데이터 모델 정리
 

@@ -37,12 +37,26 @@
 
 ## 현재 우선순위
 
-1. 30분 집계 산식 검증 테스트 추가
-2. 열기 지수 산식 문서화
-3. 개미 심리 지수 산식 문서화
+1. 30분 baseline snapshot을 기준으로 열기 지수 산식 문서화
+2. 개미 심리 지수 산식 문서화
+3. 1일/1주 window 집계 확장 범위 정리
 4. 커뮤니티별 성과 비교용 snapshot 모델 설계
 5. 커뮤니티 토픽 클러스터링 실험 범위 정리
 6. 종목 상세 팩트폭격 헤드라인에 넣을 지표 evidence schema 후보 정리
+
+## 구현된 snapshot
+
+`GET /api/indicators/community-snapshots?windowStart=2026-05-27T00:00:00Z`는 저장된 커뮤니티 글, 종목 mention, 반응 방향 분석을 30분 window로 다시 읽어 baseline snapshot을 계산합니다. `windowMinutes`는 기본 30분이며, 탐색용으로 1분부터 10,080분까지 지정할 수 있습니다.
+
+응답은 다음 묶음을 제공합니다.
+
+- `freshness`: 원천 테이블 묶음, `asOf`, 최신 글 작성 시각, stale 여부와 이유
+- `marketMood`: window 전체 mention 수, 낙관/비관/중립 count, net sentiment
+- `sourceMoods`: source와 board별 mention 수, 반응 방향 count, top keywords
+- `stockMentionCounts`: `instrumentId`, market, symbol, 이름, mention 수, 반응 방향 count, top keywords
+- `topKeywords`: window 전체 제목/snippet 기반 상위 키워드
+
+이 snapshot은 원천 데이터를 새로 수집하지 않습니다. 수집 주기는 community layer가 관리하고, indicator layer는 이미 저장된 데이터를 window 단위로 해석합니다. `asOf`는 window 안의 글 `crawledAt`과 반응 분석 `analyzedAt` 중 최신 시각입니다. `asOf`가 없거나 `windowEnd`보다 이르면 `stale=true`로 표시해, 아직 해당 window를 끝까지 처리하지 못한 값과 완료된 과거 snapshot을 구분합니다.
 
 ## 임베딩/클러스터링 적용 원칙
 

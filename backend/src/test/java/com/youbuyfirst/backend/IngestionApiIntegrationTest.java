@@ -269,6 +269,96 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void aggregatesCommunityIndicatorSnapshotForThirtyMinuteWindow() throws Exception {
+        Long ewjId = instrumentId("US", "EWJ");
+        Long ctwoId = instrumentId("US", "CTWO");
+        try {
+            restTemplate.postForEntity(
+                    "/internal/ingestions/community-posts",
+                    new IngestionRequest(
+                            "FMKOREA",
+                            "indicator-aggregation-fmkorea",
+                            Instant.parse("2026-05-27T00:00:00Z"),
+                            Instant.parse("2026-05-27T00:05:00Z"),
+                            List.of(new PostPayload(
+                                    "indicator-aggregation-fmk-1",
+                                    "https://www.fmkorea.com/stock/indicator-aggregation-1",
+                                    "EWJ battery rally",
+                                    "battery rally momentum",
+                                    "anonymous",
+                                    Instant.parse("2026-05-27T00:05:00Z"),
+                                    "indicator-aggregation-fmkorea",
+                                    1100,
+                                    11,
+                                    5,
+                                    List.of(new MentionPayload(ewjId, "US", "EWJ", "EWJ")),
+                                    List.of(new SentimentPayload(ewjId, "US", "EWJ", SentimentLabel.BULLISH, 0.91, "battery rally", "mock"))
+                            ))
+                    ),
+                    String.class
+            );
+            restTemplate.postForEntity(
+                    "/internal/ingestions/community-posts",
+                    new IngestionRequest(
+                            "DCINSIDE",
+                            "indicator-aggregation-dcinside",
+                            Instant.parse("2026-05-27T00:10:00Z"),
+                            Instant.parse("2026-05-27T00:15:00Z"),
+                            List.of(new PostPayload(
+                                    "indicator-aggregation-dc-1",
+                                    "https://gall.dcinside.com/mgallery/board/view/?id=indicator_aggregation&no=270527",
+                                    "CTWO chip risk",
+                                    "chip risk pressure",
+                                    "dc-user",
+                                    Instant.parse("2026-05-27T00:20:00Z"),
+                                    "indicator-aggregation-dcinside",
+                                    2200,
+                                    4,
+                                    31,
+                                    List.of(new MentionPayload(ctwoId, "US", "CTWO", "CTWO")),
+                                    List.of(new SentimentPayload(ctwoId, "US", "CTWO", SentimentLabel.BEARISH, 0.73, "chip risk", "mock"))
+                            ))
+                    ),
+                    String.class
+            );
+
+            String response = restTemplate.getForObject(
+                    "/api/indicators/community-snapshots?windowStart=2026-05-27T00:00:00Z",
+                    String.class
+            );
+
+            JsonNode snapshot = objectMapper.readTree(response);
+            assertThat(snapshot.get("windowStart").asText()).isEqualTo("2026-05-27T00:00:00Z");
+            assertThat(snapshot.get("windowEnd").asText()).isEqualTo("2026-05-27T00:30:00Z");
+            assertThat(snapshot.get("windowMinutes").asInt()).isEqualTo(30);
+            assertThat(snapshot.at("/freshness/source").asText()).isEqualTo("community_posts/post_mentions/sentiment_analyses");
+            assertThat(snapshot.at("/freshness/asOf").asText()).isNotBlank();
+            assertThat(snapshot.at("/freshness/latestPublishedAt").asText()).isEqualTo("2026-05-27T00:20:00Z");
+            assertThat(snapshot.at("/freshness/stale").asBoolean()).isFalse();
+            assertThat(snapshot.at("/freshness/staleReason").isNull()).isTrue();
+            assertThat(snapshot.at("/marketMood/mentionCount").asInt()).isEqualTo(2);
+            assertThat(snapshot.at("/marketMood/bullishCount").asInt()).isEqualTo(1);
+            assertThat(snapshot.at("/marketMood/bearishCount").asInt()).isEqualTo(1);
+            assertThat(snapshot.at("/marketMood/neutralCount").asInt()).isZero();
+            assertThat(snapshot.at("/marketMood/netSentiment").asDouble()).isEqualTo(0.0);
+            assertThat(snapshot.get("sourceMoods")).hasSize(2);
+            assertThat(response)
+                    .contains("\"source\":\"FMKOREA\"")
+                    .contains("\"boardId\":\"indicator-aggregation-fmkorea\"")
+                    .contains("\"source\":\"DCINSIDE\"")
+                    .contains("\"boardId\":\"indicator-aggregation-dcinside\"")
+                    .contains("\"instrumentId\":" + ewjId)
+                    .contains("\"symbol\":\"EWJ\"")
+                    .contains("\"instrumentId\":" + ctwoId)
+                    .contains("\"symbol\":\"CTWO\"")
+                    .contains("\"keyword\":\"battery\"")
+                    .contains("\"keyword\":\"chip\"");
+        } finally {
+            cleanupCommunityIndicatorSnapshotTestData();
+        }
+    }
+
+    @Test
     void recordsDiffusionEventsSeparatelyFromPostDeduplication() {
         IngestionRequest request = new IngestionRequest(
                 "DCINSIDE",
@@ -2157,6 +2247,67 @@ class IngestionApiIntegrationTest {
                 symbol,
                 range,
                 interval
+        );
+    }
+
+    private void cleanupCommunityIndicatorSnapshotTestData() {
+        jdbcTemplate.update(
+                """
+                        delete from sentiment_analyses
+                        where post_id in (
+                            select id from community_posts
+                            where (source = ? and external_id = ?)
+                               or (source = ? and external_id = ?)
+                        )
+                        """,
+                "FMKOREA",
+                "indicator-aggregation-fmk-1",
+                "DCINSIDE",
+                "indicator-aggregation-dc-1"
+        );
+        jdbcTemplate.update(
+                """
+                        delete from post_mentions
+                        where post_id in (
+                            select id from community_posts
+                            where (source = ? and external_id = ?)
+                               or (source = ? and external_id = ?)
+                        )
+                        """,
+                "FMKOREA",
+                "indicator-aggregation-fmk-1",
+                "DCINSIDE",
+                "indicator-aggregation-dc-1"
+        );
+        jdbcTemplate.update(
+                """
+                        delete from metric_snapshots
+                        where window_start = ?
+                          and instrument_id in (
+                              select id from instruments
+                              where market = ? and symbol in (?, ?)
+                          )
+                        """,
+                Timestamp.from(Instant.parse("2026-05-27T00:00:00Z")),
+                "US",
+                "EWJ",
+                "CTWO"
+        );
+        jdbcTemplate.update(
+                """
+                        delete from community_posts
+                        where (source = ? and external_id = ?)
+                           or (source = ? and external_id = ?)
+                        """,
+                "FMKOREA",
+                "indicator-aggregation-fmk-1",
+                "DCINSIDE",
+                "indicator-aggregation-dc-1"
+        );
+        jdbcTemplate.update(
+                "delete from crawl_runs where external_run_id in (?, ?)",
+                "indicator-aggregation-fmkorea",
+                "indicator-aggregation-dcinside"
         );
     }
 
