@@ -1,5 +1,6 @@
 ﻿from youbuyfirst_pipeline.matcher import InstrumentMatcher
 from youbuyfirst_pipeline.models import Instrument, InstrumentAliasRule
+from youbuyfirst_pipeline import matcher as matcher_module
 
 
 def test_matches_korean_aliases_and_us_tickers_without_duplicates():
@@ -47,6 +48,22 @@ def test_ascii_tickers_require_token_boundaries():
     mentions = matcher.match("TSLAX와 myTSLAwatch는 제외하고 tsla는 언급")
 
     assert [(m.market, m.symbol, m.matched_text) for m in mentions] == [
+        ("US", "TSLA", "TSLA"),
+    ]
+
+
+def test_ascii_tickers_match_before_hyphenated_or_dotted_suffixes():
+    matcher = InstrumentMatcher(
+        [
+            Instrument(market="US", symbol="TSLA", name="Tesla", aliases=["테슬라"]),
+            Instrument(market="US", symbol="BRK.B", name="Berkshire Hathaway Class B"),
+        ]
+    )
+
+    mentions = matcher.match("TSLA-like 흐름이랑 BRK.B-class 이야기가 같이 나옴")
+
+    assert [(mention.market, mention.symbol, mention.matched_text) for mention in mentions] == [
+        ("US", "BRK.B", "BRK.B"),
         ("US", "TSLA", "TSLA"),
     ]
 
@@ -100,3 +117,29 @@ def test_blocked_aliases_are_not_candidates_even_when_ambiguous():
         ("US", "AAPL", "애플")
     ]
     assert matcher.alias_candidates("사과 먹고 애플은 관망") == []
+
+
+def test_large_master_does_not_scan_every_alias_for_each_post(monkeypatch):
+    instruments = [
+        Instrument(market="US", symbol=f"ZZ{i:05d}", name=f"Unused Company {i:05d}")
+        for i in range(15_000)
+    ]
+    instruments.append(Instrument(market="US", symbol="TSLA", name="Tesla", aliases=["테슬라"]))
+    matcher = InstrumentMatcher(instruments)
+
+    span_lookup_count = 0
+    original = matcher_module._find_first_available_span
+
+    def counted_find_first_available_span(*args, **kwargs):
+        nonlocal span_lookup_count
+        span_lookup_count += 1
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(matcher_module, "_find_first_available_span", counted_find_first_available_span)
+
+    mentions = matcher.match("오늘은 TSLA만 게시판에서 언급됨")
+
+    assert [(mention.market, mention.symbol, mention.matched_text) for mention in mentions] == [
+        ("US", "TSLA", "TSLA")
+    ]
+    assert span_lookup_count < 20

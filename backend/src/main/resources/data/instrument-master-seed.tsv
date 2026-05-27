@@ -3691,9 +3691,9 @@ US	AALG	Leverage Shares 2X Long AAL Daily ETF	Leverage Shares 2X Long AAL Daily 
 US	AAOG	Leverage Shares 2X Long AAOI Daily ETF	Leverage Shares 2X Long AAOI Daily ETF	ETF	CBOE_BZX	AAOG	AAOG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AAOX	Tradr 2X Long AAOI Daily ETF	Tradr 2X Long AAOI Daily ETF	ETF	CBOE_BZX	AAOX	AAOX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AAPB	GraniteShares 2x Long AAPL Daily ETF	GraniteShares 2x Long AAPL Daily ETF	ETF	NASDAQ	AAPB	AAPB		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	AAPD	Direxion Daily AAPL Bear 1X ETF	Direxion Daily AAPL Bear 1X ETF	ETF	NASDAQ	AAPD	AAPD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	AAPD	Direxion Daily AAPL Bear 1X Shares	Direxion Daily AAPL Bear 1X Shares	ETF	NASDAQ	AAPD	AAPD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	AAPR	Innovator Equity Defined Protection ETF - 2 Yr to April 2028	Innovator Equity Defined Protection ETF - 2 Yr to April 2028	ETF	CBOE_BZX	AAPR	AAPR		generated-2026-05-27:nasdaqtrader:otherlisted
-US	AAPU	Direxion Daily AAPL Bull 2X ETF	Direxion Daily AAPL Bull 2X ETF	ETF	NASDAQ	AAPU	AAPU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	AAPU	Direxion Daily AAPL Bull 2X Shares	Direxion Daily AAPL Bull 2X Shares	ETF	NASDAQ	AAPU	AAPU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	AAPW	Roundhill AAPL WeeklyPay ETF	Roundhill AAPL WeeklyPay ETF	ETF	CBOE_BZX	AAPW	AAPW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AAPX	T-Rex 2X Long Apple Daily Target ETF	T-Rex 2X Long Apple Daily Target ETF	ETF	CBOE_BZX	AAPX	AAPX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AAPY	Kurv Yield Premium Strategy Apple (AAPL) ETF	Kurv Yield Premium Strategy Apple (AAPL) ETF	ETF	CBOE_BZX	AAPY	AAPY		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -3770,7 +3770,7 @@ US	AGQ	ProShares Ultra Silver	ProShares Ultra Silver	ETF	NYSE_ARCA	AGQ	AGQ		gene
 US	AGQI	First Trust Active Global Quality Income ETF	First Trust Active Global Quality Income ETF	ETF	NYSE_ARCA	AGQI	AGQI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AGRH	iShares Interest Rate Hedged U.S. Aggregate Bond ETF	iShares Interest Rate Hedged U.S. Aggregate Bond ETF	ETF	NYSE_ARCA	AGRH	AGRH		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AGRW	Allspring LT Large Growth ETF	Allspring LT Large Growth ETF	ETF	NYSE_ARCA	AGRW	AGRW		generated-2026-05-27:nasdaqtrader:otherlisted
-US	AGZ	iShares  Agency Bond ETF	iShares  Agency Bond ETF	ETF	NYSE_ARCA	AGZ	AGZ		generated-2026-05-27:nasdaqtrader:otherlisted
+US	AGZ	iShares Agency Bond ETF	iShares Agency Bond ETF	ETF	NYSE_ARCA	AGZ	AGZ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AGZD	WisdomTree Interest Rate Hedged U.S. Aggregate Bond Fund	WisdomTree Interest Rate Hedged U.S. Aggregate Bond Fund	ETF	NASDAQ	AGZD	AGZD		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	AHD	GraniteShares Autocallable HOOD ETF	GraniteShares Autocallable HOOD ETF	ETF	NASDAQ	AHD	AHD		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	AHLT	AHL Trend ETF	AHL Trend ETF	ETF	NYSE_ARCA	AHLT	AHLT		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -3827,7 +3827,7 @@ US	AMZA	InfraCap MLP ETF	InfraCap MLP ETF	ETF	NYSE_ARCA	AMZA	AMZA		generated-202
 US	AMZD	Direxion Daily AMZN Bear 1X ETF	Direxion Daily AMZN Bear 1X ETF	ETF	NASDAQ	AMZD	AMZD		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	AMZO	Tradr 2X Short AMZN Daily ETF	Tradr 2X Short AMZN Daily ETF	ETF	CBOE_BZX	AMZO	AMZO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AMZP	Kurv Yield Premium Strategy Amazon (AMZN) ETF	Kurv Yield Premium Strategy Amazon (AMZN) ETF	ETF	CBOE_BZX	AMZP	AMZP		generated-2026-05-27:nasdaqtrader:otherlisted
-US	AMZU	Direxion Daily AMZN Bull 2X ETF	Direxion Daily AMZN Bull 2X ETF	ETF	NASDAQ	AMZU	AMZU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	AMZU	Direxion Daily AMZN Bull 2X Shares	Direxion Daily AMZN Bull 2X Shares	ETF	NASDAQ	AMZU	AMZU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	AMZW	Roundhill AMZN WeeklyPay ETF	Roundhill AMZN WeeklyPay ETF	ETF	CBOE_BZX	AMZW	AMZW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AMZY	YieldMax AMZN Option Income Strategy ETF	YieldMax AMZN Option Income Strategy ETF	ETF	NYSE_ARCA	AMZY	AMZY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	AMZZ	GraniteShares 2x Long AMZN Daily ETF	GraniteShares 2x Long AMZN Daily ETF	ETF	NASDAQ	AMZZ	AMZZ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -3872,7 +3872,7 @@ US	ARCX	Tradr 2X Long ACHR Daily ETF	Tradr 2X Long ACHR Daily ETF	ETF	CBOE_BZX	A
 US	ARGT	Global X MSCI Argentina ETF	Global X MSCI Argentina ETF	ETF	NYSE_ARCA	ARGT	ARGT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ARKB	ARK 21Shares Bitcoin ETF	ARK 21Shares Bitcoin ETF	ETF	CBOE_BZX	ARKB	ARKB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ARKD	ARK DIET Q1 Buffer ETF	ARK DIET Q1 Buffer ETF	ETF	CBOE_BZX	ARKD	ARKD		generated-2026-05-27:nasdaqtrader:otherlisted
-US	ARKF	ARK Blockchain & Fintech Innovation ETF	ARK Blockchain & Fintech Innovation ETF	ETF	CBOE_BZX	ARKF	ARKF		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	ARKF	ARK Fintech Innovation ETF	ARK Fintech Innovation ETF	ETF	CBOE_BZX	ARKF	ARKF		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	ARKG	ARK Genomic Revolution ETF	ARK Genomic Revolution ETF	ETF	CBOE_BZX	ARKG	ARKG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	ARKI	ARK DIET Q2 Buffer ETF	ARK DIET Q2 Buffer ETF	ETF	CBOE_BZX	ARKI	ARKI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ARKK	ARK Innovation ETF	ARK Innovation ETF	ETF	CBOE_BZX	ARKK	ARKK		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
@@ -4092,7 +4092,7 @@ US	BIBL	Inspire 100 ETF	Inspire 100 ETF	ETF	NYSE_ARCA	BIBL	BIBL		generated-2026-
 US	BIDD	iShares International Dividend Active ETF	iShares International Dividend Active ETF	ETF	NYSE_ARCA	BIDD	BIDD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	BIDG	Leverage Shares 2X Long BIDU Daily ETF	Leverage Shares 2X Long BIDU Daily ETF	ETF	NASDAQ	BIDG	BIDG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	BIGY	YieldMax Target 12 Big 50 Option Income ETF	YieldMax Target 12 Big 50 Option Income ETF	ETF	NYSE_ARCA	BIGY	BIGY		generated-2026-05-27:nasdaqtrader:otherlisted
-US	BIL	State Street SPDR Bloomberg 1-3 Month T-Bill ETF	State Street SPDR Bloomberg 1-3 Month T-Bill ETF	ETF	NYSE_ARCA	BIL	BIL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	BIL	SPDR Bloomberg 1-3 Month T-Bill ETF	SPDR Bloomberg 1-3 Month T-Bill ETF	ETF	NYSE_ARCA	BIL	BIL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	BILD	Nomura Global Listed Infrastructure ETF	Nomura Global Listed Infrastructure ETF	ETF	NYSE_ARCA	BILD	BILD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	BILS	State Street SPDR Bloomberg 3-12 Month T-Bill ETF	State Street SPDR Bloomberg 3-12 Month T-Bill ETF	ETF	NYSE_ARCA	BILS	BILS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	BILT	iShares Infrastructure Active ETF	iShares Infrastructure Active ETF	ETF	CBOE_BZX	BILT	BILT		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -4497,23 +4497,23 @@ US	CPLS	AB Core Plus Bond ETF	AB Core Plus Bond ETF	ETF	NASDAQ	CPLS	CPLS		genera
 US	CPNJ	Calamos Nasdaq - 100 Structured Alt Protection ETF -June	Calamos Nasdaq - 100 Structured Alt Protection ETF -June	ETF	NYSE_ARCA	CPNJ	CPNJ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPNM	Calamos Nasdaq-100 Structured Alt Protection ETF - March	Calamos Nasdaq-100 Structured Alt Protection ETF - March	ETF	NYSE_ARCA	CPNM	CPNM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPNQ	Calamos Nasdaq-100 Structured Alt Protection ETF December	Calamos Nasdaq-100 Structured Alt Protection ETF December	ETF	NYSE_ARCA	CPNQ	CPNQ		generated-2026-05-27:nasdaqtrader:otherlisted
-US	CPNS	Calamos Nasdaq-100 Structured Alt Protection ETF  September	Calamos Nasdaq-100 Structured Alt Protection ETF  September	ETF	NYSE_ARCA	CPNS	CPNS		generated-2026-05-27:nasdaqtrader:otherlisted
+US	CPNS	Calamos Nasdaq-100 Structured Alt Protection ETF September	Calamos Nasdaq-100 Structured Alt Protection ETF September	ETF	NYSE_ARCA	CPNS	CPNS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPNX	Tradr 2X Long CPNG Daily ETF	Tradr 2X Long CPNG Daily ETF	ETF	CBOE_BZX	CPNX	CPNX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPRA	Calamos Russell 2000 Structured Alt Protection ETF - April	Calamos Russell 2000 Structured Alt Protection ETF - April	ETF	NYSE_ARCA	CPRA	CPRA		generated-2026-05-27:nasdaqtrader:otherlisted
-US	CPRJ	Calamos Russell 2000 Structured Alt Protection ETF  July	Calamos Russell 2000 Structured Alt Protection ETF  July	ETF	NYSE_ARCA	CPRJ	CPRJ		generated-2026-05-27:nasdaqtrader:otherlisted
+US	CPRJ	Calamos Russell 2000 Structured Alt Protection ETF July	Calamos Russell 2000 Structured Alt Protection ETF July	ETF	NYSE_ARCA	CPRJ	CPRJ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPRO	Calamos Russell 2000 Structured Alt Protection ETF - October	Calamos Russell 2000 Structured Alt Protection ETF - October	ETF	NYSE_ARCA	CPRO	CPRO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPRY	Calamos Russell 2000 Structured Alt Protection ETF January	Calamos Russell 2000 Structured Alt Protection ETF January	ETF	NYSE_ARCA	CPRY	CPRY		generated-2026-05-27:nasdaqtrader:otherlisted
-US	CPSA	Calamos S&P 500 Structured Alt Protection ETF  August	Calamos S&P 500 Structured Alt Protection ETF  August	ETF	NYSE_ARCA	CPSA	CPSA		generated-2026-05-27:nasdaqtrader:otherlisted
+US	CPSA	Calamos S&P 500 Structured Alt Protection ETF August	Calamos S&P 500 Structured Alt Protection ETF August	ETF	NYSE_ARCA	CPSA	CPSA		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSD	Calamos S&P 500 Structured Alt Protection ETF December	Calamos S&P 500 Structured Alt Protection ETF December	ETF	NYSE_ARCA	CPSD	CPSD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSF	Calamos S&P 500 Structured Alt Protection ETF February	Calamos S&P 500 Structured Alt Protection ETF February	ETF	NYSE_ARCA	CPSF	CPSF		generated-2026-05-27:nasdaqtrader:otherlisted
-US	CPSJ	Calamos S&P 500 Structured Alt Protection ETF  July	Calamos S&P 500 Structured Alt Protection ETF  July	ETF	NYSE_ARCA	CPSJ	CPSJ		generated-2026-05-27:nasdaqtrader:otherlisted
+US	CPSJ	Calamos S&P 500 Structured Alt Protection ETF July	Calamos S&P 500 Structured Alt Protection ETF July	ETF	NYSE_ARCA	CPSJ	CPSJ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSL	Calamos Laddered S&P 500 Structured Alt Protection ETF	Calamos Laddered S&P 500 Structured Alt Protection ETF	ETF	CBOE_BZX	CPSL	CPSL		generated-2026-05-27:nasdaqtrader:otherlisted
-US	CPSM	Calamos S&P 500 Structured Alt Protection ETF  May	Calamos S&P 500 Structured Alt Protection ETF  May	ETF	NYSE_ARCA	CPSM	CPSM		generated-2026-05-27:nasdaqtrader:otherlisted
+US	CPSM	Calamos S&P 500 Structured Alt Protection ETF May	Calamos S&P 500 Structured Alt Protection ETF May	ETF	NYSE_ARCA	CPSM	CPSM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSN	Calamos S&P 500 Structured Alt Protection ETF November	Calamos S&P 500 Structured Alt Protection ETF November	ETF	NYSE_ARCA	CPSN	CPSN		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSO	Calamos S&P 500 Structured Alt Protection ETF - October	Calamos S&P 500 Structured Alt Protection ETF - October	ETF	NYSE_ARCA	CPSO	CPSO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSP	Calamos S&P 500 Structured Alt Protection ETF - April	Calamos S&P 500 Structured Alt Protection ETF - April	ETF	NYSE_ARCA	CPSP	CPSP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSR	Calamos S&P 500 Structured Alt Protection ETF - March	Calamos S&P 500 Structured Alt Protection ETF - March	ETF	NYSE_ARCA	CPSR	CPSR		generated-2026-05-27:nasdaqtrader:otherlisted
-US	CPST	Calamos S&P 500 Structured Alt Protection ETF  September	Calamos S&P 500 Structured Alt Protection ETF  September	ETF	NYSE_ARCA	CPST	CPST		generated-2026-05-27:nasdaqtrader:otherlisted
+US	CPST	Calamos S&P 500 Structured Alt Protection ETF September	Calamos S&P 500 Structured Alt Protection ETF September	ETF	NYSE_ARCA	CPST	CPST		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSU	Calamos S&P 500 Structured Alt Protection ETF June	Calamos S&P 500 Structured Alt Protection ETF June	ETF	NYSE_ARCA	CPSU	CPSU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPSY	Calamos S&P 500 Structured Alt Protection ETF January	Calamos S&P 500 Structured Alt Protection ETF January	ETF	NYSE_ARCA	CPSY	CPSY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CPXR	USCF Daily Target 2X Copper Index ETF	USCF Daily Target 2X Copper Index ETF	ETF	NYSE_ARCA	CPXR	CPXR		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -4564,7 +4564,7 @@ US	CTEF	Castellan Targeted Equity ETF	Castellan Targeted Equity ETF	ETF	CBOE_BZX
 US	CTEX	ProShares S&P Kensho Cleantech ETF	ProShares S&P Kensho Cleantech ETF	ETF	NYSE_ARCA	CTEX	CTEX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CTIF	Castellan Targeted Income ETF	Castellan Targeted Income ETF	ETF	CBOE_BZX	CTIF	CTIF		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CTMA	Corgi U.S. Equities 30% Structured Buffer ETF - May Series	Corgi U.S. Equities 30% Structured Buffer ETF - May Series	ETF	CBOE_BZX	CTMA	CTMA		generated-2026-05-27:nasdaqtrader:otherlisted
-US	CTWO	Common units	Common units	ETF	NYSE_ARCA	CTWO	CTWO		generated-2026-05-27:nasdaqtrader:otherlisted
+US	CTWO	COtwo Advisors Physical European Carbon Allowance Trust	COtwo Advisors Physical European Carbon Allowance Trust	ETF	NYSE_ARCA	CTWO	CTWO		manual-fix-2026-05-27:nasdaq-press-release+generated-2026-05-27:nasdaqtrader:otherlisted
 US	CURE	Direxion Daily Healthcare Bull 3X ETF	Direxion Daily Healthcare Bull 3X ETF	ETF	NYSE_ARCA	CURE	CURE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	CUSD	CrossingBridge Ultra-Short Duration ETF	CrossingBridge Ultra-Short Duration ETF	ETF	NASDAQ	CUSD	CUSD		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	CUT	Invesco MSCI Global Timber ETF	Invesco MSCI Global Timber ETF	ETF	NYSE_ARCA	CUT	CUT		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -4727,7 +4727,7 @@ US	DHDG	FT Vest U.S. Equity Quarterly 2.5 to 15 Buffer ETF	FT Vest U.S. Equity Q
 US	DHLX	Diamond Hill Large Cap Concentrated ETF	Diamond Hill Large Cap Concentrated ETF	ETF	NYSE_ARCA	DHLX	DHLX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	DHS	WisdomTree U.S. High Dividend Fund	WisdomTree U.S. High Dividend Fund	ETF	NYSE_ARCA	DHS	DHS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	DHSB	Day Hagan Smart Buffer ETF	Day Hagan Smart Buffer ETF	ETF	NYSE_ARCA	DHSB	DHSB		generated-2026-05-27:nasdaqtrader:otherlisted
-US	DIA	State Street SPDR Dow Jones Industrial Average ETF Trust	State Street SPDR Dow Jones Industrial Average ETF Trust	ETF	NYSE_ARCA	DIA	DIA		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	DIA	SPDR Dow Jones Industrial Average ETF Trust	SPDR Dow Jones Industrial Average ETF Trust	ETF	NYSE_ARCA	DIA	DIA		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	DIAL	Columbia Diversified Fixed Income Allocation ETF	Columbia Diversified Fixed Income Allocation ETF	ETF	NYSE_ARCA	DIAL	DIAL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	DIEM	Franklin Emerging Market Core Dividend Tilt Index ETF	Franklin Emerging Market Core Dividend Tilt Index ETF	ETF	NYSE_ARCA	DIEM	DIEM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	DIG	ProShares Ultra Energy	ProShares Ultra Energy	ETF	NYSE_ARCA	DIG	DIG		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -4911,7 +4911,7 @@ US	EDV	Vanguard Extended Duration Treasury ETF	Vanguard Extended Duration Treasu
 US	EDZ	Direxion Emerging Markets Bear 3X ETF	Direxion Emerging Markets Bear 3X ETF	ETF	NYSE_ARCA	EDZ	EDZ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	EEE	CYBER HORNET S&P 500 and Ethereum 75/25 Strategy ETF	CYBER HORNET S&P 500 and Ethereum 75/25 Strategy ETF	ETF	NASDAQ	EEE	EEE		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	EELV	Invesco S&P Emerging Markets Low Volatility ETF	Invesco S&P Emerging Markets Low Volatility ETF	ETF	NYSE_ARCA	EELV	EELV		generated-2026-05-27:nasdaqtrader:otherlisted
-US	EEM	iShares MSCI Emerging Index Fund	iShares MSCI Emerging Index Fund	ETF	NYSE_ARCA	EEM	EEM		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	EEM	iShares MSCI Emerging Markets ETF	iShares MSCI Emerging Markets ETF	ETF	NYSE_ARCA	EEM	EEM		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	EEMA	iShares MSCI Emerging Markets Asia ETF	iShares MSCI Emerging Markets Asia ETF	ETF	NASDAQ	EEMA	EEMA		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	EEMO	Invesco S&P Emerging Markets Momentum ETF	Invesco S&P Emerging Markets Momentum ETF	ETF	NYSE_ARCA	EEMO	EEMO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	EEMS	iShares MSCI Emerging Markets Small Cap ETF	iShares MSCI Emerging Markets Small Cap ETF	ETF	NYSE_ARCA	EEMS	EEMS		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5095,7 +5095,7 @@ US	EWD	iShares MSCI Sweden ETF	iShares MSCI Sweden ETF	ETF	NYSE_ARCA	EWD	EWD		ge
 US	EWG	iShares MSCI Germany Index Fund	iShares MSCI Germany Index Fund	ETF	NYSE_ARCA	EWG	EWG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	EWH	iShares MSCI Hong Kong Index Fund	iShares MSCI Hong Kong Index Fund	ETF	NYSE_ARCA	EWH	EWH		generated-2026-05-27:nasdaqtrader:otherlisted
 US	EWI	iShares MSCI Italy ETF	iShares MSCI Italy ETF	ETF	NYSE_ARCA	EWI	EWI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	EWJ	iShares MSCI Japan Index Fund	iShares MSCI Japan Index Fund	ETF	NYSE_ARCA	EWJ	EWJ		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	EWJ	iShares MSCI Japan ETF	iShares MSCI Japan ETF	ETF	NYSE_ARCA	EWJ	EWJ		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	EWJV	iShares MSCI Japan Value ETF	iShares MSCI Japan Value ETF	ETF	NASDAQ	EWJV	EWJV		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	EWK	iShares MSCI Belgium ETF	iShares MSCI Belgium ETF	ETF	NYSE_ARCA	EWK	EWK		generated-2026-05-27:nasdaqtrader:otherlisted
 US	EWL	iShares MSCI Switzerland ETF	iShares MSCI Switzerland ETF	ETF	NYSE_ARCA	EWL	EWL		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5189,7 +5189,7 @@ US	FDLO	Fidelity Low Volatility Factor ETF	Fidelity Low Volatility Factor ETF	ET
 US	FDLS	Inspire Fidelis Multi Factor ETF	Inspire Fidelis Multi Factor ETF	ETF	NYSE_ARCA	FDLS	FDLS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FDM	First Trust DJ Select MicroCap ETF	First Trust DJ Select MicroCap ETF	ETF	NYSE_ARCA	FDM	FDM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FDMO	Fidelity Momentum Factor ETF	Fidelity Momentum Factor ETF	ETF	NYSE_ARCA	FDMO	FDMO		generated-2026-05-27:nasdaqtrader:otherlisted
-US	FDN	First Trust DJ Internet Index Fund	First Trust DJ Internet Index Fund	ETF	NYSE_ARCA	FDN	FDN		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	FDN	First Trust Dow Jones Internet Index Fund	First Trust Dow Jones Internet Index Fund	ETF	NYSE_ARCA	FDN	FDN		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	FDND	FT Vest Dow Jones Internet & Target Income ETF	FT Vest Dow Jones Internet & Target Income ETF	ETF	CBOE_BZX	FDND	FDND		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FDNI	First Trust Dow Jones International Internet ETF	First Trust Dow Jones International Internet ETF	ETF	NASDAQ	FDNI	FDNI		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	FDRR	Fidelity Dividend ETF for Rising Rates	Fidelity Dividend ETF for Rising Rates	ETF	NYSE_ARCA	FDRR	FDRR		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5368,7 +5368,7 @@ US	FNDE	Schwab Fundamental Emerging Markets Equity ETF	Schwab Fundamental Emergi
 US	FNDF	Schwab Fundamental International Equity ETF	Schwab Fundamental International Equity ETF	ETF	NYSE_ARCA	FNDF	FNDF		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FNDX	Schwab Fundamental U.S. Large Company ETF	Schwab Fundamental U.S. Large Company ETF	ETF	NYSE_ARCA	FNDX	FNDX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FNGG	Direxion Daily NYSE FANG+ Bull 2X ETF	Direxion Daily NYSE FANG+ Bull 2X ETF	ETF	NYSE_ARCA	FNGG	FNGG		generated-2026-05-27:nasdaqtrader:otherlisted
-US	FNGS	MicroSectors FANG  ETNs due January 8, 2038	MicroSectors FANG  ETNs due January 8, 2038	ETF	NYSE_ARCA	FNGS	FNGS		generated-2026-05-27:nasdaqtrader:otherlisted
+US	FNGS	MicroSectors FANG ETNs due January 8, 2038	MicroSectors FANG ETNs due January 8, 2038	ETF	NYSE_ARCA	FNGS	FNGS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FNGU	MicroSectors FANG+ 3X Leveraged ETNs	MicroSectors FANG+ 3X Leveraged ETNs	ETF	NYSE_ARCA	FNGU	FNGU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FNK	First Trust Mid Cap Value AlphaDEX Fund	First Trust Mid Cap Value AlphaDEX Fund	ETF	NASDAQ	FNK	FNK		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	FNOV	FT Vest U.S. Equity Buffer ETF - November	FT Vest U.S. Equity Buffer ETF - November	ETF	CBOE_BZX	FNOV	FNOV		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5382,7 +5382,7 @@ US	FOXY	Simplify Currency Strategy ETF	Simplify Currency Strategy ETF	ETF	NYSE_A
 US	FPA	First Trust Asia Pacific Ex-Japan AlphaDEX Fund	First Trust Asia Pacific Ex-Japan AlphaDEX Fund	ETF	NASDAQ	FPA	FPA		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	FPAG	FPA Global Equity ETF	FPA Global Equity ETF	ETF	CBOE_BZX	FPAG	FPAG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FPAS	FPA Short Duration Government ETF	FPA Short Duration Government ETF	ETF	CBOE_BZX	FPAS	FPAS		generated-2026-05-27:nasdaqtrader:otherlisted
-US	FPE	First Trust Preferred Securities and Income ETF ETF	First Trust Preferred Securities and Income ETF ETF	ETF	NYSE_ARCA	FPE	FPE		generated-2026-05-27:nasdaqtrader:otherlisted
+US	FPE	First Trust Preferred Securities and Income ETF	First Trust Preferred Securities and Income ETF	ETF	NYSE_ARCA	FPE	FPE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FPEI	First Trust Institutional Preferred Securities and Income ETF	First Trust Institutional Preferred Securities and Income ETF	ETF	NYSE_ARCA	FPEI	FPEI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FPFD	Fidelity Preferred Securities & Income ETF	Fidelity Preferred Securities & Income ETF	ETF	CBOE_BZX	FPFD	FPFD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	FPRO	Fidelity Real Estate Investment ETF	Fidelity Real Estate Investment ETF	ETF	CBOE_BZX	FPRO	FPRO		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5623,7 +5623,7 @@ US	GOU	GraniteShares 2x Long GOOGL Daily ETF	GraniteShares 2x Long GOOGL Daily E
 US	GOVI	Invesco Equal Weight 0-30 Year Treasury ETF	Invesco Equal Weight 0-30 Year Treasury ETF	ETF	NASDAQ	GOVI	GOVI		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	GOVM	iShares 1-10 Year Treasury Bond ETF	iShares 1-10 Year Treasury Bond ETF	ETF	CBOE_BZX	GOVM	GOVM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	GOVT	iShares U.S. Treasury Bond ETF	iShares U.S. Treasury Bond ETF	ETF	CBOE_BZX	GOVT	GOVT		generated-2026-05-27:nasdaqtrader:otherlisted
-US	GOVZ	iShares 25  Year Treasury STRIPS Bond ETF	iShares 25  Year Treasury STRIPS Bond ETF	ETF	CBOE_BZX	GOVZ	GOVZ		generated-2026-05-27:nasdaqtrader:otherlisted
+US	GOVZ	iShares 25 Year Treasury STRIPS Bond ETF	iShares 25 Year Treasury STRIPS Bond ETF	ETF	CBOE_BZX	GOVZ	GOVZ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	GPIQ	Goldman Sachs Nasdaq-100 Premium Income ETF	Goldman Sachs Nasdaq-100 Premium Income ETF	ETF	NASDAQ	GPIQ	GPIQ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	GPIX	Goldman Sachs S&P 500 Premium Income ETF	Goldman Sachs S&P 500 Premium Income ETF	ETF	NASDAQ	GPIX	GPIX		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	GPRF	Goldman Sachs Access U.S. Preferred Stock and Hybrid Securities ETF	Goldman Sachs Access U.S. Preferred Stock and Hybrid Securities ETF	ETF	NASDAQ	GPRF	GPRF		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -5703,7 +5703,7 @@ US	GXPS	Global X PureCap MSCI Consumer Staples ETF	Global X PureCap MSCI Consume
 US	GXPT	Global X PureCap MSCI Information Technology ETF	Global X PureCap MSCI Information Technology ETF	ETF	NYSE_ARCA	GXPT	GXPT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	GXRP	Grayscale XRP Trust ETF	Grayscale XRP Trust ETF	ETF	NYSE_ARCA	GXRP	GXRP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	GXUS	Goldman Sachs MarketBeta Total International Equity ETF	Goldman Sachs MarketBeta Total International Equity ETF	ETF	NYSE_ARCA	GXUS	GXUS		generated-2026-05-27:nasdaqtrader:otherlisted
-US	GYLD	Arrow Dow Jones Global Yield ETF ETF	Arrow Dow Jones Global Yield ETF ETF	ETF	NYSE	GYLD	GYLD		generated-2026-05-27:nasdaqtrader:otherlisted
+US	GYLD	Arrow Dow Jones Global Yield ETF	Arrow Dow Jones Global Yield ETF	ETF	NYSE	GYLD	GYLD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	HACK	Amplify Cybersecurity ETF	Amplify Cybersecurity ETF	ETF	NYSE_ARCA	HACK	HACK		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	HAIL	State Street SPDR S&P Kensho Smart Mobility ETF	State Street SPDR S&P Kensho Smart Mobility ETF	ETF	NYSE_ARCA	HAIL	HAIL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	HAKY	Amplify HACK Cybersecurity Covered Call ETF	Amplify HACK Cybersecurity Covered Call ETF	ETF	NYSE_ARCA	HAKY	HAKY		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5817,7 +5817,7 @@ US	HYDR	Global X Hydrogen ETF	Global X Hydrogen ETF	ETF	NASDAQ	HYDR	HYDR		genera
 US	HYDW	Xtrackers Low Beta High Yield Bond ETF	Xtrackers Low Beta High Yield Bond ETF	ETF	NYSE_ARCA	HYDW	HYDW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	HYEM	VanEck Emerging Markets High Yield Bond ETF	VanEck Emerging Markets High Yield Bond ETF	ETF	NYSE_ARCA	HYEM	HYEM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	HYFI	AB High Yield ETF	AB High Yield ETF	ETF	NYSE_ARCA	HYFI	HYFI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	HYG	iShares iBoxx $ High Yield Corporate Bond ETF	iShares iBoxx $ High Yield Corporate Bond ETF	ETF	NYSE_ARCA	HYG	HYG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	HYG	iShares iBoxx High Yield Corporate Bond ETF	iShares iBoxx High Yield Corporate Bond ETF	ETF	NYSE_ARCA	HYG	HYG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	HYGH	iShares Interest Rate Hedged High Yield Bond ETF	iShares Interest Rate Hedged High Yield Bond ETF	ETF	NYSE_ARCA	HYGH	HYGH		generated-2026-05-27:nasdaqtrader:otherlisted
 US	HYGM	Amplify HYG High Yield 10% Target Income ETF	Amplify HYG High Yield 10% Target Income ETF	ETF	CBOE_BZX	HYGM	HYGM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	HYGV	FlexShares High Yield Value-Scored Bond Index Fund	FlexShares High Yield Value-Scored Bond Index Fund	ETF	NYSE_ARCA	HYGV	HYGV		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5840,10 +5840,10 @@ US	IAGG	iShares International Aggregate Bond Fund	iShares International Aggregat
 US	IAI	iShares U.S. Broker-Dealers & Securities Exchanges ETF	iShares U.S. Broker-Dealers & Securities Exchanges ETF	ETF	NYSE_ARCA	IAI	IAI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IAK	iShares U.S. Insurance ETF	iShares U.S. Insurance ETF	ETF	NYSE_ARCA	IAK	IAK		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IALT	iShares Systematic Alternatives Active ETF	iShares Systematic Alternatives Active ETF	ETF	NASDAQ	IALT	IALT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	IAPR	Innovator International Developed Power Buffer ETF  April	Innovator International Developed Power Buffer ETF  April	ETF	NYSE_ARCA	IAPR	IAPR		generated-2026-05-27:nasdaqtrader:otherlisted
+US	IAPR	Innovator International Developed Power Buffer ETF April	Innovator International Developed Power Buffer ETF April	ETF	NYSE_ARCA	IAPR	IAPR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IAT	iShares U.S. Regional Banks ETF	iShares U.S. Regional Banks ETF	ETF	NYSE_ARCA	IAT	IAT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IAU	iShares Gold Trust Shares	iShares Gold Trust Shares	ETF	NYSE_ARCA	IAU	IAU		generated-2026-05-27:nasdaqtrader:otherlisted
-US	IAUG	Innovator International Developed Power Buffer ETF  August	Innovator International Developed Power Buffer ETF  August	ETF	NYSE_ARCA	IAUG	IAUG		generated-2026-05-27:nasdaqtrader:otherlisted
+US	IAUG	Innovator International Developed Power Buffer ETF August	Innovator International Developed Power Buffer ETF August	ETF	NYSE_ARCA	IAUG	IAUG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IAUI	NEOS Gold High Income ETF	NEOS Gold High Income ETF	ETF	CBOE_BZX	IAUI	IAUI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IAUM	iShares Gold Trust Micro Shares	iShares Gold Trust Micro Shares	ETF	NYSE_ARCA	IAUM	IAUM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IBAT	iShares Energy Storage & Materials ETF	iShares Energy Storage & Materials ETF	ETF	NASDAQ	IBAT	IBAT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -5928,7 +5928,7 @@ US	ICPY	Tweedy, Browne International Insider + Value ETF	Tweedy, Browne Internat
 US	ICRC	Bitwise CRCL Option Income Strategy ETF	Bitwise CRCL Option Income Strategy ETF	ETF	NYSE_ARCA	ICRC	ICRC		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ICSH	iShares Ultra Short Duration Bond Active ETF	iShares Ultra Short Duration Bond Active ETF	ETF	CBOE_BZX	ICSH	ICSH		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ICVT	iShares Convertible Bond ETF	iShares Convertible Bond ETF	ETF	CBOE_BZX	ICVT	ICVT		generated-2026-05-27:nasdaqtrader:otherlisted
-US	IDEC	Innovator International Developed Power Buffer ETF  December	Innovator International Developed Power Buffer ETF  December	ETF	NYSE_ARCA	IDEC	IDEC		generated-2026-05-27:nasdaqtrader:otherlisted
+US	IDEC	Innovator International Developed Power Buffer ETF December	Innovator International Developed Power Buffer ETF December	ETF	NYSE_ARCA	IDEC	IDEC		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IDEF	iShares Defense Industrials Active ETF	iShares Defense Industrials Active ETF	ETF	NASDAQ	IDEF	IDEF		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	IDEQ	Lazard International Dynamic Equity ETF	Lazard International Dynamic Equity ETF	ETF	NYSE_ARCA	IDEQ	IDEQ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IDEV	iShares Core MSCI International Developed Markets ETF	iShares Core MSCI International Developed Markets ETF	ETF	NYSE_ARCA	IDEV	IDEV		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5960,7 +5960,7 @@ US	IEUR	iShares Core MSCI Europe ETF	iShares Core MSCI Europe ETF	ETF	NYSE_ARCA	
 US	IEUS	iShares MSCI Europe Small-Cap ETF	iShares MSCI Europe Small-Cap ETF	ETF	NASDAQ	IEUS	IEUS		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	IEV	iShares Europe ETF	iShares Europe ETF	ETF	NYSE_ARCA	IEV	IEV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IEZ	iShares U.S. Oil Equipment & Services ETF	iShares U.S. Oil Equipment & Services ETF	ETF	NYSE_ARCA	IEZ	IEZ		generated-2026-05-27:nasdaqtrader:otherlisted
-US	IFEB	Innovator International Developed Power Buffer ETF  February	Innovator International Developed Power Buffer ETF  February	ETF	NYSE_ARCA	IFEB	IFEB		generated-2026-05-27:nasdaqtrader:otherlisted
+US	IFEB	Innovator International Developed Power Buffer ETF February	Innovator International Developed Power Buffer ETF February	ETF	NYSE_ARCA	IFEB	IFEB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IFED	ETRACS IFED Invest with the Fed TR Index ETN	ETRACS IFED Invest with the Fed TR Index ETN	ETF	NYSE_ARCA	IFED	IFED		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IFGL	iShares International Developed Real Estate ETF	iShares International Developed Real Estate ETF	ETF	NASDAQ	IFGL	IFGL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	IFLN	Invesco Bloomberg Enhanced Fallen Angels ETF	Invesco Bloomberg Enhanced Fallen Angels ETF	ETF	NYSE_ARCA	IFLN	IFLN		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -5977,7 +5977,7 @@ US	IGF	iShares Global Infrastructure ETF	iShares Global Infrastructure ETF	ETF	N
 US	IGGY	AB International Growth ETF	AB International Growth ETF	ETF	NYSE_ARCA	IGGY	IGGY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IGHG	ProShares Investment Grade-Interest Rate Hedged	ProShares Investment Grade-Interest Rate Hedged	ETF	CBOE_BZX	IGHG	IGHG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IGIB	iShares 5-10 Year Investment Grade Corporate Bond ETF	iShares 5-10 Year Investment Grade Corporate Bond ETF	ETF	NASDAQ	IGIB	IGIB		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	IGLB	iShares 10  Year Investment Grade Corporate Bond ETF	iShares 10  Year Investment Grade Corporate Bond ETF	ETF	NYSE_ARCA	IGLB	IGLB		generated-2026-05-27:nasdaqtrader:otherlisted
+US	IGLB	iShares 10 Year Investment Grade Corporate Bond ETF	iShares 10 Year Investment Grade Corporate Bond ETF	ETF	NYSE_ARCA	IGLB	IGLB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IGLD	FT Vest Gold Strategy Target Income ETF	FT Vest Gold Strategy Target Income ETF	ETF	CBOE_BZX	IGLD	IGLD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IGM	iShares Expanded Tech Sector ETF	iShares Expanded Tech Sector ETF	ETF	NYSE_ARCA	IGM	IGM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IGME	Bitwise GME Option Income Strategy ETF	Bitwise GME Option Income Strategy ETF	ETF	NYSE_ARCA	IGME	IGME		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6001,18 +6001,18 @@ US	IJK	iShares S&P Mid-Cap 400 Growth ETF	iShares S&P Mid-Cap 400 Growth ETF	ETF
 US	IJR	iShares Core S&P Small-Cap ETF	iShares Core S&P Small-Cap ETF	ETF	NYSE_ARCA	IJR	IJR		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	IJS	iShares S&P SmallCap 600 Value ETF	iShares S&P SmallCap 600 Value ETF	ETF	NYSE_ARCA	IJS	IJS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IJT	iShares S&P SmallCap 600 Growth ETF	iShares S&P SmallCap 600 Growth ETF	ETF	NASDAQ	IJT	IJT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	IJUL	Innovator International Developed Power Buffer ETF  July	Innovator International Developed Power Buffer ETF  July	ETF	NYSE_ARCA	IJUL	IJUL		generated-2026-05-27:nasdaqtrader:otherlisted
+US	IJUL	Innovator International Developed Power Buffer ETF July	Innovator International Developed Power Buffer ETF July	ETF	NYSE_ARCA	IJUL	IJUL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IJUN	Innovator International Developed Power Buffer ETF June	Innovator International Developed Power Buffer ETF June	ETF	NYSE_ARCA	IJUN	IJUN		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ILCB	iShares Morningstar Large-Cap ETF	iShares Morningstar Large-Cap ETF	ETF	NYSE_ARCA	ILCB	ILCB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ILCG	iShares Morningstar Large-Cap Growth ETF	iShares Morningstar Large-Cap Growth ETF	ETF	NYSE_ARCA	ILCG	ILCG		generated-2026-05-27:nasdaqtrader:otherlisted
-US	ILCV	iShares Morningstar Large-Cap  Value ETF	iShares Morningstar Large-Cap  Value ETF	ETF	NYSE_ARCA	ILCV	ILCV		generated-2026-05-27:nasdaqtrader:otherlisted
+US	ILCV	iShares Morningstar Large-Cap Value ETF	iShares Morningstar Large-Cap Value ETF	ETF	NYSE_ARCA	ILCV	ILCV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ILDR	First Trust Innovation Leaders ETF	First Trust Innovation Leaders ETF	ETF	NYSE_ARCA	ILDR	ILDR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ILF	iShares Latin America 40 ETF	iShares Latin America 40 ETF	ETF	NYSE_ARCA	ILF	ILF		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ILIT	iShares Lithium Miners and Producers ETF	iShares Lithium Miners and Producers ETF	ETF	NASDAQ	ILIT	ILIT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	ILOW	AB International Low Volatility Equity ETF	AB International Low Volatility Equity ETF	ETF	NYSE_ARCA	ILOW	ILOW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ILS	Brookmont Catastrophic Bond ETF	Brookmont Catastrophic Bond ETF	ETF	NYSE_ARCA	ILS	ILS		generated-2026-05-27:nasdaqtrader:otherlisted
-US	ILTB	iShares Core 10  Year USD Bond ETF	iShares Core 10  Year USD Bond ETF	ETF	NYSE_ARCA	ILTB	ILTB		generated-2026-05-27:nasdaqtrader:otherlisted
-US	IMAR	Innovator International Developed Power Buffer ETF  March	Innovator International Developed Power Buffer ETF  March	ETF	NYSE_ARCA	IMAR	IMAR		generated-2026-05-27:nasdaqtrader:otherlisted
+US	ILTB	iShares Core 10 Year USD Bond ETF	iShares Core 10 Year USD Bond ETF	ETF	NYSE_ARCA	ILTB	ILTB		generated-2026-05-27:nasdaqtrader:otherlisted
+US	IMAR	Innovator International Developed Power Buffer ETF March	Innovator International Developed Power Buffer ETF March	ETF	NYSE_ARCA	IMAR	IMAR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IMAY	Innovator International Developed Power Buffer ETF - May	Innovator International Developed Power Buffer ETF - May	ETF	NYSE_ARCA	IMAY	IMAY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IMCB	iShares Morningstar Mid-Cap ETF	iShares Morningstar Mid-Cap ETF	ETF	NYSE_ARCA	IMCB	IMCB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IMCG	iShares Morningstar Mid-Cap Growth ETF	iShares Morningstar Mid-Cap Growth ETF	ETF	NYSE_ARCA	IMCG	IMCG		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6043,7 +6043,7 @@ US	INFL	Horizon Kinetics Inflation Beneficiaries ETF	Horizon Kinetics Inflation 
 US	INFO	Harbor PanAgora Dynamic Large Cap Core ETF	Harbor PanAgora Dynamic Large Cap Core ETF	ETF	NYSE	INFO	INFO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	INKM	State Street Income Allocation ETF	State Street Income Allocation ETF	ETF	NYSE_ARCA	INKM	INKM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	INMU	iShares Intermediate Muni Income Active ETF	iShares Intermediate Muni Income Active ETF	ETF	NYSE_ARCA	INMU	INMU		generated-2026-05-27:nasdaqtrader:otherlisted
-US	INOV	Innovator International Developed Power Buffer ETF  November	Innovator International Developed Power Buffer ETF  November	ETF	NYSE_ARCA	INOV	INOV		generated-2026-05-27:nasdaqtrader:otherlisted
+US	INOV	Innovator International Developed Power Buffer ETF November	Innovator International Developed Power Buffer ETF November	ETF	NYSE_ARCA	INOV	INOV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	INQQ	INQQ The India Internet ETF	INQQ The India Internet ETF	ETF	NYSE_ARCA	INQQ	INQQ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	INRO	iShares U.S. Industry Rotation Active ETF	iShares U.S. Industry Rotation Active ETF	ETF	NASDAQ	INRO	INRO		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	INTF	iShares International Equity Factor ETF	iShares International Equity Factor ETF	ETF	NYSE_ARCA	INTF	INTF		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6091,7 +6091,7 @@ US	ISCB	iShares Morningstar Small-Cap ETF	iShares Morningstar Small-Cap ETF	ETF	
 US	ISCF	iShares International Small-Cap Equity Factor ETF	iShares International Small-Cap Equity Factor ETF	ETF	NYSE_ARCA	ISCF	ISCF		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ISCG	iShares Morningstar Small-Cap Growth ETF	iShares Morningstar Small-Cap Growth ETF	ETF	NYSE_ARCA	ISCG	ISCG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ISCV	iShares Morningstar Small-Cap Value ETF	iShares Morningstar Small-Cap Value ETF	ETF	NYSE_ARCA	ISCV	ISCV		generated-2026-05-27:nasdaqtrader:otherlisted
-US	ISEP	Innovator International Developed Power Buffer ETF  September	Innovator International Developed Power Buffer ETF  September	ETF	NYSE_ARCA	ISEP	ISEP		generated-2026-05-27:nasdaqtrader:otherlisted
+US	ISEP	Innovator International Developed Power Buffer ETF September	Innovator International Developed Power Buffer ETF September	ETF	NYSE_ARCA	ISEP	ISEP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ISHG	iShares 1-3 Year International Treasury Bond ETF	iShares 1-3 Year International Treasury Bond ETF	ETF	NASDAQ	ISHG	ISHG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	ISHP	First Trust S-Network E-Commerce ETF	First Trust S-Network E-Commerce ETF	ETF	NASDAQ	ISHP	ISHP		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	ISMD	Inspire Small/Mid Cap ETF	Inspire Small/Mid Cap ETF	ETF	NYSE_ARCA	ISMD	ISMD		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6150,7 +6150,7 @@ US	IWFG	NYLI Winslow Focused Large Cap Growth ETF	NYLI Winslow Focused Large Cap
 US	IWFL	ETRACS 2x Leveraged US Growth Factor TR ETN	ETRACS 2x Leveraged US Growth Factor TR ETN	ETF	NYSE_ARCA	IWFL	IWFL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IWL	iShares Russell Top 200 ETF	iShares Russell Top 200 ETF	ETF	NYSE_ARCA	IWL	IWL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IWLG	NYLI Winslow Large Cap Growth ETF	NYLI Winslow Large Cap Growth ETF	ETF	NYSE_ARCA	IWLG	IWLG		generated-2026-05-27:nasdaqtrader:otherlisted
-US	IWM	iShares Russell 2000 Index Fund	iShares Russell 2000 Index Fund	ETF	NYSE_ARCA	IWM	IWM		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	IWM	iShares Russell 2000 ETF	iShares Russell 2000 ETF	ETF	NYSE_ARCA	IWM	IWM		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	IWMI	NEOS Russell 2000 High Income ETF	NEOS Russell 2000 High Income ETF	ETF	CBOE_BZX	IWMI	IWMI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IWML	ETRACS 2x Leveraged US Size Factor TR ETN	ETRACS 2x Leveraged US Size Factor TR ETN	ETF	NYSE_ARCA	IWML	IWML		generated-2026-05-27:nasdaqtrader:otherlisted
 US	IWMW	iShares Russell 2000 BuyWrite ETF	iShares Russell 2000 BuyWrite ETF	ETF	CBOE_BZX	IWMW	IWMW		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6326,7 +6326,7 @@ US	KAUG	Innovator US Small Cap Power Buffer ETF - August	Innovator US Small Cap 
 US	KBA	KraneShares Bosera MSCI China A 50 Connect Index ETF	KraneShares Bosera MSCI China A 50 Connect Index ETF	ETF	NYSE_ARCA	KBA	KBA		generated-2026-05-27:nasdaqtrader:otherlisted
 US	KBAB	KraneShares 2x Long BABA Daily ETF	KraneShares 2x Long BABA Daily ETF	ETF	NASDAQ	KBAB	KBAB		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	KBDU	KraneShares 2x Long BIDU Daily ETF	KraneShares 2x Long BIDU Daily ETF	ETF	NASDAQ	KBDU	KBDU		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	KBE	State Street SPDR S&P Bank ETF	State Street SPDR S&P Bank ETF	ETF	NYSE_ARCA	KBE	KBE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	KBE	SPDR S&P Bank ETF	SPDR S&P Bank ETF	ETF	NYSE_ARCA	KBE	KBE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	KBFR	Innovator U.S. Small Cap Managed 10 Buffer ETF	Innovator U.S. Small Cap Managed 10 Buffer ETF	ETF	NYSE_ARCA	KBFR	KBFR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	KBUF	KraneShares 90% KWEB Defined Outcome January 2027 ETF	KraneShares 90% KWEB Defined Outcome January 2027 ETF	ETF	NYSE_ARCA	KBUF	KBUF		generated-2026-05-27:nasdaqtrader:otherlisted
 US	KBWB	Invesco KBW Bank ETF	Invesco KBW Bank ETF	ETF	NASDAQ	KBWB	KBWB		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -6388,7 +6388,7 @@ US	KPHO	KraneShares Dragon Capital Vietnam Growth Index ETF	KraneShares Dragon C
 US	KPRO	KraneShares 100% KWEB Defined Outcome January 2027 ETF	KraneShares 100% KWEB Defined Outcome January 2027 ETF	ETF	NYSE_ARCA	KPRO	KPRO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	KQQQ	Kurv Technology Titans Select ETF	Kurv Technology Titans Select ETF	ETF	NASDAQ	KQQQ	KQQQ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	KRBN	KraneShares Global Carbon Strategy ETF	KraneShares Global Carbon Strategy ETF	ETF	NYSE_ARCA	KRBN	KRBN		generated-2026-05-27:nasdaqtrader:otherlisted
-US	KRE	State Street SPDR S&P Regional Banking ETF	State Street SPDR S&P Regional Banking ETF	ETF	NYSE_ARCA	KRE	KRE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	KRE	SPDR S&P Regional Banking ETF	SPDR S&P Regional Banking ETF	ETF	NYSE_ARCA	KRE	KRE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	KRMA	Global X Conscious Companies ETF	Global X Conscious Companies ETF	ETF	NASDAQ	KRMA	KRMA		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	KROP	Global X AgTech & Food Innovation ETF	Global X AgTech & Food Innovation ETF	ETF	NASDAQ	KROP	KROP		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	KRYP	ProShares CoinDesk 20 Crypto ETF	ProShares CoinDesk 20 Crypto ETF	ETF	NYSE_ARCA	KRYP	KRYP		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6494,7 +6494,7 @@ US	LOWV	AB US Low Volatility Equity ETF	AB US Low Volatility Equity ETF	ETF	NYSE
 US	LPRE	Long Pond Real Estate Select ETF	Long Pond Real Estate Select ETF	ETF	NYSE_ARCA	LPRE	LPRE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	LQ	Simplify Tax Aware Alternatives ETF	Simplify Tax Aware Alternatives ETF	ETF	NASDAQ	LQ	LQ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	LQAI	LG QRAFT AI-Powered U.S. Large Cap Core ETF	LG QRAFT AI-Powered U.S. Large Cap Core ETF	ETF	NYSE_ARCA	LQAI	LQAI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	LQD	iShares iBoxx $ Investment Grade Corporate Bond ETF	iShares iBoxx $ Investment Grade Corporate Bond ETF	ETF	NYSE_ARCA	LQD	LQD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	LQD	iShares iBoxx Investment Grade Corporate Bond ETF	iShares iBoxx Investment Grade Corporate Bond ETF	ETF	NYSE_ARCA	LQD	LQD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	LQDB	iShares BBB Rated Corporate Bond ETF	iShares BBB Rated Corporate Bond ETF	ETF	NYSE_ARCA	LQDB	LQDB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	LQDH	iShares Interest Rate Hedged Corporate Bond ETF	iShares Interest Rate Hedged Corporate Bond ETF	ETF	NYSE_ARCA	LQDH	LQDH		generated-2026-05-27:nasdaqtrader:otherlisted
 US	LQDI	iShares Inflation Hedged Corporate Bond ETF	iShares Inflation Hedged Corporate Bond ETF	ETF	CBOE_BZX	LQDI	LQDI		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6518,7 +6518,7 @@ US	LSVD	LSV Disciplined Value ETF	LSV Disciplined Value ETF	ETF	NYSE_ARCA	LSVD	L
 US	LTAX	Nomura Tax-Free USA ETF	Nomura Tax-Free USA ETF	ETF	NYSE_ARCA	LTAX	LTAX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	LTCC	Canary Litecoin ETF	Canary Litecoin ETF	ETF	NASDAQ	LTCC	LTCC		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	LTL	ProShares Ultra Communication Services	ProShares Ultra Communication Services	ETF	NYSE_ARCA	LTL	LTL		generated-2026-05-27:nasdaqtrader:otherlisted
-US	LTPZ	Pimco 15  Year U.S. TIPS Index Exchange-Traded Fund	Pimco 15  Year U.S. TIPS Index Exchange-Traded Fund	ETF	NYSE_ARCA	LTPZ	LTPZ		generated-2026-05-27:nasdaqtrader:otherlisted
+US	LTPZ	Pimco 15 Year U.S. TIPS Index Exchange-Traded Fund	Pimco 15 Year U.S. TIPS Index Exchange-Traded Fund	ETF	NYSE_ARCA	LTPZ	LTPZ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	LTTI	FT Vest 20+ Year Treasury & Target Income ETF	FT Vest 20+ Year Treasury & Target Income ETF	ETF	NYSE_ARCA	LTTI	LTTI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	LULG	Leverage Shares 2X Long LULU Daily ETF	Leverage Shares 2X Long LULU Daily ETF	ETF	NASDAQ	LULG	LULG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	LUNL	Defiance Daily Target 2X Long LUNR ETF	Defiance Daily Target 2X Long LUNR ETF	ETF	CBOE_BZX	LUNL	LUNL		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6583,7 +6583,7 @@ US	MDIV	Multi-Asset Diversified Income Index Fund	Multi-Asset Diversified Income
 US	MDLV	Morgan Dempsey Large Cap Value ETF	Morgan Dempsey Large Cap Value ETF	ETF	CBOE_BZX	MDLV	MDLV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MDPL	Monarch Dividend Plus Index ETF	Monarch Dividend Plus Index ETF	ETF	CBOE_BZX	MDPL	MDPL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MDST	Westwood Salient Enhanced Midstream Income ETF	Westwood Salient Enhanced Midstream Income ETF	ETF	NYSE	MDST	MDST		generated-2026-05-27:nasdaqtrader:otherlisted
-US	MDY	State Street SPDR S&P MIDCAP 400 ETF Trust	State Street SPDR S&P MIDCAP 400 ETF Trust	ETF	NYSE_ARCA	MDY	MDY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	MDY	SPDR S&P MidCap 400 ETF Trust	SPDR S&P MidCap 400 ETF Trust	ETF	NYSE_ARCA	MDY	MDY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	MDYG	State Street SPDR S&P 400 Mid Cap Growth ETF	State Street SPDR S&P 400 Mid Cap Growth ETF	ETF	NYSE_ARCA	MDYG	MDYG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MDYV	State Street SPDR S&P 400 Mid Cap Value ETF	State Street SPDR S&P 400 Mid Cap Value ETF	ETF	NYSE_ARCA	MDYV	MDYV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MEAR	iShares Short Maturity Municipal Bond Active ETF	iShares Short Maturity Municipal Bond Active ETF	ETF	CBOE_BZX	MEAR	MEAR		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6597,7 +6597,7 @@ US	MEMX	Matthews Emerging Markets ex China Active ETF	Matthews Emerging Markets 
 US	MEMY	Tuttle Capital Meme Stock Income Blast ETF	Tuttle Capital Meme Stock Income Blast ETF	ETF	CBOE_BZX	MEMY	MEMY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	METD	Direxion Daily META Bear 1X ETF	Direxion Daily META Bear 1X ETF	ETF	NASDAQ	METD	METD		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	METL	Sprott Active Metals & Miners ETF	Sprott Active Metals & Miners ETF	ETF	NASDAQ	METL	METL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	METU	Direxion Daily META Bull 2X ETF	Direxion Daily META Bull 2X ETF	ETF	NASDAQ	METU	METU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	METU	Direxion Daily META Bull 2X Shares	Direxion Daily META Bull 2X Shares	ETF	NASDAQ	METU	METU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	METV	Roundhill Ball Metaverse ETF	Roundhill Ball Metaverse ETF	ETF	NYSE_ARCA	METV	METV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	METW	Roundhill META WeeklyPay ETF	Roundhill META WeeklyPay ETF	ETF	CBOE_BZX	METW	METW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MEXX	Direxion Daily MSCI Mexico Bull 3X ETF	Direxion Daily MSCI Mexico Bull 3X ETF	ETF	NYSE_ARCA	MEXX	MEXX		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6695,7 +6695,7 @@ US	MSDD	GraniteShares 2x Short MSTR Daily ETF	GraniteShares 2x Short MSTR Daily 
 US	MSFD	Direxion Daily MSFT Bear 1X ETF	Direxion Daily MSFT Bear 1X ETF	ETF	NASDAQ	MSFD	MSFD		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	MSFL	GraniteShares 2x Long MSFT Daily ETF	GraniteShares 2x Long MSFT Daily ETF	ETF	NASDAQ	MSFL	MSFL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	MSFO	YieldMax MSFT Option Income Strategy ETF	YieldMax MSFT Option Income Strategy ETF	ETF	NYSE_ARCA	MSFO	MSFO		generated-2026-05-27:nasdaqtrader:otherlisted
-US	MSFU	Direxion Daily MSFT Bull 2X ETF	Direxion Daily MSFT Bull 2X ETF	ETF	NASDAQ	MSFU	MSFU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	MSFU	Direxion Daily MSFT Bull 2X Shares	Direxion Daily MSFT Bull 2X Shares	ETF	NASDAQ	MSFU	MSFU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	MSFW	Roundhill MSFT WeeklyPay ETF	Roundhill MSFT WeeklyPay ETF	ETF	CBOE_BZX	MSFW	MSFW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MSFX	T-Rex 2X Long Microsoft Daily Target ETF	T-Rex 2X Long Microsoft Daily Target ETF	ETF	CBOE_BZX	MSFX	MSFX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MSFY	Kurv Yield Premium Strategy Microsoft (MSFT) ETF	Kurv Yield Premium Strategy Microsoft (MSFT) ETF	ETF	CBOE_BZX	MSFY	MSFY		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6716,7 +6716,7 @@ US	MSTP	GraniteShares 2x Long MSTR Daily ETF	GraniteShares 2x Long MSTR Daily ET
 US	MSTQ	LHA Market State Tactical Q ETF	LHA Market State Tactical Q ETF	ETF	CBOE_BZX	MSTQ	MSTQ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MSTU	T-Rex 2X Long MSTR Daily Target ETF	T-Rex 2X Long MSTR Daily Target ETF	ETF	CBOE_BZX	MSTU	MSTU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	MSTW	Roundhill MSTR WeeklyPay ETF	Roundhill MSTR WeeklyPay ETF	ETF	CBOE_BZX	MSTW	MSTW		generated-2026-05-27:nasdaqtrader:otherlisted
-US	MSTX	Defiance Daily Target 2x Long MSTR ETF	Defiance Daily Target 2x Long MSTR ETF	ETF	NASDAQ	MSTX	MSTX		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	MSTX	Defiance Daily Target 2X Long MSTR ETF	Defiance Daily Target 2X Long MSTR ETF	ETF	NASDAQ	MSTX	MSTX		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	MSTY	YieldMax MSTR Option Income Strategy ETF	YieldMax MSTR Option Income Strategy ETF	ETF	NYSE_ARCA	MSTY	MSTY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MSTZ	T-Rex 2X Inverse MSTR Daily Target ETF	T-Rex 2X Inverse MSTR Daily Target ETF	ETF	CBOE_BZX	MSTZ	MSTZ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	MTBA	Simplify MBS ETF	Simplify MBS ETF	ETF	NYSE_ARCA	MTBA	MTBA		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -6905,7 +6905,7 @@ US	NVDL	GraniteShares 2x Long NVDA Daily ETF	GraniteShares 2x Long NVDA Daily ET
 US	NVDO	Leverage Shares 2x Capped Accelerated NVDA Monthly ETF	Leverage Shares 2x Capped Accelerated NVDA Monthly ETF	ETF	CBOE_BZX	NVDO	NVDO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	NVDQ	T-Rex 2X Inverse NVIDIA Daily Target ETF	T-Rex 2X Inverse NVIDIA Daily Target ETF	ETF	CBOE_BZX	NVDQ	NVDQ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	NVDS	Tradr 1.5X Short NVDA Daily ETF	Tradr 1.5X Short NVDA Daily ETF	ETF	NASDAQ	NVDS	NVDS		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	NVDU	Direxion Daily NVDA Bull 2X ETF	Direxion Daily NVDA Bull 2X ETF	ETF	NASDAQ	NVDU	NVDU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	NVDU	Direxion Daily NVDA Bull 2X Shares	Direxion Daily NVDA Bull 2X Shares	ETF	NASDAQ	NVDU	NVDU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	NVDW	Roundhill NVDA WeeklyPay ETF	Roundhill NVDA WeeklyPay ETF	ETF	CBOE_BZX	NVDW	NVDW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	NVDX	T-Rex 2X Long NVIDIA Daily Target ETF	T-Rex 2X Long NVIDIA Daily Target ETF	ETF	CBOE_BZX	NVDX	NVDX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	NVDY	YieldMax NVDA Option Income Strategy ETF	YieldMax NVDA Option Income Strategy ETF	ETF	NYSE_ARCA	NVDY	NVDY		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -7104,7 +7104,7 @@ US	PFFD	Global X U.S. Preferred ETF	Global X U.S. Preferred ETF	ETF	NYSE_ARCA	PF
 US	PFFR	InfraCap REIT Preferred ETF	InfraCap REIT Preferred ETF	ETF	NYSE_ARCA	PFFR	PFFR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PFFV	Global X Variable Rate Preferred ETF	Global X Variable Rate Preferred ETF	ETF	NYSE_ARCA	PFFV	PFFV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PFI	Invesco Dorsey Wright Financial Momentum ETF	Invesco Dorsey Wright Financial Momentum ETF	ETF	NASDAQ	PFI	PFI		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	PFIG	Invesco Fundamental Investment Grade Corporate Bond  ETF	Invesco Fundamental Investment Grade Corporate Bond  ETF	ETF	NYSE_ARCA	PFIG	PFIG		generated-2026-05-27:nasdaqtrader:otherlisted
+US	PFIG	Invesco Fundamental Investment Grade Corporate Bond ETF	Invesco Fundamental Investment Grade Corporate Bond ETF	ETF	NYSE_ARCA	PFIG	PFIG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PFIX	Simplify Interest Rate Hedge ETF	Simplify Interest Rate Hedge ETF	ETF	NYSE_ARCA	PFIX	PFIX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PFLD	AAM Low Duration Preferred and Income Securities ETF	AAM Low Duration Preferred and Income Securities ETF	ETF	NYSE_ARCA	PFLD	PFLD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PFM	Invesco Dividend Achievers ETF	Invesco Dividend Achievers ETF	ETF	NASDAQ	PFM	PFM		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -7297,14 +7297,14 @@ US	PYPG	Leverage Shares 2X Long PYPL Daily ETF	Leverage Shares 2X Long PYPL Dail
 US	PYPU	Direxion Daily PYPL Bull 2X ETF	Direxion Daily PYPL Bull 2X ETF	ETF	NYSE_ARCA	PYPU	PYPU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PYPY	YieldMax PYPL Option Income Strategy ETF	YieldMax PYPL Option Income Strategy ETF	ETF	NYSE_ARCA	PYPY	PYPY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PYZ	Invesco Dorsey Wright Basic Materials Momentum ETF	Invesco Dorsey Wright Basic Materials Momentum ETF	ETF	NASDAQ	PYZ	PYZ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	PZA	Invesco National AMT-Free Municipal Bond ETFo	Invesco National AMT-Free Municipal Bond ETFo	ETF	NYSE_ARCA	PZA	PZA		generated-2026-05-27:nasdaqtrader:otherlisted
+US	PZA	Invesco National AMT-Free Municipal Bond ETF	Invesco National AMT-Free Municipal Bond ETF	ETF	NYSE_ARCA	PZA	PZA		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PZIV	Pzena International Value ETF	Pzena International Value ETF	ETF	NYSE_ARCA	PZIV	PZIV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PZLV	Pzena U.S. Large Cap Value ETF	Pzena U.S. Large Cap Value ETF	ETF	NYSE_ARCA	PZLV	PZLV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	PZT	Invesco New York AMT-Free Municipal Bond ETF	Invesco New York AMT-Free Municipal Bond ETF	ETF	NYSE_ARCA	PZT	PZT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QABA	First Trust NASDAQ ABA Community Bank Index Fund	First Trust NASDAQ ABA Community Bank Index Fund	ETF	NASDAQ	QABA	QABA		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	QAI	NYLI Hedge Multi-Strategy Tracker ETF	NYLI Hedge Multi-Strategy Tracker ETF	ETF	NYSE_ARCA	QAI	QAI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QALT	SEI DBi Multi-Strategy Alternative ETF	SEI DBi Multi-Strategy Alternative ETF	ETF	NASDAQ	QALT	QALT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	QARP	Xtrackers Russell 1000 US Quality at a Reasonable Price ETF ETF	Xtrackers Russell 1000 US Quality at a Reasonable Price ETF ETF	ETF	NYSE_ARCA	QARP	QARP		generated-2026-05-27:nasdaqtrader:otherlisted
+US	QARP	Xtrackers Russell 1000 US Quality at a Reasonable Price ETF	Xtrackers Russell 1000 US Quality at a Reasonable Price ETF	ETF	NYSE_ARCA	QARP	QARP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QAT	iShares MSCI Qatar ETF	iShares MSCI Qatar ETF	ETF	NASDAQ	QAT	QAT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	QB	ProShares Nasdaq-100 Dynamic Buffer ETF	ProShares Nasdaq-100 Dynamic Buffer ETF	ETF	NASDAQ	QB	QB		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	QBER	TrueShares Quarterly Bear Hedge ETF	TrueShares Quarterly Bear Hedge ETF	ETF	CBOE_BZX	QBER	QBER		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -7366,7 +7366,7 @@ US	QLTI	GMO International Quality ETF	GMO International Quality ETF	ETF	NYSE_ARC
 US	QLTY	GMO U.S. Quality ETF	GMO U.S. Quality ETF	ETF	NYSE_ARCA	QLTY	QLTY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QLV	FlexShares US Quality Low Volatility Index Fund	FlexShares US Quality Low Volatility Index Fund	ETF	NYSE_ARCA	QLV	QLV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QLVD	FlexShares Developed Markets ex-US Quality Low Volatility Index Fund	FlexShares Developed Markets ex-US Quality Low Volatility Index Fund	ETF	NYSE_ARCA	QLVD	QLVD		generated-2026-05-27:nasdaqtrader:otherlisted
-US	QLVE	FlexShares Emerging Markets  Quality Low Volatility Index Fund	FlexShares Emerging Markets  Quality Low Volatility Index Fund	ETF	NYSE_ARCA	QLVE	QLVE		generated-2026-05-27:nasdaqtrader:otherlisted
+US	QLVE	FlexShares Emerging Markets Quality Low Volatility Index Fund	FlexShares Emerging Markets Quality Low Volatility Index Fund	ETF	NYSE_ARCA	QLVE	QLVE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QMAG	FT Vest Nasdaq-100 Moderate Buffer ETF - August	FT Vest Nasdaq-100 Moderate Buffer ETF - August	ETF	CBOE_BZX	QMAG	QMAG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QMAR	FT Vest Nasdaq-100 Buffer ETF - March	FT Vest Nasdaq-100 Buffer ETF - March	ETF	CBOE_BZX	QMAR	QMAR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QMFE	FT Vest Nasdaq-100 Moderate Buffer ETF - February	FT Vest Nasdaq-100 Moderate Buffer ETF - February	ETF	CBOE_BZX	QMFE	QMFE		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -7387,7 +7387,7 @@ US	QQHG	Invesco QQQ Hedged Advantage ETF	Invesco QQQ Hedged Advantage ETF	ETF	NA
 US	QQLV	Invesco QQQ Low Volatility ETF	Invesco QQQ Low Volatility ETF	ETF	NASDAQ	QQLV	QQLV		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	QQMG	Invesco ESG NASDAQ 100 ETF	Invesco ESG NASDAQ 100 ETF	ETF	NASDAQ	QQMG	QQMG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	QQMY	Corgi Growth & Technology 15% Structured Buffer ETF - May Series	Corgi Growth & Technology 15% Structured Buffer ETF - May Series	ETF	CBOE_BZX	QQMY	QQMY		generated-2026-05-27:nasdaqtrader:otherlisted
-US	QQQ	Invesco QQQ Trust, Series 1	Invesco QQQ Trust, Series 1	ETF	NASDAQ	QQQ	QQQ		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	QQQ	Invesco QQQ Trust	Invesco QQQ Trust	ETF	NASDAQ	QQQ	QQQ		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	QQQA	ProShares Nasdaq-100 Dorsey Wright Momentum ETF	ProShares Nasdaq-100 Dorsey Wright Momentum ETF	ETF	NASDAQ	QQQA	QQQA		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	QQQD	Direxion Daily Magnificent 7 Bear 1X ETF	Direxion Daily Magnificent 7 Bear 1X ETF	ETF	NYSE_ARCA	QQQD	QQQD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	QQQE	Direxion NASDAQ-100 Equal Weighted Index ETF	Direxion NASDAQ-100 Equal Weighted Index ETF	ETF	NASDAQ	QQQE	QQQE		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -7585,7 +7585,7 @@ US	RSPS	Invesco S&P 500 Equal Weight Consumer Staples ETF	Invesco S&P 500 Equal 
 US	RSPT	Invesco S&P 500 Equal Weight Technology ETF	Invesco S&P 500 Equal Weight Technology ETF	ETF	NYSE_ARCA	RSPT	RSPT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	RSPU	Invesco S&P 500 Equal Weight Utilities ETF	Invesco S&P 500 Equal Weight Utilities ETF	ETF	NYSE_ARCA	RSPU	RSPU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	RSSB	Return Stacked Global Stocks & Bonds ETF	Return Stacked Global Stocks & Bonds ETF	ETF	CBOE_BZX	RSSB	RSSB		generated-2026-05-27:nasdaqtrader:otherlisted
-US	RSSE	FT Vest U.S. Equity Equal Weight Buffer ETF  September	FT Vest U.S. Equity Equal Weight Buffer ETF  September	ETF	NYSE_ARCA	RSSE	RSSE		generated-2026-05-27:nasdaqtrader:otherlisted
+US	RSSE	FT Vest U.S. Equity Equal Weight Buffer ETF September	FT Vest U.S. Equity Equal Weight Buffer ETF September	ETF	NYSE_ARCA	RSSE	RSSE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	RSSL	Global X Russell 2000 ETF	Global X Russell 2000 ETF	ETF	NYSE_ARCA	RSSL	RSSL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	RSST	Return Stacked U.S. Stocks & Managed Futures ETF	Return Stacked U.S. Stocks & Managed Futures ETF	ETF	CBOE_BZX	RSST	RSST		generated-2026-05-27:nasdaqtrader:otherlisted
 US	RSSX	Return Stacked U.S. Stocks & Gold/Bitcoin ETF	Return Stacked U.S. Stocks & Gold/Bitcoin ETF	ETF	CBOE_BZX	RSSX	RSSX		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -7651,7 +7651,7 @@ US	SCEP	Sterling Capital Hedged Equity Premium Income ETF	Sterling Capital Hedge
 US	SCHA	Schwab U.S. Small-Cap ETF	Schwab U.S. Small-Cap ETF	ETF	NYSE_ARCA	SCHA	SCHA		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SCHB	Schwab U.S. Broad Market ETF	Schwab U.S. Broad Market ETF	ETF	NYSE_ARCA	SCHB	SCHB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SCHC	Schwab International Small-Cap Equity ETF	Schwab International Small-Cap Equity ETF	ETF	NYSE_ARCA	SCHC	SCHC		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SCHD	Schwab US Dividend Equity ETF	Schwab US Dividend Equity ETF	ETF	NYSE_ARCA	SCHD	SCHD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SCHD	Schwab U.S. Dividend Equity ETF	Schwab U.S. Dividend Equity ETF	ETF	NYSE_ARCA	SCHD	SCHD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SCHE	Schwab Emerging Markets Equity ETF	Schwab Emerging Markets Equity ETF	ETF	NYSE_ARCA	SCHE	SCHE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SCHF	Schwab International Equity ETF	Schwab International Equity ETF	ETF	NYSE_ARCA	SCHF	SCHF		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SCHG	Schwab U.S. Large-Cap Growth ETF	Schwab U.S. Large-Cap Growth ETF	ETF	NYSE_ARCA	SCHG	SCHG		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -7755,7 +7755,7 @@ US	SHPU	Direxion Daily SHOP Bull 2X ETF	Direxion Daily SHOP Bull 2X ETF	ETF	NASD
 US	SHRT	Gotham Short Strategies ETF	Gotham Short Strategies ETF	ETF	NYSE_ARCA	SHRT	SHRT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SHRY	First Trust Bloomberg Shareholder Yield ETF	First Trust Bloomberg Shareholder Yield ETF	ETF	NASDAQ	SHRY	SHRY		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	SHUS	Stratified LargeCap Hedged ETF	Stratified LargeCap Hedged ETF	ETF	NYSE_ARCA	SHUS	SHUS		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SHV	iShares 0-1 Year Treasury Bond ETF	iShares 0-1 Year Treasury Bond ETF	ETF	NYSE	SHV	SHV		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SHV	iShares Short Treasury Bond ETF	iShares Short Treasury Bond ETF	ETF	NYSE	SHV	SHV		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SHY	iShares 1-3 Year Treasury Bond ETF	iShares 1-3 Year Treasury Bond ETF	ETF	NASDAQ	SHY	SHY		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	SHYD	VanEck Short High Yield Muni ETF	VanEck Short High Yield Muni ETF	ETF	CBOE_BZX	SHYD	SHYD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SHYG	iShares 0-5 Year High Yield Corporate Bond ETF	iShares 0-5 Year High Yield Corporate Bond ETF	ETF	NYSE_ARCA	SHYG	SHYG		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -7870,10 +7870,10 @@ US	SOLT	2x Solana ETF	2x Solana ETF	ETF	NASDAQ	SOLT	SOLT		generated-2026-05-27:n
 US	SOLZ	Solana ETF	Solana ETF	ETF	NASDAQ	SOLZ	SOLZ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	SOUX	Defiance Daily Target 2X Long SOUN ETF	Defiance Daily Target 2X Long SOUN ETF	ETF	NASDAQ	SOUX	SOUX		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	SOVF	Sovereign's Capital Flourish Fund	Sovereign's Capital Flourish Fund	ETF	NYSE_ARCA	SOVF	SOVF		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SOXL	Direxion Daily Semiconductor Bull 3X ETF	Direxion Daily Semiconductor Bull 3X ETF	ETF	NYSE_ARCA	SOXL	SOXL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SOXL	Direxion Daily Semiconductor Bull 3X Shares	Direxion Daily Semiconductor Bull 3X Shares	ETF	NYSE_ARCA	SOXL	SOXL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SOXQ	Invesco PHLX Semiconductor ETF	Invesco PHLX Semiconductor ETF	ETF	NASDAQ	SOXQ	SOXQ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	SOXS	Direxion Daily Semiconductor Bear 3X ETF	Direxion Daily Semiconductor Bear 3X ETF	ETF	NYSE_ARCA	SOXS	SOXS		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
-US	SOXX	iShares PHLX SOX Semiconductor Sector Index Fund	iShares PHLX SOX Semiconductor Sector Index Fund	ETF	NASDAQ	SOXX	SOXX		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	SOXS	Direxion Daily Semiconductor Bear 3X Shares	Direxion Daily Semiconductor Bear 3X Shares	ETF	NYSE_ARCA	SOXS	SOXS		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SOXX	iShares Semiconductor ETF	iShares Semiconductor ETF	ETF	NASDAQ	SOXX	SOXX		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	SOXY	YieldMax Target 12 Semiconductor Option Income ETF	YieldMax Target 12 Semiconductor Option Income ETF	ETF	NYSE_ARCA	SOXY	SOXY		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SOYB	Teucrium Soybean Fund ETV	Teucrium Soybean Fund ETV	ETF	NYSE_ARCA	SOYB	SOYB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPAB	State Street SPDR Portfolio Aggregate Bond ETF	State Street SPDR Portfolio Aggregate Bond ETF	ETF	NYSE_ARCA	SPAB	SPAB		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -7936,24 +7936,24 @@ US	SPVM	Invesco S&P 500 Value with Momentum ETF	Invesco S&P 500 Value with Momen
 US	SPWO	SP Funds S&P World (ex-US) ETF	SP Funds S&P World (ex-US) ETF	ETF	NYSE_ARCA	SPWO	SPWO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPXD	Xtrackers S&P 500 Diversified Sector Weight ETF	Xtrackers S&P 500 Diversified Sector Weight ETF	ETF	NASDAQ	SPXD	SPXD		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	SPXE	ProShares S&P 500 Ex-Energy ETF	ProShares S&P 500 Ex-Energy ETF	ETF	NYSE_ARCA	SPXE	SPXE		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SPXL	Direxion Daily S&P 500 Bull 3X ETF	Direxion Daily S&P 500 Bull 3X ETF	ETF	NYSE_ARCA	SPXL	SPXL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SPXL	Direxion Daily S&P 500 Bull 3X Shares	Direxion Daily S&P 500 Bull 3X Shares	ETF	NYSE_ARCA	SPXL	SPXL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPXN	ProShares S&P 500 Ex-Financials ETF	ProShares S&P 500 Ex-Financials ETF	ETF	NYSE_ARCA	SPXN	SPXN		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SPXS	Direxion Daily S&P 500 Bear 3X ETF	Direxion Daily S&P 500 Bear 3X ETF	ETF	NYSE_ARCA	SPXS	SPXS		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SPXS	Direxion Daily S&P 500 Bear 3X Shares	Direxion Daily S&P 500 Bear 3X Shares	ETF	NYSE_ARCA	SPXS	SPXS		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPXT	ProShares S&P 500 Ex-Technology ETF	ProShares S&P 500 Ex-Technology ETF	ETF	NYSE_ARCA	SPXT	SPXT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPXU	ProShares UltraPro Short S&P500	ProShares UltraPro Short S&P500	ETF	NYSE_ARCA	SPXU	SPXU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPXV	ProShares S&P 500 Ex-Health Care ETF	ProShares S&P 500 Ex-Health Care ETF	ETF	NYSE_ARCA	SPXV	SPXV		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SPY	State Street SPDR S&P 500 ETF Trust	State Street SPDR S&P 500 ETF Trust	ETF	NYSE_ARCA	SPY	SPY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SPY	SPDR S&P 500 ETF Trust	SPDR S&P 500 ETF Trust	ETF	NYSE_ARCA	SPY	SPY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYA	Twin Oak Endure ETF	Twin Oak Endure ETF	ETF	CBOE_BZX	SPYA	SPYA		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYC	Simplify US Equity PLUS Convexity ETF	Simplify US Equity PLUS Convexity ETF	ETF	NYSE_ARCA	SPYC	SPYC		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYD	State Street SPDR Portfolio S&P 500 High Dividend ETF	State Street SPDR Portfolio S&P 500 High Dividend ETF	ETF	NYSE_ARCA	SPYD	SPYD		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SPYG	State Street SPDR Portfolio S&P 500 Growth ETF	State Street SPDR Portfolio S&P 500 Growth ETF	ETF	NYSE_ARCA	SPYG	SPYG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SPYG	SPDR Portfolio S&P 500 Growth ETF	SPDR Portfolio S&P 500 Growth ETF	ETF	NYSE_ARCA	SPYG	SPYG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYH	NEOS S&P 500 Hedged Equity Income ETF	NEOS S&P 500 Hedged Equity Income ETF	ETF	CBOE_BZX	SPYH	SPYH		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYI	NEOS S&P 500 High Income ETF	NEOS S&P 500 High Income ETF	ETF	CBOE_BZX	SPYI	SPYI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYM	State Street SPDR Portfolio S&P 500 ETF	State Street SPDR Portfolio S&P 500 ETF	ETF	NYSE_ARCA	SPYM	SPYM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYQ	Tradr 2X Long SPY Quarterly ETF	Tradr 2X Long SPY Quarterly ETF	ETF	NASDAQ	SPYQ	SPYQ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	SPYT	Defiance S&P 500 Target Income ETF	Defiance S&P 500 Target Income ETF	ETF	NYSE_ARCA	SPYT	SPYT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYU	MAX S&P 500 4X Leveraged ETNs due October 30, 2043	MAX S&P 500 4X Leveraged ETNs due October 30, 2043	ETF	NYSE_ARCA	SPYU	SPYU		generated-2026-05-27:nasdaqtrader:otherlisted
-US	SPYV	State Street SPDR Portfolio S&P 500 Value ETF	State Street SPDR Portfolio S&P 500 Value ETF	ETF	NYSE_ARCA	SPYV	SPYV		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	SPYV	SPDR Portfolio S&P 500 Value ETF	SPDR Portfolio S&P 500 Value ETF	ETF	NYSE_ARCA	SPYV	SPYV		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	SPYX	State Street SPDR S&P 500 Fossil Fuel Reserves Free ETF	State Street SPDR S&P 500 Fossil Fuel Reserves Free ETF	ETF	NYSE_ARCA	SPYX	SPYX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SQLT	iShares MSCI USA Small-Cap Quality Factor ETF	iShares MSCI USA Small-Cap Quality Factor ETF	ETF	CBOE_BZX	SQLT	SQLT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	SQLV	Royce Quant Small-Cap Quality Value ETF	Royce Quant Small-Cap Quality Value ETF	ETF	NASDAQ	SQLV	SQLV		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -8052,14 +8052,14 @@ US	TAXS	Northern Trust Short-Term Tax-Exempt Bond ETF	Northern Trust Short-Term 
 US	TAXT	Northern Trust Tax-Exempt Bond ETF	Northern Trust Tax-Exempt Bond ETF	ETF	NASDAQ	TAXT	TAXT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	TAXX	BondBloxx IR+M Tax-Aware Short Duration ETF	BondBloxx IR+M Tax-Aware Short Duration ETF	ETF	NYSE_ARCA	TAXX	TAXX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBF	ProShares Short 20+ Year Treasury	ProShares Short 20+ Year Treasury	ETF	NYSE_ARCA	TBF	TBF		generated-2026-05-27:nasdaqtrader:otherlisted
-US	TBFC	The Brinsmere Fund  Conservative ETF	The Brinsmere Fund  Conservative ETF	ETF	NYSE_ARCA	TBFC	TBFC		generated-2026-05-27:nasdaqtrader:otherlisted
+US	TBFC	The Brinsmere Fund Conservative ETF	The Brinsmere Fund Conservative ETF	ETF	NYSE_ARCA	TBFC	TBFC		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBFG	The Brinsmere Fund Growth ETF	The Brinsmere Fund Growth ETF	ETF	NYSE_ARCA	TBFG	TBFG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBG	TBG Dividend Focus ETF	TBG Dividend Focus ETF	ETF	NYSE_ARCA	TBG	TBG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBIL	F/m US Treasury 3 Month Bill Fund	F/m US Treasury 3 Month Bill Fund	ETF	NASDAQ	TBIL	TBIL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	TBJL	Innovator 20  Year Treasury Bond 9 Buffer ETF - July	Innovator 20  Year Treasury Bond 9 Buffer ETF - July	ETF	CBOE_BZX	TBJL	TBJL		generated-2026-05-27:nasdaqtrader:otherlisted
+US	TBJL	Innovator 20 Year Treasury Bond 9 Buffer ETF - July	Innovator 20 Year Treasury Bond 9 Buffer ETF - July	ETF	CBOE_BZX	TBJL	TBJL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBLL	Invesco Short Term Treasury ETF	Invesco Short Term Treasury ETF	ETF	NYSE_ARCA	TBLL	TBLL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBLU	Tortoise Global Water ETF	Tortoise Global Water ETF	ETF	NYSE	TBLU	TBLU		generated-2026-05-27:nasdaqtrader:otherlisted
-US	TBT	ProShares UltraShort Lehman 20  Year Treasury	ProShares UltraShort Lehman 20  Year Treasury	ETF	NYSE_ARCA	TBT	TBT		generated-2026-05-27:nasdaqtrader:otherlisted
+US	TBT	ProShares UltraShort Lehman 20 Year Treasury	ProShares UltraShort Lehman 20 Year Treasury	ETF	NYSE_ARCA	TBT	TBT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBUX	T. Rowe Price Ultra Short-Term Bond ETF	T. Rowe Price Ultra Short-Term Bond ETF	ETF	NYSE_ARCA	TBUX	TBUX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBX	ProShares Short 7 10 Year Treasury	ProShares Short 7 10 Year Treasury	ETF	NYSE_ARCA	TBX	TBX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TBXU	Direxion Daily Biotech Top 5 Bull 2X ETF	Direxion Daily Biotech Top 5 Bull 2X ETF	ETF	NYSE_ARCA	TBXU	TBXU		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8111,7 +8111,7 @@ US	TEXX	Horizon Kinetics Texas ETF	Horizon Kinetics Texas ETF	ETF	NASDAQ	TEXX	TE
 US	TFFI	Chesapeake Trend-Following Fixed Income ETF	Chesapeake Trend-Following Fixed Income ETF	ETF	NYSE_ARCA	TFFI	TFFI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TFGZ	Thornburg Focus Growth Fund	Thornburg Focus Growth Fund	ETF	NASDAQ	TFGZ	TFGZ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	TFI	State Street SPDR Nuveen ICE Municipal Bond ETF	State Street SPDR Nuveen ICE Municipal Bond ETF	ETF	NYSE_ARCA	TFI	TFI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	TFJL	Innovator 20  Year Treasury Bond 5 Floor ETF - July	Innovator 20  Year Treasury Bond 5 Floor ETF - July	ETF	CBOE_BZX	TFJL	TFJL		generated-2026-05-27:nasdaqtrader:otherlisted
+US	TFJL	Innovator 20 Year Treasury Bond 5 Floor ETF - July	Innovator 20 Year Treasury Bond 5 Floor ETF - July	ETF	CBOE_BZX	TFJL	TFJL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TFLO	iShares Treasury Floating Rate Bond ETF	iShares Treasury Floating Rate Bond ETF	ETF	NYSE_ARCA	TFLO	TFLO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TFLR	T. Rowe Price Floating Rate ETF	T. Rowe Price Floating Rate ETF	ETF	NYSE_ARCA	TFLR	TFLR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TFNS	T. Rowe Price Financials ETF	T. Rowe Price Financials ETF	ETF	NASDAQ	TFNS	TFNS		generated-2026-05-27:nasdaqtrader:nasdaqlisted
@@ -8138,7 +8138,7 @@ US	THYP	21shares Hyperliquid ETF	21shares Hyperliquid ETF	ETF	NASDAQ	THYP	THYP		
 US	TIER	T. Rowe Price International Equity Research ETF	T. Rowe Price International Equity Research ETF	ETF	NYSE_ARCA	TIER	TIER		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TIIV	AAM Todd International Intrinsic Value ETF	AAM Todd International Intrinsic Value ETF	ETF	NYSE_ARCA	TIIV	TIIV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TILL	Teucrium Agricultural Strategy No K-1 ETF	Teucrium Agricultural Strategy No K-1 ETF	ETF	NYSE_ARCA	TILL	TILL		generated-2026-05-27:nasdaqtrader:otherlisted
-US	TILT	FlexShares Mornigstar US Market Factors Tilt Index Fund ETF	FlexShares Mornigstar US Market Factors Tilt Index Fund ETF	ETF	CBOE_BZX	TILT	TILT		generated-2026-05-27:nasdaqtrader:otherlisted
+US	TILT	FlexShares Morningstar US Market Factors Tilt Index Fund ETF	FlexShares Morningstar US Market Factors Tilt Index Fund ETF	ETF	CBOE_BZX	TILT	TILT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TIME	Clockwise U.S. Core Equity ETF	Clockwise U.S. Core Equity ETF	ETF	NYSE_ARCA	TIME	TIME		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TINS	Templeton International Insights ETF	Templeton International Insights ETF	ETF	NYSE_ARCA	TINS	TINS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TINT	ProShares Smart Materials ETF	ProShares Smart Materials ETF	ETF	NYSE_ARCA	TINT	TINT		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8251,12 +8251,12 @@ US	TSII	REX TSLA Growth & Income ETF	REX TSLA Growth & Income ETF	ETF	CBOE_BZX	T
 US	TSL	GraniteShares 1.25x Long TSLA Daily ETF	GraniteShares 1.25x Long TSLA Daily ETF	ETF	NASDAQ	TSL	TSL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	TSLG	Leverage Shares 2X Long TSLA Daily ETF	Leverage Shares 2X Long TSLA Daily ETF	ETF	NASDAQ	TSLG	TSLG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	TSLI	ProShares Ultra TSLA	ProShares Ultra TSLA	ETF	NYSE_ARCA	TSLI	TSLI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	TSLL	Direxion Daily TSLA Bull 2X ETF	Direxion Daily TSLA Bull 2X ETF	ETF	NASDAQ	TSLL	TSLL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	TSLL	Direxion Daily TSLA Bull 2X Shares	Direxion Daily TSLA Bull 2X Shares	ETF	NASDAQ	TSLL	TSLL		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	TSLO	Leverage Shares 2x Capped Accelerated TSLA Monthly ETF	Leverage Shares 2x Capped Accelerated TSLA Monthly ETF	ETF	CBOE_BZX	TSLO	TSLO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TSLP	Kurv Yield Premium Strategy Tesla (TSLA) ETF	Kurv Yield Premium Strategy Tesla (TSLA) ETF	ETF	CBOE_BZX	TSLP	TSLP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TSLQ	Tradr 2X Short TSLA Daily ETF	Tradr 2X Short TSLA Daily ETF	ETF	NASDAQ	TSLQ	TSLQ		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	TSLR	GraniteShares 2x Long TSLA Daily ETF	GraniteShares 2x Long TSLA Daily ETF	ETF	NASDAQ	TSLR	TSLR		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	TSLS	Direxion Daily TSLA Bear 1X ETF	Direxion Daily TSLA Bear 1X ETF	ETF	NASDAQ	TSLS	TSLS		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
+US	TSLS	Direxion Daily TSLA Bear 1X Shares	Direxion Daily TSLA Bear 1X Shares	ETF	NASDAQ	TSLS	TSLS		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	TSLT	T-REX 2X Long Tesla Daily Target ETF	T-REX 2X Long Tesla Daily Target ETF	ETF	CBOE_BZX	TSLT	TSLT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TSLW	Roundhill TSLA WeeklyPay ETF	Roundhill TSLA WeeklyPay ETF	ETF	CBOE_BZX	TSLW	TSLW		generated-2026-05-27:nasdaqtrader:otherlisted
 US	TSLY	YieldMax TSLA Option Income Strategy ETF	YieldMax TSLA Option Income Strategy ETF	ETF	NYSE_ARCA	TSLY	TSLY		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8358,7 +8358,7 @@ US	UMAY	Innovator U.S. Equity Ultra Buffer ETF - May	Innovator U.S. Equity Ultra
 US	UMDD	UltraPro MidCap400	UltraPro MidCap400	ETF	NYSE_ARCA	UMDD	UMDD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UMI	USCF Midstream Energy Income Fund ETF	USCF Midstream Energy Income Fund ETF	ETF	NYSE_ARCA	UMI	UMI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UMMA	Wahed Dow Jones Islamic World ETF	Wahed Dow Jones Islamic World ETF	ETF	NASDAQ	UMMA	UMMA		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	UNG	United States Natural Gas Fund LP	United States Natural Gas Fund LP	ETF	NYSE_ARCA	UNG	UNG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	UNG	United States Natural Gas Fund	United States Natural Gas Fund	ETF	NYSE_ARCA	UNG	UNG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	UNHG	Leverage Shares 2X Long UNH Daily ETF	Leverage Shares 2X Long UNH Daily ETF	ETF	NASDAQ	UNHG	UNHG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	UNHU	Direxion Daily UNH Bull 2X ETF	Direxion Daily UNH Bull 2X ETF	ETF	NYSE_ARCA	UNHU	UNHU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UNHW	Roundhill UNH WeeklyPay ETF	Roundhill UNH WeeklyPay ETF	ETF	CBOE_BZX	UNHW	UNHW		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8372,7 +8372,7 @@ US	UPAR	UPAR Ultra Risk Parity ETF	UPAR Ultra Risk Parity ETF	ETF	NYSE_ARCA	UPAR
 US	UPGD	Invesco Bloomberg Analyst Rating Improvers ETF	Invesco Bloomberg Analyst Rating Improvers ETF	ETF	NYSE_ARCA	UPGD	UPGD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UPGR	Xtrackers US Green Infrastructure Select Equity ETF	Xtrackers US Green Infrastructure Select Equity ETF	ETF	NASDAQ	UPGR	UPGR		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	UPLT	ProShares Ultra Platinum K-1 Free ETF	ProShares Ultra Platinum K-1 Free ETF	ETF	NYSE_ARCA	UPLT	UPLT		generated-2026-05-27:nasdaqtrader:otherlisted
-US	UPRO	ProShares UltraPro S&P 500	ProShares UltraPro S&P 500	ETF	NYSE_ARCA	UPRO	UPRO		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	UPRO	ProShares UltraPro S&P500	ProShares UltraPro S&P500	ETF	NYSE_ARCA	UPRO	UPRO		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	UPSD	Aptus Large Cap Upside ETF	Aptus Large Cap Upside ETF	ETF	CBOE_BZX	UPSD	UPSD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UPSG	Leverage Shares 2X Long UPS Daily ETF	Leverage Shares 2X Long UPS Daily ETF	ETF	NASDAQ	UPSG	UPSG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	UPSX	Tradr 2X Long UPST Daily ETF	Tradr 2X Long UPST Daily ETF	ETF	CBOE_BZX	UPSX	UPSX		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8441,7 +8441,7 @@ US	UUP	Invesco DB USD Index Bullish Fund ETF	Invesco DB USD Index Bullish Fund E
 US	UUPP	Principal CLO ETF	Principal CLO ETF	ETF	CBOE_BZX	UUPP	UUPP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UUUG	Leverage Shares 2X Long UUUU Daily ETF	Leverage Shares 2X Long UUUU Daily ETF	ETF	NASDAQ	UUUG	UUUG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	UVIX	2x Long VIX Futures ETF	2x Long VIX Futures ETF	ETF	CBOE_BZX	UVIX	UVIX		generated-2026-05-27:nasdaqtrader:otherlisted
-US	UVXY	ProShares Ultra VIX Short Term Futures ETF	ProShares Ultra VIX Short Term Futures ETF	ETF	CBOE_BZX	UVXY	UVXY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	UVXY	ProShares Ultra VIX Short-Term Futures ETF	ProShares Ultra VIX Short-Term Futures ETF	ETF	CBOE_BZX	UVXY	UVXY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	UWM	ProShares Ultra Russell2000	ProShares Ultra Russell2000	ETF	NYSE_ARCA	UWM	UWM		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UX	Roundhill Uranium ETF	Roundhill Uranium ETF	ETF	CBOE_BZX	UX	UX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	UXAP	FT Vest U.S. Equity Uncapped Accelerator ETF - April	FT Vest U.S. Equity Uncapped Accelerator ETF - April	ETF	CBOE_BZX	UXAP	UXAP		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8522,14 +8522,14 @@ US	VGVT	Vanguard Government Securities Active ETF	Vanguard Government Securities
 US	VHT	Vanguard Health Care ETF	Vanguard Health Care ETF	ETF	NYSE_ARCA	VHT	VHT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VICE	AdvisorShares Vice ETF	AdvisorShares Vice ETF	ETF	NYSE_ARCA	VICE	VICE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VIDI	Vident International Equity Strategy ETF	Vident International Equity Strategy ETF	ETF	NYSE_ARCA	VIDI	VIDI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	VIG	Vanguard Div Appreciation ETF	Vanguard Div Appreciation ETF	ETF	NYSE_ARCA	VIG	VIG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	VIG	Vanguard Dividend Appreciation ETF	Vanguard Dividend Appreciation ETF	ETF	NYSE_ARCA	VIG	VIG		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	VIGI	Vanguard International Dividend Appreciation ETF	Vanguard International Dividend Appreciation ETF	ETF	NASDAQ	VIGI	VIGI		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	VIOG	Vanguard S&P Small-Cap 600 Growth ETF	Vanguard S&P Small-Cap 600 Growth ETF	ETF	NYSE_ARCA	VIOG	VIOG		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VIOO	Vanguard S&P Small-Cap 600 ETF	Vanguard S&P Small-Cap 600 ETF	ETF	NYSE_ARCA	VIOO	VIOO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VIOV	Vanguard S&P Small-Cap 600 Value ETF	Vanguard S&P Small-Cap 600 Value ETF	ETF	NYSE_ARCA	VIOV	VIOV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VIS	Vanguard Industrials ETF	Vanguard Industrials ETF	ETF	NYSE_ARCA	VIS	VIS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VIXM	VIX Mid-Term Futures ETF	VIX Mid-Term Futures ETF	ETF	CBOE_BZX	VIXM	VIXM		generated-2026-05-27:nasdaqtrader:otherlisted
-US	VIXY	VIX Short-Term Futures ETF	VIX Short-Term Futures ETF	ETF	CBOE_BZX	VIXY	VIXY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	VIXY	ProShares VIX Short-Term Futures ETF	ProShares VIX Short-Term Futures ETF	ETF	CBOE_BZX	VIXY	VIXY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	VLLU	Harbor AlphaEdge Large Cap Value ETF	Harbor AlphaEdge Large Cap Value ETF	ETF	NYSE_ARCA	VLLU	VLLU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VLU	State Street SPDR S&P 1500 Value Tilt ETF	State Street SPDR S&P 1500 Value Tilt ETF	ETF	NYSE_ARCA	VLU	VLU		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VLUE	iShares MSCI USA Value Factor ETF	iShares MSCI USA Value Factor ETF	ETF	CBOE_BZX	VLUE	VLUE		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8554,7 +8554,7 @@ US	VOOG	Vanguard S&P 500 Growth ETF	Vanguard S&P 500 Growth ETF	ETF	NYSE_ARCA	VO
 US	VOOV	Vanguard S&P 500 Value ETF	Vanguard S&P 500 Value ETF	ETF	NYSE_ARCA	VOOV	VOOV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VOT	Vanguard Mid-Cap Growth ETF	Vanguard Mid-Cap Growth ETF	ETF	NYSE_ARCA	VOT	VOT		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VOTE	TCW Transform 500 ETF	TCW Transform 500 ETF	ETF	NASDAQ	VOTE	VOTE		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	VOX	Vanguard Communication Services  ETF	Vanguard Communication Services  ETF	ETF	NYSE_ARCA	VOX	VOX		generated-2026-05-27:nasdaqtrader:otherlisted
+US	VOX	Vanguard Communication Services ETF	Vanguard Communication Services ETF	ETF	NYSE_ARCA	VOX	VOX		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VOXP	Vox Populi ETF	Vox Populi ETF	ETF	CBOE_BZX	VOXP	VOXP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VPC	Virtus Private Credit Strategy ETF	Virtus Private Credit Strategy ETF	ETF	NYSE_ARCA	VPC	VPC		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VPL	Vanguard FTSE Pacific ETF	Vanguard FTSE Pacific ETF	ETF	NYSE_ARCA	VPL	VPL		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8575,7 +8575,7 @@ US	VSMV	VictoryShares US Multi-Factor Minimum Volatility ETF	VictoryShares US Mu
 US	VSOL	VanEck Solana ETF	VanEck Solana ETF	ETF	NASDAQ	VSOL	VSOL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	VSS	Vanguard FTSE All-Wld ex-US SmCp Idx ETF	Vanguard FTSE All-Wld ex-US SmCp Idx ETF	ETF	NYSE_ARCA	VSS	VSS		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VSTL	Defiance Daily Target 2X Long VST ETF	Defiance Daily Target 2X Long VST ETF	ETF	NASDAQ	VSTL	VSTL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
-US	VT	Vanguard Total World Stock Index ETF	Vanguard Total World Stock Index ETF	ETF	NYSE_ARCA	VT	VT		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	VT	Vanguard Total World Stock ETF	Vanguard Total World Stock ETF	ETF	NYSE_ARCA	VT	VT		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	VTC	Vanguard Total Corporate Bond ETF	Vanguard Total Corporate Bond ETF	ETF	NASDAQ	VTC	VTC		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	VTEB	Vanguard Tax-Exempt Bond ETF	Vanguard Tax-Exempt Bond ETF	ETF	NYSE_ARCA	VTEB	VTEB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	VTEC	Vanguard California Tax-Exempt Bond ETF	Vanguard California Tax-Exempt Bond ETF	ETF	CBOE_BZX	VTEC	VTEC		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8695,7 +8695,7 @@ US	XBAP	Innovator U.S. Equity Accelerated 9 Buffer ETF - April	Innovator U.S. Eq
 US	XBB	BondBloxx BB-Rated USD High Yield Corporate Bond ETF	BondBloxx BB-Rated USD High Yield Corporate Bond ETF	ETF	NYSE_ARCA	XBB	XBB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XBCI	NEOS Boosted Bitcoin High Income ETF	NEOS Boosted Bitcoin High Income ETF	ETF	NASDAQ	XBCI	XBCI		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	XBFR	Innovator Equity Managed 10 Buffer ETF	Innovator Equity Managed 10 Buffer ETF	ETF	NYSE_ARCA	XBFR	XBFR		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XBI	State Street SPDR S&P Biotech ETF	State Street SPDR S&P Biotech ETF	ETF	NYSE_ARCA	XBI	XBI		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XBI	SPDR S&P Biotech ETF	SPDR S&P Biotech ETF	ETF	NYSE_ARCA	XBI	XBI		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XBIL	US Treasury 6 Month Bill ETF	US Treasury 6 Month Bill ETF	ETF	NASDAQ	XBIL	XBIL		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	XBJA	Innovator U.S. Equity Accelerated 9 Buffer ETF - January	Innovator U.S. Equity Accelerated 9 Buffer ETF - January	ETF	CBOE_BZX	XBJA	XBJA		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XBJL	Innovator U.S. Equity Accelerated 9 Buffer ETF - July	Innovator U.S. Equity Accelerated 9 Buffer ETF - July	ETF	CBOE_BZX	XBJL	XBJL		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8724,11 +8724,11 @@ US	XEY	GraniteShares YieldBOOST Ether ETF	GraniteShares YieldBOOST Ether ETF	ETF
 US	XFEB	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - February	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - February	ETF	CBOE_BZX	XFEB	XFEB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XFIV	BondBloxx Bloomberg Five Year Target Duration US Treasury ETF	BondBloxx Bloomberg Five Year Target Duration US Treasury ETF	ETF	NYSE_ARCA	XFIV	XFIV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XFLX	FundX Flexible ETF	FundX Flexible ETF	ETF	NYSE_ARCA	XFLX	XFLX		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XHB	State Street SPDR S&P Homebuilders ETF	State Street SPDR S&P Homebuilders ETF	ETF	NYSE_ARCA	XHB	XHB		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XHB	SPDR S&P Homebuilders ETF	SPDR S&P Homebuilders ETF	ETF	NYSE_ARCA	XHB	XHB		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XHE	State Street SPDR S&P Health Care Equipment ETF	State Street SPDR S&P Health Care Equipment ETF	ETF	NYSE_ARCA	XHE	XHE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XHLF	BondBloxx Bloomberg Six Month Target Duration US Treasury ETF	BondBloxx Bloomberg Six Month Target Duration US Treasury ETF	ETF	NYSE_ARCA	XHLF	XHLF		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XHS	State Street SPDR S&P Health Care Services ETF	State Street SPDR S&P Health Care Services ETF	ETF	NYSE_ARCA	XHS	XHS		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XIDE	FT Vest U.S. Equity Buffer & Premium Income  ETF - December	FT Vest U.S. Equity Buffer & Premium Income  ETF - December	ETF	CBOE_BZX	XIDE	XIDE		generated-2026-05-27:nasdaqtrader:otherlisted
+US	XIDE	FT Vest U.S. Equity Buffer & Premium Income ETF - December	FT Vest U.S. Equity Buffer & Premium Income ETF - December	ETF	CBOE_BZX	XIDE	XIDE		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XIDV	Franklin International Dividend Booster Index ETF	Franklin International Dividend Booster Index ETF	ETF	NYSE_ARCA	XIDV	XIDV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XIJN	FT Vest U.S. Equity Buffer & Premium Income ETF - June	FT Vest U.S. Equity Buffer & Premium Income ETF - June	ETF	CBOE_BZX	XIJN	XIJN		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XIMR	FT Vest U.S. Equity Buffer & Premium Income ETF - March	FT Vest U.S. Equity Buffer & Premium Income ETF - March	ETF	CBOE_BZX	XIMR	XIMR		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8739,34 +8739,34 @@ US	XJH	iShares ESG Select Screened S&P Mid-Cap ETF	iShares ESG Select Screened S
 US	XJR	iShares ESG Select Screened S&P Small-Cap ETF	iShares ESG Select Screened S&P Small-Cap ETF	ETF	CBOE_BZX	XJR	XJR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XJUL	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - July	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - July	ETF	CBOE_BZX	XJUL	XJUL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XJUN	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - June	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - June	ETF	CBOE_BZX	XJUN	XJUN		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLB	State Street Materials Select Sector SPDR ETF	State Street Materials Select Sector SPDR ETF	ETF	NYSE_ARCA	XLB	XLB		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLB	Materials Select Sector SPDR Fund	Materials Select Sector SPDR Fund	ETF	NYSE_ARCA	XLB	XLB		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLBI	State Street Materials Select Sector SPDR Premium Income ETF	State Street Materials Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLBI	XLBI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLC	State Street Communication Services Select Sector SPDR ETF	State Street Communication Services Select Sector SPDR ETF	ETF	NYSE_ARCA	XLC	XLC		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLC	Communication Services Select Sector SPDR Fund	Communication Services Select Sector SPDR Fund	ETF	NYSE_ARCA	XLC	XLC		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLCI	State Street Communication Services Select Sector SPDR Premium Income ETF	State Street Communication Services Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLCI	XLCI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLE	State Street Energy Select Sector SPDR ETF	State Street Energy Select Sector SPDR ETF	ETF	NYSE_ARCA	XLE	XLE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLE	Energy Select Sector SPDR Fund	Energy Select Sector SPDR Fund	ETF	NYSE_ARCA	XLE	XLE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLEI	State Street Energy Select Sector SPDR Premium Income ETF	State Street Energy Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLEI	XLEI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLF	State Street Financial Select Sector SPDR ETF	State Street Financial Select Sector SPDR ETF	ETF	NYSE_ARCA	XLF	XLF		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLF	Financial Select Sector SPDR Fund	Financial Select Sector SPDR Fund	ETF	NYSE_ARCA	XLF	XLF		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLFI	State Street Financial Select Sector SPDR Premium Income ETF	State Street Financial Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLFI	XLFI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLG	Invesco S&P 500 Top 50 ETF	Invesco S&P 500 Top 50 ETF	ETF	NYSE_ARCA	XLG	XLG		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLI	State Street Industrial Select Sector SPDR ETF	State Street Industrial Select Sector SPDR ETF	ETF	NYSE_ARCA	XLI	XLI		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLI	Industrial Select Sector SPDR Fund	Industrial Select Sector SPDR Fund	ETF	NYSE_ARCA	XLI	XLI		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLII	State Street Industrial Select Sector SPDR Premium Income ETF	State Street Industrial Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLII	XLII		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLK	State Street Technology Select Sector SPDR ETF	State Street Technology Select Sector SPDR ETF	ETF	NYSE_ARCA	XLK	XLK		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLK	Technology Select Sector SPDR Fund	Technology Select Sector SPDR Fund	ETF	NYSE_ARCA	XLK	XLK		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLKI	State Street Technology Select Sector SPDR Premium Income ETF	State Street Technology Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLKI	XLKI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLP	State Street Consumer Staples Select Sector SPDR ETF	State Street Consumer Staples Select Sector SPDR ETF	ETF	NYSE_ARCA	XLP	XLP		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLRE	State Street Real Estate Select Sector SPDR ETF	State Street Real Estate Select Sector SPDR ETF	ETF	NYSE_ARCA	XLRE	XLRE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLP	Consumer Staples Select Sector SPDR Fund	Consumer Staples Select Sector SPDR Fund	ETF	NYSE_ARCA	XLP	XLP		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLRE	Real Estate Select Sector SPDR Fund	Real Estate Select Sector SPDR Fund	ETF	NYSE_ARCA	XLRE	XLRE		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLRI	State Street Real Estate Select Sector SPDR Premium Income ETF	State Street Real Estate Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLRI	XLRI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLSI	State Street Consumer Staples Select Sector SPDR Premium Income ETF	State Street Consumer Staples Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLSI	XLSI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLSR	State Street US Sector Rotation ETF	State Street US Sector Rotation ETF	ETF	NYSE_ARCA	XLSR	XLSR		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLU	State Street Utilities Select Sector SPDR ETF	State Street Utilities Select Sector SPDR ETF	ETF	NYSE_ARCA	XLU	XLU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLU	Utilities Select Sector SPDR Fund	Utilities Select Sector SPDR Fund	ETF	NYSE_ARCA	XLU	XLU		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLUI	State Street Utilities Select Sector SPDR Premium Income ETF	State Street Utilities Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLUI	XLUI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLV	State Street Health Care Select Sector SPDR ETF	State Street Health Care Select Sector SPDR ETF	ETF	NYSE_ARCA	XLV	XLV		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLV	Health Care Select Sector SPDR Fund	Health Care Select Sector SPDR Fund	ETF	NYSE_ARCA	XLV	XLV		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLVI	State Street Health Care Select Sector SPDR Premium Income ETF	State Street Health Care Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLVI	XLVI		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XLY	State Street Consumer Discretionary Select Sector SPDR ETF	State Street Consumer Discretionary Select Sector SPDR ETF	ETF	NYSE_ARCA	XLY	XLY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XLY	Consumer Discretionary Select Sector SPDR Fund	Consumer Discretionary Select Sector SPDR Fund	ETF	NYSE_ARCA	XLY	XLY		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XLYI	State Street Consumer Discretionary Select Sector SPDR Premium Income ETF	State Street Consumer Discretionary Select Sector SPDR Premium Income ETF	ETF	NYSE_ARCA	XLYI	XLYI		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XMAG	Defiance Large Cap ex-Mag 7 ETF	Defiance Large Cap ex-Mag 7 ETF	ETF	NASDAQ	XMAG	XMAG		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	XMAR	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - March	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - March	ETF	CBOE_BZX	XMAR	XMAR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XMAY	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - May	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - May	ETF	CBOE_BZX	XMAY	XMAY		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XME	State Street SPDR S&P Metals & Mining ETF	State Street SPDR S&P Metals & Mining ETF	ETF	NYSE_ARCA	XME	XME		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XME	SPDR S&P Metals & Mining ETF	SPDR S&P Metals & Mining ETF	ETF	NYSE_ARCA	XME	XME		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XMHQ	Invesco S&P MidCap Quality ETF	Invesco S&P MidCap Quality ETF	ETF	NYSE_ARCA	XMHQ	XMHQ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XMLV	Invesco S&P MidCap Low Volatility ETF	Invesco S&P MidCap Low Volatility ETF	ETF	NYSE_ARCA	XMLV	XMLV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XMMO	Invesco S&P MidCap Momentum ETF	Invesco S&P MidCap Momentum ETF	ETF	NYSE_ARCA	XMMO	XMMO		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8782,7 +8782,7 @@ US	XOEX	Xtrackers S&P 100 Ex Top 20 ETF	Xtrackers S&P 100 Ex Top 20 ETF	ETF	CBOE
 US	XOMO	YieldMax XOM Option Income Strategy ETF	YieldMax XOM Option Income Strategy ETF	ETF	NYSE_ARCA	XOMO	XOMO		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XOMX	Direxion Daily XOM Bull 2X ETF	Direxion Daily XOM Bull 2X ETF	ETF	NASDAQ	XOMX	XOMX		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	XONE	BondBloxx Bloomberg One Year Target Duration US Treasury ETF	BondBloxx Bloomberg One Year Target Duration US Treasury ETF	ETF	NYSE_ARCA	XONE	XONE		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XOP	State Street SPDR S&P Oil & Gas Exploration & Production ETF	State Street SPDR S&P Oil & Gas Exploration & Production ETF	ETF	NYSE_ARCA	XOP	XOP		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XOP	SPDR S&P Oil & Gas Exploration & Production ETF	SPDR S&P Oil & Gas Exploration & Production ETF	ETF	NYSE_ARCA	XOP	XOP		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XOVL	Defiance Daily Target 2X Long XOVR ETF	Defiance Daily Target 2X Long XOVR ETF	ETF	CBOE_BZX	XOVL	XOVL		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XOVR	ERShares Private-Public Crossover ETF	ERShares Private-Public Crossover ETF	ETF	NASDAQ	XOVR	XOVR		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	XPAY	Roundhill S&P 500 Target 20 Managed Distribution ETF	Roundhill S&P 500 Target 20 Managed Distribution ETF	ETF	NYSE_ARCA	XPAY	XPAY		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8800,8 +8800,8 @@ US	XRPM	Amplify XRP 3% Monthly Option Income ETF	Amplify XRP 3% Monthly Option I
 US	XRPR	REX-Osprey XRP ETF	REX-Osprey XRP ETF	ETF	CBOE_BZX	XRPR	XRPR		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XRPT	Volatility Shares Trust XRP 2X ETF	Volatility Shares Trust XRP 2X ETF	ETF	NASDAQ	XRPT	XRPT		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	XRPZ	Franklin XRP ETF	Franklin XRP ETF	ETF	NYSE_ARCA	XRPZ	XRPZ		generated-2026-05-27:nasdaqtrader:otherlisted
-US	XRT	State Street SPDR S&P Retail ETF	State Street SPDR S&P Retail ETF	ETF	NYSE_ARCA	XRT	XRT		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
-US	XSD	State Street SPDR S&P Semiconductor ETF	State Street SPDR S&P Semiconductor ETF	ETF	NYSE_ARCA	XSD	XSD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XRT	SPDR S&P Retail ETF	SPDR S&P Retail ETF	ETF	NYSE_ARCA	XRT	XRT		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
+US	XSD	SPDR S&P Semiconductor ETF	SPDR S&P Semiconductor ETF	ETF	NYSE_ARCA	XSD	XSD		curated-us-etf:2026-05-27+generated-2026-05-27:nasdaqtrader:otherlisted
 US	XSEP	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - September	FT Vest U.S. Equity Enhance & Moderate Buffer ETF - September	ETF	CBOE_BZX	XSEP	XSEP		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XSHD	Invesco S&P SmallCap High Dividend Low Volatility ETF	Invesco S&P SmallCap High Dividend Low Volatility ETF	ETF	CBOE_BZX	XSHD	XSHD		generated-2026-05-27:nasdaqtrader:otherlisted
 US	XSHQ	Invesco S&P SmallCap Quality ETF	Invesco S&P SmallCap Quality ETF	ETF	CBOE_BZX	XSHQ	XSHQ		generated-2026-05-27:nasdaqtrader:otherlisted
@@ -8893,7 +8893,7 @@ US	ZMAY	Innovator Equity Defined Protection ETF - 1 Yr May	Innovator Equity Defi
 US	ZMUN	F/m Ultrashort Tax-Free Municipal ETF	F/m Ultrashort Tax-Free Municipal ETF	ETF	NASDAQ	ZMUN	ZMUN		generated-2026-05-27:nasdaqtrader:nasdaqlisted
 US	ZNOV	Innovator Equity Defined Protection ETF - 1 Yr November	Innovator Equity Defined Protection ETF - 1 Yr November	ETF	CBOE_BZX	ZNOV	ZNOV		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ZOCT	Innovator Equity Defined Protection ETF - 1 Yr October	Innovator Equity Defined Protection ETF - 1 Yr October	ETF	CBOE_BZX	ZOCT	ZOCT		generated-2026-05-27:nasdaqtrader:otherlisted
-US	ZROZ	PIMCO 25  Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund	PIMCO 25  Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund	ETF	NYSE_ARCA	ZROZ	ZROZ		generated-2026-05-27:nasdaqtrader:otherlisted
+US	ZROZ	PIMCO 25 Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund	PIMCO 25 Year Zero Coupon U.S. Treasury Index Exchange-Traded Fund	ETF	NYSE_ARCA	ZROZ	ZROZ		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ZSB	USCF Sustainable Battery Metals Strategy Fund	USCF Sustainable Battery Metals Strategy Fund	ETF	NYSE_ARCA	ZSB	ZSB		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ZSC	USCF Sustainable Commodity Strategy Fund	USCF Sustainable Commodity Strategy Fund	ETF	NYSE_ARCA	ZSC	ZSC		generated-2026-05-27:nasdaqtrader:otherlisted
 US	ZSEP	Innovator Equity Defined Protection ETF - 1 Yr September	Innovator Equity Defined Protection ETF - 1 Yr September	ETF	CBOE_BZX	ZSEP	ZSEP		generated-2026-05-27:nasdaqtrader:otherlisted

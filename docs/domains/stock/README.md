@@ -43,6 +43,8 @@
 
 이 seed는 정확한 종목 식별과 provider/게시판 key 연결을 위한 master입니다. seed에 있는 종목명 전체를 커뮤니티 alias로 자동 승인하지는 않습니다. 은어, 별칭, 일반명사와 충돌할 수 있는 표현은 `instrument_alias_candidates`에 쌓고 review/promote 흐름을 거친 뒤 집계에 반영합니다.
 
+pipeline matcher는 종목 master와 alias rule을 실행 시점에 한 번 읽고, 글마다 전체 종목을 전수 대조하지 않습니다. ASCII 티커/영문 alias는 토큰 인덱스, 한글/비ASCII alias는 첫 글자 인덱스로 후보를 좁힌 뒤 span을 확인합니다. 따라서 1만 개 이상 master를 쓰더라도 게시글별 matching은 본문에 실제 등장한 토큰과 첫 글자 bucket 위주로 수행합니다.
+
 ## 역할
 
 종목을 식별하고 여러 도메인이 같은 종목을 같은 키로 다루게 만드는 기준 도메인입니다. 커뮤니티 글, 시세 provider, 화면 검색, 에이전트 판단이 모두 이 도메인의 종목 기준을 참조합니다.

@@ -106,6 +106,9 @@ class IngestionApiIntegrationTest {
         assertThat(instrumentType("KR", "069500")).isEqualTo("ETF");
         assertThat(instrumentType("US", "QQQ")).isEqualTo("ETF");
         assertThat(instrumentType("US", "AAA")).isEqualTo("ETF");
+        assertThat(instrumentNameEn("US", "EWJ")).isEqualTo("iShares MSCI Japan ETF");
+        assertThat(instrumentNameEn("US", "CTWO")).isEqualTo("COtwo Advisors Physical European Carbon Allowance Trust");
+        assertThat(malformedUsEtfNameCount()).isZero();
     }
 
     @Test
@@ -1827,6 +1830,37 @@ class IngestionApiIntegrationTest {
                 String.class,
                 market,
                 symbol
+        );
+    }
+
+    private String instrumentNameEn(String market, String symbol) {
+        return jdbcTemplate.queryForObject(
+                "select name_en from instruments where market = ? and symbol = ?",
+                String.class,
+                market,
+                symbol
+        );
+    }
+
+    private int malformedUsEtfNameCount() {
+        return jdbcTemplate.queryForObject(
+                """
+                        select count(*)
+                        from instruments
+                        where market = 'US'
+                          and type = 'ETF'
+                          and (
+                              name_ko like '%ETF ETF%'
+                              or name_en like '%ETF ETF%'
+                              or name_ko like '%ETFo%'
+                              or name_en like '%ETFo%'
+                              or name_ko like '%Mornigstar%'
+                              or name_en like '%Mornigstar%'
+                              or name_ko = 'Common units'
+                              or name_en = 'Common units'
+                          )
+                        """,
+                Integer.class
         );
     }
 
