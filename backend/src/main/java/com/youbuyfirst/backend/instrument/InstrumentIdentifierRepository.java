@@ -15,5 +15,12 @@ public interface InstrumentIdentifierRepository extends JpaRepository<Instrument
             String purpose
     );
 
+    @EntityGraph(attributePaths = "instrument")
+    Optional<InstrumentIdentifier> findFirstByInstrumentAndNamespaceIgnoreCaseAndPurposeIgnoreCaseAndEnabledTrueOrderByIdentifierAsc(
+            Instrument instrument,
+            String namespace,
+            String purpose
+    );
+
     List<InstrumentIdentifier> findByInstrumentAndEnabledTrueOrderByNamespaceAscPurposeAscIdentifierAsc(Instrument instrument);
 }

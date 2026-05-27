@@ -34,15 +34,23 @@ public class Instrument {
     @Column(nullable = false, length = 40)
     private String type;
 
+    @Column(name = "exchange_code", length = 40)
+    private String exchangeCode;
+
     protected Instrument() {
     }
 
     public Instrument(String market, String symbol, String nameKo, String nameEn, String type) {
+        this(market, symbol, nameKo, nameEn, type, null);
+    }
+
+    public Instrument(String market, String symbol, String nameKo, String nameEn, String type, String exchangeCode) {
         this.market = market;
         this.symbol = symbol;
         this.nameKo = nameKo;
         this.nameEn = nameEn;
         this.type = type;
+        this.exchangeCode = exchangeCode;
     }
 
     public Long getId() {
@@ -68,5 +76,37 @@ public class Instrument {
     public String getType() {
         return type;
     }
-}
 
+    public String getExchangeCode() {
+        return exchangeCode;
+    }
+
+    public boolean applySeed(String nameKo, String nameEn, String type, String exchangeCode) {
+        boolean changed = false;
+        if ("KR".equalsIgnoreCase(market) && hasText(nameKo) && !nameKo.equals(this.nameKo)) {
+            this.nameKo = nameKo;
+            changed = true;
+        }
+        if (!hasText(this.nameKo) && hasText(nameKo)) {
+            this.nameKo = nameKo;
+            changed = true;
+        }
+        if (hasText(nameEn) && !nameEn.equals(this.nameEn)) {
+            this.nameEn = nameEn;
+            changed = true;
+        }
+        if (hasText(type) && !type.equals(this.type)) {
+            this.type = type;
+            changed = true;
+        }
+        if (hasText(exchangeCode) && !exchangeCode.equals(this.exchangeCode)) {
+            this.exchangeCode = exchangeCode;
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+}

@@ -83,6 +83,28 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void seedsExpandedInstrumentMasterWithProviderAndBoardIdentifiers() {
+        assertThat(instrumentCount("KR")).isGreaterThanOrEqualTo(1000);
+        assertThat(instrumentCount("US")).isGreaterThanOrEqualTo(500);
+
+        Long ecoproId = instrumentId("KR", "086520");
+        Long samchundangId = instrumentId("KR", "000250");
+        Long kodex200Id = instrumentId("KR", "069500");
+        Long appleId = instrumentId("US", "AAPL");
+        Long qqqId = instrumentId("US", "QQQ");
+
+        assertThat(identifierCount("YFINANCE", "086520.KQ", "MARKET_DATA", ecoproId)).isEqualTo(1);
+        assertThat(identifierCount("YFINANCE", "000250.KQ", "MARKET_DATA", samchundangId)).isEqualTo(1);
+        assertThat(identifierCount("NAVER_STOCK_BOARD", "086520", "COMMUNITY_BOARD", ecoproId)).isEqualTo(1);
+        assertThat(identifierCount("NAVER_STOCK_BOARD", "000250", "COMMUNITY_BOARD", samchundangId)).isEqualTo(1);
+        assertThat(identifierCount("YFINANCE", "069500.KS", "MARKET_DATA", kodex200Id)).isEqualTo(1);
+        assertThat(identifierCount("YFINANCE", "AAPL", "MARKET_DATA", appleId)).isEqualTo(1);
+        assertThat(identifierCount("YFINANCE", "QQQ", "MARKET_DATA", qqqId)).isEqualTo(1);
+        assertThat(instrumentType("KR", "069500")).isEqualTo("ETF");
+        assertThat(instrumentType("US", "QQQ")).isEqualTo("ETF");
+    }
+
+    @Test
     void ingestsCommunityPostsIdempotentlyAndCreatesMetrics() {
         IngestionRequest request = new IngestionRequest(
                 "FMKOREA",
@@ -899,6 +921,22 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void chartRefreshRequestResolvesKosdaqTickerFromInstrumentIdentifiers() {
+        Long instrumentId = instrumentId("KR", "000250");
+
+        ResponseEntity<String> chart = restTemplate.getForEntity(
+                "/api/market/chart-candles?symbol=000250&range=6M&interval=1d",
+                String.class
+        );
+
+        assertThat(chart.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(chart.getBody())
+                .contains("\"instrumentId\":" + instrumentId)
+                .contains("\"symbol\":\"000250.KQ\"");
+        assertThat(chartRefreshInstrumentIdCount(instrumentId, "6M", "1d")).isEqualTo(1);
+    }
+
+    @Test
     void exposesChartCandlesWithDisplayOnlyContract() {
         Instant asOf = Instant.now().minusSeconds(60);
 
@@ -988,7 +1026,7 @@ class IngestionApiIntegrationTest {
         assertThat(claim.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody())
                 .contains("\"symbol\":\"MSFT\"")
-                .contains("\"name\":\"Microsoft\"")
+                .contains("\"name\":\"Microsoft Corp\"")
                 .contains("\"market\":\"US\"")
                 .contains("\"currency\":\"USD\"")
                 .contains("\"provider\":\"yfinance\"")
@@ -1757,6 +1795,23 @@ class IngestionApiIntegrationTest {
         return jdbcTemplate.queryForObject(
                 "select id from instruments where market = ? and symbol = ?",
                 Long.class,
+                market,
+                symbol
+        );
+    }
+
+    private int instrumentCount(String market) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from instruments where market = ?",
+                Integer.class,
+                market
+        );
+    }
+
+    private String instrumentType(String market, String symbol) {
+        return jdbcTemplate.queryForObject(
+                "select type from instruments where market = ? and symbol = ?",
+                String.class,
                 market,
                 symbol
         );

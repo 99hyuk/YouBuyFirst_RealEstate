@@ -8,4 +8,3 @@ public interface InstrumentRepository extends JpaRepository<Instrument, Long> {
 
     Optional<Instrument> findByMarketIgnoreCaseAndSymbolIgnoreCase(String market, String symbol);
 }
-

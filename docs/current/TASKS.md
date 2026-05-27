@@ -27,7 +27,7 @@
 아래 순서가 현재 가장 합리적인 진행 순서입니다. 프론트만 계속 다듬기보다, 화면에서 필요한 데이터 계약을 정하고 backend/pipeline을 같이 붙입니다.
 
 - [ ] ui 화면별 Screen Brief를 최신 화면 기준으로 맞추고, 각 화면의 필수 API 후보를 `dashboard`, `stocks`, `stock-detail`, `newsroom`, `human-indicator`, `portfolio` 순서로 정리
-- [ ] stock 종목 마스터를 국내 주식/ETF + 미국 주식/ETF 기준으로 확장하고, provider symbol, alias, 표시명, 시장 구분을 같은 키로 연결
+- [x] stock 종목 마스터를 국내 주식/ETF + 미국 주식/ETF 기준으로 확장하고, provider symbol, 표시명, 시장 구분을 같은 키로 연결
 - [ ] market quote/chart/investor-flow provider 계약을 안정화하고, yfinance + FinanceDataReader 기준의 delay/asOf/stale/dataStatus 표시 규칙을 고정
 - [ ] community source registry를 에펨코리아, 네이버 종토방, 뽐뿌 증권포럼, 디시 미국주식/주식갤러리/국내주식 후보까지 확장하되 소스 상태와 공개 가능 범위를 분리
 - [ ] indicator 개미 심리 지수 산식 v1을 확정하고, 언급량 변화, 반응 방향, 표현 강도, 인기글 확산, 소스 다양성, 표본 신뢰도, 시세 지연을 입력으로 묶기
@@ -84,12 +84,12 @@
 
 ### stock
 
-- [ ] 국내/미국 종목 master seed와 provider symbol 매핑
+- [x] 국내/미국 종목 master seed와 provider symbol 매핑
 - [x] `instrument_identifiers` 스키마: `instrument_id` 기준으로 provider/게시판 식별자, 목적, 출처를 분리해 저장
 - [x] alias registry와 은어 후보 관리: 확정 alias와 후보 alias를 분리하고, 후보는 집계에 바로 넣지 않고 `instrument_alias_candidates`로 누적
 - [x] alias 후보 심사/승격 흐름: `SUGGESTED/REJECTED/PROMOTED` 상태와 admin review/promote API로 승인 alias만 집계에 반영
 - [x] market quote/chart/investor-flow cache와 NAVER crawl target을 `instrument_id` 기준으로 연결
-- [ ] 커뮤니티 종목 후보와 market provider symbol을 같은 canonical key로 연결: 전체 국내/미국 master 확장과 provider suffix 정렬은 후속 작업
+- [ ] 커뮤니티 종목 후보와 market provider symbol을 같은 canonical key로 연결: seed 기반 식별자 연결은 완료, pipeline matcher가 master/alias 후보를 함께 쓰는 단계는 후속 작업
 
 ### community
 

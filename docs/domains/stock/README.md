@@ -31,6 +31,18 @@
 
 식별자는 시세/차트/수급/종목형 게시판처럼 외부 시스템에 접근하기 위한 키입니다. 커뮤니티 은어와 별칭은 `instrument_aliases`와 `instrument_alias_candidates`에서 관리합니다.
 
+## Instrument Master Seed
+
+`backend/src/main/resources/data/instrument-master-seed.tsv`는 앱이 시작될 때 `instruments`와 `instrument_identifiers`에 반영되는 대량 종목 seed입니다.
+
+- 현재 seed 규모: 총 10,334개입니다. KR 주식 2,808개, KR ETF 874개, US 주식 6,534개, US ETF 118개를 담습니다.
+- loader: `InstrumentMasterSeedLoader`가 idempotent하게 실행됩니다. 같은 `market + symbol` 종목은 업데이트하고, 같은 `namespace + normalized_identifier + purpose` 식별자는 중복 저장하지 않습니다.
+- 설정: `INSTRUMENT_MASTER_SEED_ENABLED=false`로 로더를 끌 수 있고, `INSTRUMENT_MASTER_SEED_PATH`로 seed 경로를 바꿀 수 있습니다.
+- provider 식별자: `YFINANCE/MARKET_DATA`, `KRX_TICKER` 또는 `US_TICKER/EXCHANGE_REFERENCE`, 국내 종목은 `NAVER_STOCK_BOARD/COMMUNITY_BOARD`를 생성합니다.
+- 거래소 구분: `instruments.exchange_code`에 `KOSPI`, `KOSDAQ`, `KOSDAQ GLOBAL`, `KRX_ETF`, `NASDAQ`, `NYSE`, `AMEX`, `US_ETF` 같은 값을 저장합니다.
+
+이 seed는 정확한 종목 식별과 provider/게시판 key 연결을 위한 master입니다. seed에 있는 종목명 전체를 커뮤니티 alias로 자동 승인하지는 않습니다. 은어, 별칭, 일반명사와 충돌할 수 있는 표현은 `instrument_alias_candidates`에 쌓고 review/promote 흐름을 거친 뒤 집계에 반영합니다.
+
 ## 역할
 
 종목을 식별하고 여러 도메인이 같은 종목을 같은 키로 다루게 만드는 기준 도메인입니다. 커뮤니티 글, 시세 provider, 화면 검색, 에이전트 판단이 모두 이 도메인의 종목 기준을 참조합니다.

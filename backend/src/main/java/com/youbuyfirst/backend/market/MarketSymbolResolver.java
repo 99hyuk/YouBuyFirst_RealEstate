@@ -31,6 +31,13 @@ public class MarketSymbolResolver {
     }
 
     public MarketInstrument resolve(String value) {
+        String key = normalizeKey(value);
+        Optional<MarketInstrument> byExchangeReference = findExchangeReference(key)
+                .flatMap(this::findMarketDataForReference);
+        if (byExchangeReference.isPresent()) {
+            return byExchangeReference.get();
+        }
+
         String symbol = normalizeProviderSymbol(value);
         return findMarketDataIdentifier(symbol)
                 .map(this::toMarketInstrument)
@@ -62,6 +69,10 @@ public class MarketSymbolResolver {
             return normalized;
         }
         return normalized.replace('.', '-');
+    }
+
+    public String resolveProviderSymbol(String value) {
+        return resolve(value).symbol();
     }
 
     public String providerName(String market) {
@@ -100,6 +111,43 @@ public class MarketSymbolResolver {
                 InstrumentIdentifier.normalizeIdentifier(symbol),
                 "MARKET_DATA"
         );
+    }
+
+    private Optional<InstrumentIdentifier> findExchangeReference(String key) {
+        String identifier = exchangeReferenceIdentifier(key);
+        if (identifier.isBlank()) {
+            return Optional.empty();
+        }
+        return findExchangeReference("KRX_TICKER", identifier)
+                .or(() -> findExchangeReference("US_TICKER", identifier));
+    }
+
+    private Optional<InstrumentIdentifier> findExchangeReference(String namespace, String identifier) {
+        return identifierRepository.findByNamespaceIgnoreCaseAndNormalizedIdentifierAndPurposeIgnoreCaseAndEnabledTrue(
+                namespace,
+                InstrumentIdentifier.normalizeIdentifier(identifier),
+                "EXCHANGE_REFERENCE"
+        );
+    }
+
+    private Optional<MarketInstrument> findMarketDataForReference(InstrumentIdentifier reference) {
+        return identifierRepository.findFirstByInstrumentAndNamespaceIgnoreCaseAndPurposeIgnoreCaseAndEnabledTrueOrderByIdentifierAsc(
+                        reference.getInstrument(),
+                        "YFINANCE",
+                        "MARKET_DATA"
+                )
+                .map(this::toMarketInstrument);
+    }
+
+    private static String exchangeReferenceIdentifier(String key) {
+        if (key.isBlank()) {
+            return "";
+        }
+        if (key.contains(":")) {
+            String[] parts = key.split(":", 2);
+            return parts[1];
+        }
+        return key;
     }
 
     private MarketInstrument toMarketInstrument(InstrumentIdentifier identifier) {

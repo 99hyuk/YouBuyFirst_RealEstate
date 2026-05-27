@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -49,7 +50,7 @@ public class TechnicalIndicatorService {
             Integer bollingerPeriod,
             BigDecimal bollingerMultiplier
     ) {
-        String normalizedSymbol = symbolResolver.normalizeProviderSymbol(normalizeRequiredSymbol(symbol));
+        MarketInstrument instrument = symbolResolver.resolve(normalizeRequiredSymbol(symbol));
         String normalizedRange = normalizeRange(range == null || range.isBlank() ? "3M" : range);
         String normalizedInterval = normalizeInterval(interval == null || interval.isBlank() ? "1d" : interval);
         validateRangeAndInterval(normalizedRange, normalizedInterval);
@@ -58,14 +59,10 @@ public class TechnicalIndicatorService {
         BigDecimal multiplier = (bollingerMultiplier == null ? new BigDecimal("2.00") : bollingerMultiplier)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        return chartCandleSetRepository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
-                        normalizedSymbol,
-                        normalizedRange,
-                        normalizedInterval
-                )
+        return findCandleSet(instrument, normalizedRange, normalizedInterval)
                 .map(candleSet -> responseFrom(candleSet, boundedRsiPeriod, boundedBollingerPeriod, multiplier))
                 .orElseGet(() -> insufficientResponse(
-                        normalizedSymbol,
+                        instrument,
                         normalizedRange,
                         normalizedInterval,
                         boundedRsiPeriod,
@@ -104,14 +101,13 @@ public class TechnicalIndicatorService {
     }
 
     private TechnicalIndicatorResponse insufficientResponse(
-            String symbol,
+            MarketInstrument instrument,
             String range,
             String interval,
             int rsiPeriod,
             int bollingerPeriod,
             BigDecimal multiplier
     ) {
-        MarketInstrument instrument = symbolResolver.resolve(symbol);
         return new TechnicalIndicatorResponse(
                 instrument.symbol(),
                 instrument.name(),
@@ -127,6 +123,24 @@ public class TechnicalIndicatorService {
                 "INSUFFICIENT",
                 new RsiResponse(rsiPeriod, List.of()),
                 new BollingerBandsResponse(bollingerPeriod, multiplier, List.of())
+        );
+    }
+
+    private Optional<ChartCandleSet> findCandleSet(MarketInstrument instrument, String range, String interval) {
+        if (instrument.instrumentId() != null) {
+            Optional<ChartCandleSet> byInstrument = chartCandleSetRepository.findFirstByInstrumentIdAndRangeLabelAndCandleInterval(
+                    instrument.instrumentId(),
+                    range,
+                    interval
+            );
+            if (byInstrument.isPresent()) {
+                return byInstrument;
+            }
+        }
+        return chartCandleSetRepository.findBySymbolIgnoreCaseAndRangeLabelAndCandleInterval(
+                instrument.symbol(),
+                range,
+                interval
         );
     }
 
