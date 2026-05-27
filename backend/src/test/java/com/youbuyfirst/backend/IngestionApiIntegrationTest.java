@@ -86,12 +86,14 @@ class IngestionApiIntegrationTest {
     void seedsExpandedInstrumentMasterWithProviderAndBoardIdentifiers() {
         assertThat(instrumentCount("KR")).isGreaterThanOrEqualTo(1000);
         assertThat(instrumentCount("US")).isGreaterThanOrEqualTo(500);
+        assertThat(instrumentCount("US", "ETF")).isGreaterThanOrEqualTo(1000);
 
         Long ecoproId = instrumentId("KR", "086520");
         Long samchundangId = instrumentId("KR", "000250");
         Long kodex200Id = instrumentId("KR", "069500");
         Long appleId = instrumentId("US", "AAPL");
         Long qqqId = instrumentId("US", "QQQ");
+        Long aaaId = instrumentId("US", "AAA");
 
         assertThat(identifierCount("YFINANCE", "086520.KQ", "MARKET_DATA", ecoproId)).isEqualTo(1);
         assertThat(identifierCount("YFINANCE", "000250.KQ", "MARKET_DATA", samchundangId)).isEqualTo(1);
@@ -100,8 +102,10 @@ class IngestionApiIntegrationTest {
         assertThat(identifierCount("YFINANCE", "069500.KS", "MARKET_DATA", kodex200Id)).isEqualTo(1);
         assertThat(identifierCount("YFINANCE", "AAPL", "MARKET_DATA", appleId)).isEqualTo(1);
         assertThat(identifierCount("YFINANCE", "QQQ", "MARKET_DATA", qqqId)).isEqualTo(1);
+        assertThat(identifierCount("YFINANCE", "AAA", "MARKET_DATA", aaaId)).isEqualTo(1);
         assertThat(instrumentType("KR", "069500")).isEqualTo("ETF");
         assertThat(instrumentType("US", "QQQ")).isEqualTo("ETF");
+        assertThat(instrumentType("US", "AAA")).isEqualTo("ETF");
     }
 
     @Test
@@ -1805,6 +1809,15 @@ class IngestionApiIntegrationTest {
                 "select count(*) from instruments where market = ?",
                 Integer.class,
                 market
+        );
+    }
+
+    private int instrumentCount(String market, String type) {
+        return jdbcTemplate.queryForObject(
+                "select count(*) from instruments where market = ? and type = ?",
+                Integer.class,
+                market,
+                type
         );
     }
 

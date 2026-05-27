@@ -35,7 +35,7 @@
 
 `backend/src/main/resources/data/instrument-master-seed.tsv`는 앱이 시작될 때 `instruments`와 `instrument_identifiers`에 반영되는 대량 종목 seed입니다.
 
-- 현재 seed 규모: 총 10,334개입니다. KR 주식 2,808개, KR ETF 874개, US 주식 6,534개, US ETF 118개를 담습니다.
+- 현재 seed 규모: 총 15,439개입니다. KR 주식 2,808개, KR ETF 874개, US 주식 6,534개, US ETF 5,223개를 담습니다.
 - loader: `InstrumentMasterSeedLoader`가 idempotent하게 실행됩니다. 같은 `market + symbol` 종목은 업데이트하고, 같은 `namespace + normalized_identifier + purpose` 식별자는 중복 저장하지 않습니다.
 - 설정: `INSTRUMENT_MASTER_SEED_ENABLED=false`로 로더를 끌 수 있고, `INSTRUMENT_MASTER_SEED_PATH`로 seed 경로를 바꿀 수 있습니다.
 - provider 식별자: `YFINANCE/MARKET_DATA`, `KRX_TICKER` 또는 `US_TICKER/EXCHANGE_REFERENCE`, 국내 종목은 `NAVER_STOCK_BOARD/COMMUNITY_BOARD`를 생성합니다.
