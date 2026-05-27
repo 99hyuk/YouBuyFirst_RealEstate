@@ -28,8 +28,10 @@ import com.youbuyfirst.backend.post.PostMention;
 import com.youbuyfirst.backend.post.PostMentionRepository;
 import com.youbuyfirst.backend.sentiment.SentimentAnalysis;
 import com.youbuyfirst.backend.sentiment.SentimentAnalysisRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -176,7 +178,11 @@ public class IngestionService {
             return;
         }
         List<PostMention> entities = mentions.stream()
-                .map(mention -> new PostMention(post, getOrCreateInstrument(mention.market(), mention.symbol()), trimTo(mention.matchedText(), 200)))
+                .map(mention -> new PostMention(
+                        post,
+                        resolveInstrument(mention.instrumentId(), mention.market(), mention.symbol()),
+                        trimTo(mention.matchedText(), 200)
+                ))
                 .toList();
         mentionRepository.saveAll(entities);
     }
@@ -188,7 +194,7 @@ public class IngestionService {
         List<SentimentAnalysis> entities = sentiments.stream()
                 .map(sentiment -> new SentimentAnalysis(
                         post,
-                        getOrCreateInstrument(sentiment.market(), sentiment.symbol()),
+                        resolveInstrument(sentiment.instrumentId(), sentiment.market(), sentiment.symbol()),
                         sentiment.sentiment(),
                         sentiment.confidence(),
                         trimTo(sentiment.rationale(), 500),
@@ -331,6 +337,14 @@ public class IngestionService {
         String normalizedSymbol = normalize(symbol);
         return instrumentRepository.findByMarketIgnoreCaseAndSymbolIgnoreCase(normalizedMarket, normalizedSymbol)
                 .orElseGet(() -> instrumentRepository.save(new Instrument(normalizedMarket, normalizedSymbol, normalizedSymbol, normalizedSymbol, "UNKNOWN")));
+    }
+
+    private Instrument resolveInstrument(Long instrumentId, String market, String symbol) {
+        if (instrumentId != null) {
+            return instrumentRepository.findById(instrumentId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "unknown instrumentId"));
+        }
+        return getOrCreateInstrument(market, symbol);
     }
 
     private static String normalize(String value) {

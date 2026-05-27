@@ -30,6 +30,7 @@ class Mention:
     market: str
     symbol: str
     matched_text: str
+    instrument_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -63,6 +64,7 @@ class Analysis:
     confidence: float
     rationale: str
     model: str
+    instrument_id: int | None = None
 
 
 @dataclass(frozen=True)

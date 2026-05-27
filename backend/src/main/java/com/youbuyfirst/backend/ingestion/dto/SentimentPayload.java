@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record SentimentPayload(
+        Long instrumentId,
         @NotBlank String market,
         @NotBlank String symbol,
         @NotNull SentimentLabel sentiment,
@@ -14,5 +15,14 @@ public record SentimentPayload(
         String rationale,
         String model
 ) {
+    public SentimentPayload(
+            String market,
+            String symbol,
+            SentimentLabel sentiment,
+            double confidence,
+            String rationale,
+            String model
+    ) {
+        this(null, market, symbol, sentiment, confidence, rationale, model);
+    }
 }
-

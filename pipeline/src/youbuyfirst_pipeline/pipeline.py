@@ -238,9 +238,15 @@ class CommunityPipeline:
             for candidate in (find_alias_candidates(text) if find_alias_candidates else [])
         ]
         decisions = self.llm_provider.resolve_mentions(post.title, post.content, candidates)
+        candidates_by_key = {_mention_key(candidate): candidate for candidate in candidates}
         accepted_decisions = _accepted_decisions(candidates, decisions)
         mentions = [
-            Mention(market=decision.market, symbol=decision.symbol, matched_text=decision.matched_text)
+            Mention(
+                market=decision.market,
+                symbol=decision.symbol,
+                matched_text=decision.matched_text,
+                instrument_id=_candidate_instrument_id(candidates_by_key, decision),
+            )
             for decision in accepted_decisions
         ]
         analyses = [
@@ -251,6 +257,7 @@ class CommunityPipeline:
                 confidence=decision.confidence,
                 rationale=decision.rationale,
                 model=decision.model,
+                instrument_id=_candidate_instrument_id(candidates_by_key, decision),
             )
             for decision in accepted_decisions
         ]
@@ -298,16 +305,29 @@ class CommunityPipeline:
 
 
 def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecision]) -> list[MentionDecision]:
-    candidate_keys = {(candidate.market.upper(), candidate.symbol.upper(), candidate.matched_text) for candidate in candidates}
+    candidate_keys = {_mention_key(candidate) for candidate in candidates}
     accepted: list[MentionDecision] = []
     seen: set[tuple[str, str, str]] = set()
     for decision in decisions:
-        key = (decision.market.upper(), decision.symbol.upper(), decision.matched_text)
+        key = _decision_key(decision)
         if key in seen or key not in candidate_keys or not decision.is_mentioned:
             continue
         seen.add(key)
         accepted.append(decision)
     return accepted
+
+
+def _candidate_instrument_id(candidates_by_key: dict[tuple[str, str, str], Mention], decision: MentionDecision) -> int | None:
+    candidate = candidates_by_key.get(_decision_key(decision))
+    return candidate.instrument_id if candidate else None
+
+
+def _mention_key(mention: Mention) -> tuple[str, str, str]:
+    return (mention.market.upper(), mention.symbol.upper(), mention.matched_text)
+
+
+def _decision_key(decision: MentionDecision) -> tuple[str, str, str]:
+    return (decision.market.upper(), decision.symbol.upper(), decision.matched_text)
 
 
 def _trim_to(value: str, max_length: int) -> str:

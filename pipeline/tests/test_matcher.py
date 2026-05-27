@@ -68,6 +68,21 @@ def test_ascii_tickers_match_before_hyphenated_or_dotted_suffixes():
     ]
 
 
+def test_mentions_carry_instrument_id_from_snapshot():
+    matcher = InstrumentMatcher(
+        [
+            Instrument(market="US", symbol="TSLA", name="Tesla", aliases=["테슬라"], instrument_id=7),
+        ]
+    )
+
+    mentions = matcher.match("테슬라와 TSLA가 같이 언급됨")
+
+    assert {(mention.instrument_id, mention.market, mention.symbol, mention.matched_text) for mention in mentions} == {
+        (7, "US", "TSLA", "테슬라"),
+        (7, "US", "TSLA", "TSLA"),
+    }
+
+
 def test_review_aliases_are_candidates_not_confirmed_mentions():
     matcher = InstrumentMatcher(
         [

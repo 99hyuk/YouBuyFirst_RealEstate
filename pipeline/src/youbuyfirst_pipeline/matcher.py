@@ -82,7 +82,14 @@ class InstrumentMatcher:
                 continue
             seen.add(key)
             spans_by_instrument.setdefault(instrument_key, []).append(span)
-            mentions.append(Mention(market=instrument.market, symbol=instrument.symbol, matched_text=entry.alias))
+            mentions.append(
+                Mention(
+                    market=instrument.market,
+                    symbol=instrument.symbol,
+                    matched_text=entry.alias,
+                    instrument_id=instrument.instrument_id,
+                )
+            )
         return mentions
 
     def alias_candidates(self, text: str) -> list[AliasCandidate]:

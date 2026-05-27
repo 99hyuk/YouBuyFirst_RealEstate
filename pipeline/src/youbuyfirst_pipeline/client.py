@@ -8,7 +8,7 @@ import httpx
 from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardWatermark
 from youbuyfirst_pipeline.market_investor_flows import InvestorFlowSnapshot
 from youbuyfirst_pipeline.market_quotes import ChartCandleSet, QuoteSnapshot
-from youbuyfirst_pipeline.models import AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost
+from youbuyfirst_pipeline.models import Analysis, AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost, Mention
 
 
 class SpringIngestionClient:
@@ -165,25 +165,8 @@ class SpringIngestionClient:
             "viewCount": post.view_count,
             "recommendCount": post.recommend_count,
             "commentCount": post.comment_count,
-            "mentions": [
-                {
-                    "market": mention.market,
-                    "symbol": mention.symbol,
-                    "matchedText": mention.matched_text,
-                }
-                for mention in post.mentions
-            ],
-            "sentiments": [
-                {
-                    "market": analysis.market,
-                    "symbol": analysis.symbol,
-                    "sentiment": analysis.sentiment,
-                    "confidence": analysis.confidence,
-                    "rationale": analysis.rationale,
-                    "model": analysis.model,
-                }
-                for analysis in post.analyses
-            ],
+            "mentions": [_mention_payload(mention) for mention in post.mentions],
+            "sentiments": [_analysis_payload(analysis) for analysis in post.analyses],
         }
 
     @staticmethod
@@ -231,6 +214,31 @@ def _iso(value: datetime) -> str:
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _mention_payload(mention: Mention) -> dict:
+    payload = {
+        "market": mention.market,
+        "symbol": mention.symbol,
+        "matchedText": mention.matched_text,
+    }
+    if mention.instrument_id is not None:
+        payload["instrumentId"] = mention.instrument_id
+    return payload
+
+
+def _analysis_payload(analysis: Analysis) -> dict:
+    payload = {
+        "market": analysis.market,
+        "symbol": analysis.symbol,
+        "sentiment": analysis.sentiment,
+        "confidence": analysis.confidence,
+        "rationale": analysis.rationale,
+        "model": analysis.model,
+    }
+    if analysis.instrument_id is not None:
+        payload["instrumentId"] = analysis.instrument_id
+    return payload
 
 
 def _parse_iso(value: str | None) -> datetime | None:

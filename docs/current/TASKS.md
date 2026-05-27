@@ -90,7 +90,7 @@
 - [x] alias 후보 심사/승격 흐름: `SUGGESTED/REJECTED/PROMOTED` 상태와 admin review/promote API로 승인 alias만 집계에 반영
 - [x] market quote/chart/investor-flow cache와 NAVER crawl target을 `instrument_id` 기준으로 연결
 - [x] pipeline matcher 입력을 backend DB 기반 matcher snapshot으로 연결: 승인된 종목 master와 alias는 `INSTRUMENT_SNAPSHOT_URL`로 재시도 로드하고 CSV는 fallback으로 유지
-- [ ] mention ingestion payload와 집계 저장을 `instrument_id` 기준으로 넓히기: 현재 matcher snapshot은 `instrumentId`를 싣지만 mention payload는 아직 `market + symbol` 기준
+- [x] mention ingestion payload와 집계 저장을 `instrument_id` 기준으로 넓히기: pipeline mention/sentiment payload는 snapshot의 `instrumentId`를 싣고 backend ingestion은 `instrumentId`를 우선 사용
 
 ### community
 

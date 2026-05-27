@@ -6,7 +6,7 @@ import respx
 
 from youbuyfirst_pipeline.board_stream import BoardWatermark
 from youbuyfirst_pipeline.client import SpringIngestionClient
-from youbuyfirst_pipeline.models import AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost
+from youbuyfirst_pipeline.models import Analysis, AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost, Mention
 
 
 def test_post_payload_includes_board_and_engagement_counts():
@@ -30,6 +30,53 @@ def test_post_payload_includes_board_and_engagement_counts():
     assert payload["viewCount"] == 1788
     assert payload["recommendCount"] == 8
     assert payload["commentCount"] == 19
+
+
+def test_post_payload_includes_instrument_ids_for_mentions_and_sentiments():
+    post = EnrichedPost(
+        source="FMKOREA",
+        board_id="stock",
+        external_id="fmk-107",
+        url="https://www.fmkorea.com/stock/107",
+        title="테슬라 강세",
+        content="테슬라 실적 기대",
+        author="sample",
+        published_at=datetime(2026, 5, 27, 0, 57, tzinfo=timezone.utc),
+        mentions=[Mention(instrument_id=7, market="US", symbol="TSLA", matched_text="테슬라")],
+        analyses=[
+            Analysis(
+                instrument_id=7,
+                market="US",
+                symbol="TSLA",
+                sentiment="bullish",
+                confidence=0.8,
+                rationale="실적 기대",
+                model="mock",
+            )
+        ],
+    )
+
+    payload = SpringIngestionClient._post_payload(post)
+
+    assert payload["mentions"] == [
+        {
+            "instrumentId": 7,
+            "market": "US",
+            "symbol": "TSLA",
+            "matchedText": "테슬라",
+        }
+    ]
+    assert payload["sentiments"] == [
+        {
+            "instrumentId": 7,
+            "market": "US",
+            "symbol": "TSLA",
+            "sentiment": "bullish",
+            "confidence": 0.8,
+            "rationale": "실적 기대",
+            "model": "mock",
+        }
+    ]
 
 
 @respx.mock

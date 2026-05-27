@@ -23,7 +23,7 @@ def test_enrich_keeps_only_ai_accepted_mentions_and_analyses():
     matcher = InstrumentMatcher(
         [
             Instrument(market="US", symbol="AAPL", name="Apple", aliases=["애플"]),
-            Instrument(market="US", symbol="TSLA", name="Tesla", aliases=["테슬라"]),
+            Instrument(market="US", symbol="TSLA", name="Tesla", aliases=["테슬라"], instrument_id=7),
         ]
     )
     pipeline = CommunityPipeline(adapters=[], matcher=matcher, llm_provider=MockLLMProvider(), client=_NoopClient())
@@ -33,6 +33,9 @@ def test_enrich_keeps_only_ai_accepted_mentions_and_analyses():
     assert [(mention.market, mention.symbol, mention.matched_text) for mention in enriched.mentions] == [
         ("US", "TSLA", "테슬라")
     ]
-    assert [(analysis.market, analysis.symbol, analysis.sentiment) for analysis in enriched.analyses] == [
-        ("US", "TSLA", "bullish")
+    assert [(mention.instrument_id, mention.market, mention.symbol, mention.matched_text) for mention in enriched.mentions] == [
+        (7, "US", "TSLA", "테슬라")
+    ]
+    assert [(analysis.instrument_id, analysis.market, analysis.symbol, analysis.sentiment) for analysis in enriched.analyses] == [
+        (7, "US", "TSLA", "bullish")
     ]

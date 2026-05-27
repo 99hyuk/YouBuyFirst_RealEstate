@@ -2,7 +2,7 @@
 
 ## Alias Registry와 후보 큐
 
-종목 언급 집계는 raw text를 바로 세지 않고 `market + symbol` canonical key로 확정된 mention만 사용합니다.
+종목 언급 집계는 raw text를 바로 세지 않고 서비스 내부 `instrument_id`를 기준으로 확정된 mention을 사용합니다. `market + symbol`은 외부 입력 호환성과 표시/조회 보조 key로 유지합니다.
 
 - `instrument_aliases`: 승인된 alias registry입니다. `status=ACCEPTED`이고 `ambiguous=false`인 alias만 종목 mention 후보로 씁니다.
 - `status=REVIEW` 또는 `ambiguous=true`인 alias는 종목 mention으로 확정하지 않고 후보로만 기록합니다.
@@ -53,6 +53,7 @@ matcher snapshot API:
 - 응답: `instrumentId`, `market`, `symbol`, `name`, `aliases`
 - `aliases`에는 `instrument_aliases.status=ACCEPTED`이고 `ambiguous=false`인 값만 포함합니다. `REVIEW`, `BLOCKED`, `ambiguous=true` alias는 확정 mention 후보가 아닙니다.
 - pipeline은 이 snapshot을 글마다 DB 조회하지 않고 시작 시 한 번 로드한 뒤 인메모리 matcher 인덱스로 씁니다.
+- pipeline mention/sentiment payload는 snapshot에서 온 `instrumentId`를 함께 전송합니다. backend ingestion은 `instrumentId`가 있으면 이 값을 우선 사용하고, 없는 과거 payload는 `market + symbol`로 instrument를 찾아 저장합니다.
 
 ## 역할
 

@@ -213,6 +213,62 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void ingestsMentionsAndSentimentsByInstrumentIdWhenProvided() {
+        Long teslaId = instrumentId("US", "TSLA");
+        Long nvdaId = instrumentId("US", "NVDA");
+        int teslaMentionsBefore = tableInstrumentIdCount("post_mentions", teslaId);
+        int nvdaMentionsBefore = tableInstrumentIdCount("post_mentions", nvdaId);
+        int teslaSentimentsBefore = tableInstrumentIdCount("sentiment_analyses", teslaId);
+        int nvdaSentimentsBefore = tableInstrumentIdCount("sentiment_analyses", nvdaId);
+
+        Map<String, Object> request = Map.of(
+                "source", "FMKOREA",
+                "runId", "run-20260527-instrument-id",
+                "batchStartedAt", "2026-05-27T00:00:00Z",
+                "batchFinishedAt", "2026-05-27T00:30:00Z",
+                "posts", List.of(Map.ofEntries(
+                        Map.entry("externalId", "fmk-instrument-id-1"),
+                        Map.entry("url", "https://www.fmkorea.com/stock/instrument-id-1"),
+                        Map.entry("title", "테슬라 instrument id 기준 저장"),
+                        Map.entry("contentSnippet", "문자열 symbol은 NVDA로 어긋나도 instrumentId는 TSLA를 가리킨다."),
+                        Map.entry("authorDisplayName", "anonymous"),
+                        Map.entry("publishedAt", "2026-05-27T00:05:00Z"),
+                        Map.entry("boardId", "stock"),
+                        Map.entry("viewCount", 100),
+                        Map.entry("recommendCount", 1),
+                        Map.entry("commentCount", 2),
+                        Map.entry("mentions", List.of(Map.of(
+                                "instrumentId", teslaId,
+                                "market", "US",
+                                "symbol", "NVDA",
+                                "matchedText", "테슬라"
+                        ))),
+                        Map.entry("sentiments", List.of(Map.of(
+                                "instrumentId", teslaId,
+                                "market", "US",
+                                "symbol", "NVDA",
+                                "sentiment", "BULLISH",
+                                "confidence", 0.91,
+                                "rationale", "instrument id should win",
+                                "model", "mock"
+                        )))
+                ))
+        );
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                request,
+                String.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(tableInstrumentIdCount("post_mentions", teslaId)).isEqualTo(teslaMentionsBefore + 1);
+        assertThat(tableInstrumentIdCount("post_mentions", nvdaId)).isEqualTo(nvdaMentionsBefore);
+        assertThat(tableInstrumentIdCount("sentiment_analyses", teslaId)).isEqualTo(teslaSentimentsBefore + 1);
+        assertThat(tableInstrumentIdCount("sentiment_analyses", nvdaId)).isEqualTo(nvdaSentimentsBefore);
+    }
+
+    @Test
     void recordsDiffusionEventsSeparatelyFromPostDeduplication() {
         IngestionRequest request = new IngestionRequest(
                 "DCINSIDE",
