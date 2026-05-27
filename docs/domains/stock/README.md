@@ -8,7 +8,8 @@
 - `status=REVIEW` 또는 `ambiguous=true`인 alias는 종목 mention으로 확정하지 않고 후보로만 기록합니다.
 - `status=BLOCKED` alias는 일반명사 충돌처럼 오탐 위험이 큰 표현입니다. 집계와 후보 큐 모두에서 제외합니다.
 - `instrument_alias_candidates`: 커뮤니티에서 관찰된 은어/별칭 후보 큐입니다. 같은 `source + normalizedAlias + suggestedMarket + suggestedSymbol`은 occurrence를 누적합니다.
-- pipeline은 `INSTRUMENT_ALIAS_CSV_PATH`로 alias rule CSV를 읽고, review alias가 보이면 `aliasCandidates` ingestion payload로 backend에 보냅니다.
+- pipeline은 운영/compose 환경에서 `INSTRUMENT_SNAPSHOT_URL`로 backend의 `/admin/instruments/matcher-snapshot`을 읽어 승인된 종목 master와 alias를 가져옵니다. URL이 없거나 snapshot 로드가 반복 실패하면 로컬 fixture용 `INSTRUMENT_CSV_PATH`와 `INSTRUMENT_ALIAS_CSV_PATH`를 fallback으로 씁니다.
+- `INSTRUMENT_ALIAS_CSV_PATH`의 review alias는 아직 후보 탐지 fallback입니다. 정식 mention 집계는 backend snapshot에 포함된 `ACCEPTED + ambiguous=false` alias만 확정 후보로 씁니다.
 - 후보 상태는 `PENDING -> SUGGESTED/REJECTED/PROMOTED` 흐름으로 봅니다. `SUGGESTED`는 AI/사람이 "그럴듯함"으로 판정한 상태일 뿐이고, `PROMOTED`가 되어 `instrument_aliases(status=ACCEPTED, ambiguous=false)`에 들어가기 전까지는 집계에 쓰지 않습니다.
 - 운영용 API는 `POST /admin/alias-candidates/{candidateId}/review`로 `SUGGESTED` 또는 `REJECTED` 판정을 저장하고, `POST /admin/alias-candidates/{candidateId}/promote`로 승인 후보를 정식 alias로 승격합니다.
 
@@ -43,7 +44,15 @@
 
 이 seed는 정확한 종목 식별과 provider/게시판 key 연결을 위한 master입니다. seed에 있는 종목명 전체를 커뮤니티 alias로 자동 승인하지는 않습니다. 은어, 별칭, 일반명사와 충돌할 수 있는 표현은 `instrument_alias_candidates`에 쌓고 review/promote 흐름을 거친 뒤 집계에 반영합니다.
 
-pipeline matcher는 종목 master와 alias rule을 실행 시점에 한 번 읽고, 글마다 전체 종목을 전수 대조하지 않습니다. ASCII 티커/영문 alias는 토큰 인덱스, 한글/비ASCII alias는 첫 글자 인덱스로 후보를 좁힌 뒤 span을 확인합니다. 따라서 1만 개 이상 master를 쓰더라도 게시글별 matching은 본문에 실제 등장한 토큰과 첫 글자 bucket 위주로 수행합니다.
+pipeline matcher는 종목 master와 alias rule을 실행 시점에 한 번 읽고, 글마다 전체 종목을 전수 대조하지 않습니다. `INSTRUMENT_SNAPSHOT_URL`이 있으면 backend DB 정본에서 생성한 snapshot을 한 번 가져오고, 없으면 CSV fixture를 읽습니다. snapshot URL이 설정되어 있어도 backend 부팅 타이밍이나 일시 장애로 실패할 수 있으므로 `INSTRUMENT_SNAPSHOT_RETRIES`, `INSTRUMENT_SNAPSHOT_RETRY_DELAY_SECONDS`, `INSTRUMENT_SNAPSHOT_FALLBACK_ON_ERROR`로 재시도와 CSV fallback을 제어합니다. 이후 ASCII 티커/영문 alias는 토큰 인덱스, 한글/비ASCII alias는 첫 글자 인덱스로 후보를 좁힌 뒤 span을 확인합니다. 따라서 1만 개 이상 master를 쓰더라도 게시글별 matching은 본문에 실제 등장한 토큰과 첫 글자 bucket 위주로 수행합니다.
+
+matcher snapshot API:
+
+- `GET /admin/instruments/matcher-snapshot`
+- query: `market` optional. 예: `?market=US`
+- 응답: `instrumentId`, `market`, `symbol`, `name`, `aliases`
+- `aliases`에는 `instrument_aliases.status=ACCEPTED`이고 `ambiguous=false`인 값만 포함합니다. `REVIEW`, `BLOCKED`, `ambiguous=true` alias는 확정 mention 후보가 아닙니다.
+- pipeline은 이 snapshot을 글마다 DB 조회하지 않고 시작 시 한 번 로드한 뒤 인메모리 matcher 인덱스로 씁니다.
 
 ## 역할
 

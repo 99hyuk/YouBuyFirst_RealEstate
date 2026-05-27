@@ -89,7 +89,8 @@
 - [x] alias registry와 은어 후보 관리: 확정 alias와 후보 alias를 분리하고, 후보는 집계에 바로 넣지 않고 `instrument_alias_candidates`로 누적
 - [x] alias 후보 심사/승격 흐름: `SUGGESTED/REJECTED/PROMOTED` 상태와 admin review/promote API로 승인 alias만 집계에 반영
 - [x] market quote/chart/investor-flow cache와 NAVER crawl target을 `instrument_id` 기준으로 연결
-- [ ] 커뮤니티 종목 후보와 market provider symbol을 같은 canonical key로 연결: seed 기반 식별자 연결은 완료, pipeline matcher가 master/alias 후보를 함께 쓰는 단계는 후속 작업
+- [x] pipeline matcher 입력을 backend DB 기반 matcher snapshot으로 연결: 승인된 종목 master와 alias는 `INSTRUMENT_SNAPSHOT_URL`로 재시도 로드하고 CSV는 fallback으로 유지
+- [ ] mention ingestion payload와 집계 저장을 `instrument_id` 기준으로 넓히기: 현재 matcher snapshot은 `instrumentId`를 싣지만 mention payload는 아직 `market + symbol` 기준
 
 ### community
 

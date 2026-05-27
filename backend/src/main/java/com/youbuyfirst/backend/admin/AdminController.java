@@ -35,6 +35,7 @@ public class AdminController {
     private final CommunityCommentCollectionTargetRepository commentCollectionTargetRepository;
     private final InstrumentRepository instrumentRepository;
     private final InstrumentAliasRepository instrumentAliasRepository;
+    private final InstrumentMatcherSnapshotService instrumentMatcherSnapshotService;
     private final InstrumentAliasCandidateRepository aliasCandidateRepository;
     private final InstrumentAliasReviewService aliasReviewService;
     private final MetricSnapshotRepository metricSnapshotRepository;
@@ -47,6 +48,7 @@ public class AdminController {
             CommunityCommentCollectionTargetRepository commentCollectionTargetRepository,
             InstrumentRepository instrumentRepository,
             InstrumentAliasRepository instrumentAliasRepository,
+            InstrumentMatcherSnapshotService instrumentMatcherSnapshotService,
             InstrumentAliasCandidateRepository aliasCandidateRepository,
             InstrumentAliasReviewService aliasReviewService,
             MetricSnapshotRepository metricSnapshotRepository
@@ -58,6 +60,7 @@ public class AdminController {
         this.commentCollectionTargetRepository = commentCollectionTargetRepository;
         this.instrumentRepository = instrumentRepository;
         this.instrumentAliasRepository = instrumentAliasRepository;
+        this.instrumentMatcherSnapshotService = instrumentMatcherSnapshotService;
         this.aliasCandidateRepository = aliasCandidateRepository;
         this.aliasReviewService = aliasReviewService;
         this.metricSnapshotRepository = metricSnapshotRepository;
@@ -128,6 +131,12 @@ public class AdminController {
         return instrumentAliasRepository.findByOrderByAliasAsc(page).stream()
                 .map(InstrumentAliasView::from)
                 .toList();
+    }
+
+    @GetMapping("/instruments/matcher-snapshot")
+    @Transactional(readOnly = true)
+    public List<InstrumentMatcherSnapshotView> instrumentMatcherSnapshot(@RequestParam(required = false) String market) {
+        return instrumentMatcherSnapshotService.snapshot(market);
     }
 
     @GetMapping("/alias-candidates")

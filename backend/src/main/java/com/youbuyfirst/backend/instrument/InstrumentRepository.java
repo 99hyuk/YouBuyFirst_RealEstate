@@ -2,9 +2,14 @@ package com.youbuyfirst.backend.instrument;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface InstrumentRepository extends JpaRepository<Instrument, Long> {
 
     Optional<Instrument> findByMarketIgnoreCaseAndSymbolIgnoreCase(String market, String symbol);
+
+    List<Instrument> findByOrderByMarketAscSymbolAsc();
+
+    List<Instrument> findByMarketIgnoreCaseOrderByMarketAscSymbolAsc(String market);
 }

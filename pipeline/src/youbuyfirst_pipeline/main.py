@@ -23,7 +23,7 @@ from youbuyfirst_pipeline.crawlers.dcinside import DcinsideAdapter
 from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
 from youbuyfirst_pipeline.crawlers.naver import NaverBoardAdapter
 from youbuyfirst_pipeline.crawlers.ppomppu import PpomppuAdapter
-from youbuyfirst_pipeline.instruments import load_alias_rules, load_instruments, review_alias_rules
+from youbuyfirst_pipeline.instruments import load_alias_rules, load_instrument_snapshot, review_alias_rules
 from youbuyfirst_pipeline.llm import build_llm_provider
 from youbuyfirst_pipeline.market_investor_flows import (
     DEFAULT_INVESTOR_FLOW_PROVIDER,
@@ -60,8 +60,17 @@ def build_pipeline() -> CommunityPipeline:
 
     instrument_path = Path(os.getenv("INSTRUMENT_CSV_PATH", "data/instruments.sample.csv"))
     alias_path = Path(os.getenv("INSTRUMENT_ALIAS_CSV_PATH", "data/instrument_aliases.sample.csv"))
+    instrument_snapshot_url = os.getenv("INSTRUMENT_SNAPSHOT_URL")
     alias_rules = load_alias_rules(alias_path)
-    instruments = load_instruments(instrument_path, alias_rules)
+    instruments = load_instrument_snapshot(
+        instrument_path,
+        alias_rules,
+        snapshot_url=instrument_snapshot_url,
+        timeout_seconds=float(os.getenv("INSTRUMENT_SNAPSHOT_TIMEOUT_SECONDS", "10")),
+        snapshot_retries=_configured_int(os.getenv("INSTRUMENT_SNAPSHOT_RETRIES"), 12),
+        snapshot_retry_delay_seconds=float(os.getenv("INSTRUMENT_SNAPSHOT_RETRY_DELAY_SECONDS", "5")),
+        fallback_on_snapshot_error=_configured_bool(os.getenv("INSTRUMENT_SNAPSHOT_FALLBACK_ON_ERROR"), True),
+    )
 
     targets = default_crawl_targets(
         instruments,
@@ -104,6 +113,12 @@ def _configured_int(value: str | None, default: int) -> int:
     if not value:
         return default
     return int(value)
+
+
+def _configured_bool(value: str | None, default: bool) -> bool:
+    if value is None or value.strip() == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "y"}
 
 
 def _stream_crawler_from_env() -> BoardStreamCrawler:

@@ -112,6 +112,35 @@ class IngestionApiIntegrationTest {
     }
 
     @Test
+    void exportsMatcherSnapshotWithOnlyAcceptedNonAmbiguousAliases() throws Exception {
+        Long teslaId = instrumentId("US", "TSLA");
+        insertInstrumentAlias(teslaId, "슬라스냅승인", "슬라스냅승인", "ACCEPTED", false);
+        insertInstrumentAlias(teslaId, "슬라스냅검토", "슬라스냅검토", "REVIEW", false);
+        insertInstrumentAlias(teslaId, "슬라스냅애매", "슬라스냅애매", "ACCEPTED", true);
+
+        ResponseEntity<String> response = restTemplate.getForEntity("/admin/instruments/matcher-snapshot?market=US", String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode snapshot = objectMapper.readTree(response.getBody());
+
+        JsonNode tesla = null;
+        for (JsonNode instrument : snapshot) {
+            if ("US".equals(instrument.get("market").asText()) && "TSLA".equals(instrument.get("symbol").asText())) {
+                tesla = instrument;
+                break;
+            }
+        }
+
+        assertThat(tesla).isNotNull();
+        assertThat(tesla.get("instrumentId").asLong()).isEqualTo(teslaId);
+        assertThat(tesla.get("name").asText()).isNotBlank();
+        assertThat(tesla.get("aliases"))
+                .extracting(JsonNode::asText)
+                .contains("슬라스냅승인")
+                .doesNotContain("슬라스냅검토", "슬라스냅애매");
+    }
+
+    @Test
     void ingestsCommunityPostsIdempotentlyAndCreatesMetrics() {
         IngestionRequest request = new IngestionRequest(
                 "FMKOREA",

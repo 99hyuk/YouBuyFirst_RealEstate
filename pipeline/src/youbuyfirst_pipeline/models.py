@@ -10,6 +10,7 @@ class Instrument:
     symbol: str
     name: str
     aliases: list[str] = field(default_factory=list)
+    instrument_id: int | None = None
 
 
 @dataclass(frozen=True)
