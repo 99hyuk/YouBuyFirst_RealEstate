@@ -22,11 +22,11 @@
 - quote snapshot 영역: `GET /api/quotes` 응답을 가격 근처에 표시한다. 현재가/등락률/거래량은 차트에서 긁지 않는다.
 - 거래일별 수급 영역: 국내 종목/ETF만 `GET /api/market/investor-flows/history` 응답으로 표시한다. 미국 종목은 숨긴다.
 - 데이터 상태: quote/chart/수급 각각 provider, delayLabel, asOf, stale, dataStatus를 노출한다. 실패나 빈 배열을 0값처럼 보이게 만들지 않는다.
-- 요약 지표 strip: 반응 점수, 언급 변화, 긍정/부정, 출처 수, 원문 링크 수
+- 요약 지표 strip: 반응 점수, 언급 변화, 반응 방향, 반응 일관성, 원문 링크 수
 - 반응 키워드와 시간대별 변화: 30분 키워드 pulse, 09:00~09:45 snapshot
 - 커뮤니티 반응 추이: 30분/1일/1주 언급량과 긍정/부정/중립 비율
 - 어제와 달라진 점: 매일 들어왔을 때 바로 볼 변화 요약
-- 소스별 반응: 네이버 종토방, 디시, 뽐뿌, 에펨코리아별 언급/반응/메모
+- 통합 반응 품질: 표본 수, 소스 편중 주의, coverage, 반응 일관성, 주요 쟁점
 - 이벤트 타임라인: 뉴스, 커뮤니티, 가격, 인기글, 리포트를 시간순으로 묶음
 - 근거 링크: 뉴스, 리포트, 영상, 블로그, 커뮤니티 제목 링크
 - 신호 신뢰도: 표본 수, 커뮤니티 편중, 출처 다양성, 가격 지연, 원문 확인 필요
@@ -50,11 +50,11 @@
 | `investorFlowHistory` | market | `GET /api/market/investor-flows/history` 응답. 국내 종목/ETF의 거래일별 수급만 표시한다. `derived=true` 값은 직접 관찰값처럼 보이지 않게 라벨링한다. |
 | `headlineTone`, `headline`, `subtitle`, `scoreLine`, `riskNote` | agent/backend | 상단 팩트폭격 카피와 보조 문구 |
 | `headlineEvidence` | market/indicator/agent | 한줄평 근거 chip 배열 |
-| `quickStats` | indicator | 반응 점수, 언급 변화, 출처 수, 링크 수 |
+| `quickStats` | indicator | 반응 점수, 언급 변화, 반응 일관성, 링크 수 |
 | `keywordPulse` | indicator | 30분 반응 키워드 증감 |
 | `intradaySnapshots` | indicator/market | 시간대별 언급, 반응, 가격 변화 |
 | `reactionTrend` | indicator | 30분/1일/1주 언급량과 반응 비율 |
-| `sourceReaction` | indicator/community | 커뮤니티별 언급, 긍정/부정, 메모 |
+| `reactionQuality` | indicator/community | 표본 수, 소스 편중 주의, coverage, 반응 일관성, 주요 쟁점 |
 | `events` | backend/indicator/market | 뉴스, 공시, 가격, 커뮤니티 이벤트 타임라인 |
 | `evidenceLinks` | community/indicator | 제목 링크와 출처, 원문 URL |
 | `reliability` | backend/indicator | 표본 수, 편중, 출처 다양성, 가격 지연, 원문 확인 |

@@ -1,6 +1,6 @@
 # 현재 작업 인수인계
 
-마지막 갱신: 2026-05-24
+마지막 갱신: 2026-05-28
 
 새 채팅이 방향을 잡는 짧은 요약입니다. 전문 읽기를 기본값으로 두지 말고 필요한 섹션만 확인합니다.
 
@@ -32,6 +32,9 @@
 - 브랜치는 실제 PR 후보가 있을 때 열고, merge/close/대체 후에는 worktree와 함께 정리합니다. 열린 브랜치는 active, review, blocked, stale, close-candidate 중 하나로 설명할 수 있어야 합니다.
 - 사용자 보고는 파일명/폴더명 나열보다 무엇이 해결됐고 이제 무엇을 판단하면 되는지 먼저 말합니다.
 - 제품 핵심은 `커뮤니티 반응`과 `개미 심리 지수`입니다. 관심종목은 이 지표를 매일 쓰게 만드는 필터/개인화 레이어입니다.
+- 커뮤니티 제품 기획은 source별 전용 에이전트가 아니라 `종합 커뮤니티 반응`, `개미 심리 지수`, 통합 지표 기반 모의 성과 검증을 중심으로 둡니다. source별 분석은 내부 보정/coverage/source-slice 검증에 사용하고, 공개 화면에는 `반응 일관성`, `소스 편중 주의`, `표본 신뢰도`로 압축합니다. 세부 기준은 `docs/product/COMMUNITY_SIGNAL_STRATEGY.md`를 봅니다.
+- RAG와 벡터DB는 종목 식별이나 수익률 계산이 아니라 과거 유사 window 검색, issueMix 설명, 백테스트 결과 해석에 붙이는 후순위 분석 레이어입니다.
+- FMKOREA는 통합 지표 입력에 포함하되 로컬 개인 지표용 source로만 다루며, 수집이 허용된 로컬 환경에서도 HTTP 목록 요청을 먼저 보내지 않고 브라우저 렌더링으로만 접근합니다.
 - 제품명은 붙여 쓴 `너나사`를 기본 브랜드명으로 씁니다. 풀어서 설명할 때만 `너나 사` 말장난을 제한적으로 씁니다.
 - 부동산은 주식 MVP에 섞지 않고 후순위 별도 버티컬로만 검토합니다.
 - market MVP는 quote/chart를 `yfinance` + FinanceDataReader 조합으로 다루고, 국내 수급은 quote와 분리합니다. 화면에는 지연, provider, `asOf`, `stale`, 참고용 표시가 필요합니다. 상세 기준은 `docs/domains/market/README.md`, `docs/domains/market/CHART_CANDLES.md`, `docs/domains/market/INVESTOR_FLOWS.md`를 봅니다.

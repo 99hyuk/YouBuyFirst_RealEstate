@@ -42,7 +42,7 @@ Screen Brief가 커지면 새 채팅이 느려지고, 화면 기준도 흐려집
 | `stock-filing-detail` | `/stocks/:symbol/filings/:filingId` 또는 drawer | 예정 | candidate | 공시 상세, 관련 지표 영향 |
 | `stock-community-post` | `/stocks/:symbol/community/:postId` 또는 drawer | 예정 | candidate | 커뮤니티 원문 snippet, 출처, 관련 종목 |
 | `stock-indicator-detail` | `/stocks/:symbol/indicators/:indicatorId` 또는 panel | 예정 | candidate | RSI, VWAP, PER 등 개별 지표 설명 |
-| `human-indicator` | `/communities?view=` | `human-indicator.md` | active | 커뮤니티별 반응/성과 비교와 모의 에이전트 판단 |
+| `human-indicator` | `/communities?view=` | `human-indicator.md` | active | 통합 커뮤니티 반응/성과 비교와 모의 에이전트 판단 |
 | `indicators` | `/indicators` | `indicators.md` | active | 시장 지표와 커뮤니티 반응 괴리 |
 | `agents` | `/agents` -> `/communities?view=agents` | `agents.md` | redirect | 인간 지표 하위 모의 에이전트 섹션 |
 | `portfolio` | `/portfolio` | `portfolio.md` | active | 모의 포트폴리오와 원장 기반 손익 |

@@ -10,7 +10,7 @@
 
 1. 관심종목에서 가격, 거래량, 커뮤니티 반응, 뉴스/공시 변화가 감지됩니다.
 2. 사용자는 종목 상세에서 변화 원인, 근거 링크, 신뢰도/주의 배지를 확인합니다.
-3. 개미 심리 지수와 커뮤니티별 반응 흐름으로 시장 분위기를 봅니다.
+3. 개미 심리 지수와 통합 커뮤니티 반응 흐름으로 시장 분위기를 봅니다.
 4. 모의 포트폴리오와 에이전트 paper trading으로 판단 결과를 복기합니다.
 5. 이후 유사 상황 검색, 알림, OCR 자산 연동, 부동산 버티컬을 확장합니다.
 
@@ -30,7 +30,7 @@
 - [x] stock 종목 마스터를 국내 주식/ETF + 미국 주식/ETF 기준으로 확장하고, provider symbol, 표시명, 시장 구분을 같은 키로 연결
 - [ ] market quote/chart/investor-flow provider 계약을 안정화하고, yfinance + FinanceDataReader 기준의 delay/asOf/stale/dataStatus 표시 규칙을 고정
 - [ ] community source registry를 에펨코리아, 네이버 종토방, 뽐뿌 증권포럼, 디시 미국주식/주식갤러리/국내주식 후보까지 확장하되 소스 상태와 공개 가능 범위를 분리
-- [ ] indicator 개미 심리 지수 산식 v1을 확정하고, 언급량 변화, 반응 방향, 표현 강도, 인기글 확산, 소스 다양성, 표본 신뢰도, 시세 지연을 입력으로 묶기
+- [ ] indicator 개미 심리 지수 산식 v1을 확정하고, 언급량 변화, 반응 방향, 표현 강도, 인기글 확산, source baseline 보정, 표본 신뢰도, 시세 지연을 입력으로 묶기
 - [ ] stock detail 이벤트 타임라인 계약을 정리하고, 뉴스/공시/리포트/영상/블로그/커뮤니티/가격 이벤트를 같은 시간축으로 표시하는 응답 shape 설계
 - [ ] simulation 가상 계좌, 주문, 예약, 체결, 정산, 원장, 포지션, 손익 계산의 트랜잭션 경계를 먼저 설계
 - [ ] agent 판단 key, strategy version, input window, idempotency key를 설계해 같은 통계 window에서 중복 판단/중복 주문이 나지 않게 만들기
@@ -55,8 +55,8 @@
 ### Slice C. 인간 지표
 
 - [ ] 개미 심리 지수 ranking, 급변 종목, 공포/과열/무관심 구간 표시
-- [ ] 커뮤니티별 반응 분포와 확산 레이어를 같은 종목 키로 연결
-- [ ] 커뮤니티별 paper 성과 비교: 추종/역추종, 1시간/6시간/24시간/3일/7일 기준
+- [ ] 통합 반응 품질, 반응 일관성, 소스 편중 주의, 확산 레이어를 같은 종목 키로 연결
+- [ ] 통합 지표 기반 paper 성과 비교: 추종/역추종, 1시간/6시간/24시간/3일/7일 기준
 - [ ] 인기글/개념글/추천글 기준을 source별로 다르게 정의
 
 ### Slice D. 모의 포트폴리오와 원장
@@ -71,6 +71,7 @@
 - [ ] 역발상, 모멘텀, 리스크 관리형, 관망형 persona의 입력값과 판단 결과 필드 정의
 - [ ] agent decision log에 input window, strategy version, decision key, skip reason 저장
 - [ ] agent는 주문/체결을 직접 수정하지 않고 simulation contract를 통해서만 요청
+- [ ] source별 전용 에이전트 없이 통합 커뮤니티 에이전트 하나로 운용하고, source-only slice는 내부 검증으로만 둠
 - [ ] 사용자 화면에는 내부 추론 전문이 아니라 짧은 판단 근거와 데이터 상태만 표시
 
 ### Slice F. 데이터 확장
@@ -79,6 +80,7 @@
 - [ ] 증권 유튜브 영상, 신뢰 블로그 whitelist, 인기글/개념글 링크 수집 정책 정리
 - [ ] 임베딩/클러스터링은 수집 데이터가 쌓인 뒤 토픽 묶음과 과거 유사 상황 검색으로 도입
 - [ ] 벡터DB는 RAG/유사 상황 검색/질문형 분석이 제품 기능이 될 때 도입 후보로 검토
+- [ ] RAG는 종목 식별/수익률 계산이 아니라 유사 window와 백테스트 결과 설명 레이어로 도입
 
 ## 작업 영역별 백로그
 
@@ -108,6 +110,7 @@
 
 - [x] `CommunityIndicatorSnapshot` 30분 baseline 응답/API 구현: `marketMood`, `sourceMoods`, `stockMentionCounts`, `topKeywords`
 - [ ] `RetailSentimentIndex` 응답 shape 설계
+- [ ] `StockReactionWindow`, `ForwardReturn`, `issueMix`, `reactionQuality` contract 설계
 - [ ] 1일/1주 window 집계 테스트 추가
 - [ ] 소스 다양성, 표본 수, 신뢰도 배지 산식 분리
 - [ ] 과거 유사 반응 상황 검색 후보 데이터 모델 정리
@@ -124,12 +127,14 @@
 - [ ] `Account`, `Order`, `Execution`, `LedgerEntry`, `Position` 최소 모델 설계
 - [ ] 주문 예약, 체결, 취소, 정산의 상태 전이와 idempotency 규칙 설계
 - [ ] 리더보드는 원장과 가격 snapshot으로 재계산 가능하게 설계
+- [ ] 백테스트용 `BacktestRun`, `StrategyPerformanceSnapshot`, strategy rule JSON 후보 설계
 
 ### agent
 
 - [ ] `AgentDecision` key와 strategy version 관리
 - [ ] 종목 상태 팩트폭격 헤드라인 생성 입력과 금지 표현 검사
-- [ ] 커뮤니티별 성과 비교 실험의 추종/역추종 규칙과 기준 수익률 정의
+- [ ] 통합 지표 기반 성과 비교 실험의 추종/역추종 규칙과 기준 수익률 정의
+- [ ] `나만의 모의 전략` builder의 입력 조건과 금지 표현 기준 정리
 - [ ] 판단 로그를 Notion/포트폴리오 기술 경험으로 설명 가능한 문제 해결 사례로 남기기
 
 ### ui
@@ -153,7 +158,7 @@
 - [ ] Spring Security 인증/인가
 - [ ] 운영 배포와 모니터링
 - [ ] 사용자 반응방/게시판/채팅
-- [ ] 벡터DB 기반 질문형 분석
+- [ ] 벡터DB/RAG 기반 유사 window 질문형 분석
 - [ ] 부동산 버티컬
 
 ## 현재 완료 기반
