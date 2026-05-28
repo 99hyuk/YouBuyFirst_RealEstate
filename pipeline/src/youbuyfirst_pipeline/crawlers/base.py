@@ -11,7 +11,9 @@ from youbuyfirst_pipeline.models import RawPost
 
 
 class SourceBlockedError(RuntimeError):
-    pass
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class CommunityAdapter(Protocol):
@@ -29,11 +31,26 @@ class FetchResult:
 
 
 class BrowserCapableFetcher:
-    def __init__(self, user_agent: str, timeout_seconds: float = 10.0) -> None:
+    def __init__(
+        self,
+        user_agent: str,
+        timeout_seconds: float = 10.0,
+        browser_channel: str | None = None,
+    ) -> None:
         self.user_agent = user_agent
         self.timeout_seconds = timeout_seconds
+        self.browser_channel = browser_channel.strip() if browser_channel else None
+        self.headers = {
+            "User-Agent": self.user_agent,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+        }
 
-    async def fetch_html(self, url: str, allow_browser_fallback: bool = True) -> FetchResult:
+    async def fetch_html(
+        self,
+        url: str,
+        allow_browser_fallback: bool = True,
+    ) -> FetchResult:
         try:
             return await self._fetch_http(url)
         except SourceBlockedError:
@@ -43,15 +60,18 @@ class BrowserCapableFetcher:
                 raise
             return await self._fetch_browser(url)
 
+    async def fetch_browser_html(self, url: str) -> FetchResult:
+        return await self._fetch_browser(url)
+
     async def _fetch_http(self, url: str) -> FetchResult:
         async with httpx.AsyncClient(
             follow_redirects=True,
             timeout=self.timeout_seconds,
-            headers={"User-Agent": self.user_agent},
+            headers=self.headers,
         ) as client:
             response = await client.get(url)
-            if response.status_code in {403, 429}:
-                raise SourceBlockedError(f"{url} returned {response.status_code}")
+            if response.status_code in {403, 429, 430}:
+                raise SourceBlockedError(f"{url} returned {response.status_code}", status_code=response.status_code)
             response.raise_for_status()
             html = _decode_html(url, response)
             _raise_if_block_page(str(response.url), html)
@@ -61,14 +81,17 @@ class BrowserCapableFetcher:
         from playwright.async_api import async_playwright
 
         async with async_playwright() as playwright:
-            browser = await playwright.chromium.launch(headless=True)
+            launch_options = {"headless": True}
+            if self.browser_channel:
+                launch_options["channel"] = self.browser_channel
+            browser = await playwright.chromium.launch(**launch_options)
             page = await browser.new_page(user_agent=self.user_agent)
             response = await page.goto(url, wait_until="domcontentloaded", timeout=int(self.timeout_seconds * 1000))
             html = await page.content()
             status = response.status if response else 200
             await browser.close()
-            if status in {403, 429}:
-                raise SourceBlockedError(f"{url} returned {status} with browser fallback")
+            if status in {403, 429, 430}:
+                raise SourceBlockedError(f"{url} returned {status} with browser fallback", status_code=status)
             _raise_if_block_page(url, html)
             return FetchResult(url=url, html=html, status_code=status)
 
@@ -122,3 +145,5 @@ def _raise_if_block_page(url: str, html: str) -> None:
     normalized = html.lower()
     if "captcha" in normalized or "verify you are human" in normalized or "human verification" in normalized:
         raise SourceBlockedError(f"{url} returned CAPTCHA or human verification page")
+    if "fmkorea.com" in url and "에펨코리아 보안 시스템" in html[:2000]:
+        raise SourceBlockedError(f"{url} returned known block page")

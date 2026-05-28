@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from youbuyfirst_pipeline.board_stream import BoardPage, BoardStreamCrawler, BoardStreamResult, BoardWatermark
 from youbuyfirst_pipeline.crawl_targets import CrawlTarget
-from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher, parse_datetime
+from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher, FetchResult, parse_datetime
 from youbuyfirst_pipeline.models import RawPost
 
 
@@ -20,25 +20,32 @@ class FmkoreaAdapter:
         url: str | None = None,
         target: CrawlTarget | None = None,
         stream_crawler: BoardStreamCrawler | None = None,
+        use_local_browser_fetch: bool = True,
     ) -> None:
         self.fetcher = fetcher
         self.url = url or self.default_url
         self.target = target or CrawlTarget.community_board(self.source, url=self.url, label="FMKOREA stock board")
         self.stream_crawler = stream_crawler or BoardStreamCrawler()
+        self.use_local_browser_fetch = use_local_browser_fetch
 
     async def fetch_posts(self) -> list[RawPost]:
-        result = await self.fetcher.fetch_html(self.url)
+        result = await self._fetch_fmkorea_html(self.url)
         return self.parse_list_html(result.html, board_id=self.target.board_id or "stock")
 
     async def fetch_stream(self, watermark: BoardWatermark | None = None) -> BoardStreamResult:
         return await self.stream_crawler.collect(self._fetch_page, watermark)
 
     async def _fetch_page(self, cursor: str | None) -> BoardPage:
-        result = await self.fetcher.fetch_html(_page_url(self.url, cursor))
+        result = await self._fetch_fmkorea_html(_page_url(self.url, cursor))
         posts = self.parse_list_html(result.html, board_id=self.target.board_id or "stock")
         current_page = cursor or "1"
         next_cursor = str(int(current_page) + 1) if posts else None
         return BoardPage(cursor=current_page, posts=posts, next_cursor=next_cursor)
+
+    async def _fetch_fmkorea_html(self, url: str) -> FetchResult:
+        if self.use_local_browser_fetch:
+            return await self.fetcher.fetch_browser_html(url)
+        return await self.fetcher.fetch_html(url)
 
     @staticmethod
     def parse_list_html(html: str, board_id: str = "stock") -> list[RawPost]:

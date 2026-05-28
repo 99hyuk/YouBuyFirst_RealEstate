@@ -202,6 +202,16 @@ def test_adapters_are_created_from_targets_with_target_metadata():
     ]
 
 
+def test_adapters_use_browser_fetch_for_fmkorea_by_default():
+    fetcher = BrowserCapableFetcher(user_agent="test")
+    target = CrawlTarget.community_board("FMKOREA", board_id="stock", url="https://example.com/stock")
+
+    adapters = _adapters_from_targets([target], fetcher)
+
+    assert adapters[0].source == "FMKOREA"
+    assert adapters[0].use_local_browser_fetch is True
+
+
 def test_stream_crawler_from_env_configures_limits_and_page_delay(monkeypatch):
     monkeypatch.setenv("CRAWLER_MAX_PAGES_PER_RUN", "7")
     monkeypatch.setenv("CRAWLER_MAX_POSTS_PER_RUN", "120")

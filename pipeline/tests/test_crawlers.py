@@ -18,9 +18,14 @@ class FakeFetcher:
     def __init__(self, pages: dict[str, str]) -> None:
         self.pages = pages
         self.urls: list[str] = []
+        self.browser_urls: list[str] = []
 
     async def fetch_html(self, url: str, allow_browser_fallback: bool = True) -> FetchResult:
         self.urls.append(url)
+        return FetchResult(url=url, html=self.pages[url], status_code=200)
+
+    async def fetch_browser_html(self, url: str) -> FetchResult:
+        self.browser_urls.append(url)
         return FetchResult(url=url, html=self.pages[url], status_code=200)
 
 
@@ -272,12 +277,37 @@ async def test_fmkorea_fetch_stream_walks_pages_until_duplicate_with_coverage():
 
     result = await adapter.fetch_stream(BoardWatermark(last_seen_external_id="FMKOREA-1001"))
 
-    assert fetcher.urls == ["https://www.fmkorea.com/stock", "https://www.fmkorea.com/stock?page=2"]
+    assert fetcher.urls == []
+    assert fetcher.browser_urls == ["https://www.fmkorea.com/stock", "https://www.fmkorea.com/stock?page=2"]
     assert [post.external_id for post in result.posts] == ["FMKOREA-1002"]
     assert result.coverage.pages_fetched == 2
     assert result.coverage.rows_seen == 2
     assert result.coverage.duplicate_stop is True
     assert result.coverage.coverage_status == "complete"
+
+
+@pytest.mark.anyio
+async def test_fmkorea_fetch_stream_uses_browser_fetch_by_default_without_http_first():
+    page = """
+    <table><tr>
+      <td class="title"><a href="/1002">새 글</a></td>
+      <td class="author"><span>writer</span></td>
+      <td class="time">09:20</td>
+    </tr></table>
+    """
+    fetcher = FakeFetcher({"https://www.fmkorea.com/stock": page})
+    target = CrawlTarget.community_board("FMKOREA", board_id="stock", url="https://www.fmkorea.com/stock")
+    adapter = FmkoreaAdapter(
+        fetcher,
+        target=target,
+        stream_crawler=BoardStreamCrawler(max_pages_per_run=1),
+    )
+
+    result = await adapter.fetch_stream()
+
+    assert [post.external_id for post in result.posts] == ["FMKOREA-1002"]
+    assert fetcher.urls == []
+    assert fetcher.browser_urls == ["https://www.fmkorea.com/stock"]
 
 
 @pytest.mark.anyio

@@ -68,7 +68,7 @@
 
 pipeline의 `community_board_registry()`는 위 1차 대상의 최신글 URL, source 안의 `boardId`, 표시명, 시장 범위, 기본 우선순위를 한곳에서 관리합니다. 기본 최신글 target은 5개 게시판 모두 활성화합니다.
 
-source 활성화 상태가 `enabled` 또는 허용된 로컬 환경의 `local-research-only`가 아니면 외부 요청을 보내지 않습니다. 로그인, CAPTCHA, 프록시 회전, fingerprint 위장은 하지 않고, 공개 HTTP 목록 수집을 우선합니다. Playwright는 정적 HTTP로 공개 목록을 읽을 수 없지만 정책상 허용되는 렌더링 fallback일 때만 사용합니다.
+source 활성화 상태가 `enabled` 또는 허용된 로컬 환경의 `local-research-only`가 아니면 외부 요청을 보내지 않습니다. 로그인, CAPTCHA, 프록시 회전, fingerprint 위장은 하지 않고, 공개 HTTP 목록 수집을 우선합니다. Playwright는 정적 HTTP로 공개 목록을 읽을 수 없지만 정책상 허용되는 렌더링 수집일 때만 사용합니다. FMKOREA는 로컬 개인 지표용으로만 다루며, 수집이 허용된 로컬 환경에서도 HTTP 목록 요청을 먼저 보내지 않고 처음부터 브라우저 렌더링으로 접근합니다.
 
 ### 순회 방식
 
@@ -89,7 +89,9 @@ source 활성화 상태가 `enabled` 또는 허용된 로컬 환경의 `local-re
 - community crawl scheduler는 `max_instances=1`, `coalesce=true`로 겹쳐 실행하지 않습니다.
 - 일반 게시판 목록은 페이지 요청 사이에 기본 `CRAWLER_PAGE_DELAY_MIN_SECONDS=1.5`, `CRAWLER_PAGE_DELAY_MAX_SECONDS=4.0` 범위의 랜덤 지연을 둡니다.
 - 한 run의 기본 상한은 `CRAWLER_MAX_PAGES_PER_RUN=20`, `CRAWLER_MAX_POSTS_PER_RUN=500`입니다.
-- 403, 429, CAPTCHA, human verification 페이지는 차단 신호로 보고 브라우저 fallback을 시도하지 않습니다.
+- 403, 429, 430, CAPTCHA, human verification 페이지는 차단 신호로 보고 기본적으로 브라우저 fallback을 시도하지 않습니다.
+- FMKOREA는 브라우저 렌더링 전용 수집 대상입니다. 로컬 source policy가 허용할 때도 HTTP 목록 요청을 먼저 보내지 않습니다.
+- 로컬 브라우저 렌더링에 Playwright 기본 브라우저가 없으면 `CRAWLER_BROWSER_CHANNEL=msedge` 또는 `CRAWLER_BROWSER_CHANNEL=chrome`처럼 설치된 브라우저 channel을 지정할 수 있습니다.
 - 차단 신호는 `blocked` backoff로 기록하고 기본 6시간 동안 같은 source/board 재시도를 건너뜁니다.
 - timeout 또는 일시 네트워크 오류는 `transient-error` backoff로 기록하고 기본 15분 뒤 재시도합니다.
 
@@ -169,7 +171,7 @@ watermark는 run이 성공적으로 끝났거나 partial이라도 저장된 새 
 | `DCINSIDE` | `nyse` | `concept` | enabled | 공개 목록에서 `exception_mode=recommend` 개념글 목록 확인 |
 | `DCINSIDE` | `neostock` | `concept` | enabled | 공개 목록에서 `exception_mode=recommend` 개념글 목록 확인 |
 | `DCINSIDE` | `koreastock` | `concept` | enabled | 공개 목록에서 `exception_mode=recommend` 개념글 목록 확인 |
-| `FMKOREA` | `stock` | `popular` | disabled | 인기글 URL과 공개 HTTP 접근성을 별도 확인한 뒤 활성화 |
+| `FMKOREA` | `stock` | `popular` | disabled | 인기글 URL과 공개 브라우저 접근성을 별도 확인한 뒤 활성화 |
 | `PPOMPPU` | `stock` | `popular` | disabled | 핫/인기 category URL과 공개 HTTP 접근성을 별도 확인한 뒤 활성화 |
 
 disabled 확산 후보는 registry에 남기지만 `default_crawl_targets()`에서는 target으로 만들지 않습니다. URL이 불확실하거나 공개 HTTP 접근이 불안정한 상태에서 crawler가 임의 요청을 보내지 않게 하기 위한 기준입니다.
