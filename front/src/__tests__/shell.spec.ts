@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import App from '../App.vue';
 import { routes } from '../router/routes';
@@ -23,6 +23,11 @@ const municipalityTopology = JSON.parse(
     };
   };
 };
+const municipalityTopologyJson = readFileSync(
+  resolve(testDir, '../fixtures/skorea-municipalities-2018-topo-simple.json'),
+  'utf8'
+);
+const nativeFetch = globalThis.fetch;
 const municipalityCountByRegionCode = municipalityTopology.objects.skorea_municipalities_2018_geo.geometries.reduce(
   (counts, geometry) => {
     const regionCode = geometry.properties.code.slice(0, 2);
@@ -32,6 +37,28 @@ const municipalityCountByRegionCode = municipalityTopology.objects.skorea_munici
   },
   new Map<string, number>()
 );
+
+beforeAll(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+
+      if (url.includes('skorea-municipalities-2018-topo-simple')) {
+        return new Response(municipalityTopologyJson, {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      return nativeFetch(input, init);
+    })
+  );
+});
+
+afterAll(() => {
+  vi.unstubAllGlobals();
+});
 
 const mountAt = async (path: string) => {
   const router = createRouter({
@@ -279,6 +306,7 @@ describe('front dashboard shell', () => {
     for (const target of mapTargetsFixture.targets) {
       const expectedCount = municipalityCountByRegionCode.get(target.regionCode);
       const wrapper = await mountAt(`/realestate/map/${target.id}`);
+      await flushPromises();
 
       if (!expectedCount) {
         throw new Error(`No municipality fixture rows for ${target.name}`);

@@ -5,7 +5,9 @@
 - Parent: `realestate-dashboard`
 - Route 후보: `/realestate/targets/:targetId`
 - 지도 route: `/realestate/map`
+- 지도 drilldown route: `/realestate/map/:regionId`
 - Child screens: evidence log drawer, source link drawer, similar history panel
+- Map child screens: 시군구 drilldown map, selected municipality report panel, future complex coordinate layer
 
 ## 화면 목적
 
@@ -30,17 +32,20 @@
 - 기간 선택: 최근 1주, 1개월, 6개월, 1년을 토글로 제공하고 `asOf`와 stale badge를 같이 표시
 - 색상 규칙: 국내 사용자 관습을 우선해 `빨강=상승`, `파랑=하락`, 진하기=변화 강도, 회색=표본 부족/데이터 없음
 - 확대 흐름: 시도 -> 시군구 -> 읍면동/생활권 -> 단지 순서로 drilldown
+- 현재 구현: `/realestate/map`에서 시도를 선택하면 `/realestate/map/:regionId`로 이동하고, 해당 시도의 실제 시군구 경계를 렌더링
 - 클릭 동작: 선택 지역의 가격 흐름, 거래 강도, 전세 압력, 공급/청약, 정책/교통 이벤트, 커뮤니티 반응을 side panel에 표시
 - 단지 매핑: 법정동 코드, 도로명/지번 주소, 단지명 별칭, 좌표를 묶어 `complex` target과 연결
 - 지도 레이어: 가격 변화율, 거래량, 전세 압력, 매물/호가, 커뮤니티 언급량, 정책 이벤트를 별도 toggle로 분리
 
-초기 구현은 전국 시도 단위 정적 heatmap부터 시작하고, 이후 시군구/법정동 경계 GeoJSON과 단지 좌표 매핑을 추가하는 단계가 적합합니다.
+초기 구현은 전국 시도 단위 정적 heatmap과 시군구 drilldown까지 포함합니다. 이후 법정동/생활권 경계와 단지 좌표 매핑을 추가하는 단계가 적합합니다.
 
 ## 지도-리포트 상호작용
 
 - 첫 진입: 지도는 화면 중앙에 단독 배치하고 리포트 패널은 숨김
-- 지역 선택: 지도는 왼쪽으로 이동하고 오른쪽에 지역 리포트 패널을 50:50에 가깝게 표시
+- 시도 선택: `/realestate/map/:regionId` 상세 지도 route로 이동하고, 같은 stage에서 시군구 경계를 표시
+- 시군구 선택: 지도는 왼쪽으로 이동하고 오른쪽에 지역 리포트 패널을 50:50에 가깝게 표시
 - 지역 단위: 1차 구현은 KOSTAT 2018 시도 TopoJSON 경계를 사용하며, `regionCode`/`geometryId` 계약으로 실제 지형과 데이터 target을 연결
+- 시군구 단위: KOSTAT 2018 시군구 TopoJSON 경계를 asset으로 지연 로드하고, `regionCode` prefix로 하위 지역을 필터링
 - 시각 방향: 단순 평면 지도보다 3D surface, dark glass, neon heat layer를 사용해 미래형 관제 지도에 가깝게 표현
 - 클릭성: 지도는 화면에서 충분히 크게 보이도록 세로 stage를 키우고, 지역별 hit area를 실제 도형보다 넓게 둠
 - heat 표현: 빨강=상승, 파랑=하락, 변화폭이 클수록 더 진하고 밝게 표현해 한눈에 강약을 구분
@@ -68,6 +73,8 @@
 | `similarWindows[]` | indicator/agent | 유사 과거 상황 후보 |
 | `mapLayers[]` | realestate/indicator | 기간별 지역 heat layer와 표본/stale 상태 |
 | `mapLayers[].features[]` | realestate | region code, geometry id, changePct, sampleCount, confidence |
+| `municipalityTopologyAsset` | realestate/ui | 상세 지도 진입 시 fetch하는 시군구 경계 asset URL |
+| `selectedMunicipalityReport` | realestate/indicator/community | 시군구 선택 시 오른쪽 패널에 표시할 가격 흐름, 커뮤니티 언급, 핵심 쟁점 |
 | `nearbyComplexes[]` | realestate | 지도 확대 시 노출할 단지 좌표와 시장 fact 요약 |
 | `selectedRegionReport` | realestate/indicator/community | 지도에서 선택한 지역의 가격 흐름, 거래 강도, 전세 압력, 정책 이벤트, 커뮤니티 반응 |
 
@@ -82,6 +89,7 @@
 ## 변경 로그
 
 - 2026-06-01: `/realestate/map` 1차 구현 방향과 지도-리포트 split interaction 추가, 실제 시도 TopoJSON 기반 3D 지도 방향 반영
+- 2026-06-01: `/realestate/map/:regionId` 시군구 drilldown route와 지연 로드되는 시군구 경계 asset 계약 추가
 - 2026-06-01: 지도 stage 확대, heat 색상 대비 강화, 커뮤니티 언급량/핵심 쟁점 리포트 강화
 - 2026-06-01: 지도형 heat layer와 drilldown 구현 방향 추가
 - 2026-06-01: 지역/단지 상세 Screen Brief 생성
