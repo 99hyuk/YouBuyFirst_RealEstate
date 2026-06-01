@@ -3,11 +3,11 @@ import { geoCentroid, geoMercator, geoPath } from 'd3-geo';
 import type { Feature, FeatureCollection, Geometry, Position } from 'geojson';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import mapFixture from '../fixtures/realestate-map-targets.json';
-import municipalitiesTopo from '../fixtures/skorea-municipalities-2018-topo-simple.json';
+import municipalityTopologyUrl from '../fixtures/skorea-municipalities-2018-topo-simple.json?url';
 import koreaProvincesTopo from '../fixtures/skorea-provinces-2018-topo-simple.json';
 
 type PeriodKey = 'week' | 'month' | 'halfYear';
@@ -91,15 +91,10 @@ const detailMapSize = { width: 560, height: 560 };
 const currentMapSize = computed(() => (selectedRegion.value ? detailMapSize : nationalMapSize));
 
 const koreaTopology = koreaProvincesTopo as KoreaTopology;
-const municipalityTopology = municipalitiesTopo as MunicipalityTopology;
 const provinceFeatureCollection = topojsonFeature(
   koreaTopology,
   koreaTopology.objects.skorea_provinces_2018_geo
 ) as FeatureCollection<Geometry, ProvinceProperties>;
-const municipalityFeatureCollection = topojsonFeature(
-  municipalityTopology,
-  municipalityTopology.objects.skorea_municipalities_2018_geo
-) as FeatureCollection<Geometry, MunicipalityProperties>;
 
 const polygonArea = (ring: Position[]) => {
   if (ring.length < 3) return 0;
@@ -142,6 +137,15 @@ const countryOutlineFeatureCollection: FeatureCollection<Geometry, ProvincePrope
   ...provinceDisplayCollection,
   features: provinceDisplayCollection.features.filter((feature) => feature.properties.code !== '39')
 };
+const emptyMunicipalityFeatureCollection: FeatureCollection<Geometry, MunicipalityProperties> = {
+  type: 'FeatureCollection',
+  features: []
+};
+const municipalityFeatureCollection = shallowRef<FeatureCollection<Geometry, MunicipalityProperties>>(
+  emptyMunicipalityFeatureCollection
+);
+const municipalityLoadState = ref<'idle' | 'loading' | 'loaded' | 'error'>('idle');
+let municipalityLoadPromise: Promise<void> | null = null;
 const targetByRegionCode = new Map(targets.map((target) => [target.regionCode, target]));
 const targetById = new Map(targets.map((target) => [target.id, target]));
 const nationalProjection = geoMercator().fitSize([nationalMapSize.width, nationalMapSize.height], provinceDisplayCollection);
@@ -199,6 +203,37 @@ const pageDescription = computed(() =>
     : '전국 시도별 가격 흐름과 커뮤니티 반응을 3D 관찰형 지도 위에 겹쳐 보여줍니다. 지역을 누르면 해당 시도의 구·시·군 상세 지도로 이동합니다.'
 );
 
+const loadMunicipalityTopology = () => {
+  if (municipalityLoadState.value === 'loaded') return Promise.resolve();
+  if (municipalityLoadPromise) return municipalityLoadPromise;
+
+  municipalityLoadState.value = 'loading';
+  municipalityLoadPromise = fetch(municipalityTopologyUrl)
+    .then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Municipality topology request failed: ${response.status}`);
+      }
+
+      return (await response.json()) as MunicipalityTopology;
+    })
+    .then((municipalityTopology) => {
+      municipalityFeatureCollection.value = topojsonFeature(
+        municipalityTopology,
+        municipalityTopology.objects.skorea_municipalities_2018_geo
+      ) as FeatureCollection<Geometry, MunicipalityProperties>;
+      municipalityLoadState.value = 'loaded';
+    })
+    .catch(() => {
+      municipalityFeatureCollection.value = emptyMunicipalityFeatureCollection;
+      municipalityLoadState.value = 'error';
+    })
+    .finally(() => {
+      municipalityLoadPromise = null;
+    });
+
+  return municipalityLoadPromise;
+};
+
 const selectedMunicipalityCollection = computed<FeatureCollection<Geometry, MunicipalityProperties>>(() => {
   if (!selectedRegion.value) {
     return {
@@ -209,7 +244,7 @@ const selectedMunicipalityCollection = computed<FeatureCollection<Geometry, Muni
 
   return {
     type: 'FeatureCollection',
-    features: municipalityFeatureCollection.features
+    features: municipalityFeatureCollection.value.features
       .filter((feature) => feature.properties.code.startsWith(selectedRegion.value!.regionCode))
       .map((feature) => trimSmallMultipolygons(feature as MunicipalityFeature, 0.04) as MunicipalityFeature)
   };
@@ -474,6 +509,15 @@ watch(
   () => {
     closeReport();
   }
+);
+watch(
+  selectedRegion,
+  (region) => {
+    if (region) {
+      void loadMunicipalityTopology();
+    }
+  },
+  { immediate: true }
 );
 </script>
 
