@@ -103,13 +103,6 @@ const rankSummary = [
   { label: '보조 지표', value: '수급·전세', meta: '기대/우려 비율' }
 ];
 
-const focusTiles = [
-  { label: '언급 급증', value: '성수동 생활권', meta: '언급 +86% · 상권' },
-  { label: '기대 우세', value: '분당·판교', meta: '기대 58 / 우려 24' },
-  { label: '우려 증가', value: '송도국제도시', meta: '공급 부담 · stale' },
-  { label: '정책 민감', value: '잠실동 단지군', meta: '토허제·재건축' }
-];
-
 const hotThemes = [
   { theme: '전세 매물', count: 14, heat: 88 },
   { theme: 'GTX·교통', count: 9, heat: 76 },
@@ -119,7 +112,7 @@ const hotThemes = [
 
 const signalTiles: SignalTile[] = [
   {
-    label: '지금 뜨는 지역',
+    label: '언급 급증',
     target: '성수동 생활권',
     symbol: 'SEONGSU-DONG',
     metric: '+86%',
@@ -130,7 +123,18 @@ const signalTiles: SignalTile[] = [
     community: '지역 블로그'
   },
   {
-    label: '우려 많은 지역',
+    label: '기대 우세',
+    target: '분당·판교',
+    symbol: 'BUNDANG-PANGYO',
+    metric: '기대 58',
+    tone: 'positive',
+    summary: '일자리와 재건축 기대 키워드가 짧은 시간에 올라왔습니다.',
+    reasons: ['직장인 커뮤니티 확산', '재건축 별칭 언급', '기대 58 / 우려 24'],
+    pulse: 72,
+    community: '블라인드'
+  },
+  {
+    label: '우려 증가',
     target: '송도국제도시',
     symbol: 'SONGDO',
     metric: '우려 36',
@@ -141,26 +145,15 @@ const signalTiles: SignalTile[] = [
     community: '네이버 카페'
   },
   {
-    label: '언급 많은 지역',
-    target: '마포구 아파트',
-    symbol: 'SEOUL-MAPO',
-    metric: '128건',
-    tone: 'watch',
-    summary: '전세, 공덕, 학군 키워드가 넓게 퍼졌습니다.',
-    reasons: ['카페 댓글 급증', '전세 우려 반복', '출처 4곳 이상'],
-    pulse: 76,
-    community: '네이버 카페'
-  },
-  {
-    label: '관심 상승 단지군',
-    target: '분당·판교',
-    symbol: 'BUNDANG-PANGYO',
-    metric: '+30%',
-    tone: 'positive',
-    summary: '일자리와 재건축 기대 키워드가 짧은 시간에 올라왔습니다.',
-    reasons: ['직장인 커뮤니티 확산', '재건축 별칭 언급', '기대 58 / 우려 24'],
-    pulse: 72,
-    community: '블라인드'
+    label: '정책 민감',
+    target: '잠실동 단지군',
+    symbol: 'JAMSIL-DONG',
+    metric: '+54%',
+    tone: 'negative',
+    summary: '토허제, 재건축, 대출 규제 키워드가 동시에 올라와 관찰이 필요합니다.',
+    reasons: ['정책 댓글 급증', '재건축 별칭 반복', '규제 관망 확산'],
+    pulse: 68,
+    community: '지역 카페'
   }
 ];
 
@@ -233,14 +226,41 @@ const strategyRules = [
       </nav>
     </section>
 
-    <template v-if="isSectionVisible('ranking')">
-      <section class="region-focus-strip" aria-label="지역 핵심 신호">
-        <article v-for="tile in focusTiles" :key="tile.label">
+    <section
+      v-if="activeRegionReactionView !== 'agents'"
+      class="human-signal-board region-signal-overview-board"
+      aria-label="커뮤니티 언급 급증 지역"
+    >
+      <div class="section-band-title full">
+        <div>
+          <p class="label">community pulse</p>
+          <h3>커뮤니티 언급 급증 지역</h3>
+        </div>
+        <span>언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합</span>
+      </div>
+      <RouterLink
+        v-for="tile in signalTiles"
+        :key="tile.label"
+        :class="['human-signal-tile', tile.tone]"
+        :to="`/realestate/targets/${tile.symbol}`"
+      >
+        <div class="signal-tile-top">
           <span>{{ tile.label }}</span>
-          <strong>{{ tile.value }}</strong>
-          <em>{{ tile.meta }}</em>
-        </article>
-      </section>
+          <em>{{ tile.community }}</em>
+        </div>
+        <strong>{{ tile.target }}</strong>
+        <b>{{ tile.metric }}</b>
+        <p>{{ tile.summary }}</p>
+        <div class="signal-reason-row">
+          <small v-for="reason in tile.reasons" :key="reason">{{ reason }}</small>
+        </div>
+        <i class="signal-pulse-track">
+          <mark :style="{ width: `${tile.pulse}%` }"></mark>
+        </i>
+      </RouterLink>
+    </section>
+
+    <template v-if="isSectionVisible('ranking')">
 
       <div class="region-filter-strip" aria-label="지역 필터">
         <button v-for="filter in filters" :key="filter" type="button">{{ filter }}</button>
@@ -329,39 +349,6 @@ const strategyRules = [
           </div>
         </section>
       </aside>
-    </template>
-
-    <template v-if="isSectionVisible('signals')">
-      <section class="human-signal-board" aria-label="커뮤니티별 언급 급증 지역">
-        <div class="section-band-title full">
-          <div>
-            <p class="label">signal board</p>
-            <h3>커뮤니티별 언급 급증 지역</h3>
-          </div>
-          <span>인기글·댓글·지역 블로그 레이어에서 강하게 뜬 지역만 짧게 표시</span>
-        </div>
-        <RouterLink
-          v-for="tile in signalTiles"
-          :key="tile.label"
-          :class="['human-signal-tile', tile.tone]"
-          :to="`/realestate/targets/${tile.symbol}`"
-        >
-          <div class="signal-tile-top">
-            <span>{{ tile.label }}</span>
-            <em>{{ tile.community }}</em>
-          </div>
-          <strong>{{ tile.target }}</strong>
-          <b>{{ tile.metric }}</b>
-          <p>{{ tile.summary }}</p>
-          <div class="signal-reason-row">
-            <small v-for="reason in tile.reasons" :key="reason">{{ reason }}</small>
-          </div>
-          <i class="signal-pulse-track">
-            <mark :style="{ width: `${tile.pulse}%` }"></mark>
-          </i>
-        </RouterLink>
-      </section>
-
     </template>
 
     <section

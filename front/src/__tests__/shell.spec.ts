@@ -108,7 +108,9 @@ describe('front dashboard shell', () => {
     expect(reactions.text()).toContain('단지군 관심 TOP 6');
     expect(reactions.text()).toContain('지역·단지 순위, 급증 신호');
     expect(reactions.text()).toContain('정렬 기준');
-    expect(reactions.text()).toContain('커뮤니티별 언급 급증 지역');
+    expect(reactions.text()).toContain('커뮤니티 언급 급증 지역');
+    expect(reactions.text()).toContain('언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합');
+    expect(reactions.text()).not.toContain('커뮤니티별 언급 급증 지역');
     expect(reactions.text()).toContain('모의 에이전트 판단 기록');
     expect(reactions.text()).not.toContain('커뮤니티별 언급 급증과 반응 비율');
     expect(reactions.text()).not.toContain('커뮤니티 반응과 공식 지표 비교 그래프');
@@ -137,12 +139,18 @@ describe('front dashboard shell', () => {
     expect(otherTarget.text()).toContain('GTX 기대와 입주 물량 우려');
     expect(otherTarget.text()).toContain('전세수급지수');
 
+    const unsupportedTarget = await mountAt('/realestate/targets/SEONGSU-DONG');
+    expect(unsupportedTarget.find('.unsupported-region-state').exists()).toBe(true);
+    expect(unsupportedTarget.text()).toContain('SEONGSU-DONG');
+    expect(unsupportedTarget.find('.region-reaction-card').exists()).toBe(false);
+
     const communities = await mountAt('/communities');
     expect(communities.text()).toContain('지역 반응');
-    expect(communities.text()).toContain('커뮤니티별 언급 급증 지역');
+    expect(communities.text()).toContain('커뮤니티 언급 급증 지역');
+    expect(communities.text()).not.toContain('커뮤니티별 언급 급증 지역');
     expect(communities.text()).not.toContain('커뮤니티별 반응 비교');
     expect(communities.text()).not.toContain('커뮤니티별 언급 급증과 반응 비율');
-    expect(communities.text()).toContain('인기글·댓글·지역 블로그 레이어');
+    expect(communities.text()).toContain('언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합');
     expect(communities.text()).not.toContain('지역별 반응 선행성 실험');
     expect(communities.text()).toContain('모의 에이전트');
     expect(communities.text()).toContain('모의 에이전트 판단 기록');
@@ -239,6 +247,7 @@ describe('front dashboard shell', () => {
     expect(styles).toContain('--surface');
     expect(styles).toContain('--market-up');
     expect(styles).toContain('--market-down');
+    expect(styles).toContain('.realestate-map-layout.centered,\n  .realestate-map-layout.split');
     expect(styles).toContain('.region-hero');
     expect(styles).toContain('.event-chain-flow');
     expect(styles).toContain('.community-table');

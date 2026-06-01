@@ -100,16 +100,13 @@ const targets: RealEstateTarget[] = [
   }
 ];
 
-const fallbackTarget = targets[0];
-const routeSymbol = computed(() => String(route.params.symbol ?? fallbackTarget.symbol).toUpperCase());
-const target = computed(
-  () => targets.find((item) => item.symbol.toUpperCase() === routeSymbol.value) ?? fallbackTarget
-);
-const confidenceValue = computed(() => Number.parseInt(target.value.confidence, 10));
+const routeSymbol = computed(() => String(route.params.symbol ?? '').toUpperCase());
+const target = computed(() => targets.find((item) => item.symbol.toUpperCase() === routeSymbol.value));
+const confidenceValue = computed(() => (target.value ? Number.parseInt(target.value.confidence, 10) : 0));
 </script>
 
 <template>
-  <section class="surface-page region-detail-page region-detail-page">
+  <section v-if="target" class="surface-page region-detail-page region-detail-page">
     <section class="region-brief-panel panel" aria-label="지역 한줄 브리핑">
       <div class="region-brief-topline">
         <div>
@@ -241,6 +238,56 @@ const confidenceValue = computed(() => Number.parseInt(target.value.confidence, 
           <strong>{{ item.label }}</strong>
           <span>{{ item.source }}</span>
         </a>
+      </div>
+    </section>
+  </section>
+
+  <section v-else class="surface-page region-detail-page unsupported-region-state" aria-label="지원 준비 중인 지역">
+    <section class="region-brief-panel panel">
+      <div class="region-brief-topline">
+        <div>
+          <strong>지원 준비 중인 지역</strong>
+          <span>{{ routeSymbol || 'UNKNOWN' }}</span>
+        </div>
+        <RouterLink class="region-report-close region-report-close" to="/realestate/reactions" aria-label="지역 반응 목록으로 돌아가기">×</RouterLink>
+      </div>
+
+      <article class="region-brief-banner">
+        <p class="eyebrow">지역 상세 리포트</p>
+        <h2>아직 상세 리포트가 연결되지 않았습니다</h2>
+        <span>선택한 지역/단지는 순위와 반응 화면에서 관찰 후보로 표시되지만, 상세 mock 데이터는 아직 준비되지 않았습니다. 잘못된 지역 리포트를 대신 보여주지 않고 지원 준비 상태로 표시합니다.</span>
+      </article>
+    </section>
+
+    <section class="region-hero panel">
+      <div class="region-identity">
+        <RouterLink class="detail-link region-back-link region-back-link" to="/realestate/reactions">← 지역 반응 목록으로</RouterLink>
+        <p class="eyebrow">unsupported target</p>
+        <h2>{{ routeSymbol || 'UNKNOWN' }} <span>상세 데이터 미연결</span></h2>
+        <p>해당 심볼의 상세 지표, 커뮤니티 반응, 근거 링크가 준비되면 이 페이지에서 실제 리포트로 전환됩니다.</p>
+      </div>
+
+      <div class="region-metric-board">
+        <article>
+          <span>상태</span>
+          <strong>준비 중</strong>
+          <em>잘못된 fallback 차단</em>
+        </article>
+        <article>
+          <span>요청 심볼</span>
+          <strong>{{ routeSymbol || 'UNKNOWN' }}</strong>
+          <em>지역/단지 alias 확인 필요</em>
+        </article>
+        <article>
+          <span>상세 데이터</span>
+          <strong>미연결</strong>
+          <em>mock 확장 후보</em>
+        </article>
+        <article>
+          <span>다음 경로</span>
+          <strong>목록 복귀</strong>
+          <em>반응 화면에서 재확인</em>
+        </article>
       </div>
     </section>
   </section>
