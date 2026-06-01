@@ -1,5 +1,7 @@
 # 내 포트폴리오 화면
 
+> Legacy stock reference: 부동산 1차 범위에서는 포트폴리오/원장 화면을 활성 기능으로 보지 않습니다.
+
 ## Route
 
 - Parent: root

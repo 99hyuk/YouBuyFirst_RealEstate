@@ -1,5 +1,7 @@
 # stock 작업 지침
 
+> Legacy stock reference: 이 부동산 전용 프로젝트에서는 새 작업 영역으로 선택하지 않습니다. 기존 구조 참고나 후속 삭제 후보 정리에만 사용합니다.
+
 stock은 종목 master, symbol, market code, ticker, alias, 검색/매칭 기준을 소유합니다.
 
 ## 시작

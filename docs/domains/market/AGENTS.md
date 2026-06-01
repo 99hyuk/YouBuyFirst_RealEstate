@@ -1,5 +1,7 @@
 # market 작업 지침
 
+> Legacy stock reference: 이 부동산 전용 프로젝트에서는 새 market 작업을 열지 않습니다. 부동산 market fact는 `realestate`에서 다룹니다.
+
 market은 시세, 차트 캔들, 투자자 수급, provider/cache/stale 기준을 소유합니다.
 
 ## 시작

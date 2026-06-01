@@ -1,5 +1,7 @@
 # 종목 상세 화면
 
+> Legacy stock reference: 이 문서는 기존 종목 상세 참고용입니다. 새 부동산 상세 화면 정본은 `../realestate-target-detail.md`입니다.
+
 ## Route
 
 - Parent: `stocks`
@@ -12,7 +14,7 @@
 
 ## 화면 목적
 
-사용자가 종목 랭킹에서 특정 종목을 눌렀을 때 가격 흐름, 커뮤니티 반응, 근거 링크, 데이터 신뢰도를 한 화면에서 빠르게 확인하게 한다. 상단 팩트폭격 카피는 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md` 기준의 시황 요약이며, 검은 배너 표현은 `docs/layers/ui/screens/stock-detail/banner.md`를 따른다. 투자 행동을 지시하는 문구가 아니라 공개 데이터 기반 상태 표현으로 유지한다.
+사용자가 종목 랭킹에서 특정 종목을 눌렀을 때 가격 흐름, 커뮤니티 반응, 근거 링크, 데이터 신뢰도를 한 화면에서 빠르게 확인하게 한다. 이 문서는 legacy stock reference이며, 새 부동산 평가 카피 정본은 `docs/domains/agent/REAL_ESTATE_EVALUATION_COPY.md`, 새 상세 화면 정본은 `docs/layers/ui/screens/realestate-target-detail.md`를 따른다. 투자 행동을 지시하는 문구가 아니라 공개 데이터 기반 상태 표현으로 유지한다.
 
 ## 현재 섹션
 

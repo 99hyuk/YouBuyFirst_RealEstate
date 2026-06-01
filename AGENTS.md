@@ -1,15 +1,15 @@
 # 에이전트 작업 가이드
 
-이 파일은 너나사(YouBuyFirst) 전체의 얇은 라우터입니다. 세부 규칙은 담당 도메인/layer `AGENTS.md`, `README.md`, contract 문서에서 확인합니다.
+이 파일은 너나사 부동산 프로젝트 전체의 얇은 라우터입니다. 세부 규칙은 담당 도메인/layer `AGENTS.md`, `README.md`, contract 문서에서 확인합니다.
 
-너나사는 커뮤니티 반응, 종목 언급량, 시세/수급, 모의투자 에이전트를 결합해 "개미들의 투자 반응을 읽는 참고 서비스"를 만듭니다. 실제 투자 자문, 실거래 지시, 수익 보장, 개인화 투자 권유처럼 보이는 기능과 표현은 피합니다.
+너나사 부동산은 지역과 단지에 대한 실제 사람들의 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 같은 시장 사실 데이터를 함께 보여주는 관찰형 분석 서비스입니다. 기존 YouBuyFirst의 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 근거 로그 구조를 재사용하되 주식 도메인 안에 부동산을 끼워 넣지 않습니다.
 
 ## 읽는 순서
 
 1. 요청을 작업 영역(domain/layer)과 정본 위치로 나눕니다. 작업 영역은 PR 범위와 문서 읽기 경계를 정하는 1차 기준입니다.
 2. 이미 대화에 주입된 긴 문서는 터미널로 다시 전문 출력하지 않습니다.
-3. `docs/current/HANDOFF.md`는 필요한 줄만 확인합니다. 제품 방향이 필요할 때만 `docs/product/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 봅니다.
-4. 작업 영역이 정해지면 아래 라우팅 표의 담당 `AGENTS.md`를 먼저 보고, 세부 색인이 필요할 때만 같은 폴더의 `README.md`를 봅니다.
+3. 작업 영역이 정해지면 아래 라우팅 표의 담당 `AGENTS.md`를 먼저 보고, 세부 색인이 필요할 때만 같은 폴더의 `README.md`를 봅니다.
+4. 제품 방향이 필요하면 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`와 `docs/product/FINAL_PRODUCT_PLAN.md`를 봅니다.
 5. 시작할 때 작업 영역, 수정 대상, 기록 위치, 주요 위험을 짧게 말합니다.
 6. 범위 없는 `뭐 해야 해?`, `다음 뭐하지?` 요청에는 바로 구현하지 말고 `docs/layers/ops/CHAT_START_GUIDE.md` 기준으로 선택지를 좁힙니다.
 
@@ -17,22 +17,22 @@
 
 | 요청/작업 영역 | 먼저 볼 곳 | 주 작업 위치 |
 | --- | --- | --- |
-| `community` (`crawl`) | `docs/domains/community/AGENTS.md` | `pipeline/`, 수집 정책, source registry |
-| `stock` (`data` 일부) | `docs/domains/stock/AGENTS.md` | 종목 master, symbol, alias, 종목 식별 |
-| `indicator` (`data` 일부) | `docs/domains/indicator/AGENTS.md` | 반응 방향 집계, 열기 지수, 개미 심리 지수 |
-| `market` | `docs/domains/market/AGENTS.md` | 시세, 차트 캔들, 수급, provider/cache |
-| `simulation` (`trade`) | `docs/domains/simulation/AGENTS.md` | 가상 계좌, 주문, 체결, 원장, 수익률 |
-| `agent` | `docs/domains/agent/AGENTS.md` | AI 판단, paper trading 결정 로그, 헤드라인 |
+| `realestate` | `docs/domains/realestate/AGENTS.md` | 지역/단지 모델, 실거래/전세/매물/정책 이벤트, 부동산 데이터 contract |
+| `community` (`crawl`) | `docs/domains/community/AGENTS.md` | 공개 수집, 제한 원문 저장, source registry |
+| `indicator` | `docs/domains/indicator/AGENTS.md` | 지역/단지 반응 지표, window snapshot, 쟁점 비율 |
+| `agent` | `docs/domains/agent/AGENTS.md` | 지역/단지 평가, 근거 로그, 유사 과거 비교 설명 |
 | `ui` (`front`) | `docs/layers/ui/AGENTS.md` | `front/`, 화면별 Screen Brief, fixture/API 후보 |
 | `ops` | `docs/layers/ops/AGENTS.md` | 문서 구조, Git/PR, Notion, 브랜치/worktree, 컨텍스트 예산 |
+| `stock`, `market`, `simulation` | 각 도메인 문서 | 주식 프로젝트에서 넘어온 참고/비활성 영역. 첫 정렬 단계에서 삭제하지 않습니다. |
 
 ## 공통 게이트
 
-- 사용자 화면의 기본 언어는 `커뮤니티 반응`, 단일 분석값은 `반응 방향`, 대표 점수는 `개미 심리 지수`, 내부 후보 필드는 `reactionDirection`입니다.
-- `추천`, `사라`, `팔아라`, `수익 보장`, `진입`, `시그널 확정`처럼 투자 행동을 지시하는 표현은 서비스 판단, CTA, 제목, 요약 문구에 쓰지 않습니다.
+- 사용자 화면의 기본 언어는 `관찰`, `분석`, `반응 지표`, `쟁점 비율`, `표본 신뢰도`, `근거 로그`입니다.
+- 특정 매수, 매도, 청약, 대출 행동을 권유하거나 가격 상승을 단정하는 표현은 서비스 판단, CTA, 제목, 요약 문구에 쓰지 않습니다.
+- 커뮤니티 반응은 시장 관찰 데이터로만 표현합니다. 서비스 결론이나 확정 판단처럼 보이게 만들지 않습니다.
 - CAPTCHA 우회, 로그인 세션 크롤링, 프록시 회전, fingerprint 위장은 하지 않습니다. 공개 HTTP 수집을 우선하고 Playwright는 렌더링 fallback으로만 씁니다.
-- 저장 원문은 제목, 본문 일부, URL, 작성자 해시, 작성 시각, 원문 해시처럼 필요한 범위로 제한합니다. 출처가 있는 관찰 데이터 라벨은 쓸 수 있지만 서비스 결론처럼 보이게 만들지 않습니다.
-- 시세/수급/차트는 provider, `asOf`, `stale`, 지연 여부를 분리해서 다룹니다. 확인되지 않은 데이터를 실시간처럼 말하지 않습니다.
+- 저장 원문은 제목, 일부 snippet, URL, 작성자 해시, 작성 시각, 원문 해시처럼 필요한 범위로 제한합니다.
+- 실거래/전세/매물/정책 데이터는 provider, `asOf`, `stale`, 지연 여부를 분리해서 다룹니다. 확인되지 않은 데이터를 실시간처럼 말하지 않습니다.
 - 확인할 수 없는 값은 추측으로 채우지 않고 `unknown`, `null`, `확인 필요`, `mock`처럼 구분합니다.
 
 ## 컨텍스트 예산

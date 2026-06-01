@@ -1,5 +1,7 @@
 # 뉴스룸 화면
 
+> Refactor needed: 부동산 뉴스/컬럼/커뮤니티 이슈룸으로 전환해야 합니다.
+
 ## Route
 
 - Parent: root

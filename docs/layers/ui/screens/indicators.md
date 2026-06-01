@@ -1,5 +1,7 @@
 # 주요 지표 화면
 
+> Refactor needed: 부동산 market fact와 지역/단지 반응 지표 화면으로 전환해야 합니다.
+
 ## Route
 
 - Parent: root

@@ -45,7 +45,7 @@
 | `docs/layers/ops/LABEL_GUIDE.md` | GitHub/Notion 라벨 의미가 헷갈릴 때 |
 | `docs/layers/ops/DOMAIN_PACKAGE_GUIDE.md` | 작업 영역과 코드 패키지 경계가 헷갈릴 때 |
 | `docs/domains/community/REACTION_GUIDE.md` | 커뮤니티 반응 용어와 수집 전략 확인 |
-| `docs/domains/agent/STOCK_DETAIL_HEADLINE.md` | 종목 상세 상단의 시황/기술지표/재무 기반 팩트폭격 한줄평 기준 확인 |
+| `docs/domains/agent/REAL_ESTATE_EVALUATION_COPY.md` | 지역/단지 평가 문구와 근거 로그 표현 기준 확인 |
 | `docs/layers/ui/screens/` | 화면별 기획, route, child screen, API 후보 확인 |
 | `docs/governance/LEGAL_RISK_CASES.md` | 크롤링/공개 배포 리스크 확인 |
 | `docs/governance/TECHNICAL_RISK_REGISTER.md` | 최종 기획상 생길 수 있는 기술/제품/운영 이슈 확인 |
@@ -72,10 +72,10 @@
 
 | 대상 | 정본 |
 | --- | --- |
-| 제품 범위와 결정 | `docs/product/FINAL_PRODUCT_PLAN.md`, `docs/product/PRODUCT_DECISION_NOTES.md` |
+| 제품 범위와 결정 | `docs/product/FINAL_PRODUCT_PLAN.md`, `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`, `docs/product/PRODUCT_DECISION_NOTES.md` |
 | 현재 작업 상태 | `docs/current/HANDOFF.md`, `docs/current/TASKS.md` |
 | 화면 구조와 API 후보 | `docs/layers/ui/screens/`, 현재 `front/` 코드 |
-| 시세/커뮤니티/지표/에이전트/원장 데이터 | 해당 도메인 `AGENTS.md`, `README.md`, API contract, DB entity/snapshot |
+| 부동산 target/커뮤니티/지표/에이전트/market fact 데이터 | 해당 도메인 `AGENTS.md`, `README.md`, API contract, DB entity/snapshot |
 | 장애와 기술 결정 근거 | `docs/governance/TECHNICAL_RISK_REGISTER.md`, Notion 개발자 기술 경험 DB |
 
 새 인덱스 문서는 같은 lookup을 여러 작업 영역이 반복할 때만 만듭니다. 인덱스는 상세 설명을 복제하지 않고 정본 위치, ID/key, 상태, source/asOf만 짧게 가리킵니다.

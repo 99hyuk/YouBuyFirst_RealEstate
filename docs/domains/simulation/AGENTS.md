@@ -1,5 +1,7 @@
 # simulation 작업 지침
 
+> Legacy stock reference: 이 부동산 전용 프로젝트에서는 새 simulation 작업을 열지 않습니다. 기존 구조 참고나 후속 삭제 후보 정리에만 사용합니다.
+
 simulation은 가상 계좌, 예수금, 주문/체결, 원장, 포트폴리오, 수익률 계산을 소유합니다.
 
 ## 시작

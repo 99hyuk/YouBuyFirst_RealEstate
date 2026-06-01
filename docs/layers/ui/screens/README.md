@@ -8,7 +8,7 @@
 
 - 탭 하나만 기준으로 보지 않고, 사용자가 실제로 이동하는 화면 트리 기준으로 정리합니다.
 - route를 가진 페이지는 Screen Brief를 둡니다.
-- 단순 화면은 `screens/<screen>.md`로 두고, 하위 상세나 특수 컴포넌트가 많은 복잡한 화면은 `screens/<screen>/README.md`와 보조 문서로 묶습니다.
+- 단순 화면은 `screens/<screen>.md`로 둡니다.
 - route가 없어도 독립 데이터 계약, 독립 상태, 공유 가능한 상세 UI를 가진 drawer/modal/detail panel은 Screen Brief 후보입니다.
 - 단순 버튼, 카드, 표 셀처럼 독립 기획이 없는 component는 별도 brief를 만들지 않습니다.
 - 화면을 만들며 바뀐 기획은 먼저 해당 Screen Brief에 남기고, 안정화된 것만 `docs/product/FINAL_PRODUCT_PLAN.md`, API 명세, 관련 도메인/layer `AGENTS.md`/`README.md`로 승격합니다.
@@ -16,36 +16,20 @@
 - 사용자가 따로 "기록해"라고 말하지 않아도, 프론트 작업자가 화면 구조, route, child screen, fixture/API 후보, 화면 문구 기준을 바꾸면 해당 Screen Brief를 갱신합니다.
 - Screen Brief는 최신 기준 문서입니다. 완료된 시행착오, 긴 피드백 전문, 과거 스크린샷 설명을 계속 누적하지 않습니다.
 
-## 크기 관리
-
-Screen Brief가 커지면 새 채팅이 느려지고, 화면 기준도 흐려집니다. 각 파일은 다음 예산을 목표로 합니다.
-
-| 항목 | 목표 |
-| --- | --- |
-| 일반 화면 brief | 150줄 이하 |
-| 복잡한 부모 화면 brief | 220줄 이하 |
-| 변경 로그 | 최근 5개만 유지 |
-| 기획자 확인 필요 | 열린 질문만 유지 |
-| 이미지 | 직접 붙이지 않고 필요한 경우 `docs/assets/` 링크만 사용 |
-
-오래된 결정 과정은 Screen Brief에 계속 붙이지 않습니다. 필요한 경우 `docs/archive/ui/wireframe/` 또는 PR/Notion 작업 로그로 넘기고, Screen Brief에는 현재 결론만 남깁니다.
-
 ## 화면 트리
 
 | Screen ID | Route 후보 | Brief | 상태 | 비고 |
 | --- | --- | --- | --- | --- |
-| `dashboard` | `/dashboard` | `dashboard.md` | active | 메인 대시보드, 종목/커뮤니티/뉴스 요약 |
-| `newsroom` | `/newsroom?feed=&page=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그/커뮤니티 링크 |
-| `stocks` | `/stocks` | `stocks.md` | active | 종목 반응 랭킹, 검색/필터, 상세 진입 |
-| `stock-detail` | `/stocks/:symbol` | `stock-detail/README.md` | active | 종목 상세, 팩트폭격 배너, 반응, 근거, 신뢰도 |
-| `stock-news-detail` | `/stocks/:symbol/news/:newsId` 또는 drawer | 예정 | candidate | 뉴스/공시 상세 링크와 원문 이동 전 요약 |
-| `stock-filing-detail` | `/stocks/:symbol/filings/:filingId` 또는 drawer | 예정 | candidate | 공시 상세, 관련 지표 영향 |
-| `stock-community-post` | `/stocks/:symbol/community/:postId` 또는 drawer | 예정 | candidate | 커뮤니티 원문 snippet, 출처, 관련 종목 |
-| `stock-indicator-detail` | `/stocks/:symbol/indicators/:indicatorId` 또는 panel | 예정 | candidate | RSI, VWAP, PER 등 개별 지표 설명 |
-| `human-indicator` | `/communities?view=` | `human-indicator.md` | active | 통합 커뮤니티 반응/성과 비교와 모의 에이전트 판단 |
-| `indicators` | `/indicators` | `indicators.md` | active | 시장 지표와 커뮤니티 반응 괴리 |
-| `agents` | `/agents` -> `/communities?view=agents` | `agents.md` | redirect | 인간 지표 하위 모의 에이전트 섹션 |
-| `portfolio` | `/portfolio` | `portfolio.md` | active | 모의 포트폴리오와 원장 기반 손익 |
+| `realestate-dashboard` | `/dashboard` 또는 `/realestate` | `realestate-dashboard.md` | active | 메인 대시보드, 언급 많은 지역/단지, 이슈, market fact 상태 |
+| `realestate-target-detail` | `/realestate/targets/:targetId` | `realestate-target-detail.md` | active | 지역/단지 상세, 반응 지표, 타임라인, 유사 과거, 근거 로그 |
+| `newsroom` | `/newsroom?feed=&page=` | `newsroom.md` | refactor-needed | 뉴스, 컬럼, 커뮤니티 링크를 부동산 이슈룸으로 전환 필요 |
+| `indicators` | `/indicators` | `indicators.md` | refactor-needed | 시장 지표와 지역/단지 반응 괴리로 전환 필요 |
+| `agents` | `/agents` | `agents.md` | refactor-needed | 에이전트 근거 로그 화면으로 전환 필요 |
+| `dashboard` | `/dashboard` | `dashboard.md` | legacy-stock-reference | 기존 주식 대시보드 참고 |
+| `stocks` | `/stocks` | `stocks.md` | legacy-stock-reference | 기존 종목 목록 참고 |
+| `stock-detail` | `/stocks/:symbol` | `stock-detail/README.md` | legacy-stock-reference | 기존 종목 상세 참고 |
+| `human-indicator` | `/communities?view=` | `human-indicator.md` | legacy-stock-reference | 기존 인간 지표 참고 |
+| `portfolio` | `/portfolio` | `portfolio.md` | legacy-stock-reference | 기존 모의 포트폴리오 참고 |
 
 ## Screen Brief 템플릿
 

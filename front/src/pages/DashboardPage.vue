@@ -4,7 +4,7 @@ import dashboardSummary from '../fixtures/dashboard-summary.json';
 import quoteSnapshots from '../fixtures/quote-snapshots.json';
 import reactionRanking from '../fixtures/reaction-ranking.json';
 
-const marketFilters = ['전체', '언급 증가', '심리 변화', '가격 stale'];
+const marketFilters = ['전체', '언급 증가', '정책 변화', '공공데이터 stale'];
 const returnTimeModes = ['일', '주', '월', '년'];
 const drawerTabs = [
   { id: 'reaction', label: '반응' },
@@ -26,24 +26,26 @@ const buildReactionGroup = (id: 'positive' | 'negative', label: string, caption:
   label,
   caption,
   metric,
-  ratioLabel: metric === 'bullish' ? '긍정' : '부정',
+  ratioLabel: metric === 'bullish' ? '기대' : '우려',
   items: [...reactionRanking.items]
     .sort((left, right) => reactionSignalScore(right, metric) - reactionSignalScore(left, metric))
     .slice(0, 3)
 });
 const reactionSignalGroups = [
-  buildReactionGroup('positive', '언급+긍정 TOP 3', '언급량 x 긍정', 'bullish'),
-  buildReactionGroup('negative', '언급+부정 TOP 3', '언급량 x 부정', 'bearish')
+  buildReactionGroup('positive', '언급+기대 TOP 3', '언급량 x 기대', 'bullish'),
+  buildReactionGroup('negative', '언급+우려 TOP 3', '언급량 x 우려', 'bearish')
 ];
 
 const formatPct = (value: number) => `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
 const trendClass = (trend: string) => (trend === 'down' ? 'down' : 'up');
-const directIconUrls: Record<string, string> = {
-  'blog.naver.com': 'https://ssl.pstatic.net/static/blog/icon/favicon.ico',
-  'finance.naver.com': 'https://ssl.pstatic.net/imgstock/favi/favicon-96x96.png'
+const sourceIconInitial = (domain: string) => domain.replace(/^(www|new|cafe)\./, '').charAt(0).toUpperCase() || 'Y';
+const faviconUrl = (domain: string) => {
+  const label = sourceIconInitial(domain);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#fff7ed"/><text x="32" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#b45309">${label}</text></svg>`;
+
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 };
-const faviconUrl = (domain: string) => directIconUrls[domain] ?? `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 const hideBrokenIcon = (event: Event) => {
   const image = event.target as HTMLImageElement;
   image.hidden = true;
@@ -114,7 +116,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
       <p class="eyebrow">{{ reactionRanking.windowLabel }} · mock data</p>
       <div class="search-line">
         <div class="search-primary-row">
-          <aside class="retail-sentiment-gauge-card" aria-label="개미 심리 지수">
+          <aside class="retail-sentiment-gauge-card" aria-label="지역 반응 지수">
             <div class="retail-sentiment-copy">
               <span>{{ retailSentimentIndex.label }}</span>
               <strong>{{ retailSentimentIndex.value }}<small>{{ retailSentimentIndex.unit }}</small></strong>
@@ -137,16 +139,16 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <circle class="gauge-hub" :cx="gaugeCenter.x" :cy="gaugeCenter.y" r="4.6" />
               </svg>
               <div class="retail-gauge-scale" aria-hidden="true">
-                <span>공포</span>
-                <span>중립</span>
-                <span>탐욕</span>
+                <span>냉각</span>
+                <span>균형</span>
+                <span>과열</span>
               </div>
             </div>
           </aside>
           <button class="mock-search" type="button" disabled>
             <span class="search-icon" aria-hidden="true"></span>
             <strong>/</strong>
-            <span>종목이나 키워드 검색</span>
+            <span>지역이나 단지 검색</span>
           </button>
         </div>
         <p>{{ dashboardSummary.headline }}</p>
@@ -165,9 +167,9 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
       </div>
       <div class="dashboard-meta-strip" aria-label="대시보드 집계 메타">
         <span>언급 합계 <strong>{{ totalMentions }}</strong></span>
-        <span>지연 시세 <strong>{{ staleQuoteCount }}건</strong></span>
-        <span>관찰 <strong>{{ reactionRanking.items.length }}종목</strong></span>
-        <span>투자 자문 아님</span>
+        <span>지연 지표 <strong>{{ staleQuoteCount }}건</strong></span>
+        <span>관찰 <strong>{{ reactionRanking.items.length }}곳</strong></span>
+        <span>부동산 자문 아님</span>
       </div>
     </section>
 
@@ -177,8 +179,8 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
           <article class="return-chart" aria-labelledby="return-title">
             <div class="panel-header">
               <div>
-                <p class="label">paper return</p>
-                <h3 id="return-title">커뮤니티 지표 비교</h3>
+                <p class="label">reaction history</p>
+                <h3 id="return-title">유사 과거 흐름 비교</h3>
               </div>
               <div class="section-actions">
                 <span class="status-pill warning">mock</span>
@@ -206,7 +208,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 </div>
               </div>
               <svg viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="return-title">
-                <text class="axis-title" x="50" y="50">return (%)</text>
+                <text class="axis-title" x="50" y="50">reaction delta (%)</text>
                 <line class="chart-grid" x1="50" x2="1142" y1="90" y2="90" />
                 <line class="chart-grid" x1="50" x2="1142" y1="250" y2="250" />
                 <line class="chart-grid" x1="50" x2="1142" y1="410" y2="410" />
@@ -263,17 +265,17 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
               </svg>
             </div>
 
-            <p class="chart-note">모의 성과 fixture · 투자 자문 아님</p>
+            <p class="chart-note">유사 과거 흐름 fixture · 부동산 자문 아님</p>
           </article>
 
           <section class="mood-board stock-bubble-section reaction-panel" aria-labelledby="mood-title">
             <div class="mood-header">
               <div>
                 <p class="label">지금 뜨는 반응</p>
-                <h3 id="mood-title">종목 반응 한눈에</h3>
+                <h3 id="mood-title">지역·단지 반응 한눈에</h3>
               </div>
               <div class="section-actions">
-                <div class="period-tabs mood-period-tabs" aria-label="종목별 심리 비교 기간">
+                <div class="period-tabs mood-period-tabs" aria-label="지역·단지별 반응 비교 기간">
                   <button
                     v-for="period in dashboardSummary.moodPeriods"
                     :key="period"
@@ -283,17 +285,17 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                     {{ period }}
                   </button>
                 </div>
-                <RouterLink class="detail-link" to="/stocks/005930">자세히 보기 →</RouterLink>
+                <RouterLink class="detail-link" to="/stocks/SEOUL-MAPO">자세히 보기 →</RouterLink>
               </div>
             </div>
 
-            <div class="reaction-legend" aria-label="종목 반응 색상 설명">
-              <span><i class="positive"></i>긍정 반응</span>
-              <span><i class="negative"></i>부정 반응</span>
+            <div class="reaction-legend" aria-label="지역·단지 반응 색상 설명">
+              <span><i class="positive"></i>기대 반응</span>
+              <span><i class="negative"></i>우려 반응</span>
               <span><i class="neutral"></i>중립·기타</span>
             </div>
 
-            <div class="reaction-split-board" aria-label="긍정 부정 반응별 종목 순위">
+            <div class="reaction-split-board" aria-label="기대 우려 반응별 지역 순위">
               <section
                 v-for="group in reactionSignalGroups"
                 :key="group.id"
@@ -338,8 +340,8 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
         <section class="indicator-section" aria-labelledby="indicator-title">
           <div class="section-title-row">
             <div>
-              <p class="label">market pulse</p>
-              <h3 id="indicator-title">실시간 주요 지표</h3>
+              <p class="label">real estate pulse</p>
+              <h3 id="indicator-title">주요 부동산 지표</h3>
             </div>
             <div class="section-actions">
               <span class="status-pill warning">mock · 지연 가능</span>
@@ -406,7 +408,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
             <div class="panel-header">
               <div>
                 <p class="label">research feed</p>
-                <h3 id="analyst-title">애널리스트 리포트</h3>
+                <h3 id="analyst-title">정책·통계 리포트</h3>
               </div>
               <div class="section-actions">
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'reports' } }">자세히 보기 →</RouterLink>
@@ -440,7 +442,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
             <div class="panel-header">
               <div>
                 <p class="label">outside links</p>
-                <h3 id="external-video-title">증권 영상 새 글</h3>
+                <h3 id="external-video-title">부동산 영상 새 글</h3>
               </div>
               <div class="section-actions">
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'videos' } }">자세히 보기 →</RouterLink>
@@ -511,8 +513,8 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
           <article class="panel" aria-labelledby="quote-title">
             <div class="panel-header">
               <div>
-                <p class="label">market placeholder</p>
-                <h3 id="quote-title">가격 상태</h3>
+                <p class="label">public data placeholder</p>
+                <h3 id="quote-title">실거래·지표 상태</h3>
               </div>
               <RouterLink class="detail-link" to="/indicators">자세히 보기 →</RouterLink>
             </div>
@@ -521,7 +523,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <strong>{{ quote.name }}</strong>
                 <span>{{ quote.price.toLocaleString() }}원</span>
                 <span :class="['status-pill', quote.stale ? 'warning' : '']">
-                  {{ quote.stale ? 'stale quote' : 'mock quote' }}
+                  {{ quote.stale ? 'stale public data' : 'mock public data' }}
                 </span>
               </div>
             </div>
@@ -556,7 +558,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
 
         <section v-show="activeDrawerTab === 'reaction'" class="drawer-tab-screen drawer-reaction-screen">
           <div class="drawer-card hot-stock-panel" aria-labelledby="hot-stock-title">
-            <p class="label">라이브 패널 · 지금 언급 급상승 종목</p>
+            <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
             <h3 id="hot-stock-title">{{ topRiser.name }}</h3>
             <strong>{{ formatPct(topRiser.mentionDeltaPct) }}</strong>
             <span>{{ topRiser.symbol }} · 언급 {{ topRiser.previousMentionCount }} → {{ topRiser.mentionCount }}</span>
@@ -570,7 +572,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <em>{{ topRiser.market }}</em>
               </div>
             </div>
-            <div class="hot-stock-drivers" aria-label="이 종목 반응이 움직인 이유">
+            <div class="hot-stock-drivers" aria-label="이 지역 반응이 움직인 이유">
               <p>왜 움직였나</p>
               <div>
                 <span v-for="driver in topRiser.reactionDrivers" :key="`${driver.type}-${driver.label}`" class="hot-stock-driver">
@@ -587,7 +589,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
             <div class="drawer-section-title">
               <p class="label">early signal</p>
               <h3 id="drawer-rising-title">라이징 스타</h3>
-              <RouterLink class="detail-link" to="/stocks/005930">자세히 보기 →</RouterLink>
+              <RouterLink class="detail-link" to="/stocks/SEOUL-MAPO">자세히 보기 →</RouterLink>
             </div>
             <div class="drawer-rising-list">
               <article v-for="item in dashboardSummary.risingStars" :key="item.symbol">

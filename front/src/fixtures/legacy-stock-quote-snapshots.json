@@ -1,0 +1,79 @@
+{
+  "items": [
+    {
+      "symbol": "005930.KS",
+      "name": "Samsung Electronics",
+      "market": "KR",
+      "currency": "KRW",
+      "price": 78200,
+      "change": 600,
+      "changePct": 1.24,
+      "volume": 18400000,
+      "asOf": "2026-05-20T06:00:00Z",
+      "provider": "yfinance+FinanceDataReader",
+      "delayLabel": "Yahoo Finance delayed up to 30 min",
+      "stale": false,
+      "dataStatus": "OK"
+    },
+    {
+      "symbol": "000660.KS",
+      "name": "SK hynix",
+      "market": "KR",
+      "currency": "KRW",
+      "price": 184800,
+      "change": 3900,
+      "changePct": 2.18,
+      "volume": 9800000,
+      "asOf": "2026-05-20T06:00:00Z",
+      "provider": "yfinance+FinanceDataReader",
+      "delayLabel": "Yahoo Finance delayed up to 30 min",
+      "stale": false,
+      "dataStatus": "OK"
+    },
+    {
+      "symbol": "069500.KS",
+      "name": "KODEX 200",
+      "market": "KR",
+      "currency": "KRW",
+      "price": 38420,
+      "change": 160,
+      "changePct": 0.42,
+      "volume": 12800000,
+      "asOf": "2026-05-20T06:00:00Z",
+      "provider": "yfinance+FinanceDataReader",
+      "delayLabel": "Yahoo Finance delayed up to 30 min",
+      "stale": false,
+      "dataStatus": "OK"
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple",
+      "market": "US",
+      "currency": "USD",
+      "price": 198.12,
+      "change": 1.25,
+      "changePct": 0.64,
+      "volume": 42123456,
+      "asOf": "2026-05-20T20:00:00Z",
+      "provider": "yfinance",
+      "delayLabel": "Yahoo Finance 10 min refresh snapshot",
+      "stale": false,
+      "dataStatus": "OK"
+    },
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA",
+      "market": "US",
+      "currency": "USD",
+      "price": 924.8,
+      "change": 16.82,
+      "changePct": 1.85,
+      "volume": 51700000,
+      "asOf": "2026-05-20T20:00:00Z",
+      "provider": "yfinance",
+      "delayLabel": "Yahoo Finance 10 min refresh snapshot",
+      "stale": false,
+      "dataStatus": "OK"
+    }
+  ]
+}

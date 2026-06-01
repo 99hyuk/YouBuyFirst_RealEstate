@@ -1,5 +1,7 @@
 # Quote Snapshot Contract
 
+> Legacy stock reference: 부동산 market fact 정본은 `docs/domains/realestate/`와 후속 `DATA_CONTRACT.md`에서 관리합니다.
+
 ## Scope
 
 This slice gives the frontend a limited quote snapshot for public display. It does not expose raw minute candles, order book levels, bulk OHLC history, or a downloadable market-data API.

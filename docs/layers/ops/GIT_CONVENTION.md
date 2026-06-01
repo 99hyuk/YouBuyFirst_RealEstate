@@ -29,7 +29,7 @@ codex/<work-area>-<task>
 예:
 
 - `codex/community-target-api`
-- `codex/stock-alias-matcher`
+- `codex/realestate-alias-matcher`
 - `codex/ui-dashboard-shell`
 - `codex/ops-chat-stability`
 
@@ -40,7 +40,7 @@ codex/<work-area>-<task>
 브랜치는 작업 단위가 실제로 생겼을 때 엽니다.
 
 - 엽니다: 코드/문서 수정이 필요하고 PR 후보가 분명할 때
-- 엽니다: 병렬 ui/community/stock/indicator/market/simulation/agent 작업처럼 파일 소유권을 분리해야 할 때
+- 엽니다: 병렬 ui/community/realestate/indicator/agent 작업처럼 파일 소유권을 분리해야 할 때
 - 열지 않습니다: 단순 조사, PR/로그 확인, 사용자 질문 답변처럼 변경이 없는 작업
 - 열지 않습니다: 이미 같은 작업 영역/같은 목적의 활성 브랜치가 있고 그 브랜치에서 이어가는 편이 자연스러울 때
 
@@ -87,7 +87,7 @@ codex/<work-area>-<task>
 예:
 
 - `[community][feat] 공개 게시글 수집 대상 큐 추가`
-- `[stock][fix] 별칭 중첩 매칭 보강`
+- `[realestate][fix] 별칭 중첩 매칭 보강`
 - `[ui][feat] 대시보드 셸 구성`
 - `[ops][docs] 채팅 안정성 규칙`
 
@@ -99,7 +99,7 @@ codex/<work-area>-<task>
 
 작업 영역:
 
-- PR 제목 prefix와 `track:*` 라벨 값은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops` 중 하나를 씁니다.
+- PR 제목 prefix와 `track:*` 라벨 값은 `realestate`, `community`, `indicator`, `agent`, `ui`, `ops` 중 하나를 우선 씁니다. `stock`, `market`, `simulation`은 legacy reference 정리 작업에만 제한적으로 씁니다.
 - GitHub 라벨 family 이름은 기존 형식인 `track:*`를 유지합니다. 바뀌는 것은 `track:` 뒤 분류값입니다.
 - 과거 `crawl`, `data`, `trade`, `front` 값은 닫힌 PR이나 과거 Notion 카드 해석용 alias입니다.
 
@@ -114,7 +114,7 @@ codex/<work-area>-<task>
 
 GitHub 라벨:
 
-- `track:*`: 작업 영역. 예: `track:community`, `track:stock`, `track:ui`
+- `track:*`: 작업 영역. 예: `track:realestate`, `track:community`, `track:ui`
 - `type:*`: 작업 타입
 - `size:*`: 변경 크기
 - `part:*`: 실제 리뷰 경로나 변경 파트를 드러낼 때만 사용
@@ -208,7 +208,7 @@ if ($missing) { throw "PR template headings missing: $($missing -join ', ')" }
 
 자동 리뷰가 아직 달리지 않았는데 리뷰가 필요한 PR이면 merge 전에 `@codex review`로 수동 요청하거나, 자동 리뷰 미실행 사유를 PR 본문/완료 보고에 남깁니다. PR 생성 또는 draft 해제 직후에는 바로 merge/close/완료 처리하지 않고, review 상태로 두어 자동 리뷰와 사람 리뷰가 도착할 시간을 확보합니다. 기본 정책은 아래입니다.
 
-- 코드, API, DB, 배치, crawler, chart/market data, front 동작이 바뀌는 PR은 Codex 리뷰를 남깁니다.
+- 코드, API, DB, 배치, crawler, market fact, front 동작이 바뀌는 PR은 Codex 리뷰를 남깁니다.
 - 문서만 바뀌는 아주 작은 PR은 선택 사항입니다. 다만 작업 규칙, 보안, 법적/데이터 정책, PR/merge 정책을 바꾸는 문서는 Codex 리뷰를 남깁니다.
 - 리뷰가 필요한 PR은 PR 생성/ready 후 5-10분 뒤 `gh pr view <number> --comments`와 `gh pr view <number> --json reviews,comments`로 한 번 더 봅니다. 같은 세션에서 기다릴 수 없으면 Codex 앱의 heartbeat/reminder처럼 사용 가능한 후속 확인 장치를 잡고, 완료 보고와 PR 본문에 `리뷰 재확인 필요`를 남깁니다.
 - 다음 작업을 시작하기 전에는 전체 PR/세션 로그를 훑지 않고, 현재 세션에서 만든 PR과 최근 open PR만 가볍게 확인합니다. 늦게 달린 사람 리뷰나 `chatgpt-codex-connector`의 actionable 의견이 있으면 새 작업보다 먼저 처리하거나 후속 기록으로 남깁니다.

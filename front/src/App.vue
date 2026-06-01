@@ -4,23 +4,23 @@ import { useRoute } from 'vue-router';
 
 const railItems = [
   { id: 'watch', label: '관심', shortcut: 'W' },
-  { id: 'pulse', label: '관심도', shortcut: 'P' },
+  { id: 'pulse', label: '반응', shortcut: 'P' },
   { id: 'recent', label: '최근 본', shortcut: 'R' },
   { id: 'live', label: '실시간', shortcut: 'L' }
 ];
 
 const liveTopics = [
-  '속보 09:20 KOSDAQ 반등 구간에서 2차전지 언급 증가',
-  '속보 09:35 삼성전자 반도체 키워드 30분 전 대비 +18%',
-  '공시 10:00 두산로보틱스 단일가 변동성 확대',
-  '커뮤니티 10:05 에코프로 인기글 상위 3% 도달'
+  '속보 09:20 마포 전세 매물 체감 언급 30분 전 대비 +18%',
+  '속보 09:35 동탄역권 GTX 키워드가 네이버 카페 상위권 도달',
+  '정책 10:00 대출 규제 관망 댓글이 잠실·송파 생활권에 확산',
+  '커뮤니티 10:05 성수동 상권·임대료 키워드 동반 증가'
 ];
 
-const watchStocks = [
-  { name: '삼성전자', symbol: '005930', value: '78,200원', change: '+1.24%', tone: 'up' },
-  { name: '두산로보틱스', symbol: '454910', value: '132,100원', change: '+4.80%', tone: 'up' },
-  { name: 'NAVER', symbol: '035420', value: '182,600원', change: '-0.70%', tone: 'down' },
-  { name: '에코프로', symbol: '086520', value: '128,600원', change: '-1.96%', tone: 'down' }
+const watchTargets = [
+  { name: '마포구 아파트', symbol: 'SEOUL-MAPO', value: '14.5억', change: '+0.55%', tone: 'up' },
+  { name: '성수동 생활권', symbol: 'SEONGSU-DONG', value: '18.2억', change: '+0.66%', tone: 'up' },
+  { name: '동탄역권', symbol: 'DONGTAN-STATION', value: '9.8억', change: '+0.31%', tone: 'up' },
+  { name: '잠실동 단지군', symbol: 'JAMSIL-DONG', value: '22.5억', change: '-0.22%', tone: 'down' }
 ];
 
 const activeRailItem = ref('watch');
@@ -87,10 +87,10 @@ const dismissNewsroomMenu = () => {
               </RouterLink>
             </span>
           </span>
-          <RouterLink data-testid="nav-stock" to="/stocks">종목</RouterLink>
-          <RouterLink data-testid="nav-communities" to="/communities">인간 지표</RouterLink>
+          <RouterLink data-testid="nav-stock" to="/stocks">지역/단지</RouterLink>
+          <RouterLink data-testid="nav-communities" to="/communities">반응 지표</RouterLink>
           <RouterLink data-testid="nav-indicators" to="/indicators">주요 지표</RouterLink>
-          <RouterLink data-testid="nav-portfolio" to="/portfolio">내 포트폴리오</RouterLink>
+          <RouterLink data-testid="nav-portfolio" to="/portfolio">관심 지역</RouterLink>
         </nav>
 
         <div class="topbar-status topbar-actions" aria-label="서비스 상태와 계정">
@@ -124,42 +124,42 @@ const dismissNewsroomMenu = () => {
           <section class="site-footer-brand">
             <h2 id="site-footer-title">너나사<span>YouBuyFirst</span></h2>
             <p>
-              커뮤니티 반응, 종목별 언급량, 시세 상태, 모의투자 에이전트를 함께 보는 투자 참고 실험 서비스입니다.
-              실제 거래 지시나 개인화 투자 권유를 제공하지 않습니다.
+              커뮤니티 반응, 지역·단지 언급량, 실거래·전세·매물 상태, 에이전트 근거 로그를 함께 보는 부동산 관찰형 분석 서비스입니다.
+              실제 매수·매도 지시나 개인화 부동산 자문을 제공하지 않습니다.
             </p>
             <a href="mailto:yh99cho1@gmail.com">문의 yh99cho1@gmail.com</a>
           </section>
 
           <section class="footer-column" aria-labelledby="footer-features-title">
             <h3 id="footer-features-title">서비스 특징</h3>
-            <span>관심종목 반응 변화 브리핑</span>
-            <span>뉴스·공시·커뮤니티·가격 이벤트 연결</span>
-            <span>커뮤니티별 반응 비교와 모의 성과 실험</span>
-            <span>AI 에이전트 모의 판단 기록</span>
+            <span>관심 지역·단지 반응 변화 브리핑</span>
+            <span>정책·교통·전세·매물 이벤트 연결</span>
+            <span>커뮤니티별 반응 비교와 유사 과거 상황</span>
+            <span>AI 에이전트 근거 로그</span>
           </section>
 
           <section class="footer-column footer-legal" aria-labelledby="footer-notice-title">
             <h3 id="footer-notice-title">유의사항</h3>
             <p>
-              모든 가격, 등락률, 수익률, 반응 지표는 참고용 추정치이며 공식 발표 값과 다를 수 있습니다.
+              모든 가격, 변동률, 반응 지표는 참고용 추정치이며 공공데이터 공개 시점과 다를 수 있습니다.
               본 사이트는 정보 제공과 모의 실험 목적으로만 운영됩니다.
             </p>
             <p>
-              어떠한 종목 거래도 권유하지 않으며, 이용으로 발생한 직·간접 손실에 대해 책임지지 않습니다.
+              어떠한 부동산 매수·매도·청약·대출 행동도 권유하지 않으며, 이용으로 발생한 직·간접 손실에 대해 책임지지 않습니다.
             </p>
           </section>
 
           <section class="footer-column" aria-labelledby="footer-source-title">
             <h3 id="footer-source-title">데이터 출처</h3>
-            <span>KRX · 네이버 금융</span>
-            <span>Yahoo Finance · NASDAQ Trader</span>
-            <span>업비트 · 공개 커뮤니티 게시글</span>
+            <span>국토교통부 공공데이터</span>
+            <span>한국부동산원 통계</span>
+            <span>공개 커뮤니티·뉴스·컬럼</span>
             <span>비공개·유료 데이터 미사용</span>
           </section>
         </div>
 
         <div class="site-footer-bottom">
-          <span>© 2026 YouBuyFirst · 모든 시세는 비공식이며 실시간이 아닐 수 있습니다.</span>
+          <span>© 2026 YouBuyFirst · 모든 부동산 지표는 참고용이며 실시간이 아닐 수 있습니다.</span>
           <span>BETA · mock wireframe · 2026.05</span>
         </div>
       </div>
@@ -176,15 +176,15 @@ const dismissNewsroomMenu = () => {
         </div>
 
         <div v-if="activeRailItem === 'watch'" class="edge-watch-list">
-          <article v-for="stock in watchStocks" :key="stock.symbol" class="edge-watch-row">
-            <span class="edge-symbol">{{ stock.name.slice(0, 1) }}</span>
+          <article v-for="target in watchTargets" :key="target.symbol" class="edge-watch-row">
+            <span class="edge-symbol">{{ target.name.slice(0, 1) }}</span>
             <div>
-              <strong>{{ stock.name }}</strong>
-              <p>{{ stock.symbol }}</p>
+              <strong>{{ target.name }}</strong>
+              <p>{{ target.symbol }}</p>
             </div>
             <div class="edge-price">
-              <strong>{{ stock.value }}</strong>
-              <em :class="stock.tone">{{ stock.change }}</em>
+              <strong>{{ target.value }}</strong>
+              <em :class="target.tone">{{ target.change }}</em>
             </div>
           </article>
         </div>
@@ -192,17 +192,17 @@ const dismissNewsroomMenu = () => {
         <div v-else-if="activeRailItem === 'pulse'" class="edge-live-list">
           <article>
             <span>반응 변화</span>
-            <strong>삼성전자</strong>
+            <strong>마포구</strong>
             <em class="up">+18%</em>
           </article>
           <article>
-            <span>가격 괴리</span>
-            <strong>NAVER</strong>
-            <em class="down">부정 증가</em>
+            <span>전세 우려</span>
+            <strong>잠실동</strong>
+            <em class="down">관망 증가</em>
           </article>
           <article>
             <span>관심 테마</span>
-            <strong>반도체</strong>
+            <strong>GTX</strong>
             <em class="up">상위권</em>
           </article>
         </div>

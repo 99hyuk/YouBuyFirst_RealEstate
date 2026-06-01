@@ -1,0 +1,102 @@
+{
+  "window": "1h",
+  "windowLabel": "최근 1시간",
+  "items": [
+    {
+      "symbol": "005930",
+      "name": "삼성전자",
+      "market": "KRX",
+      "mentionCount": 128,
+      "mentionDeltaPct": 42.3,
+      "reactionDirectionRatio": {
+        "bullish": 0.52,
+        "bearish": 0.31,
+        "neutral": 0.17
+      },
+      "heatScore": 82,
+      "topKeywords": ["실적", "반도체", "외국인"],
+      "priceStatus": "mock quote",
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla",
+      "market": "NASDAQ",
+      "mentionCount": 74,
+      "mentionDeltaPct": 18.7,
+      "reactionDirectionRatio": {
+        "bullish": 0.41,
+        "bearish": 0.43,
+        "neutral": 0.16
+      },
+      "heatScore": 68,
+      "topKeywords": ["실적", "가격", "변동성"],
+      "priceStatus": "stale quote",
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "042700",
+      "name": "한미반도체",
+      "market": "KRX",
+      "mentionCount": 41,
+      "mentionDeltaPct": 86.4,
+      "reactionDirectionRatio": {
+        "bullish": 0.57,
+        "bearish": 0.24,
+        "neutral": 0.19
+      },
+      "heatScore": 77,
+      "topKeywords": ["HBM", "장비", "수급"],
+      "priceStatus": "mock quote",
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "035420",
+      "name": "NAVER",
+      "market": "KRX",
+      "mentionCount": 43,
+      "mentionDeltaPct": 53.6,
+      "reactionDirectionRatio": {
+        "bullish": 0.48,
+        "bearish": 0.27,
+        "neutral": 0.25
+      },
+      "heatScore": 64,
+      "topKeywords": ["AI", "커머스", "광고"],
+      "priceStatus": "mock quote",
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "000660",
+      "name": "SK하이닉스",
+      "market": "KRX",
+      "mentionCount": 66,
+      "mentionDeltaPct": 29.8,
+      "reactionDirectionRatio": {
+        "bullish": 0.61,
+        "bearish": 0.22,
+        "neutral": 0.17
+      },
+      "heatScore": 75,
+      "topKeywords": ["HBM", "메모리", "외국인"],
+      "priceStatus": "mock quote",
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "068270",
+      "name": "셀트리온",
+      "market": "KRX",
+      "mentionCount": 38,
+      "mentionDeltaPct": 21.4,
+      "reactionDirectionRatio": {
+        "bullish": 0.44,
+        "bearish": 0.34,
+        "neutral": 0.22
+      },
+      "heatScore": 59,
+      "topKeywords": ["바이오", "실적", "수급"],
+      "priceStatus": "mock quote",
+      "dataStatus": "mock"
+    }
+  ]
+}

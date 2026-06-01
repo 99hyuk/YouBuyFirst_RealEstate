@@ -17,8 +17,6 @@
 
 ### 작업 타입 Type
 
-`type:*`는 이 PR이 어떤 종류의 변경인지 설명합니다. 기능 추가인지, 버그 수정인지, 문서 정리인지처럼 “무슨 일을 했는가”를 나타냅니다.
-
 | 라벨 | 의미 | 예시 |
 | --- | --- | --- |
 | `type:feat` | 사용자나 시스템의 새 동작 추가 | 신규 API, 새 화면, 새 배치 |
@@ -30,24 +28,22 @@
 
 ### 작업 영역 Track
 
-작업 판단의 1차 기준은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops` 작업 영역입니다. GitHub 라벨 family는 기존 형식인 `track:*`를 유지하고, `track:` 뒤 값만 작업 영역 이름으로 씁니다.
+작업 판단의 1차 기준은 `realestate`, `community`, `indicator`, `agent`, `ui`, `ops` 작업 영역입니다. GitHub 라벨 family는 기존 형식인 `track:*`를 유지하고, `track:` 뒤 값만 작업 영역 이름으로 씁니다.
 
 | 라벨 | 작업 영역 | 담당 |
 | --- | --- | --- |
+| `track:realestate` | `realestate` | 지역/단지, alias, market fact, 정책/개발/교통 이벤트 |
 | `track:community` | `community` | 커뮤니티 글 수집, 소스 어댑터, source policy, 원문 제한 저장 |
-| `track:stock` | `stock` | 종목 master, symbol, alias, 종목 식별 |
-| `track:indicator` | `indicator` | 반응 방향, 열기 지수, 개미 심리 지수, snapshot |
-| `track:market` | `market` | 실시간/지연 시세, 차트 캔들, quote cache, 수급 |
-| `track:simulation` | `simulation` | 가상 계좌, 주문, 체결, 원장, 포트폴리오, 수익률 |
-| `track:agent` | `agent` | AI 판단, 커뮤니티별 성과 비교, 결정 로그, 헤드라인 |
+| `track:indicator` | `indicator` | 반응 방향, 쟁점 비율, 반응 지표, snapshot |
+| `track:agent` | `agent` | 지역/단지 평가, 유사 과거 비교 설명, 근거 로그 |
 | `track:ui` | `ui` | 사용자 화면, 디자인 시스템, mock data, API 연동 |
 | `track:ops` | `ops` | 기획 조율, 문서, Notion, PR/CI, 배포 정책 |
 
-과거 `track:crawl`, `track:data`, `track:trade`, `track:front`는 닫힌 PR이나 기존 Notion 카드 해석용으로만 봅니다.
+`track:stock`, `track:market`, `track:simulation`은 기존 주식 프로젝트에서 넘어온 참고/비활성 영역 또는 과거 기록 해석용으로만 봅니다. 과거 `track:crawl`, `track:data`, `track:trade`, `track:front`도 닫힌 PR이나 기존 Notion 카드 해석용입니다.
 
 ### 변경 파트 Part
 
-`part:*`는 실제로 건드린 부분입니다. 리뷰 경로를 돕는 보조 라벨이라, 애매하면 생략해도 됩니다. 예를 들어 `track:ops` 작업이라도 PR 템플릿 파일을 바꾸면 `part:rule`이나 `part:docs`를 붙일 수 있습니다.
+`part:*`는 실제로 건드린 부분입니다. 리뷰 경로를 돕는 보조 라벨이라, 애매하면 생략해도 됩니다.
 
 | 라벨 | 의미 |
 | --- | --- |
@@ -76,7 +72,7 @@
 | 속성 | 의미 |
 | --- | --- |
 | `상태` | `Merged`, `Open`, `Draft`, `Blocked` 중 하나 |
-| `트랙` | 기존 속성명 유지. 값은 `community`, `stock`, `indicator`, `market`, `simulation`, `agent`, `ui`, `ops` 중 하나 |
+| `트랙` | 기존 속성명 유지. 값은 `realestate`, `community`, `indicator`, `agent`, `ui`, `ops` 중 하나 |
 | `변경 파트` | 영향을 받은 코드/문서/규칙/자산 |
 | `크기` | PR 리뷰 크기 |
 | `검증` | 사람이 읽기 쉬운 검증 결과 |
@@ -93,22 +89,9 @@
 | `예상 PR 크기` | 예상되는 리뷰 크기 |
 | `완료 기준` | 이 작업이 끝났다고 말할 수 있는 조건 |
 
-## 작업 영역 아이콘
-
-| 아이콘 | 작업 영역 | 표시 위치 |
-| --- | --- | --- |
-| 🕸️ | `community` | 수집/크롤링 작업 |
-| 🧾 | `stock` | 종목 master/별칭/식별 작업 |
-| 📊 | `indicator` | 반응 분석/집계/개미 심리 지수 작업 |
-| 💹 | `market` | 시세/호가 작업 |
-| 💰 | `simulation` | 모의투자/체결/원장 작업 |
-| 🧠 | `agent` | 전략 에이전트 작업 |
-| 🖥️ | `ui` | 화면/UI 작업 |
-| 🧭 | `ops` | 기획/운영/조율 작업 |
-
 ## 작성 원칙
 
-- PR 제목은 `[작업영역][타입] 한국어 명사형 요약`으로 씁니다. 기술 고유명사를 제외하고 영어 요약 제목을 쓰지 않습니다. 예: `[ops][docs] 작업 영역 라벨 기준 정리`
+- PR 제목은 `[작업영역][타입] 한국어 명사형 요약`으로 씁니다. 예: `[realestate][docs] 데이터 계약 기준 정리`
 - PR 본문은 카드형 구조로 작성합니다.
 - Notion 작업 카드는 PR 본문과 같은 흐름을 따릅니다.
 - 명령어는 PR 본문 첫 화면에 길게 늘어놓지 않고 접힌 영역에 둡니다.

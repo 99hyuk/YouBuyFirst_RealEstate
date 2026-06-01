@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>너나사 부동산 한페이지 기획안</title>
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    :root {
+      --bg: #f3f6f8;
+      --ink: #17212b;
+      --muted: #405064;
+      --muted-2: #657285;
+      --line: #dfe5ec;
+      --line-strong: #cdd6e1;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --nav: #1d1f23;
+      --brand: #4f7fee;
+      --blue-soft: #eef5ff;
+      --green: #00b976;
+      --green-soft: #e9f7ef;
+      --red: #f04452;
+      --red-soft: #fff0f2;
+      --orange: #ff9d3d;
+      --orange-soft: #fff8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 210mm;
+      color: var(--ink);
+      background: #dfe5ec;
+      font-family: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      letter-spacing: 0;
+      line-height: 1.28;
+    }
+
+    .page {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto;
+      overflow: hidden;
+      padding: 18px;
+      background: var(--bg);
+      box-shadow: 0 18px 44px rgba(39, 51, 67, 0.12);
+      display: grid;
+      grid-template-rows: auto auto auto auto auto 1fr;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 8px;
+      background: var(--nav);
+      color: #f9fbff;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .brand span {
+      color: #72a0ff;
+    }
+
+    .topbar-badges {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .topbar-badges span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 23px;
+      padding: 0 8px;
+      border-radius: 6px;
+      background: rgba(79, 127, 238, 0.22);
+      color: #c9d8ff;
+      font-size: 10.5px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 216px;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .panel,
+    .hero-main,
+    .identity-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .hero-main {
+      padding: 11px 20px 17px;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      margin: 0 0 16px;
+      padding: 0 9px;
+      border: 1px solid #c9d8ec;
+      border-radius: 6px;
+      background: var(--blue-soft);
+      color: #244f7d;
+      font-size: 11.3px;
+      font-weight: 900;
+      text-transform: uppercase;
+      transform: translateY(-7px);
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 36px;
+      font-weight: 950;
+      line-height: 1.08;
+      letter-spacing: 0;
+      word-break: keep-all;
+    }
+
+    .hero-main p {
+      margin: 10px 0 0;
+      max-width: 590px;
+      color: #405064;
+      font-size: 14.1px;
+      font-weight: 730;
+      word-break: keep-all;
+    }
+
+    .identity-panel {
+      display: grid;
+      gap: 9px;
+      align-content: center;
+      padding: 14px;
+      background: linear-gradient(180deg, #fff8f0, #ffffff 64%);
+      border-color: #d9e4ee;
+    }
+
+    .identity-panel > span {
+      width: fit-content;
+      min-height: 24px;
+      padding: 0 9px;
+      border: 1px solid #ead8aa;
+      border-radius: 6px;
+      background: var(--orange-soft);
+      color: #85570d;
+      font-size: 11.3px;
+      font-weight: 900;
+      line-height: 24px;
+    }
+
+    .identity-panel strong {
+      display: block;
+      color: var(--ink);
+      font-size: 29px;
+      font-weight: 950;
+      line-height: 1.04;
+      word-break: keep-all;
+    }
+
+    .identity-panel strong span {
+      display: inline-block;
+      font-size: 23.5px;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .identity-panel em {
+      width: fit-content;
+      min-height: 20px;
+      padding: 0 8px;
+      border-radius: 6px;
+      background: var(--green-soft);
+      color: #178452;
+      font-size: 10px;
+      font-weight: 860;
+      font-style: normal;
+      line-height: 20px;
+      white-space: nowrap;
+    }
+
+    .thesis-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .thesis-card {
+      display: grid;
+      grid-template-columns: 27px 1fr;
+      gap: 9px;
+      align-items: center;
+      min-height: 98px;
+      padding: 12px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .thesis-card b {
+      display: grid;
+      place-items: center;
+      width: 27px;
+      height: 34px;
+      border-radius: 7px;
+      background: var(--blue-soft);
+      color: var(--brand);
+      font-size: 16px;
+      font-weight: 920;
+    }
+
+    .thesis-card strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--ink);
+      font-size: 15.4px;
+      font-weight: 900;
+      line-height: 1.18;
+      white-space: nowrap;
+    }
+
+    .thesis-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.25;
+      word-break: keep-all;
+    }
+
+    .panel {
+      padding: 13px 10px 11px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h2 {
+      margin-left: 12px;
+    }
+
+    h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 16px;
+      font-weight: 900;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    .panel-header small {
+      color: var(--muted-2);
+      font-size: 11.4px;
+      font-weight: 780;
+      white-space: nowrap;
+    }
+
+    .flow-track {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      max-width: 545px;
+    }
+
+    .flow-track span,
+    .flow-track .flow-group {
+      display: inline-flex;
+      align-items: center;
+      min-height: 25px;
+      padding: 0 8px;
+      border: 1px solid #c9d8ec;
+      border-radius: 6px;
+      background: #eef5ff;
+      color: #244f7d;
+      font-size: 10.8px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .flow-track .flow-group {
+      gap: 5px;
+      border-color: #ead8aa;
+      background: #fff8f0;
+      color: #85570d;
+    }
+
+    .flow-track .flow-group b {
+      font-size: 10.8px;
+      font-weight: 900;
+    }
+
+    .flow-track span:last-child {
+      border-color: #beded5;
+      background: #e9f7ef;
+      color: #178452;
+    }
+
+    .flow-arrow {
+      color: var(--brand);
+      font-size: 14px;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .architecture-map text[font-size="17"] {
+      font-size: 19.5px;
+    }
+
+    .architecture-map text[font-size="15"] {
+      font-size: 17.6px;
+    }
+
+    .architecture-map text[font-size="13"],
+    .architecture-map text[font-size="12.5"] {
+      font-size: 15.6px;
+    }
+
+    .architecture-map text[font-size="12"] {
+      font-size: 14.2px;
+    }
+
+    .architecture-map text[font-size="11.8"],
+    .architecture-map text[font-size="10.7"] {
+      font-size: 13.2px;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .feature-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .feature {
+      min-height: 82px;
+      padding: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    .feature p {
+      margin: 0 0 6px;
+      color: var(--brand);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .feature strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1.16;
+    }
+
+    .feature span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .footer {
+      display: flex;
+      align-self: end;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 9px 2px 0;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 9.5px;
+      font-weight: 720;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        margin: 0;
+        box-shadow: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">너나사<span>YouBuyFirst</span></div>
+      <div class="topbar-badges">
+        <span>싸피 15기 조용혁 · 양해미</span>
+      </div>
+    </header>
+
+    <section class="hero" aria-label="기획 핵심">
+      <div class="hero-main">
+        <p class="label">core identity</p>
+        <h1>사람들의 반응을 부동산 지표로 바꾼다.</h1>
+        <p>커뮤니티 글·댓글·뉴스·컬럼 속 관심과 불안을 지역과 단지 반응 지표로 만들고,<br />비슷한 과거 분위기에서 이후 어떤 결과가 나왔는지까지 연결한다.</p>
+      </div>
+      <aside class="identity-panel" aria-label="차별화 포인트">
+        <span>차별화 포인트</span>
+        <strong>반응 지표<br /><span>+ 유사 과거</span><br /><span>+ 에이전트 판단</span></strong>
+        <em>가격표가 아닌 시장 심리 추적</em>
+      </aside>
+    </section>
+
+    <section class="thesis-strip" aria-label="핵심 차별점">
+      <article class="thesis-card">
+        <b>1</b>
+        <div><strong>실제 사람들이 남긴 반응</strong><span>커뮤니티·댓글·컬럼·뉴스 언급을<br />지역과 단지 기준으로 모은다.</span></div>
+      </article>
+      <article class="thesis-card">
+        <b>2</b>
+        <div><strong>반응을 지표와 쟁점으로 변환</strong><span>언급량, 기대/우려, 이슈 비중,<br />표본 신뢰도를 한눈에 보여준다.</span></div>
+      </article>
+      <article class="thesis-card">
+        <b>3</b>
+        <div><strong>비슷한 과거의 결과까지 비교</strong><span>비슷했던 과거 분위기와 이후<br />가격·전세·매물 흐름을 붙인다.</span></div>
+      </article>
+    </section>
+
+    <section class="panel" aria-label="통합 아키텍처">
+      <div class="panel-header">
+        <h2>도메인별 기술 구조와 산출물</h2>
+        <div class="flow-track" aria-label="핵심 판단 흐름">
+          <span>사람 반응</span>
+          <b class="flow-arrow" aria-hidden="true">→</b>
+          <span>지표화</span>
+          <b class="flow-arrow" aria-hidden="true">→</b>
+          <span class="flow-group"><b>이슈·경제 맥락</b><b>+</b><b>비슷한 과거</b></span>
+          <b class="flow-arrow" aria-hidden="true">→</b>
+          <span>종합 판단</span>
+        </div>
+      </div>
+
+      <svg class="architecture-map" viewBox="0 0 980 550" role="img" aria-labelledby="arch-title arch-desc">
+        <title id="arch-title">너나사 부동산 통합 아키텍처</title>
+        <desc id="arch-desc">커뮤니티 반응, 시장 사실, 과거 유사 상황, 에이전트 판단 도메인이 각각 어떤 기술 흐름을 거쳐 이슈와 경제 맥락을 반영한 화면 산출물을 만드는지 보여준다.</desc>
+        <defs>
+          <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M 0 0 L 6 3 L 0 6 z" fill="#4f7fee"></path>
+          </marker>
+        </defs>
+
+        <rect x="24" y="18" width="932" height="488" rx="18" fill="#f8fafc" stroke="#dfe5ec"></rect>
+        <path d="M 864 136 C 914 262 820 444 762 506" fill="none" stroke="#cdd6e1" stroke-width="2"></path>
+        <path d="M 864 236 C 904 312 818 454 762 506" fill="none" stroke="#cdd6e1" stroke-width="2"></path>
+        <path d="M 864 336 C 890 396 814 464 762 506" fill="none" stroke="#cdd6e1" stroke-width="2"></path>
+        <path d="M 864 436 C 848 462 804 486 762 506" fill="none" stroke="#cdd6e1" stroke-width="2"></path>
+
+        <text x="126" y="56" text-anchor="middle" font-size="17" font-weight="900" fill="#17212b">도메인</text>
+        <text x="492" y="56" text-anchor="middle" font-size="17" font-weight="900" fill="#17212b">기술 흐름</text>
+        <text x="864" y="56" text-anchor="middle" font-size="17" font-weight="900" fill="#17212b">사용자 산출물</text>
+
+        <rect x="51" y="76" width="150" height="64" rx="12" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="126" y="102" text-anchor="middle" font-size="15" font-weight="900" fill="#17212b">커뮤니티 반응</text>
+        <text x="126" y="124" text-anchor="middle" font-size="12" font-weight="760" fill="#405064">글 · 댓글 · 컬럼 · 뉴스</text>
+
+        <rect x="218" y="90" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="274" y="113" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">크롤링 수집</text>
+        <rect x="354" y="90" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="410" y="113" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">DB 저장</text>
+        <rect x="490" y="90" width="140" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="560" y="113" text-anchor="middle" font-size="12.5" font-weight="850" fill="#17212b">임베딩·쟁점 묶기</text>
+        <rect x="654" y="90" width="100" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="704" y="113" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">지표화</text>
+
+        <rect x="790" y="80" width="148" height="56" rx="10" fill="#eef5ff" stroke="#c9d8ec"></rect>
+        <text x="864" y="99" text-anchor="middle" font-size="13" font-weight="900" fill="#2f6fed">관심 지수</text>
+        <text x="864" y="117" text-anchor="middle" font-size="10.7" font-weight="740" fill="#405064">쟁점 비율</text>
+        <text x="864" y="132" text-anchor="middle" font-size="10.7" font-weight="740" fill="#405064">표본 신뢰도</text>
+
+        <rect x="51" y="176" width="150" height="64" rx="12" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="126" y="202" text-anchor="middle" font-size="15" font-weight="900" fill="#17212b">시장 사실</text>
+        <text x="126" y="224" text-anchor="middle" font-size="12" font-weight="760" fill="#405064">실거래 · 전세 · 매물</text>
+
+        <rect x="218" y="190" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="274" y="213" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">공공 데이터</text>
+        <rect x="354" y="190" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="410" y="213" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">시점별 저장</text>
+        <rect x="490" y="190" width="140" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="560" y="213" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">이벤트 타임라인</text>
+        <rect x="654" y="190" width="100" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="704" y="213" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">변화 감지</text>
+
+        <rect x="790" y="180" width="148" height="56" rx="10" fill="#fff8f0" stroke="#ead8aa"></rect>
+        <text x="864" y="199" text-anchor="middle" font-size="13" font-weight="900" fill="#9a650d">시장 흐름</text>
+        <text x="864" y="217" text-anchor="middle" font-size="10.7" font-weight="740" fill="#405064">가격·전세·매물</text>
+        <text x="864" y="232" text-anchor="middle" font-size="10.7" font-weight="740" fill="#405064">뉴스·정책 연결</text>
+
+        <rect x="51" y="276" width="150" height="64" rx="12" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="126" y="302" text-anchor="middle" font-size="15" font-weight="900" fill="#17212b">비슷한 과거</text>
+        <text x="126" y="324" text-anchor="middle" font-size="12" font-weight="760" fill="#405064">분위기 · 이후 결과</text>
+
+        <rect x="218" y="290" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="274" y="313" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">과거 사례 저장</text>
+        <rect x="354" y="290" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="410" y="313" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">유사 사례 DB</text>
+        <rect x="490" y="290" width="140" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="560" y="313" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">유사 패턴 검색</text>
+        <rect x="654" y="290" width="100" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="704" y="313" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">결과 비교</text>
+
+        <rect x="790" y="280" width="148" height="56" rx="10" fill="#eef5ff" stroke="#c9d8ec"></rect>
+        <text x="864" y="299" text-anchor="middle" font-size="13" font-weight="900" fill="#2f6fed">과거 비교 리포트</text>
+        <text x="864" y="317" text-anchor="middle" font-size="10.7" font-weight="740" fill="#405064">가격·전세·매물</text>
+        <text x="864" y="332" text-anchor="middle" font-size="10.7" font-weight="740" fill="#405064">이후 흐름</text>
+
+        <rect x="51" y="376" width="150" height="64" rx="12" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="126" y="402" text-anchor="middle" font-size="15" font-weight="900" fill="#17212b">에이전트 판단</text>
+        <text x="126" y="424" text-anchor="middle" font-size="12" font-weight="760" fill="#405064">근거 기록 · 종합 평가</text>
+
+        <rect x="218" y="390" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="274" y="413" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">지표 입력</text>
+        <rect x="354" y="390" width="112" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="410" y="413" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">AI 근거 검색</text>
+        <rect x="490" y="390" width="140" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="560" y="413" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">맥락 종합</text>
+        <rect x="654" y="390" width="100" height="36" rx="8" fill="#ffffff" stroke="#dfe5ec"></rect>
+        <text x="704" y="413" text-anchor="middle" font-size="13" font-weight="850" fill="#17212b">근거 로그</text>
+
+        <rect x="790" y="380" width="148" height="56" rx="10" fill="#e9f7ef" stroke="#beded5"></rect>
+        <text x="864" y="399" text-anchor="middle" font-size="13" font-weight="900" fill="#178452">지역 평가</text>
+        <text x="864" y="418" text-anchor="middle" font-size="10.7" font-weight="740" fill="#405064">근거 있는 종합 판단</text>
+
+        <rect x="218" y="473" width="544" height="66" rx="13" fill="#1d1f23"></rect>
+        <text x="490" y="494" text-anchor="middle" font-size="15" font-weight="900" fill="#ffffff">서비스 API · 대시보드</text>
+        <text x="490" y="514" text-anchor="middle" font-size="11.8" font-weight="760" fill="#d8e1ef">언급 많은 지역 · 실시간 이슈 · 뉴스/컬럼</text>
+        <text x="490" y="530" text-anchor="middle" font-size="11.8" font-weight="760" fill="#d8e1ef">상세 타임라인 · 에이전트 근거 로그</text>
+
+        <line x1="333" y1="108" x2="350" y2="108" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="469" y1="108" x2="486" y2="108" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="633" y1="108" x2="650" y2="108" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="757" y1="108" x2="786" y2="108" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+
+        <line x1="333" y1="208" x2="350" y2="208" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="469" y1="208" x2="486" y2="208" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="633" y1="208" x2="650" y2="208" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="757" y1="208" x2="786" y2="208" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+
+        <line x1="333" y1="308" x2="350" y2="308" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="469" y1="308" x2="486" y2="308" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="633" y1="308" x2="650" y2="308" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="757" y1="308" x2="786" y2="308" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+
+        <line x1="333" y1="408" x2="350" y2="408" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="469" y1="408" x2="486" y2="408" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="633" y1="408" x2="650" y2="408" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+        <line x1="757" y1="408" x2="786" y2="408" stroke="#4f7fee" stroke-width="1.8" marker-end="url(#arrow)"></line>
+
+      </svg>
+    </section>
+
+    <section class="feature-summary" aria-label="주요 기능 요약">
+      <article class="feature">
+        <p>live pulse</p>
+        <strong>요즘 언급 많은 곳</strong>
+        <span>지역과 단지별 언급량 급등과 기대/우려 방향을 랭킹으로 보여준다.</span>
+      </article>
+      <article class="feature">
+        <p>issue feed</p>
+        <strong>실시간 이슈·뉴스·컬럼</strong>
+        <span>정책, 청약, 교통, 개발, 컬럼 링크를 지역 타임라인으로 묶는다.</span>
+      </article>
+      <article class="feature">
+        <p>history match</p>
+        <strong>과거 유사 상황 결과</strong>
+        <span>비슷한 반응 패턴 이후 실거래·전세·매물 흐름을 비교한다.</span>
+      </article>
+      <article class="feature">
+        <p>agent log</p>
+        <strong>에이전트 평가와 근거</strong>
+        <span>AI가 지역과 단지 평가와 근거 기반 판단을 남기고 기록한다.</span>
+      </article>
+    </section>
+
+    <footer class="footer">
+      <span>실제 사람들의 반응을 지표화하는 부동산 시장 관찰·분석 서비스</span>
+    </footer>
+  </main>
+</body>
+</html>

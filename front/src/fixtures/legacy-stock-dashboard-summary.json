@@ -1,0 +1,512 @@
+{
+  "productName": "너나사",
+  "title": "오늘 커뮤니티 브리핑",
+  "headline": "투자자들이 먼저 떠드는 종목을 읽습니다",
+  "description": "커뮤니티 반응이 커진 종목을 mock 데이터로 빠르게 훑어보고, 실제 API 계약 전까지 필요한 기획 질문을 남깁니다.",
+  "notice": "투자 자문이 아니라 커뮤니티 반응을 관찰하는 참고 화면입니다.",
+  "retailSentimentIndex": {
+    "label": "개미 심리 지수",
+    "value": 73,
+    "unit": "점",
+    "changePct": 6.4,
+    "changeLabel": "어제 대비",
+    "keywords": ["실적 경계", "반도체 과열", "저가 매수 언급"],
+    "status": "탐욕",
+    "segments": [
+      { "label": "공포", "start": 0, "end": 25, "color": "#dfe6ee" },
+      { "label": "경계", "start": 25, "end": 50, "color": "#edf1f5" },
+      { "label": "중립", "start": 50, "end": 65, "color": "#d7eadf" },
+      { "label": "탐욕", "start": 65, "end": 85, "color": "#72c79a" },
+      { "label": "과열", "start": 85, "end": 100, "color": "#f0a66e" }
+    ],
+    "history": [
+      { "label": "전일", "value": 67, "status": "탐욕" },
+      { "label": "1주 전", "value": 58, "status": "중립" },
+      { "label": "1개월 전", "value": 42, "status": "경계" }
+    ]
+  },
+  "activeMoodPeriod": "1D",
+  "moodPeriods": ["1D", "7D", "1M", "3M"],
+  "activeReturnPeriod": "1M",
+  "returnPeriods": ["1D", "7D", "1M", "3M", "6M"],
+  "marketIndicators": [
+    {
+      "label": "KOSPI",
+      "value": "2,742.18",
+      "changePct": 0.42,
+      "updatedLabel": "15분 전",
+      "trend": "up",
+      "pointString": "4,40 24,34 44,36 64,28 84,24 104,18 124,20"
+    },
+    {
+      "label": "KOSDAQ",
+      "value": "862.41",
+      "changePct": -0.18,
+      "updatedLabel": "15분 전",
+      "trend": "down",
+      "pointString": "4,22 24,24 44,20 64,26 84,30 104,32 124,36"
+    },
+    {
+      "label": "NASDAQ100F",
+      "value": "18,904.5",
+      "changePct": 0.71,
+      "updatedLabel": "지연",
+      "trend": "up",
+      "pointString": "4,36 24,32 44,31 64,27 84,20 104,18 124,14"
+    },
+    {
+      "label": "USD/KRW",
+      "value": "1,367.2",
+      "changePct": 0.21,
+      "updatedLabel": "mock",
+      "trend": "up",
+      "pointString": "4,30 24,29 44,34 64,28 84,24 104,22 124,18"
+    },
+    {
+      "label": "VIX",
+      "value": "18.42",
+      "changePct": 1.06,
+      "updatedLabel": "mock",
+      "trend": "up",
+      "pointString": "4,38 24,28 44,36 64,30 84,34 104,22 124,26"
+    },
+    {
+      "label": "S&P500F",
+      "value": "5,941.0",
+      "changePct": 0.28,
+      "updatedLabel": "지연",
+      "trend": "up",
+      "pointString": "4,34 24,31 44,29 64,26 84,23 104,19 124,17"
+    }
+  ],
+  "liveNews": [
+    {
+      "source": "Yahoo Finance",
+      "iconDomain": "finance.yahoo.com",
+      "tag": "macro",
+      "title": "미 물가 대기, 반도체 언급 증가",
+      "url": "https://finance.yahoo.com/topic/stock-market-news/",
+      "timeLabel": "방금",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "네이버페이 증권",
+      "iconDomain": "finance.naver.com",
+      "tag": "stock",
+      "title": "한미반도체 HBM 댓글 증가",
+      "url": "https://finance.naver.com/item/news.naver?code=042700",
+      "timeLabel": "7분 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "Investing.com",
+      "iconDomain": "www.investing.com",
+      "tag": "index",
+      "title": "나스닥 선물 변동성 확대",
+      "url": "https://www.investing.com/indices/nq-100-futures-news",
+      "timeLabel": "14분 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "Google Finance",
+      "iconDomain": "www.google.com",
+      "tag": "macro",
+      "title": "달러/원 상승 언급 확산",
+      "url": "https://www.google.com/finance/quote/USD-KRW",
+      "timeLabel": "21분 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "토스증권 커뮤니티",
+      "iconDomain": "www.tossinvest.com",
+      "tag": "community",
+      "title": "커뮤니티별 관심 종목 차이 확대",
+      "url": "https://www.tossinvest.com/community",
+      "timeLabel": "31분 전",
+      "dataStatus": "mock"
+    }
+  ],
+  "analystReports": [
+    {
+      "source": "네이버페이 증권 리서치",
+      "iconDomain": "finance.naver.com",
+      "tag": "research",
+      "title": "반도체 장비 업종, HBM 수요와 수주 모멘텀 점검",
+      "url": "https://finance.naver.com/research/",
+      "timeLabel": "1시간 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "한경 컨센서스",
+      "iconDomain": "consensus.hankyung.com",
+      "tag": "research",
+      "title": "AI 인프라 투자 확대가 국내 IT 밸류체인에 미치는 영향",
+      "url": "https://consensus.hankyung.com/",
+      "timeLabel": "2시간 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "증권사 데일리",
+      "iconDomain": "finance.yahoo.com",
+      "tag": "strategy",
+      "title": "시장 변동성 확대 구간, 수급·실적 확인 종목 중심 점검",
+      "url": "https://finance.yahoo.com/topic/stock-market-news/",
+      "timeLabel": "2시간 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "DART 공시 체크",
+      "iconDomain": "dart.fss.or.kr",
+      "tag": "disclosure",
+      "title": "주요 공시와 리서치 코멘트가 함께 언급된 종목",
+      "url": "https://dart.fss.or.kr/",
+      "timeLabel": "어제",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "증권사 데일리",
+      "iconDomain": "finance.yahoo.com",
+      "tag": "strategy",
+      "title": "외국인 수급 회복과 커뮤니티 관심이 겹친 대형주 점검",
+      "url": "https://finance.yahoo.com/topic/stock-market-news/",
+      "timeLabel": "3시간 전",
+      "dataStatus": "mock"
+    }
+  ],
+  "externalContent": {
+    "videos": [
+      {
+        "type": "youtube",
+        "typeLabel": "유튜브",
+        "source": "삼프로TV",
+        "iconDomain": "www.youtube.com",
+        "title": "“10년 기다렸더니 코스닥 지배했다… 대덕의 무서운 전략” | 정희권 연구개발특구진흥재단 이사장 [주말인터뷰]",
+        "url": "https://www.youtube.com/watch?v=X9YDHxlQbpI",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 18만",
+        "dataStatus": "rss"
+      },
+      {
+        "type": "youtube",
+        "typeLabel": "유튜브",
+        "source": "김작가TV",
+        "iconDomain": "www.youtube.com",
+        "title": "증시 위험 신호 마지막 경고입니다, 고점에 물리면 계좌 싹다 녹는다 (슈퍼개미 이정윤 세무사 3부)",
+        "url": "https://www.youtube.com/watch?v=jQmKJCYJPv8",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 12만",
+        "dataStatus": "rss"
+      },
+      {
+        "type": "youtube",
+        "typeLabel": "유튜브",
+        "source": "슈카월드",
+        "iconDomain": "www.youtube.com",
+        "title": "미국 주식 사면 관세 내야되나요?",
+        "url": "https://www.youtube.com/watch?v=iV1IOGlFHiw",
+        "publishedLabel": "3일 전",
+        "engagementLabel": "조회 9.8만",
+        "dataStatus": "rss"
+      },
+      {
+        "type": "youtube",
+        "typeLabel": "유튜브",
+        "source": "달란트투자",
+        "iconDomain": "www.youtube.com",
+        "title": "삼성전자 분위기 심상치 않다. 곧 무시무시한 일 벌어진다｜박진희 부장 풀버전",
+        "url": "https://www.youtube.com/watch?v=zsn4SjSZIK8",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 7.4만",
+        "dataStatus": "rss"
+      },
+      {
+        "type": "youtube",
+        "typeLabel": "유튜브",
+        "source": "미주은",
+        "iconDomain": "www.youtube.com",
+        "title": "나스닥 반등장에서 먼저 확인할 실적주와 금리 변수",
+        "url": "https://www.youtube.com/results?search_query=%EB%82%98%EC%8A%A4%EB%8B%A5+%EC%8B%A4%EC%A0%81%EC%A3%BC+%EA%B8%88%EB%A6%AC+%EB%AF%B8%EC%A3%BC%EC%9D%80",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "조회 5.9만",
+        "dataStatus": "rss"
+      }
+    ],
+    "links": [
+      {
+        "type": "blog",
+        "typeLabel": "블로그",
+        "source": "메르 블로그",
+        "iconDomain": "blog.naver.com",
+        "title": "우주 데이터센터의 새로운 경쟁자가 출현했나?",
+        "url": "https://blog.naver.com/ranto28/224287501270?fromRss=true&trackingCode=rss",
+        "publishedLabel": "1일 전",
+        "engagementLabel": "공감 312",
+        "dataStatus": "rss"
+      },
+      {
+        "type": "blog",
+        "typeLabel": "블로그",
+        "source": "메르 블로그",
+        "iconDomain": "blog.naver.com",
+        "title": "금요일 국장은 왜 무너졌을까?",
+        "url": "https://blog.naver.com/ranto28/224287048703?fromRss=true&trackingCode=rss",
+        "publishedLabel": "2일 전",
+        "engagementLabel": "공감 244",
+        "dataStatus": "rss"
+      },
+      {
+        "type": "community",
+        "typeLabel": "커뮤니티",
+        "source": "네이버 종목토론",
+        "iconDomain": "finance.naver.com",
+        "title": "한미반도체 종목토론 원문 목록",
+        "url": "https://finance.naver.com/item/board.naver?code=042700",
+        "publishedLabel": "방금 갱신",
+        "engagementLabel": "댓글 198",
+        "dataStatus": "external-link"
+      },
+      {
+        "type": "community",
+        "typeLabel": "커뮤니티",
+        "source": "네이버 종목토론",
+        "iconDomain": "finance.naver.com",
+        "title": "삼성전자 종목토론 원문 목록",
+        "url": "https://finance.naver.com/item/board.naver?code=005930",
+        "publishedLabel": "방금 갱신",
+        "engagementLabel": "댓글 156",
+        "dataStatus": "external-link"
+      },
+      {
+        "type": "community",
+        "typeLabel": "커뮤니티",
+        "source": "토스증권 커뮤니티",
+        "iconDomain": "www.tossinvest.com",
+        "title": "토스증권 커뮤니티 반응 원문",
+        "url": "https://www.tossinvest.com/community",
+        "publishedLabel": "1시간 전",
+        "engagementLabel": "댓글 121",
+        "dataStatus": "external-link"
+      }
+    ]
+  },
+  "macroMetrics": [
+    {
+      "category": "달러·금리",
+      "name": "미 10년 국채",
+      "value": "4.47%",
+      "changeLabel": "+0.22pp",
+      "trend": "up",
+      "pointString": "2,34 20,30 38,32 56,24 74,22 92,18 110,20"
+    },
+    {
+      "category": "달러·금리",
+      "name": "달러 인덱스",
+      "value": "99.27",
+      "changeLabel": "+0.39%",
+      "trend": "up",
+      "pointString": "2,34 20,36 38,30 56,28 74,24 92,20 110,18"
+    },
+    {
+      "category": "환율",
+      "name": "달러/원",
+      "value": "1,367.2",
+      "changeLabel": "+0.21%",
+      "trend": "up",
+      "pointString": "2,30 20,28 38,34 56,30 74,24 92,22 110,18"
+    },
+    {
+      "category": "원자재",
+      "name": "WTI",
+      "value": "101.15",
+      "changeLabel": "-0.84%",
+      "trend": "down",
+      "pointString": "2,20 20,18 38,24 56,22 74,30 92,34 110,32"
+    },
+    {
+      "category": "원자재",
+      "name": "금",
+      "value": "4,540.65",
+      "changeLabel": "-2.40%",
+      "trend": "down",
+      "pointString": "2,18 20,24 38,22 56,28 74,30 92,26 110,34"
+    },
+    {
+      "category": "글로벌 지수",
+      "name": "S&P500",
+      "value": "7,408.49",
+      "changeLabel": "-1.24%",
+      "trend": "down",
+      "pointString": "2,20 20,22 38,18 56,24 74,26 92,30 110,34"
+    },
+    {
+      "category": "심리",
+      "name": "Fear & Greed",
+      "value": "63",
+      "changeLabel": "탐욕",
+      "trend": "up",
+      "pointString": "2,36 20,30 38,26 56,28 74,22 92,18 110,14"
+    },
+    {
+      "category": "변동성",
+      "name": "VIX",
+      "value": "18.42",
+      "changeLabel": "+6.78%",
+      "trend": "up",
+      "pointString": "2,36 20,26 38,32 56,28 74,34 92,24 110,20"
+    }
+  ],
+  "risingStars": [
+    {
+      "symbol": "042700",
+      "name": "한미반도체",
+      "market": "KRX",
+      "previousMentionCount": 22,
+      "mentionCount": 41,
+      "mentionDeltaPct": 86.4,
+      "heatScore": 77,
+      "coreReactions": [
+        "HBM 장비 수요가 다시 붙는다는 기대가 늘었습니다.",
+        "외국인 수급 회복을 기다리는 관망 반응이 함께 보입니다.",
+        "단기 급등 부담을 경계하는 댓글도 섞여 있습니다."
+      ],
+      "reactionDrivers": [
+        { "type": "기사", "label": "HBM 장비 수요" },
+        { "type": "공시", "label": "수주 확인 대기" },
+        { "type": "커뮤니티", "label": "HBM·수급·급등 부담" },
+        { "type": "가격", "label": "+3.2% 변동" }
+      ],
+      "movementReasons": [
+        "HBM 수요 기사와 커뮤니티 키워드가 같은 방향으로 몰림.",
+        "수주 공시 확인 대기와 외국인 수급 회복 기대가 같이 언급됨.",
+        "가격 급등 뒤 부담 댓글이 붙어 반응량이 더 커짐."
+      ],
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "035420",
+      "name": "NAVER",
+      "market": "KRX",
+      "previousMentionCount": 28,
+      "mentionCount": 43,
+      "mentionDeltaPct": 53.6,
+      "heatScore": 64,
+      "coreReactions": [
+        "AI 서비스와 커머스 회복 기대가 새로 붙었습니다.",
+        "광고 매출 회복 속도는 아직 확인이 필요하다는 의견이 많습니다."
+      ],
+      "dataStatus": "mock"
+    },
+    {
+      "symbol": "TSLA",
+      "name": "Tesla",
+      "market": "NASDAQ",
+      "previousMentionCount": 54,
+      "mentionCount": 74,
+      "mentionDeltaPct": 37.0,
+      "heatScore": 68,
+      "coreReactions": [
+        "실적 발표 이후 가격 변동성 논쟁이 커졌습니다.",
+        "장기 보유와 단기 차익 실현 의견이 갈립니다."
+      ],
+      "dataStatus": "mock"
+    }
+  ],
+  "communityReturns": [
+    {
+      "community": "네이버 종토방",
+      "returnPct": 4.8,
+      "winRatePct": 58,
+      "sampleTrades": 24,
+      "dataStatus": "mock"
+    },
+    {
+      "community": "에펨코리아 주식",
+      "returnPct": 2.1,
+      "winRatePct": 54,
+      "sampleTrades": 18,
+      "dataStatus": "mock"
+    },
+    {
+      "community": "토스증권 커뮤니티",
+      "returnPct": 0.9,
+      "winRatePct": 51,
+      "sampleTrades": 12,
+      "dataStatus": "mock"
+    },
+    {
+      "community": "디시 주식",
+      "returnPct": -1.2,
+      "winRatePct": 43,
+      "sampleTrades": 15,
+      "dataStatus": "mock"
+    }
+  ],
+  "communityReturnSeries": [
+    {
+      "community": "네이버 종토방",
+      "returnPct": 4.8,
+      "color": "#2f6fed",
+      "pointString": "18,122 74,116 130,102 186,92 242,80 298,70",
+      "points": [
+        { "x": 18, "y": 122, "value": 0.4 },
+        { "x": 74, "y": 116, "value": 0.9 },
+        { "x": 130, "y": 102, "value": 2.1 },
+        { "x": 186, "y": 92, "value": 2.9 },
+        { "x": 242, "y": 80, "value": 3.8 },
+        { "x": 298, "y": 70, "value": 4.8 }
+      ],
+      "dataStatus": "mock"
+    },
+    {
+      "community": "에펨코리아 주식",
+      "returnPct": 2.1,
+      "color": "#397367",
+      "pointString": "18,124 74,118 130,112 186,104 242,98 298,94",
+      "points": [
+        { "x": 18, "y": 124, "value": 0.2 },
+        { "x": 74, "y": 118, "value": 0.7 },
+        { "x": 130, "y": 112, "value": 1.0 },
+        { "x": 186, "y": 104, "value": 1.4 },
+        { "x": 242, "y": 98, "value": 1.8 },
+        { "x": 298, "y": 94, "value": 2.1 }
+      ],
+      "dataStatus": "mock"
+    },
+    {
+      "community": "토스증권 커뮤니티",
+      "returnPct": 0.9,
+      "color": "#9a5c3e",
+      "pointString": "18,126 74,120 130,124 186,116 242,114 298,110",
+      "points": [
+        { "x": 18, "y": 126, "value": 0.1 },
+        { "x": 74, "y": 120, "value": 0.6 },
+        { "x": 130, "y": 124, "value": 0.2 },
+        { "x": 186, "y": 116, "value": 0.5 },
+        { "x": 242, "y": 114, "value": 0.7 },
+        { "x": 298, "y": 110, "value": 0.9 }
+      ],
+      "dataStatus": "mock"
+    },
+    {
+      "community": "디시 주식",
+      "returnPct": -1.2,
+      "color": "#c45d48",
+      "pointString": "18,124 74,132 130,128 186,136 242,142 298,146",
+      "points": [
+        { "x": 18, "y": 124, "value": 0.2 },
+        { "x": 74, "y": 132, "value": -0.4 },
+        { "x": 130, "y": 128, "value": -0.1 },
+        { "x": 186, "y": 136, "value": -0.6 },
+        { "x": 242, "y": 142, "value": -1.0 },
+        { "x": 298, "y": 146, "value": -1.2 }
+      ],
+      "dataStatus": "mock"
+    }
+  ],
+  "confirmationNeeded": [
+    "열기 지수 용어 확정",
+    "종목별 심리 비교의 원형 지표와 반응 막대 산식 확정",
+    "커뮤니티 수익률 비교 산식과 기간 확정",
+    "AI 3줄 요약 placeholder 문구 확정"
+  ]
+}

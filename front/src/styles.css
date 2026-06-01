@@ -10,7 +10,18 @@
   --surface: #ffffff;
   --surface-soft: #f8fafc;
   --nav: #1d1f23;
-  --brand: #4f7fee;
+  --series-stock: #4f7fee;
+  --series-realestate: #f08a2b;
+  --series-realestate-strong: #b45309;
+  --series-realestate-soft: #fff7ed;
+  --series-realestate-line: #fed7aa;
+  --brand: var(--series-realestate);
+  --brand-strong: var(--series-realestate-strong);
+  --brand-soft: var(--series-realestate-soft);
+  --brand-line: var(--series-realestate-line);
+  --brand-on-dark: #fdba74;
+  --brand-badge-bg: rgba(240, 138, 43, 0.22);
+  --brand-badge-text: #fed7aa;
   --positive-blue: #2f6fed;
   --negative-red: #e94d5f;
   --neutral-slate: #dce5ef;
@@ -126,7 +137,7 @@ a {
 }
 
 .brand-lockup h1 span {
-  color: #72a0ff;
+  color: var(--brand-on-dark);
 }
 
 .brand-lockup strong,
@@ -136,8 +147,8 @@ a {
   min-height: 22px;
   padding: 0 8px;
   border-radius: 6px;
-  background: rgba(79, 127, 238, 0.22);
-  color: #aecaee;
+  background: var(--brand-badge-bg);
+  color: var(--brand-badge-text);
   font-size: 11px;
   font-weight: 760;
 }
@@ -171,7 +182,7 @@ a {
 }
 
 .main-nav a.router-link-active {
-  border-color: #72a0ff;
+  border-color: var(--brand-on-dark);
   color: #ffffff;
 }
 
@@ -237,8 +248,8 @@ a {
 
 .main-nav .nav-submenu a:hover,
 .main-nav .nav-submenu a.active {
-  background: #eef5ff;
-  color: #2f6fed;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
 }
 
 .topbar-status {
@@ -257,7 +268,7 @@ a {
   padding: 0 14px;
   border: 0;
   border-radius: 8px;
-  background: #2f6fed;
+  background: var(--brand);
   color: #ffffff;
   font-size: 12px;
   font-weight: 820;

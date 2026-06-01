@@ -1,5 +1,7 @@
 # Chart Candles API Contract
 
+> Legacy stock reference: 부동산 market time series는 실거래/전세/매물 흐름으로 별도 정의합니다.
+
 ## Scope
 
 This slice answers the stock-detail frontend request for a real price chart source. `GET /api/quotes` remains a quote snapshot API and must not be used to synthesize candles.

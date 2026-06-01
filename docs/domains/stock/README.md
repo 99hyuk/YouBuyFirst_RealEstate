@@ -1,5 +1,7 @@
 # stock
 
+> Legacy stock reference: 이 부동산 전용 프로젝트에서는 새 기능의 정본으로 사용하지 않습니다. 지역/단지 식별은 `docs/domains/realestate/`가 소유합니다.
+
 ## Alias Registry와 후보 큐
 
 종목 언급 집계는 raw text를 바로 세지 않고 서비스 내부 `instrument_id`를 기준으로 확정된 mention을 사용합니다. `market + symbol`은 외부 입력 호환성과 표시/조회 보조 key로 유지합니다.

@@ -1,14 +1,15 @@
 # Front Wireframe Handoff
 
-Last update: 2026-05-20 KST
+Last update: 2026-06-01 KST
 
 이 파일은 새 front 세션이 처음 보는 현재 기준입니다. 과거 디자인 대화와 긴 로그는 archive에 있고, 시작 루틴으로 읽지 않습니다.
 
 ## 현재 작업 기준
 
-- 기준 브랜치는 최신 `main`입니다.
-- 실제 화면 작업은 별도 front worktree/branch에서 진행합니다.
-- 현재 제품 톤은 대시보드(`/dashboard`) 기준입니다.
+- 기준 브랜치는 `codex/realestate-bootstrap`입니다.
+- 실제 화면 작업은 별도 front branch에서 진행합니다.
+- 이 프로젝트는 부동산 서비스만 담당합니다.
+- 첫 화면은 랜딩 페이지가 아니라 실제 부동산 대시보드입니다.
 - 디자인 시스템은 `docs/layers/ui/DESIGN_SYSTEM.md`를 따릅니다.
 - 화면 구조가 바뀌면 `docs/layers/ui/screens/`의 해당 Screen Brief를 최신 기준으로 갱신합니다.
 
@@ -20,16 +21,23 @@ Last update: 2026-05-20 KST
 4. 카드 남발 대신 헤더, 선, 간격, 배경 톤으로 영역을 나눕니다.
 5. 긴 설명문은 도형, 막대, 선 그래프, 칩, 표, timeline으로 치환합니다.
 6. 탭 첫 화면은 핵심 요약 허브로 만들고, 상세 정보는 하위 route로 분리합니다.
-7. 커뮤니티 반응과 가격/뉴스/공시 변화가 함께 읽히게 합니다.
-8. 투자 자문형 표현은 피하고, 관찰 데이터 라벨로만 다룹니다.
+7. 지역/단지 반응, 뉴스/컬럼, 실거래/전세/매물, 정책 이벤트가 함께 읽히게 합니다.
+8. 행동 지시형 표현은 피하고, 관찰 데이터 라벨로만 다룹니다.
 
 ## 최근 결정
 
-- 대시보드 검색창 왼쪽에는 `개미 심리 지수`를 둡니다.
-- 넓은 화면에서는 왼쪽 보조 카드, 반폭 QHD 같은 중간 폭에서는 검색창 위의 얇은 정보 바로 전환합니다.
-- 종목 상세의 상단 팩트폭격 배너는 커뮤니티 요약이 아니라 시황/기술 지표/재무/뉴스 기반의 짧은 한줄평입니다.
-- 뉴스룸은 대시보드의 네 개 리스트 패턴을 확장해 뉴스, 리포트, 영상, 블로그/커뮤니티를 따로 볼 수 있게 합니다.
-- 인간 지표는 커뮤니티 비교와 에이전트 판단 기록을 함께 다루는 방향입니다.
+- `stock`, `market`, `simulation` 화면은 active 기준이 아니라 legacy reference입니다.
+- 신규 active 화면은 `realestate-dashboard`와 `realestate-target-detail`입니다.
+- 너나사 주식과 너나사 부동산은 같은 시리즈입니다. UI shell, nav, 검색, dashboard grid, rail, card 패턴은 최대한 동일하게 유지하고, 부동산은 대표 accent만 warm orange 계열로 둡니다.
+- 부동산 화면은 dashboard 스타일을 유지하되, 핵심 정보는 지역/단지, 쟁점 비율, market fact timeline, evidence log입니다.
+- 화면 문구는 "관찰", "분석", "반응 지표", "표본 신뢰도", "근거 로그", "데이터 지연"을 기본으로 씁니다.
+
+## 색상 적용 기준
+
+- `--brand`는 부동산 active 화면에서 warm orange 계열로 둡니다.
+- 기존 blue는 너나사 주식 accent 또는 우려/하락/정보 의미색으로 남길 수 있습니다.
+- 의미색을 브랜드색과 섞지 않습니다. warning/error, 기대/우려, market up/down은 기존 의미를 우선합니다.
+- 첫 front 변경은 전체 리디자인이 아니라 token 교체와 주요 brand usage 정리로 제한합니다.
 
 ## 시각 기록
 
@@ -54,5 +62,5 @@ git diff --check
 과거 근거가 꼭 필요할 때만 아래처럼 좁혀 봅니다.
 
 ```powershell
-rg -n -m 20 "검색어" docs\archive\ui\wireframe\WIREFRAME_HANDOFF_2026-05-17.md
+rg -n -m 20 "검색어" docs\archive\ui
 ```

@@ -64,17 +64,17 @@ describe('front dashboard shell', () => {
     expect(wrapper.get('[data-testid="nav-newsroom"]').text()).toContain('뉴스룸');
     expect(wrapper.findAll('.nav-submenu a')).toHaveLength(4);
     expect(wrapper.findAll('.nav-submenu a.active')).toHaveLength(0);
-    expect(wrapper.get('[data-testid="nav-stock"]').text()).toContain('종목');
-    expect(wrapper.get('[data-testid="nav-communities"]').text()).toContain('인간 지표');
+    expect(wrapper.get('[data-testid="nav-stock"]').text()).toContain('지역/단지');
+    expect(wrapper.get('[data-testid="nav-communities"]').text()).toContain('반응 지표');
     expect(wrapper.get('[data-testid="nav-indicators"]').text()).toContain('주요 지표');
     expect(wrapper.find('[data-testid="nav-agents"]').exists()).toBe(false);
-    expect(wrapper.get('[data-testid="nav-portfolio"]').text()).toContain('내 포트폴리오');
+    expect(wrapper.get('[data-testid="nav-portfolio"]').text()).toContain('관심 지역');
     expect(wrapper.find('.topbar .live-ticker').exists()).toBe(true);
-    expect(wrapper.text()).toContain('개미 심리 지수');
-    expect(wrapper.text()).toContain('73점');
-    expect(wrapper.text()).toContain('어제 대비 +6.4%');
-    expect(wrapper.text()).toContain('실적 경계');
-    expect(wrapper.text()).toContain('커뮤니티 지표 비교');
+    expect(wrapper.text()).toContain('지역 반응 지수');
+    expect(wrapper.text()).toContain('68점');
+    expect(wrapper.text()).toContain('어제 대비 +5.7%');
+    expect(wrapper.text()).toContain('전세 우려');
+    expect(wrapper.text()).toContain('유사 과거 흐름 비교');
     expect(wrapper.find('.edge-rail').exists()).toBe(true);
     expect(wrapper.find('.edge-panel').exists()).toBe(true);
     await wrapper.find('.rail-expand').trigger('click');
@@ -159,8 +159,8 @@ describe('front dashboard shell', () => {
       expect(card.findAll('.newsroom-row')).toHaveLength(8);
     }
     expect(newsroomAll.text()).toContain('실시간 뉴스');
-    expect(newsroomAll.text()).toContain('애널리스트 리포트');
-    expect(newsroomAll.text()).toContain('증권 영상 새 글');
+    expect(newsroomAll.text()).toContain('정책·통계 리포트');
+    expect(newsroomAll.text()).toContain('부동산 영상 새 글');
     expect(newsroomAll.text()).toContain('블로그와 커뮤니티 링크');
     expect(newsroomAll.text()).toContain('뉴스만 몰아보기');
     expect(newsroomAll.text()).toContain('원문 링크만 몰아보기');
@@ -223,7 +223,7 @@ describe('front dashboard shell', () => {
     expect(styles).toContain('.decision-log-list');
     expect(styles).toContain('.portfolio-table');
     expect(styles).toContain('.account-sync-grid');
-    expect(wrapper.text()).toContain('실제 거래 지시나 개인화 투자 권유를 제공하지 않습니다');
+    expect(wrapper.text()).toContain('실제 매수·매도 지시나 개인화 부동산 자문을 제공하지 않습니다');
     expect(wrapper.text()).not.toContain('매수 추천');
     expect(wrapper.text()).not.toContain('매도 추천');
     expect(wrapper.text()).not.toContain('수익 보장');

@@ -1,67 +1,63 @@
 # 현재 작업 인수인계
 
-마지막 갱신: 2026-05-28
+마지막 갱신: 2026-06-01
 
 새 채팅이 방향을 잡는 짧은 요약입니다. 전문 읽기를 기본값으로 두지 말고 필요한 섹션만 확인합니다.
 
 ## 현재 상태
 
-- Repository: `99hyuk/YouBuyFirst`
-- Default branch: `main`
-- 루트 checkout: `C:\agents\YouBuyFirst`는 main/조율용, 병렬 작업은 `.worktrees/<task>`에서 진행합니다.
-- 최근 ops 정리: 문서 트리 구조, 도메인/layer `AGENTS.md`, 루트 QA 산출물 정리 기준이 `main`에 반영되어 있습니다.
+- Repository: 새 부동산 전용 복제본
+- Workspace: `C:\agents\YouBuyFirst_RealEstate`
+- Branch: `codex/realestate-bootstrap`
+- Remote: 아직 없음. 원본 `C:\agents\YouBuyFirst`로 push하지 않도록 복제 직후 `origin`을 제거했습니다.
 - 기반: Spring Boot backend, Python pipeline, MySQL, Docker Compose, Vue 3 front mock shell
 
 ## 구현 스냅샷
 
-- MVP는 커뮤니티 글 수집, 종목 언급 인식, 반응 방향 분석, backend 저장까지 연결된 ingestion 기반입니다.
-- backend에는 ingestion/admin API, crawl run/posts/stock metrics 조회, `CrawlTarget` queue API가 있습니다.
-- pipeline에는 source policy gate, skip run 기록, crawl backoff, AI mention resolver/mock provider 흐름이 있습니다.
-- front는 `front/`의 Vue 3 + Vite + TypeScript mock 와이어프레임 shell입니다. 대시보드와 디자인/구현 정본은 현재 `front/` 코드와 짧은 `docs/layers/ui/WIREFRAME_HANDOFF.md`입니다. 과거 세부 로그는 `docs/archive/ui/wireframe/`에서 필요할 때만 검색합니다.
-- 화면별 기획, route, 하위 상세 화면, API 후보는 `docs/layers/ui/screens/`를 봅니다.
-- 최종 제품은 전체 랭킹보다 관심종목 브리핑, 종목별 기사/공시/커뮤니티/가격 이벤트 타임라인, 신호 신뢰도/주의 배지를 매일 쓰는 투자자 루프로 강화합니다.
-- 기획/개발은 완제품 사용 루프를 기준으로 세로 slice를 완성하는 방식으로 갑니다. mock 화면을 먼저 세우되, 프론트만 오래 다듬지 않고 화면에서 필요한 API/데이터 계약을 backend/pipeline 작업으로 바로 넘깁니다.
+- 이 repo는 이제 주식이 아니라 부동산 서비스만 담당합니다.
+- root `AGENTS.md`는 부동산 전용 라우터입니다.
+- 제품 방향 정본은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`와 `docs/product/FINAL_PRODUCT_PLAN.md`입니다.
+- 핵심 구현 기준은 `docs/product/real-estate-one-page-plan.html`과 `docs/product/CORE_IMPLEMENTATION_SCOPE.md`입니다.
+- `docs/domains/realestate/`가 새 주 도메인입니다.
+- `stock`, `market`, `simulation`은 기존 주식 프로젝트에서 넘어온 참고/비활성 영역입니다. 첫 정렬 단계에서는 삭제하지 않습니다.
+- front는 아직 복제된 주식 mock 화면을 많이 포함합니다. 새 화면 기준은 realestate dashboard와 target detail Screen Brief로 재정렬해야 합니다.
 
 ## 최근 결정
 
-- 새 채팅은 루트 `AGENTS.md`와 이 문서를 읽고, 작업 영역이 정해지면 해당 `docs/domains/.../AGENTS.md` 또는 `docs/layers/.../AGENTS.md`만 추가로 봅니다.
-- 문서 구조는 `product`, `current`, `domains`, `layers`, `governance`, `archive`로 봅니다. 작업 영역은 domain/layer 기준이고, 기존 track 값은 PR/라벨/Notion 호환용 alias로만 봅니다.
-- PR 제목은 `[작업영역][타입] 한국어 명사형 요약`으로 쓰고, GitHub 라벨과 Notion `트랙` 속성은 기존 구조를 유지하되 값은 작업 영역 기준으로 분류합니다. 예: `[community][feat] 공개 게시글 수집 대상 큐 추가`, `track:community`, Notion `트랙=community`.
-- handoff에는 최신 기준과 상세 문서 위치만 남깁니다. 긴 근거, 과거 설계, 검증 로그는 도메인 문서나 archive로 넘깁니다.
-- 채팅 오류는 제품 코드보다 대화 컨텍스트/도구 출력 과다를 먼저 의심합니다. 스킬 문서, gstack, Notion fetch, 세션 로그 검색은 시작 루틴이 아닙니다.
-- 브랜치는 실제 PR 후보가 있을 때 열고, merge/close/대체 후에는 worktree와 함께 정리합니다. 열린 브랜치는 active, review, blocked, stale, close-candidate 중 하나로 설명할 수 있어야 합니다.
-- 사용자 보고는 파일명/폴더명 나열보다 무엇이 해결됐고 이제 무엇을 판단하면 되는지 먼저 말합니다.
-- 제품 핵심은 `커뮤니티 반응`과 `개미 심리 지수`입니다. 관심종목은 이 지표를 매일 쓰게 만드는 필터/개인화 레이어입니다.
-- 커뮤니티 제품 기획은 source별 전용 에이전트가 아니라 `종합 커뮤니티 반응`, `개미 심리 지수`, 통합 지표 기반 모의 성과 검증을 중심으로 둡니다. source별 분석은 내부 보정/coverage/source-slice 검증에 사용하고, 공개 화면에는 `반응 일관성`, `소스 편중 주의`, `표본 신뢰도`로 압축합니다. 세부 기준은 `docs/product/COMMUNITY_SIGNAL_STRATEGY.md`를 봅니다.
-- RAG와 벡터DB는 종목 식별이나 수익률 계산이 아니라 과거 유사 window 검색, issueMix 설명, 백테스트 결과 해석에 붙이는 후순위 분석 레이어입니다.
-- FMKOREA는 통합 지표 입력에 포함하되 로컬 개인 지표용 source로만 다루며, 수집이 허용된 로컬 환경에서도 HTTP 목록 요청을 먼저 보내지 않고 브라우저 렌더링으로만 접근합니다.
-- 제품명은 붙여 쓴 `너나사`를 기본 브랜드명으로 씁니다. 풀어서 설명할 때만 `너나 사` 말장난을 제한적으로 씁니다.
-- 부동산은 주식 MVP에 섞지 않고 후순위 별도 버티컬로만 검토합니다.
-- market MVP는 quote/chart를 `yfinance` + FinanceDataReader 조합으로 다루고, 국내 수급은 quote와 분리합니다. 화면에는 지연, provider, `asOf`, `stale`, 참고용 표시가 필요합니다. 상세 기준은 `docs/domains/market/README.md`, `docs/domains/market/CHART_CANDLES.md`, `docs/domains/market/INVESTOR_FLOWS.md`를 봅니다.
-- 종목 상세 상단의 강한 한줄평은 커뮤니티 요약이 아니라 시황/기술지표/재무 기반 `종목 상태 팩트폭격 헤드라인`입니다. 생성 기준은 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`, UI 표현은 `docs/layers/ui/screens/stock-detail/banner.md`를 봅니다.
-- 디자인과 프론트 구현은 기본적으로 Codex가 `front/` 코드에서 함께 진행합니다. Figma AI/Stitch는 사용자가 명시적으로 요청할 때만 참고 시안 탐색용으로 씁니다.
-- 사용자 화면에서 `추천`, `매수`, `매도`, `수익 보장`, `진입`, `시그널 확정`처럼 투자 행동을 지시하는 표현은 서비스 판단이나 CTA로 쓰지 않습니다.
-- 소스 상태는 `enabled`, `public-demo-only`, `local-research-only`, `disabled`로 나누며 새 소스는 기본 `disabled`입니다. 공개 배포 전에는 원문 재게시, 작성자 추적, 닉네임 랭킹을 하지 않습니다.
-- `simulation`은 가상 주문, 체결, 정산, 원장, 포지션의 트랜잭션 정합성을 보여줍니다. `agent`는 통계 윈도우 기반 판단을 남기고, 체결/원장 수정은 `simulation` contract를 통합니다.
-- 최종 기획상 생길 수 있는 기술/제품/운영 이슈는 `docs/governance/TECHNICAL_RISK_REGISTER.md`에 누적합니다. 실제 장애 복구 기록은 `docs/governance/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
+- 부동산은 후순위 버티컬이 아니라 이 프로젝트의 주 도메인입니다.
+- 기존 YouBuyFirst의 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 근거 로그 구조는 재사용합니다.
+- 주식의 종목/시세/모의투자 모델을 부동산에 억지로 일반화하지 않습니다.
+- 주식과 기술 흐름은 거의 같지만, 부동산은 대상이 훨씬 쪼개져 있고 지역 단위 상승, 정책, 교통, 공급, 대출, 청약, 학군, 재건축 이벤트에 민감합니다.
+- 따라서 region/complex/living_area/policy_area target graph와 policy timeline은 1차 구현 범위입니다.
+- 사용자는 요즘 언급 많은 지역/단지, 주요 쟁점, 시장 사실 타임라인, 유사 과거 상황, 에이전트 근거 로그를 봅니다.
+- 특정 매수, 매도, 청약, 대출 행동을 권유하거나 가격 상승을 단정하는 표현은 쓰지 않습니다.
+- 확인되지 않은 데이터는 `unknown`, `null`, `확인 필요`, `mock`으로 구분합니다.
+- 실거래/전세/매물/정책 데이터는 provider, `asOf`, `stale`, 지연 여부를 함께 표시합니다.
+- 공공데이터포털에는 국토교통부 아파트 매매/전월세 실거래가 API가 있고 업데이트 주기가 `실시간`으로 표시됩니다. 다만 제품에서는 매일 확정 공시처럼 표현하지 않고 신고/공개/수집 시각을 분리합니다.
+- 커뮤니티 별칭 DB는 크롤링의 1차 필수 요소입니다. 공식명, 줄임말, 커뮤니티 별칭, 오타, 생활권 표현을 후보로 받되 `approved` 전에는 정식 지표에 섞지 않습니다.
+- 부동산 source는 30개 내외 후보를 `crawl_sources` registry에 먼저 넣고, 네이버 카페/다음 카페는 비로그인 공개 목록 접근이 가능한 경우만 검토합니다.
+- 공개 HTTP 수집을 우선하고, CAPTCHA 우회, 로그인 세션 크롤링, 프록시 회전, fingerprint 위장은 하지 않습니다.
+- 원문은 제목, 일부 snippet, URL, 작성자 해시, 작성 시각, 원문 해시 정도로 제한 저장합니다.
 
 ## 바로 가기
 
 - 작업 영역: `docs/layers/ops/WORK_AREAS.md`
+- 패키지 기준: `docs/layers/ops/DOMAIN_PACKAGE_GUIDE.md`
+- 제품 방향: `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`
+- 최종 기획: `docs/product/FINAL_PRODUCT_PLAN.md`
+- 핵심 구현 범위: `docs/product/CORE_IMPLEMENTATION_SCOPE.md`
+- 한페이지 기획안: `docs/product/real-estate-one-page-plan.html`
+- 작업 지도: `docs/current/TASKS.md`
+- realestate 도메인: `docs/domains/realestate/README.md`
+- 데이터 계약: `docs/domains/realestate/DATA_CONTRACT.md`
 - 문서/컨텍스트 예산: `docs/layers/ops/DOCUMENTATION_GUIDE.md`
-- 기술 리스크 목록: `docs/governance/TECHNICAL_RISK_REGISTER.md`
-- 제품/기술 고민 메모: `docs/product/PRODUCT_DECISION_NOTES.md`
 - 작업 방식: `docs/layers/ops/WORKFLOW.md`
 - Git/PR 규칙: `docs/layers/ops/GIT_CONVENTION.md`
-- 라벨: `docs/layers/ops/LABEL_GUIDE.md`
-- Notion 정본 위치: `docs/layers/ops/DOCUMENTATION_GUIDE.md`, `docs/layers/ops/ENGINEERING_EVIDENCE_GUIDE.md`
 
 ## 다음 작업 후보
 
-- 전체 업무 지도: `docs/current/TASKS.md`는 MVP 후보 목록이 아니라 완제품 기준 세로 slice와 영역별 백로그로 유지합니다.
-- UI/API: dashboard, stocks, stock detail, newsroom, human indicator, portfolio 순서로 Screen Brief와 필수 API 후보를 맞춥니다.
-- stock/market: 국내/미국 종목 master, provider symbol, quote/chart/investor-flow 표시 계약을 안정화합니다.
-- community/indicator: source registry, 인기글/개념글 확산 레이어, 신뢰 블로그 whitelist, 개미 심리 지수 v1 산식을 정리합니다.
-- simulation/agent: 모의 계좌/주문/체결/원장 트랜잭션과 agent 판단 key/idempotency를 설계합니다.
-- backend/pipeline: 화면 계약을 실제 데이터로 채우기 위해 `CrawlTarget` 연동, readiness wait, Swagger 예시, validation 오류 응답을 정리합니다.
-- ops: 열린 브랜치/worktree와 오래된 문서 표현을 주기적으로 정리합니다.
+- 공공데이터 API 응답 필드와 실제 갱신 지연 기준 확인
+- 부동산 source registry 후보 30개 내외 정리
+- 지역/단지 alias seed와 검수 기준 정리
+- `pipeline/src/youbuyfirst_pipeline/realestate/` matcher 초안 설계
+- 기존 stock/market/simulation 문서와 코드를 legacy reference로 표시하고 후속 삭제 후보 목록 작성

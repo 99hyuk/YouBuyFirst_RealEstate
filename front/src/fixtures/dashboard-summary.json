@@ -1,28 +1,28 @@
 {
   "productName": "너나사",
-  "title": "오늘 커뮤니티 브리핑",
-  "headline": "투자자들이 먼저 떠드는 종목을 읽습니다",
-  "description": "커뮤니티 반응이 커진 종목을 mock 데이터로 빠르게 훑어보고, 실제 API 계약 전까지 필요한 기획 질문을 남깁니다.",
-  "notice": "투자 자문이 아니라 커뮤니티 반응을 관찰하는 참고 화면입니다.",
+  "title": "오늘 부동산 반응 브리핑",
+  "headline": "사람들이 먼저 말하는 지역과 단지를 읽습니다",
+  "description": "커뮤니티 반응이 커진 지역, 단지, 정책 키워드를 mock 데이터로 훑어보고 공공데이터와 크롤링 계약 전에 필요한 기획 질문을 남깁니다.",
+  "notice": "매수 자문이 아니라 지역과 단지 반응을 관찰하는 참고 화면입니다.",
   "retailSentimentIndex": {
-    "label": "개미 심리 지수",
-    "value": 73,
+    "label": "지역 반응 지수",
+    "value": 68,
     "unit": "점",
-    "changePct": 6.4,
+    "changePct": 5.7,
     "changeLabel": "어제 대비",
-    "keywords": ["실적 경계", "반도체 과열", "저가 매수 언급"],
-    "status": "탐욕",
+    "keywords": ["전세 우려", "교통 호재", "정책 관망"],
+    "status": "관심 상승",
     "segments": [
-      { "label": "공포", "start": 0, "end": 25, "color": "#dfe6ee" },
-      { "label": "경계", "start": 25, "end": 50, "color": "#edf1f5" },
-      { "label": "중립", "start": 50, "end": 65, "color": "#d7eadf" },
-      { "label": "탐욕", "start": 65, "end": 85, "color": "#72c79a" },
-      { "label": "과열", "start": 85, "end": 100, "color": "#f0a66e" }
+      { "label": "냉각", "start": 0, "end": 25, "color": "#dfe6ee" },
+      { "label": "관망", "start": 25, "end": 50, "color": "#edf1f5" },
+      { "label": "균형", "start": 50, "end": 65, "color": "#d7eadf" },
+      { "label": "관심", "start": 65, "end": 85, "color": "#f0a66e" },
+      { "label": "과열", "start": 85, "end": 100, "color": "#d9824b" }
     ],
     "history": [
-      { "label": "전일", "value": 67, "status": "탐욕" },
-      { "label": "1주 전", "value": 58, "status": "중립" },
-      { "label": "1개월 전", "value": 42, "status": "경계" }
+      { "label": "전일", "value": 62, "status": "균형" },
+      { "label": "1주 전", "value": 55, "status": "관망" },
+      { "label": "1개월 전", "value": 47, "status": "관망" }
     ]
   },
   "activeMoodPeriod": "1D",
@@ -31,144 +31,144 @@
   "returnPeriods": ["1D", "7D", "1M", "3M", "6M"],
   "marketIndicators": [
     {
-      "label": "KOSPI",
-      "value": "2,742.18",
-      "changePct": 0.42,
-      "updatedLabel": "15분 전",
+      "label": "서울 아파트",
+      "value": "+0.07%",
+      "changePct": 0.07,
+      "updatedLabel": "주간 mock",
       "trend": "up",
-      "pointString": "4,40 24,34 44,36 64,28 84,24 104,18 124,20"
+      "pointString": "4,38 24,36 44,34 64,29 84,25 104,20 124,18"
     },
     {
-      "label": "KOSDAQ",
-      "value": "862.41",
-      "changePct": -0.18,
-      "updatedLabel": "15분 전",
+      "label": "수도권 전세",
+      "value": "+0.12%",
+      "changePct": 0.12,
+      "updatedLabel": "주간 mock",
+      "trend": "up",
+      "pointString": "4,40 24,37 44,32 64,28 84,26 104,22 124,18"
+    },
+    {
+      "label": "매물수",
+      "value": "71,420",
+      "changePct": -1.8,
+      "updatedLabel": "portal mock",
       "trend": "down",
-      "pointString": "4,22 24,24 44,20 64,26 84,30 104,32 124,36"
+      "pointString": "4,18 24,22 44,24 64,27 84,30 104,34 124,38"
     },
     {
-      "label": "NASDAQ100F",
-      "value": "18,904.5",
-      "changePct": 0.71,
-      "updatedLabel": "지연",
+      "label": "대출 규제",
+      "value": "관망",
+      "changePct": 0.4,
+      "updatedLabel": "정책 mock",
       "trend": "up",
-      "pointString": "4,36 24,32 44,31 64,27 84,20 104,18 124,14"
+      "pointString": "4,34 24,34 44,31 64,29 84,25 104,24 124,22"
     },
     {
-      "label": "USD/KRW",
-      "value": "1,367.2",
-      "changePct": 0.21,
-      "updatedLabel": "mock",
+      "label": "청약 경쟁",
+      "value": "18.4:1",
+      "changePct": 2.6,
+      "updatedLabel": "월간 mock",
       "trend": "up",
-      "pointString": "4,30 24,29 44,34 64,28 84,24 104,22 124,18"
+      "pointString": "4,36 24,32 44,30 64,27 84,22 104,18 124,16"
     },
     {
-      "label": "VIX",
-      "value": "18.42",
-      "changePct": 1.06,
-      "updatedLabel": "mock",
+      "label": "교통 호재",
+      "value": "GTX",
+      "changePct": 4.1,
+      "updatedLabel": "언급 mock",
       "trend": "up",
-      "pointString": "4,38 24,28 44,36 64,30 84,34 104,22 124,26"
-    },
-    {
-      "label": "S&P500F",
-      "value": "5,941.0",
-      "changePct": 0.28,
-      "updatedLabel": "지연",
-      "trend": "up",
-      "pointString": "4,34 24,31 44,29 64,26 84,23 104,19 124,17"
+      "pointString": "4,42 24,38 44,35 64,30 84,24 104,19 124,14"
     }
   ],
   "liveNews": [
     {
-      "source": "Yahoo Finance",
-      "iconDomain": "finance.yahoo.com",
+      "source": "국토교통부",
+      "iconDomain": "www.molit.go.kr",
       "tag": "macro",
-      "title": "미 물가 대기, 반도체 언급 증가",
-      "url": "https://finance.yahoo.com/topic/stock-market-news/",
+      "title": "실거래 공개 지연 구간, 신고 기준일 확인 필요",
+      "url": "https://rt.molit.go.kr/",
       "timeLabel": "방금",
       "dataStatus": "mock"
     },
     {
-      "source": "네이버페이 증권",
-      "iconDomain": "finance.naver.com",
-      "tag": "stock",
-      "title": "한미반도체 HBM 댓글 증가",
-      "url": "https://finance.naver.com/item/news.naver?code=042700",
-      "timeLabel": "7분 전",
-      "dataStatus": "mock"
-    },
-    {
-      "source": "Investing.com",
-      "iconDomain": "www.investing.com",
+      "source": "한국부동산원",
+      "iconDomain": "www.reb.or.kr",
       "tag": "index",
-      "title": "나스닥 선물 변동성 확대",
-      "url": "https://www.investing.com/indices/nq-100-futures-news",
-      "timeLabel": "14분 전",
+      "title": "주간 가격지수와 커뮤니티 기대감이 엇갈린 지역",
+      "url": "https://www.reb.or.kr/",
+      "timeLabel": "9분 전",
       "dataStatus": "mock"
     },
     {
-      "source": "Google Finance",
-      "iconDomain": "www.google.com",
-      "tag": "macro",
-      "title": "달러/원 상승 언급 확산",
-      "url": "https://www.google.com/finance/quote/USD-KRW",
-      "timeLabel": "21분 전",
-      "dataStatus": "mock"
-    },
-    {
-      "source": "토스증권 커뮤니티",
-      "iconDomain": "www.tossinvest.com",
+      "source": "네이버 부동산",
+      "iconDomain": "new.land.naver.com",
       "tag": "community",
-      "title": "커뮤니티별 관심 종목 차이 확대",
-      "url": "https://www.tossinvest.com/community",
-      "timeLabel": "31분 전",
+      "title": "전세 매물 감소 언급이 늘어난 생활권",
+      "url": "https://new.land.naver.com/",
+      "timeLabel": "18분 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "정책 브리핑",
+      "iconDomain": "www.korea.kr",
+      "tag": "macro",
+      "title": "대출·청약 제도 변화 키워드가 지역 토론에 확산",
+      "url": "https://www.korea.kr/",
+      "timeLabel": "27분 전",
+      "dataStatus": "mock"
+    },
+    {
+      "source": "부동산 커뮤니티",
+      "iconDomain": "cafe.naver.com",
+      "tag": "community",
+      "title": "교통 호재 별칭으로 불리는 단지 언급 증가",
+      "url": "https://section.cafe.naver.com/",
+      "timeLabel": "35분 전",
       "dataStatus": "mock"
     }
   ],
   "analystReports": [
     {
-      "source": "네이버페이 증권 리서치",
-      "iconDomain": "finance.naver.com",
+      "source": "한국부동산원 통계",
+      "iconDomain": "www.reb.or.kr",
       "tag": "research",
-      "title": "반도체 장비 업종, HBM 수요와 수주 모멘텀 점검",
-      "url": "https://finance.naver.com/research/",
+      "title": "매매·전세 지수와 커뮤니티 반응의 괴리 구간 점검",
+      "url": "https://www.reb.or.kr/",
       "timeLabel": "1시간 전",
       "dataStatus": "mock"
     },
     {
-      "source": "한경 컨센서스",
-      "iconDomain": "consensus.hankyung.com",
+      "source": "공공데이터포털",
+      "iconDomain": "www.data.go.kr",
       "tag": "research",
-      "title": "AI 인프라 투자 확대가 국내 IT 밸류체인에 미치는 영향",
-      "url": "https://consensus.hankyung.com/",
+      "title": "아파트 실거래·전월세 신고 데이터 수집 계약 후보",
+      "url": "https://www.data.go.kr/",
       "timeLabel": "2시간 전",
       "dataStatus": "mock"
     },
     {
-      "source": "증권사 데일리",
-      "iconDomain": "finance.yahoo.com",
+      "source": "부동산 리서치",
+      "iconDomain": "www.reb.or.kr",
       "tag": "strategy",
-      "title": "시장 변동성 확대 구간, 수급·실적 확인 종목 중심 점검",
-      "url": "https://finance.yahoo.com/topic/stock-market-news/",
+      "title": "지역 단위 상승 기대와 정책 이벤트를 함께 보는 방식",
+      "url": "https://www.reb.or.kr/",
       "timeLabel": "2시간 전",
       "dataStatus": "mock"
     },
     {
-      "source": "DART 공시 체크",
-      "iconDomain": "dart.fss.or.kr",
+      "source": "청약홈 체크",
+      "iconDomain": "www.applyhome.co.kr",
       "tag": "disclosure",
-      "title": "주요 공시와 리서치 코멘트가 함께 언급된 종목",
-      "url": "https://dart.fss.or.kr/",
+      "title": "청약 일정과 커뮤니티 관심이 겹친 생활권 후보",
+      "url": "https://www.applyhome.co.kr/",
       "timeLabel": "어제",
       "dataStatus": "mock"
     },
     {
-      "source": "증권사 데일리",
-      "iconDomain": "finance.yahoo.com",
+      "source": "교통 정책 메모",
+      "iconDomain": "www.molit.go.kr",
       "tag": "strategy",
-      "title": "외국인 수급 회복과 커뮤니티 관심이 겹친 대형주 점검",
-      "url": "https://finance.yahoo.com/topic/stock-market-news/",
+      "title": "철도·도로 발표 이후 별칭 언급이 늘어난 지역",
+      "url": "https://www.molit.go.kr/",
       "timeLabel": "3시간 전",
       "dataStatus": "mock"
     }
@@ -178,89 +178,89 @@
       {
         "type": "youtube",
         "typeLabel": "유튜브",
-        "source": "삼프로TV",
+        "source": "부동산 분석 채널",
         "iconDomain": "www.youtube.com",
-        "title": "“10년 기다렸더니 코스닥 지배했다… 대덕의 무서운 전략” | 정희권 연구개발특구진흥재단 이사장 [주말인터뷰]",
-        "url": "https://www.youtube.com/watch?v=X9YDHxlQbpI",
+        "title": "전세가 움직이는 지역을 먼저 확인하는 법",
+        "url": "https://www.youtube.com/results?search_query=%EC%A0%84%EC%84%B8+%EB%B6%80%EB%8F%99%EC%82%B0+%EC%A7%80%EC%97%AD+%EB%B6%84%EC%84%9D",
         "publishedLabel": "2일 전",
         "engagementLabel": "조회 18만",
-        "dataStatus": "rss"
+        "dataStatus": "mock"
       },
       {
         "type": "youtube",
         "typeLabel": "유튜브",
-        "source": "김작가TV",
+        "source": "정책 읽기",
         "iconDomain": "www.youtube.com",
-        "title": "증시 위험 신호 마지막 경고입니다, 고점에 물리면 계좌 싹다 녹는다 (슈퍼개미 이정윤 세무사 3부)",
-        "url": "https://www.youtube.com/watch?v=jQmKJCYJPv8",
+        "title": "대출 규제 변화가 커뮤니티 반응을 바꾸는 순간",
+        "url": "https://www.youtube.com/results?search_query=%EB%8C%80%EC%B6%9C+%EA%B7%9C%EC%A0%9C+%EB%B6%80%EB%8F%99%EC%82%B0",
         "publishedLabel": "2일 전",
         "engagementLabel": "조회 12만",
-        "dataStatus": "rss"
+        "dataStatus": "mock"
       },
       {
         "type": "youtube",
         "typeLabel": "유튜브",
-        "source": "슈카월드",
+        "source": "청약 리뷰",
         "iconDomain": "www.youtube.com",
-        "title": "미국 주식 사면 관세 내야되나요?",
-        "url": "https://www.youtube.com/watch?v=iV1IOGlFHiw",
+        "title": "청약 경쟁률보다 먼저 봐야 하는 생활권 언급 변화",
+        "url": "https://www.youtube.com/results?search_query=%EC%B2%AD%EC%95%BD+%EA%B2%BD%EC%9F%81%EB%A5%A0+%EC%83%9D%ED%99%9C%EA%B6%8C",
         "publishedLabel": "3일 전",
         "engagementLabel": "조회 9.8만",
-        "dataStatus": "rss"
+        "dataStatus": "mock"
       },
       {
         "type": "youtube",
         "typeLabel": "유튜브",
-        "source": "달란트투자",
+        "source": "교통 호재 지도",
         "iconDomain": "www.youtube.com",
-        "title": "삼성전자 분위기 심상치 않다. 곧 무시무시한 일 벌어진다｜박진희 부장 풀버전",
-        "url": "https://www.youtube.com/watch?v=zsn4SjSZIK8",
+        "title": "GTX 언급이 실제 관심 지역으로 번지는 과정",
+        "url": "https://www.youtube.com/results?search_query=GTX+%EB%B6%80%EB%8F%99%EC%82%B0+%EC%A7%80%EC%97%AD",
         "publishedLabel": "2일 전",
         "engagementLabel": "조회 7.4만",
-        "dataStatus": "rss"
+        "dataStatus": "mock"
       },
       {
         "type": "youtube",
         "typeLabel": "유튜브",
-        "source": "미주은",
+        "source": "지역 데이터 노트",
         "iconDomain": "www.youtube.com",
-        "title": "나스닥 반등장에서 먼저 확인할 실적주와 금리 변수",
-        "url": "https://www.youtube.com/results?search_query=%EB%82%98%EC%8A%A4%EB%8B%A5+%EC%8B%A4%EC%A0%81%EC%A3%BC+%EA%B8%88%EB%A6%AC+%EB%AF%B8%EC%A3%BC%EC%9D%80",
+        "title": "실거래가 늦게 뜰 때 커뮤니티 반응을 어떻게 보나",
+        "url": "https://www.youtube.com/results?search_query=%EC%8B%A4%EA%B1%B0%EB%9E%98%EA%B0%80+%EC%BB%A4%EB%AE%A4%EB%8B%88%ED%8B%B0+%EB%B0%98%EC%9D%91",
         "publishedLabel": "2일 전",
         "engagementLabel": "조회 5.9만",
-        "dataStatus": "rss"
+        "dataStatus": "mock"
       }
     ],
     "links": [
       {
         "type": "blog",
         "typeLabel": "블로그",
-        "source": "메르 블로그",
+        "source": "지역 임장 블로그",
         "iconDomain": "blog.naver.com",
-        "title": "우주 데이터센터의 새로운 경쟁자가 출현했나?",
-        "url": "https://blog.naver.com/ranto28/224287501270?fromRss=true&trackingCode=rss",
+        "title": "마포 전세 매물 체감과 실거래 신고 간격 기록",
+        "url": "https://blog.naver.com/",
         "publishedLabel": "1일 전",
         "engagementLabel": "공감 312",
-        "dataStatus": "rss"
+        "dataStatus": "mock"
       },
       {
         "type": "blog",
         "typeLabel": "블로그",
-        "source": "메르 블로그",
+        "source": "청약 메모",
         "iconDomain": "blog.naver.com",
-        "title": "금요일 국장은 왜 무너졌을까?",
-        "url": "https://blog.naver.com/ranto28/224287048703?fromRss=true&trackingCode=rss",
+        "title": "분양 일정 전후로 커뮤니티 별칭이 늘어나는 패턴",
+        "url": "https://blog.naver.com/",
         "publishedLabel": "2일 전",
         "engagementLabel": "공감 244",
-        "dataStatus": "rss"
+        "dataStatus": "mock"
       },
       {
         "type": "community",
         "typeLabel": "커뮤니티",
-        "source": "네이버 종목토론",
-        "iconDomain": "finance.naver.com",
-        "title": "한미반도체 종목토론 원문 목록",
-        "url": "https://finance.naver.com/item/board.naver?code=042700",
+        "source": "네이버 카페",
+        "iconDomain": "cafe.naver.com",
+        "title": "동탄역권 원문 목록 후보",
+        "url": "https://section.cafe.naver.com/",
         "publishedLabel": "방금 갱신",
         "engagementLabel": "댓글 198",
         "dataStatus": "external-link"
@@ -268,10 +268,10 @@
       {
         "type": "community",
         "typeLabel": "커뮤니티",
-        "source": "네이버 종목토론",
-        "iconDomain": "finance.naver.com",
-        "title": "삼성전자 종목토론 원문 목록",
-        "url": "https://finance.naver.com/item/board.naver?code=005930",
+        "source": "다음 카페",
+        "iconDomain": "cafe.daum.net",
+        "title": "잠실·송파 생활권 반응 원문 후보",
+        "url": "https://cafe.daum.net/",
         "publishedLabel": "방금 갱신",
         "engagementLabel": "댓글 156",
         "dataStatus": "external-link"
@@ -279,10 +279,10 @@
       {
         "type": "community",
         "typeLabel": "커뮤니티",
-        "source": "토스증권 커뮤니티",
-        "iconDomain": "www.tossinvest.com",
-        "title": "토스증권 커뮤니티 반응 원문",
-        "url": "https://www.tossinvest.com/community",
+        "source": "부동산 커뮤니티",
+        "iconDomain": "new.land.naver.com",
+        "title": "지역별 매물 체감 반응 원문",
+        "url": "https://new.land.naver.com/",
         "publishedLabel": "1시간 전",
         "engagementLabel": "댓글 121",
         "dataStatus": "external-link"
@@ -291,150 +291,118 @@
   },
   "macroMetrics": [
     {
-      "category": "달러·금리",
-      "name": "미 10년 국채",
-      "value": "4.47%",
-      "changeLabel": "+0.22pp",
+      "category": "금리",
+      "name": "주담대 금리",
+      "value": "4.12%",
+      "changeLabel": "+0.05pp",
       "trend": "up",
       "pointString": "2,34 20,30 38,32 56,24 74,22 92,18 110,20"
     },
     {
-      "category": "달러·금리",
-      "name": "달러 인덱스",
-      "value": "99.27",
-      "changeLabel": "+0.39%",
+      "category": "정책",
+      "name": "대출 규제",
+      "value": "관망",
+      "changeLabel": "이슈 증가",
       "trend": "up",
       "pointString": "2,34 20,36 38,30 56,28 74,24 92,20 110,18"
     },
     {
-      "category": "환율",
-      "name": "달러/원",
-      "value": "1,367.2",
-      "changeLabel": "+0.21%",
+      "category": "전세",
+      "name": "수도권 전세",
+      "value": "+0.12%",
+      "changeLabel": "+0.04pp",
       "trend": "up",
       "pointString": "2,30 20,28 38,34 56,30 74,24 92,22 110,18"
     },
     {
-      "category": "원자재",
-      "name": "WTI",
-      "value": "101.15",
-      "changeLabel": "-0.84%",
+      "category": "공급",
+      "name": "입주 물량",
+      "value": "감소",
+      "changeLabel": "-3.1%",
       "trend": "down",
       "pointString": "2,20 20,18 38,24 56,22 74,30 92,34 110,32"
-    },
-    {
-      "category": "원자재",
-      "name": "금",
-      "value": "4,540.65",
-      "changeLabel": "-2.40%",
-      "trend": "down",
-      "pointString": "2,18 20,24 38,22 56,28 74,30 92,26 110,34"
-    },
-    {
-      "category": "글로벌 지수",
-      "name": "S&P500",
-      "value": "7,408.49",
-      "changeLabel": "-1.24%",
-      "trend": "down",
-      "pointString": "2,20 20,22 38,18 56,24 74,26 92,30 110,34"
-    },
-    {
-      "category": "심리",
-      "name": "Fear & Greed",
-      "value": "63",
-      "changeLabel": "탐욕",
-      "trend": "up",
-      "pointString": "2,36 20,30 38,26 56,28 74,22 92,18 110,14"
-    },
-    {
-      "category": "변동성",
-      "name": "VIX",
-      "value": "18.42",
-      "changeLabel": "+6.78%",
-      "trend": "up",
-      "pointString": "2,36 20,26 38,32 56,28 74,34 92,24 110,20"
     }
   ],
   "risingStars": [
     {
-      "symbol": "042700",
-      "name": "한미반도체",
-      "market": "KRX",
-      "previousMentionCount": 22,
-      "mentionCount": 41,
-      "mentionDeltaPct": 86.4,
-      "heatScore": 77,
+      "symbol": "SEOUL-MAPO",
+      "name": "마포구 아파트",
+      "market": "서울",
+      "previousMentionCount": 34,
+      "mentionCount": 72,
+      "mentionDeltaPct": 111.8,
+      "heatScore": 79,
       "coreReactions": [
-        "HBM 장비 수요가 다시 붙는다는 기대가 늘었습니다.",
-        "외국인 수급 회복을 기다리는 관망 반응이 함께 보입니다.",
+        "전세 매물 체감 감소와 학군·교통 언급이 같이 늘었습니다.",
+        "신고가보다 실거래 공개 지연을 확인해야 한다는 관망 반응이 함께 보입니다.",
         "단기 급등 부담을 경계하는 댓글도 섞여 있습니다."
       ],
       "reactionDrivers": [
-        { "type": "기사", "label": "HBM 장비 수요" },
-        { "type": "공시", "label": "수주 확인 대기" },
-        { "type": "커뮤니티", "label": "HBM·수급·급등 부담" },
-        { "type": "가격", "label": "+3.2% 변동" }
+        { "type": "공공", "label": "실거래 신고 지연" },
+        { "type": "전세", "label": "매물 감소 체감" },
+        { "type": "커뮤니티", "label": "마포·공덕·학군 별칭" },
+        { "type": "정책", "label": "대출 규제 관망" }
       ],
       "movementReasons": [
-        "HBM 수요 기사와 커뮤니티 키워드가 같은 방향으로 몰림.",
-        "수주 공시 확인 대기와 외국인 수급 회복 기대가 같이 언급됨.",
-        "가격 급등 뒤 부담 댓글이 붙어 반응량이 더 커짐."
+        "전세 매물 감소 체감과 커뮤니티 별칭 키워드가 같은 방향으로 몰림.",
+        "실거래 공개 지연 때문에 가격보다 반응량을 먼저 보는 댓글이 증가.",
+        "교통과 학군 언급 뒤 과열 부담 댓글이 붙어 반응량이 더 커짐."
       ],
       "dataStatus": "mock"
     },
     {
-      "symbol": "035420",
-      "name": "NAVER",
-      "market": "KRX",
-      "previousMentionCount": 28,
-      "mentionCount": 43,
-      "mentionDeltaPct": 53.6,
-      "heatScore": 64,
+      "symbol": "SEONGSU-DONG",
+      "name": "성수동 생활권",
+      "market": "서울",
+      "previousMentionCount": 41,
+      "mentionCount": 64,
+      "mentionDeltaPct": 56.1,
+      "heatScore": 66,
       "coreReactions": [
-        "AI 서비스와 커머스 회복 기대가 새로 붙었습니다.",
-        "광고 매출 회복 속도는 아직 확인이 필요하다는 의견이 많습니다."
+        "상권과 개발 기대가 다시 붙었습니다.",
+        "가격 부담과 임대료 상승 우려는 계속 확인이 필요하다는 의견이 많습니다."
       ],
       "dataStatus": "mock"
     },
     {
-      "symbol": "TSLA",
-      "name": "Tesla",
-      "market": "NASDAQ",
-      "previousMentionCount": 54,
-      "mentionCount": 74,
-      "mentionDeltaPct": 37.0,
-      "heatScore": 68,
+      "symbol": "DONGTAN-STATION",
+      "name": "동탄역권",
+      "market": "경기",
+      "previousMentionCount": 47,
+      "mentionCount": 69,
+      "mentionDeltaPct": 46.8,
+      "heatScore": 71,
       "coreReactions": [
-        "실적 발표 이후 가격 변동성 논쟁이 커졌습니다.",
-        "장기 보유와 단기 차익 실현 의견이 갈립니다."
+        "GTX와 출퇴근 시간 단축 기대가 반복 언급됩니다.",
+        "입주 물량과 전세 흐름을 같이 봐야 한다는 반응이 갈립니다."
       ],
       "dataStatus": "mock"
     }
   ],
   "communityReturns": [
     {
-      "community": "네이버 종토방",
+      "community": "네이버 카페",
       "returnPct": 4.8,
       "winRatePct": 58,
       "sampleTrades": 24,
       "dataStatus": "mock"
     },
     {
-      "community": "에펨코리아 주식",
+      "community": "다음 카페",
       "returnPct": 2.1,
       "winRatePct": 54,
       "sampleTrades": 18,
       "dataStatus": "mock"
     },
     {
-      "community": "토스증권 커뮤니티",
+      "community": "부동산 커뮤니티",
       "returnPct": 0.9,
       "winRatePct": 51,
       "sampleTrades": 12,
       "dataStatus": "mock"
     },
     {
-      "community": "디시 주식",
+      "community": "뉴스·컬럼",
       "returnPct": -1.2,
       "winRatePct": 43,
       "sampleTrades": 15,
@@ -443,9 +411,9 @@
   ],
   "communityReturnSeries": [
     {
-      "community": "네이버 종토방",
+      "community": "네이버 카페",
       "returnPct": 4.8,
-      "color": "#2f6fed",
+      "color": "#f08a2b",
       "pointString": "18,122 74,116 130,102 186,92 242,80 298,70",
       "points": [
         { "x": 18, "y": 122, "value": 0.4 },
@@ -458,7 +426,7 @@
       "dataStatus": "mock"
     },
     {
-      "community": "에펨코리아 주식",
+      "community": "다음 카페",
       "returnPct": 2.1,
       "color": "#397367",
       "pointString": "18,124 74,118 130,112 186,104 242,98 298,94",
@@ -473,7 +441,7 @@
       "dataStatus": "mock"
     },
     {
-      "community": "토스증권 커뮤니티",
+      "community": "부동산 커뮤니티",
       "returnPct": 0.9,
       "color": "#9a5c3e",
       "pointString": "18,126 74,120 130,124 186,116 242,114 298,110",
@@ -488,7 +456,7 @@
       "dataStatus": "mock"
     },
     {
-      "community": "디시 주식",
+      "community": "뉴스·컬럼",
       "returnPct": -1.2,
       "color": "#c45d48",
       "pointString": "18,124 74,132 130,128 186,136 242,142 298,146",
@@ -504,9 +472,9 @@
     }
   ],
   "confirmationNeeded": [
-    "열기 지수 용어 확정",
-    "종목별 심리 비교의 원형 지표와 반응 막대 산식 확정",
-    "커뮤니티 수익률 비교 산식과 기간 확정",
-    "AI 3줄 요약 placeholder 문구 확정"
+    "지역 반응 지수 용어와 산식 확정",
+    "지역·단지 별칭 DB의 표준명/별칭/출처 관리 방식 확정",
+    "공공데이터 observedAt/asOf/sourceUpdatedAt 기준 확정",
+    "30개 내외 크롤링 후보의 공개 접근 가능 범위 확정"
   ]
 }

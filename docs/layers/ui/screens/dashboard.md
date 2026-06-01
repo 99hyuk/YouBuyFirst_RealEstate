@@ -1,5 +1,7 @@
 # 대시보드 화면
 
+> Legacy stock reference: 이 문서는 기존 주식 대시보드 참고용입니다. 새 부동산 화면 정본은 `realestate-dashboard.md`입니다.
+
 ## Route
 
 - Parent: root

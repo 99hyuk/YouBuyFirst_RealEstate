@@ -1,179 +1,157 @@
-# 너나사 (YouBuyFirst) 작업 지도
+# 너나사 부동산 작업 지도
 
 이 문서는 다음 작업을 고르기 위한 현재 기준입니다. 완료 상세 이력은 PR, Notion 작업 로그, `docs/archive/work-units/items/`에서 찾습니다.
 
 ## 기준
 
-너나사는 단순 ingestion MVP가 아니라 완제품을 향해 세로로 쌓아 가는 투자 참고형 시뮬레이터입니다. 완제품 기준은 `docs/product/FINAL_PRODUCT_PLAN.md`이고, 현재 구현은 그중 커뮤니티 수집/저장 기반과 일부 market/ui 기반이 먼저 깔린 상태입니다.
+너나사 부동산은 지역과 단지에 대한 실제 사람들의 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 같은 시장 사실 데이터를 함께 보여주는 관찰형 분석 서비스입니다. 완제품 기준은 `docs/product/FINAL_PRODUCT_PLAN.md`, 전환 원칙은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`입니다.
 
 최종 사용 루프는 다음 순서입니다.
 
-1. 관심종목에서 가격, 거래량, 커뮤니티 반응, 뉴스/공시 변화가 감지됩니다.
-2. 사용자는 종목 상세에서 변화 원인, 근거 링크, 신뢰도/주의 배지를 확인합니다.
-3. 개미 심리 지수와 통합 커뮤니티 반응 흐름으로 시장 분위기를 봅니다.
-4. 모의 포트폴리오와 에이전트 paper trading으로 판단 결과를 복기합니다.
-5. 이후 유사 상황 검색, 알림, OCR 자산 연동, 부동산 버티컬을 확장합니다.
+1. 대시보드에서 요즘 언급 많은 지역과 단지를 확인합니다.
+2. 지역/단지 상세에서 기대/우려, 쟁점 비율, 표본 신뢰도를 봅니다.
+3. 뉴스/컬럼, 정책/개발/교통 이벤트, 실거래/전세/매물 흐름을 같은 시간축에서 봅니다.
+4. 비슷한 과거 반응 상황과 이후 시장 흐름을 비교합니다.
+5. 에이전트 평가와 근거 로그로 어떤 데이터가 판단에 쓰였는지 확인합니다.
 
 ## 운영 원칙
 
-- 업무는 과거의 제외 목록이 아니라 `완제품을 구성하는 세로 slice` 기준으로 뽑습니다.
+- 업무는 부동산 완제품을 구성하는 세로 slice 기준으로 뽑습니다.
 - 한 PR은 하나의 primary work area를 가집니다. 영역 기준은 `docs/layers/ops/WORK_AREAS.md`를 따릅니다.
-- ui가 먼저 발견한 API 후보는 screen brief에 남기고, backend/pipeline은 그 계약을 실제 데이터로 채웁니다.
-- 토큰 최적화 때문에 필요한 기획, 계약, 검증, PR/Notion 기록을 생략하지 않습니다. 대신 큰 로그와 archive 전문 출력을 막습니다.
-- 투자 자문처럼 보이는 표현, 원문 재게시, 로그인/CAPTCHA/프록시/fingerprint 우회는 하지 않습니다.
+- UI가 먼저 발견한 API 후보는 Screen Brief에 남기고, backend/pipeline은 그 계약을 실제 데이터로 채웁니다.
+- 특정 매수, 매도, 청약, 대출 행동을 권유하는 표현은 쓰지 않습니다.
+- 원문 재게시, 로그인/CAPTCHA/프록시/fingerprint 우회는 하지 않습니다.
+- 기존 stock/market/simulation 코드는 즉시 삭제하지 않고 참고/비활성 영역으로 분류합니다.
 
 ## 지금 우선순위
 
-아래 순서가 현재 가장 합리적인 진행 순서입니다. 프론트만 계속 다듬기보다, 화면에서 필요한 데이터 계약을 정하고 backend/pipeline을 같이 붙입니다.
-
-- [ ] ui 화면별 Screen Brief를 최신 화면 기준으로 맞추고, 각 화면의 필수 API 후보를 `dashboard`, `stocks`, `stock-detail`, `newsroom`, `human-indicator`, `portfolio` 순서로 정리
-- [x] stock 종목 마스터를 국내 주식/ETF + 미국 주식/ETF 기준으로 확장하고, provider symbol, 표시명, 시장 구분을 같은 키로 연결
-- [ ] market quote/chart/investor-flow provider 계약을 안정화하고, yfinance + FinanceDataReader 기준의 delay/asOf/stale/dataStatus 표시 규칙을 고정
-- [ ] community source registry를 에펨코리아, 네이버 종토방, 뽐뿌 증권포럼, 디시 미국주식/주식갤러리/국내주식 후보까지 확장하되 소스 상태와 공개 가능 범위를 분리
-- [ ] indicator 개미 심리 지수 산식 v1을 확정하고, 언급량 변화, 반응 방향, 표현 강도, 인기글 확산, source baseline 보정, 표본 신뢰도, 시세 지연을 입력으로 묶기
-- [ ] stock detail 이벤트 타임라인 계약을 정리하고, 뉴스/공시/리포트/영상/블로그/커뮤니티/가격 이벤트를 같은 시간축으로 표시하는 응답 shape 설계
-- [ ] simulation 가상 계좌, 주문, 예약, 체결, 정산, 원장, 포지션, 손익 계산의 트랜잭션 경계를 먼저 설계
-- [ ] agent 판단 key, strategy version, input window, idempotency key를 설계해 같은 통계 window에서 중복 판단/중복 주문이 나지 않게 만들기
-- [ ] backend/pipeline 기존 ingestion 기반을 실제 화면 API로 연결하기 위해 readiness wait, Swagger 예시, validation 오류 응답, fixture와 실제 데이터 전환 기준 정리
+- [x] root `AGENTS.md`를 부동산 프로젝트 라우터로 전환
+- [x] `docs/domains/realestate/AGENTS.md`와 `README.md` 생성
+- [x] `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md` 생성
+- [x] `docs/product/real-estate-one-page-plan.html`을 현재 repo로 이관
+- [x] `docs/product/CORE_IMPLEMENTATION_SCOPE.md` 생성
+- [x] `WORK_AREAS.md`와 `DOMAIN_PACKAGE_GUIDE.md`에 realestate 작업 영역/패키지 방향 추가
+- [x] `docs/domains/realestate/DATA_CONTRACT.md` 작성
+- [x] `docs/layers/ui/screens/realestate-dashboard.md` 작성
+- [x] `docs/layers/ui/screens/realestate-target-detail.md` 작성
+- [ ] 공공데이터 API 응답 필드와 실제 갱신 지연 기준 확인
+- [ ] 부동산 source registry 후보 30개 내외 정리
+- [ ] region/complex/living_area/policy_area target graph 설계
+- [ ] 정책/교통/공급/대출/청약/학군/재건축 이벤트 taxonomy 정리
+- [ ] `pipeline/src/youbuyfirst_pipeline/realestate/` matcher 초안 설계
+- [ ] 기존 stock/market/simulation 문서와 코드를 legacy reference로 표시하고 후속 삭제 후보 목록 작성
 
 ## 제품 세로 Slice
 
-### Slice A. 관심종목 브리핑
+### Slice A. 부동산 대시보드
 
-- [ ] 관심종목 source를 사용자가 등록한 종목, 모의 포트폴리오 보유 종목, 최근 본 종목으로 나누기
-- [ ] 관심종목별 가격/거래량/언급량/개미 심리 지수 변화 요약 API 설계
-- [ ] 신뢰도/주의 배지: 표본 부족, 특정 커뮤니티 편중, 시세 지연, 기사 없음, 원문 확인 필요
-- [ ] dashboard와 portfolio에서 같은 briefing contract를 재사용
+- [ ] 요즘 언급 많은 지역/단지 ranking API 후보 설계
+- [ ] 기대/우려/중립, mention count, issueMix, 표본 신뢰도 표시 기준 정리
+- [ ] source skew, stale, provider/asOf 상태 badge 정리
+- [ ] dashboard mock fixture와 실제 API 전환 기준 정리
 
-### Slice B. 종목 상세
+### Slice B. 지역/단지 상세
 
-- [ ] quote snapshot, chart candles, 국내 수급, 커뮤니티 반응 추이를 한 화면에서 분리 표시
-- [ ] 팩트폭격 배너는 커뮤니티 요약이 아니라 시황/기술지표/재무/뉴스 기반으로 생성
-- [ ] 뉴스/공시/리포트/영상/블로그/커뮤니티 링크 카드와 이벤트 타임라인 연결
-- [ ] 데이터 실패 시 0값처럼 보이지 않게 영역별 empty/stale/error 상태 표시
+- [ ] region/complex 기본 정보와 alias 표시 기준 정리
+- [ ] 상위 지역/생활권/정책 영향권과 하위 단지 roll-up/drill-down 기준 정리
+- [ ] reaction snapshot과 주요 쟁점 비율 응답 shape 설계
+- [ ] 실거래/전세/매물/정책 이벤트 timeline 계약 정리
+- [ ] 데이터 실패 시 0값처럼 보이지 않게 empty/stale/error 상태 표시
 
-### Slice C. 인간 지표
+### Slice C. 수집과 matcher
 
-- [ ] 개미 심리 지수 ranking, 급변 종목, 공포/과열/무관심 구간 표시
-- [ ] 통합 반응 품질, 반응 일관성, 소스 편중 주의, 확산 레이어를 같은 종목 키로 연결
-- [ ] 통합 지표 기반 paper 성과 비교: 추종/역추종, 1시간/6시간/24시간/3일/7일 기준
-- [ ] 인기글/개념글/추천글 기준을 source별로 다르게 정의
+- [ ] 부동산 커뮤니티/뉴스/컬럼 source registry 후보 30개 내외 정리
+- [ ] 네이버 카페/다음 카페 후보 중 비로그인 공개 목록 접근 가능 source만 분리
+- [ ] 공개 HTTP 우선, Playwright fallback, 금지 행위 기준 재확인
+- [ ] 지역/단지 alias DB와 matcher 초안 작성
+- [ ] 지역 단위 언급과 단지 단위 언급의 roll-up/drill-down 규칙 정의
+- [ ] matched=false, confidence, reviewState 기준 정리
 
-### Slice D. 모의 포트폴리오와 원장
+### Slice D. 반응 지표와 유사 과거
 
-- [ ] 가상 예수금과 주문 예약을 원장 기준으로 기록
-- [ ] 체결/정산/포지션/손익 갱신을 하나의 트랜잭션 경계로 묶기
-- [ ] batch 재시도와 부분 실패에도 원장과 포지션을 재계산 가능하게 만들기
-- [ ] 체결 이후 커뮤니티 반응, 뉴스, 가격 변화를 복기 strip으로 연결
+- [ ] RealEstateReactionSnapshot contract 설계
+- [ ] issueMix 후보: 교통, 학군, 전세, 재건축, 청약, 대출, 공급, 정책
+- [ ] 표본 수, source 다양성, source skew, 수집 지연을 confidence에 반영
+- [ ] 유사 과거 상황 검색 후보 데이터 모델 정리
 
-### Slice E. AI 에이전트 실험
+### Slice E. 에이전트 근거 로그
 
-- [ ] 역발상, 모멘텀, 리스크 관리형, 관망형 persona의 입력값과 판단 결과 필드 정의
-- [ ] agent decision log에 input window, strategy version, decision key, skip reason 저장
-- [ ] agent는 주문/체결을 직접 수정하지 않고 simulation contract를 통해서만 요청
-- [ ] source별 전용 에이전트 없이 통합 커뮤니티 에이전트 하나로 운용하고, source-only slice는 내부 검증으로만 둠
-- [ ] 사용자 화면에는 내부 추론 전문이 아니라 짧은 판단 근거와 데이터 상태만 표시
-
-### Slice F. 데이터 확장
-
-- [ ] 뉴스/공시 provider 후보와 링크 표시 정책 정리
-- [ ] 증권 유튜브 영상, 신뢰 블로그 whitelist, 인기글/개념글 링크 수집 정책 정리
-- [ ] 임베딩/클러스터링은 수집 데이터가 쌓인 뒤 토픽 묶음과 과거 유사 상황 검색으로 도입
-- [ ] 벡터DB는 RAG/유사 상황 검색/질문형 분석이 제품 기능이 될 때 도입 후보로 검토
-- [ ] RAG는 종목 식별/수익률 계산이 아니라 유사 window와 백테스트 결과 설명 레이어로 도입
+- [ ] EvidenceLog contract 설계
+- [ ] 평가 입력: reaction snapshot, market fact, timeline event, 유사 과거 상황
+- [ ] 사용자용 summary/caveat 문구 기준 정리
+- [ ] 내부 추론 전문 비노출 기준 정리
 
 ## 작업 영역별 백로그
 
-### stock
+### realestate
 
-- [x] 국내/미국 종목 master seed와 provider symbol 매핑
-- [x] `instrument_identifiers` 스키마: `instrument_id` 기준으로 provider/게시판 식별자, 목적, 출처를 분리해 저장
-- [x] alias registry와 은어 후보 관리: 확정 alias와 후보 alias를 분리하고, 후보는 집계에 바로 넣지 않고 `instrument_alias_candidates`로 누적
-- [x] alias 후보 심사/승격 흐름: `SUGGESTED/REJECTED/PROMOTED` 상태와 admin review/promote API로 승인 alias만 집계에 반영
-- [x] market quote/chart/investor-flow cache와 NAVER crawl target을 `instrument_id` 기준으로 연결
-- [x] pipeline matcher 입력을 backend DB 기반 matcher snapshot으로 연결: 승인된 종목 master와 alias는 `INSTRUMENT_SNAPSHOT_URL`로 재시도 로드하고 CSV는 fallback으로 유지
-- [x] mention ingestion payload와 집계 저장을 `instrument_id` 기준으로 넓히기: pipeline mention/sentiment payload는 snapshot의 `instrumentId`를 싣고 backend ingestion은 `instrumentId`를 우선 사용
+- [x] `DATA_CONTRACT.md` 생성
+- [x] region/complex/alias/mention/market fact/evidence log 모델 초안 정의
+- [ ] target graph와 policy event 모델 확장
+- [ ] 국토교통부 실거래가/전월세 API와 건축HUB 응답 필드 샘플 저장
+- [ ] API 후보 endpoint와 응답 shape 정리
+- [ ] 부동산 source별 provider/asOf/stale 기준 정리
 
 ### community
 
-- [ ] source/board registry와 `CrawlTarget` 우선순위 기준 정리
-- [ ] 일반 게시판형과 종목 게시판형 수집 정책 분리
-- [x] 네이버 종토방 target selector v1: 관심종목과 대형주/대표 ETF만 30개 이하로 만들고, 전체 국내 종목 전수 순회는 막음
-- [x] 인기글/개념글/조회수/추천수 확산 이벤트 저장/전달 계약 추가
-- [x] source별 인기글/개념글/추천글 URL registry와 기본 target 활성화 기준 정리
-- [x] 확산/고영향 글 기준 댓글 제한 수집 큐 구현
-- [ ] 급증 종목 댓글 trigger를 indicator output과 연결
-- [ ] 일반 게시판 언급 급증 종목, 포트폴리오 종목, 시장 영향 후보를 네이버 종토방 target selector의 `extra_candidates`로 연결
+- [ ] 부동산 게시판/커뮤니티/뉴스/컬럼 source registry 후보 30개 내외 정리
+- [ ] 네이버 카페/다음 카페 후보의 공개 접근성, robots/약관, 로그인 필요 여부 기록
+- [ ] 일반 게시판형과 부동산 대상형 source 분리
 - [ ] 제목, 제한 snippet, URL, 작성자 hash, 작성 시각, 원문 hash 저장 정책 점검
+- [ ] 추천수/조회수/댓글수는 source별 의미가 다르므로 raw 비교하지 않는 기준 유지
 
 ### indicator
 
-- [x] `CommunityIndicatorSnapshot` 30분 baseline 응답/API 구현: `marketMood`, `sourceMoods`, `stockMentionCounts`, `topKeywords`
-- [ ] `RetailSentimentIndex` 응답 shape 설계
-- [ ] `StockReactionWindow`, `ForwardReturn`, `issueMix`, `reactionQuality` contract 설계
-- [ ] 1일/1주 window 집계 테스트 추가
-- [ ] 소스 다양성, 표본 수, 신뢰도 배지 산식 분리
-- [ ] 과거 유사 반응 상황 검색 후보 데이터 모델 정리
-
-### market
-
-- [ ] quote snapshot, chart candle, investor flow API 계약과 화면 표시 규칙 유지
-- [ ] yfinance + FinanceDataReader provider 실패, 빈 배열, stale 처리 테스트
-- [ ] 국내 수급은 quote와 분리하고, 전 거래일 기준/derived 여부를 명확히 표시
-- [ ] Redis quote cache와 WebSocket은 실제 갱신량이 생긴 뒤 도입
-
-### simulation
-
-- [ ] `Account`, `Order`, `Execution`, `LedgerEntry`, `Position` 최소 모델 설계
-- [ ] 주문 예약, 체결, 취소, 정산의 상태 전이와 idempotency 규칙 설계
-- [ ] 리더보드는 원장과 가격 snapshot으로 재계산 가능하게 설계
-- [ ] 백테스트용 `BacktestRun`, `StrategyPerformanceSnapshot`, strategy rule JSON 후보 설계
+- [ ] RealEstateReactionSnapshot 응답 shape 설계
+- [ ] expectation/concern/neutral baseline 산식 정리
+- [ ] issueMix, source skew, sample confidence 기준 정리
+- [ ] 1일/1주/1개월 window 집계 후보 정리
 
 ### agent
 
-- [ ] `AgentDecision` key와 strategy version 관리
-- [ ] 종목 상태 팩트폭격 헤드라인 생성 입력과 금지 표현 검사
-- [ ] 통합 지표 기반 성과 비교 실험의 추종/역추종 규칙과 기준 수익률 정의
-- [ ] `나만의 모의 전략` builder의 입력 조건과 금지 표현 기준 정리
-- [ ] 판단 로그를 Notion/포트폴리오 기술 경험으로 설명 가능한 문제 해결 사례로 남기기
+- [ ] 지역/단지 평가와 evidence log 입력 필드 정의
+- [ ] 유사 과거 상황 설명 방식 정리
+- [ ] 행동 지시처럼 보이는 평가 문구 금지 기준 정리
+- [ ] evaluationVersion과 skipReason 관리 기준 정리
 
 ### ui
 
-- [ ] `front/`의 실제 화면과 `docs/layers/ui/screens/`를 항상 동기화
-- [ ] 디자인 시스템 토큰과 공통 컴포넌트 후보를 새 화면에 적용
-- [ ] stock detail, newsroom, human indicator, portfolio의 empty/loading/stale/error 상태 구현
-- [ ] 브라우저 QA는 최종 화면 단위로 실행하고 결과만 짧게 기록
+- [ ] realestate dashboard Screen Brief 생성
+- [ ] realestate target detail Screen Brief 생성
+- [ ] 너나사 시리즈 공통 shell을 유지하면서 부동산 brand accent를 warm orange 계열로 전환
+- [ ] front CSS에서 브랜드 blue와 의미색 blue를 분리
+- [ ] accent token 변경 후 dashboard/detail screenshot QA
+- [ ] 기존 dashboard 디자인 시스템을 부동산 화면에 맞춰 적용
+- [ ] loading/empty/stale/error 상태 구현 기준 정리
 
 ### ops
 
-- [ ] 열린 branch/worktree를 active, review, blocked, stale, close-candidate로 주기 점검
-- [ ] PR/Notion 라벨은 작업 영역 값으로 맞추되 기존 형식은 유지
-- [ ] 문서가 MVP-only 표현으로 돌아가면 product/current/domain 정본 기준으로 정리
-- [ ] 완료 이력은 TASKS에 길게 누적하지 않고 PR/Notion/archive로 보냄
+- [ ] 새 GitHub remote 연결 전까지 `origin` 없음 상태 유지
+- [ ] PR/Notion 라벨은 작업 영역 값으로 맞추되 기존 형식 유지
+- [ ] 오래된 주식 중심 문서 표현을 active docs에서 제거
+- [ ] archive는 과거 근거로 보존하고 시작 루틴에서 읽지 않음
 
 ## 후순위
 
-- [ ] OCR 자산 연동과 S3 Presigned URL 업로드
-- [ ] Telegram 또는 앱 알림
-- [ ] Spring Security 인증/인가
+- [ ] 유사 과거 상황 검색용 벡터 저장소
+- [ ] 질문형 분석
+- [ ] 사용자 관심 지역/단지 알림
+- [ ] 인증/인가
 - [ ] 운영 배포와 모니터링
-- [ ] 사용자 반응방/게시판/채팅
-- [ ] 벡터DB/RAG 기반 유사 window 질문형 분석
-- [ ] 부동산 버티컬
 
 ## 현재 완료 기반
 
-- ingestion MVP: 커뮤니티 글 수집, 종목 언급 인식, 반응 방향 분석, backend 저장
-- backend: ingestion/admin API, crawl run/posts/stock metrics 조회, `CrawlTarget` queue API
-- pipeline: source policy gate, skip run 기록, crawl backoff, AI mention resolver/mock provider
-- market: quote snapshot, chart candle, investor flow public API 기반
-- ui: Vue 3 + Vite + TypeScript mock shell과 주요 Screen Brief
-- ops: domain/layer 문서 구조, PR/라벨/branch/worktree 기준
+- 원본 `C:\agents\YouBuyFirst`를 복제한 새 워크스페이스
+- 원본 remote 제거
+- `codex/realestate-bootstrap` 브랜치
+- 부동산 전용 root 라우터와 realestate 도메인 문서
+- 부동산 제품 방향 문서
+- 작업 영역/패키지 가이드의 realestate 기준 반영
 
 ## 작업 메모
 
 - 작업 단위는 하나의 체크박스 또는 강하게 묶인 2-3개 체크박스로 제한합니다.
 - 작업을 시작하면 `codex/<task-name>` 브랜치에서 진행합니다.
 - 구현 전에 관련 테스트를 먼저 추가하거나 기존 테스트를 확장합니다.
+- 문서만 바꿔도 `git diff --check`를 실행합니다.
 - PR 설명에는 변경 범위, 사람이 읽기 쉬운 검증 결과, 남은 리스크를 포함합니다.
-- 병렬 작업은 관련 도메인/layer `AGENTS.md`의 관련 섹션을 먼저 확인하고, 세부 색인이 필요할 때만 README를 봅니다.

@@ -3,99 +3,99 @@
   "windowLabel": "최근 1시간",
   "items": [
     {
-      "symbol": "005930",
-      "name": "삼성전자",
-      "market": "KRX",
+      "symbol": "SEOUL-MAPO",
+      "name": "마포구 아파트",
+      "market": "서울",
       "mentionCount": 128,
       "mentionDeltaPct": 42.3,
       "reactionDirectionRatio": {
-        "bullish": 0.52,
-        "bearish": 0.31,
-        "neutral": 0.17
+        "bullish": 0.49,
+        "bearish": 0.33,
+        "neutral": 0.18
       },
       "heatScore": 82,
-      "topKeywords": ["실적", "반도체", "외국인"],
-      "priceStatus": "mock quote",
+      "topKeywords": ["전세", "공덕", "학군"],
+      "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
     {
-      "symbol": "TSLA",
-      "name": "Tesla",
-      "market": "NASDAQ",
+      "symbol": "DONGTAN-STATION",
+      "name": "동탄역권",
+      "market": "경기",
       "mentionCount": 74,
       "mentionDeltaPct": 18.7,
       "reactionDirectionRatio": {
-        "bullish": 0.41,
-        "bearish": 0.43,
-        "neutral": 0.16
+        "bullish": 0.44,
+        "bearish": 0.39,
+        "neutral": 0.17
       },
       "heatScore": 68,
-      "topKeywords": ["실적", "가격", "변동성"],
-      "priceStatus": "stale quote",
+      "topKeywords": ["GTX", "입주", "전세"],
+      "priceStatus": "stale public data",
       "dataStatus": "mock"
     },
     {
-      "symbol": "042700",
-      "name": "한미반도체",
-      "market": "KRX",
+      "symbol": "SEONGSU-DONG",
+      "name": "성수동 생활권",
+      "market": "서울",
       "mentionCount": 41,
       "mentionDeltaPct": 86.4,
       "reactionDirectionRatio": {
-        "bullish": 0.57,
-        "bearish": 0.24,
+        "bullish": 0.56,
+        "bearish": 0.25,
         "neutral": 0.19
       },
       "heatScore": 77,
-      "topKeywords": ["HBM", "장비", "수급"],
-      "priceStatus": "mock quote",
+      "topKeywords": ["상권", "개발", "임대료"],
+      "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
     {
-      "symbol": "035420",
-      "name": "NAVER",
-      "market": "KRX",
+      "symbol": "JAMSIL-DONG",
+      "name": "잠실동 단지군",
+      "market": "서울",
       "mentionCount": 43,
       "mentionDeltaPct": 53.6,
       "reactionDirectionRatio": {
-        "bullish": 0.48,
-        "bearish": 0.27,
-        "neutral": 0.25
+        "bullish": 0.47,
+        "bearish": 0.29,
+        "neutral": 0.24
       },
       "heatScore": 64,
-      "topKeywords": ["AI", "커머스", "광고"],
-      "priceStatus": "mock quote",
+      "topKeywords": ["토허제", "재건축", "전세"],
+      "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
     {
-      "symbol": "000660",
-      "name": "SK하이닉스",
-      "market": "KRX",
+      "symbol": "BUNDANG-PANGYO",
+      "name": "분당·판교",
+      "market": "경기",
       "mentionCount": 66,
       "mentionDeltaPct": 29.8,
       "reactionDirectionRatio": {
-        "bullish": 0.61,
-        "bearish": 0.22,
-        "neutral": 0.17
+        "bullish": 0.58,
+        "bearish": 0.24,
+        "neutral": 0.18
       },
       "heatScore": 75,
-      "topKeywords": ["HBM", "메모리", "외국인"],
-      "priceStatus": "mock quote",
+      "topKeywords": ["일자리", "재건축", "학군"],
+      "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
     {
-      "symbol": "068270",
-      "name": "셀트리온",
-      "market": "KRX",
+      "symbol": "SONGDO",
+      "name": "송도국제도시",
+      "market": "인천",
       "mentionCount": 38,
       "mentionDeltaPct": 21.4,
       "reactionDirectionRatio": {
-        "bullish": 0.44,
-        "bearish": 0.34,
+        "bullish": 0.42,
+        "bearish": 0.36,
         "neutral": 0.22
       },
       "heatScore": 59,
-      "topKeywords": ["바이오", "실적", "수급"],
-      "priceStatus": "mock quote",
+      "topKeywords": ["공급", "국제학교", "전세"],
+      "priceStatus": "stale public data",
       "dataStatus": "mock"
     }
   ]

@@ -1,5 +1,7 @@
 # Investor Flow History
 
+> Legacy stock reference: 부동산 프로젝트에서는 수급/투자자 flow를 활성 기능으로 보지 않습니다.
+
 ## 한눈에 보기
 
 종목별 개인/외국인/기관 수급은 가격 snapshot이나 차트 candle에 섞지 않고 별도 history slice로 제공한다. 프론트는 종목 상세에서 가격은 `GET /api/quotes`, 차트는 `GET /api/market/chart-candles`, 수급은 `GET /api/market/investor-flows/history`로 분리 호출한다.

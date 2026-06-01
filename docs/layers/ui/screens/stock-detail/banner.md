@@ -1,8 +1,10 @@
 # Stock Detail Banner
 
+> Legacy stock reference: 이 문서는 기존 주식 화면 참고용입니다. 부동산 평가 문구 기준은 `docs/domains/agent/REAL_ESTATE_EVALUATION_COPY.md`, 새 상세 화면 기준은 `docs/layers/ui/screens/realestate-target-detail.md`입니다.
+
 ## 역할
 
-종목 상세 상단의 검은 팩트폭격 배너 표현 기준입니다. 문구 생성 기준은 `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`가 소유하고, 이 문서는 화면 위치, 시각 스타일, 반응형 제약, 레퍼런스 자산만 다룹니다.
+종목 상세 상단의 검은 팩트폭격 배너 표현 기준입니다. 이 문서는 legacy reference이며 새 부동산 화면 정본으로 사용하지 않습니다.
 
 ## 시각 레퍼런스
 
@@ -38,6 +40,6 @@
 
 ## 참조
 
-- 생성 기준: `docs/domains/agent/STOCK_DETAIL_HEADLINE.md`
+- 생성 기준: legacy stock reference. 새 부동산 평가 카피 정본은 `docs/domains/agent/REAL_ESTATE_EVALUATION_COPY.md`
 - 화면 상세: `docs/layers/ui/screens/stock-detail/README.md`
 - 디자인 시스템: `docs/layers/ui/DESIGN_SYSTEM.md`

@@ -1,22 +1,22 @@
 # agent 작업 지침
 
-agent는 지표와 시세를 읽어 paper trading 판단, 통합 지표 기반 성과 비교, 페르소나, 결정 로그, 종목 상태 한줄평 생성을 소유합니다.
+agent는 지역/단지 반응 지표와 시장 사실 데이터를 읽어 사용자용 평가, 유사 과거 비교 설명, 근거 로그를 소유합니다.
 
 ## 시작
 
-- 종목 상세 상단 한줄평, 톤, evidence contract가 걸리면 `STOCK_DETAIL_HEADLINE.md`를 봅니다.
-- 전략, decision key, 성과 비교, 판단 로그가 걸리면 `README.md`의 해당 섹션만 봅니다.
-- 입력 지표가 문제면 `indicator`, 시세/수급이 문제면 `market`, 가상 계좌 반영이 문제면 `simulation`을 먼저 봅니다.
+- 지역/단지 평가 문구, 톤, evidence contract가 걸리면 `REAL_ESTATE_EVALUATION_COPY.md`를 봅니다.
+- 평가 입력, evidence log, evaluation key가 걸리면 `README.md`의 해당 섹션만 봅니다.
+- 입력 지표가 문제면 `indicator`, 지역/단지 식별자가 문제면 `realestate`, 수집 원문이 문제면 `community`를 먼저 봅니다.
 
 ## 경계
 
-- 실제 투자 자문, 실거래 지시, 수익 보장처럼 보이는 표현은 만들지 않습니다.
-- 장부 수정과 체결 정합성은 `simulation` contract를 통합니다.
-- 화면 배너의 시각 표현은 `layers/ui/screens/stock-detail/banner.md`가 소유합니다.
-- 커뮤니티 원문 분석 기준은 `community`, 핵심 지표 산식은 `indicator`가 소유합니다.
+- 특정 매수, 매도, 청약, 대출 행동을 권유하지 않습니다.
+- 가격 상승, 청약 성공, 수익을 단정하지 않습니다.
+- 커뮤니티 원문 분석 기준은 `community`, 핵심 지표 산식은 `indicator`, market fact 정본은 `realestate`가 소유합니다.
+- 화면 배너와 레이아웃은 `layers/ui`가 소유합니다.
 
 ## 기록
 
-- 판단 key는 `agentId + windowStart + symbol + strategyVersion`처럼 중복 실행을 막을 수 있게 설계합니다.
-- 새 전략이나 판단 로그 필드가 생기면 input, output, skip reason, source/asOf, strategyVersion을 함께 남깁니다.
+- evaluation key는 `targetType + targetId + windowStart + evaluationVersion`처럼 중복 실행을 막을 수 있게 설계합니다.
+- 새 평가나 근거 로그 필드가 생기면 input, output, skip reason, source/asOf, evaluationVersion을 함께 남깁니다.
 - 확정된 제품 표현은 `docs/product/FINAL_PRODUCT_PLAN.md`, 고민 단계는 `docs/product/PRODUCT_DECISION_NOTES.md`로 보냅니다.

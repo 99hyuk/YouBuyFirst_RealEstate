@@ -1,5 +1,7 @@
 # 인간 지표 화면
 
+> Legacy stock reference: 이 문서는 기존 주식 커뮤니티/성과 비교 화면 참고용입니다. 새 부동산 지표 화면은 `realestate-dashboard.md`와 `realestate-target-detail.md`를 기준으로 다시 설계합니다.
+
 ## Route
 
 - Parent: root

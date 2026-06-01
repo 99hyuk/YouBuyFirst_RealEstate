@@ -38,7 +38,7 @@ ops는 문서 구조, Git/PR, Notion 기록, 작업 영역 조율, 브랜치/wor
 - pipeline payload contract
 - DB migration
 - front package
-- quote/analysis/indicator/trade domain schema
+- realestate/analysis/indicator/agent domain schema
 
 ## 현재 우선순위
 
@@ -60,6 +60,6 @@ PR 규칙의 정본은 `GIT_CONVENTION.md`입니다. 이 README에는 원칙만 
 
 - crawler parser 구현
 - 반응 지표 산식 구현
-- quote provider 내부 구현
-- 모의투자 체결 로직 구현
+- market fact provider 내부 구현
+- legacy stock/simulation 삭제 판단
 - 사용자 대시보드 UI 구현

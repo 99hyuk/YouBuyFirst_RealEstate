@@ -1,5 +1,7 @@
 # market
 
+> Legacy stock reference: 주식 quote/chart 참고 영역입니다. 부동산 실거래/전세/매물/정책 market fact는 `realestate`가 소유합니다.
+
 ## 역할
 
 가격 데이터, 차트 캔들, 투자자 수급, provider/cache/stale 기준을 담당합니다. 주문/체결은 `simulation`, 매매 판단과 종목 상태 한줄평은 `agent`, 차트 UI 표현은 `layers/ui`가 소유합니다.
