@@ -23,6 +23,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('../pages/RealEstateMapPage.vue')
   },
   {
+    path: '/realestate/map/:regionId',
+    name: 'realestate-map-region',
+    component: () => import('../pages/RealEstateMapPage.vue')
+  },
+  {
     path: '/newsroom',
     name: 'newsroom',
     component: NewsroomPage
