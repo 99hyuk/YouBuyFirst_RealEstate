@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { describe, expect, it } from 'vitest';
 
@@ -9,6 +9,29 @@ import App from '../App.vue';
 import { routes } from '../router/routes';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
+const mapTargetsFixture = JSON.parse(
+  readFileSync(resolve(testDir, '../fixtures/realestate-map-targets.json'), 'utf8')
+) as {
+  targets: { id: string; name: string; regionCode: string }[];
+};
+const municipalityTopology = JSON.parse(
+  readFileSync(resolve(testDir, '../fixtures/skorea-municipalities-2018-topo-simple.json'), 'utf8')
+) as {
+  objects: {
+    skorea_municipalities_2018_geo: {
+      geometries: { properties: { code: string } }[];
+    };
+  };
+};
+const municipalityCountByRegionCode = municipalityTopology.objects.skorea_municipalities_2018_geo.geometries.reduce(
+  (counts, geometry) => {
+    const regionCode = geometry.properties.code.slice(0, 2);
+    counts.set(regionCode, (counts.get(regionCode) ?? 0) + 1);
+
+    return counts;
+  },
+  new Map<string, number>()
+);
 
 const mountAt = async (path: string) => {
   const router = createRouter({
@@ -34,6 +57,7 @@ describe('front dashboard shell', () => {
       '/',
       '/dashboard',
       '/realestate/map',
+      '/realestate/map/:regionId',
       '/newsroom',
       '/realestate/reactions',
       '/realestate/targets/:symbol',
@@ -216,28 +240,55 @@ describe('front dashboard shell', () => {
     expect(portfolio.text()).toContain('알림 후 복기');
   });
 
-  it('opens a report panel when a map region is selected', async () => {
+  it('opens a full regional drilldown map from the national map', async () => {
     const wrapper = await mountAt('/realestate/map');
 
     expect(wrapper.text()).toContain('전국 지역 흐름 지도');
     expect(wrapper.find('[data-testid="map-report-panel"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="realestate-map-layout"]').classes()).toContain('centered');
 
-    await wrapper.get('[data-testid="map-target-seoul"]').trigger('click');
+    await wrapper.get('[data-testid="map-target-daejeon"]').trigger('click');
+    await flushPromises();
+
+    expect(wrapper.vm.$route.path).toBe('/realestate/map/daejeon');
+    expect(wrapper.text()).toContain('대전 상세 흐름 지도');
+    expect(wrapper.text()).toContain('전국 지도로 돌아가기');
+    expect(wrapper.findAll('[data-testid^="subregion-shape-"]')).toHaveLength(5);
+    expect(wrapper.findAll('.subregion-labels text')).toHaveLength(0);
+    expect(wrapper.text()).toContain('동구');
+    expect(wrapper.text()).toContain('유성구');
+
+    await wrapper.get('[data-testid="subregion-button-25040"]').trigger('click');
 
     expect(wrapper.find('[data-testid="realestate-map-layout"]').classes()).toContain('split');
-    expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('서울');
+    expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('유성구');
     expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('가격 흐름');
-    expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('커뮤니티 반응');
+    expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('커뮤니티 언급');
     expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('언급량 급증');
     expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('핵심 쟁점');
-    expect(wrapper.get('[data-testid="map-report-panel"]').text()).toContain('전세 매물 감소');
 
     await wrapper.get('[data-testid="close-map-report"]').trigger('click');
 
     expect(wrapper.find('[data-testid="map-report-panel"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="realestate-map-layout"]').classes()).toContain('centered');
-  });
+  }, 15000);
+
+  it('renders every province as a municipal drilldown map', async () => {
+    expect(mapTargetsFixture.targets).toHaveLength(17);
+
+    for (const target of mapTargetsFixture.targets) {
+      const expectedCount = municipalityCountByRegionCode.get(target.regionCode);
+      const wrapper = await mountAt(`/realestate/map/${target.id}`);
+
+      if (!expectedCount) {
+        throw new Error(`No municipality fixture rows for ${target.name}`);
+      }
+
+      expect(expectedCount).toBeGreaterThan(0);
+      expect(wrapper.text()).toContain(`${target.name} 상세 흐름 지도`);
+      expect(wrapper.findAll('[data-testid^="subregion-shape-"]')).toHaveLength(expectedCount);
+    }
+  }, 20000);
 
   it('keeps the visual system and advice guardrails explicit', async () => {
     const wrapper = await mountAt('/dashboard');

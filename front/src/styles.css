@@ -8817,18 +8817,29 @@ a {
 
 .indicator-schedule-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
   gap: 10px;
+  min-width: 0;
   padding: 0 16px 16px;
+  overflow: hidden;
 }
 
 .indicator-schedule-strip .section-band-title {
   grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.indicator-schedule-strip .section-band-title.full {
+  margin: 0 -16px 4px;
+  border: 0;
+  border-bottom: 1px solid #dfe7f1;
+  border-radius: 18px 18px 0 0;
 }
 
 .indicator-schedule-strip article {
   display: grid;
   gap: 5px;
+  min-width: 0;
   padding: 11px 12px;
   border-radius: 14px;
   background: #f8fafc;
@@ -8842,14 +8853,20 @@ a {
 
 .indicator-schedule-strip span,
 .indicator-schedule-strip em {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: #64748b;
   font-size: 11px;
   font-style: normal;
+  line-height: 1.35;
 }
 
 .indicator-schedule-strip strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: #172033;
   font-size: 13px;
+  line-height: 1.35;
 }
 
 .region-reactions-board-page,
@@ -9110,12 +9127,21 @@ a {
   overflow: hidden;
 }
 
+.portfolio-holdings-panel > .section-band-title,
+.portfolio-import-panel > .section-band-title,
+.portfolio-orders-panel > .section-band-title,
+.portfolio-ledger-panel > .section-band-title {
+  margin: 0;
+  border-radius: 18px 18px 0 0;
+}
+
 .portfolio-holding-head,
 .portfolio-holding-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1.1fr) 58px 82px 82px 88px minmax(128px, 1fr) minmax(104px, 0.8fr);
+  grid-template-columns: minmax(112px, 1.1fr) 54px 72px 76px minmax(76px, 0.74fr) minmax(116px, 1fr) minmax(96px, 0.82fr);
   gap: 9px;
   align-items: center;
+  min-width: 0;
 }
 
 .portfolio-holding-head {
@@ -9129,7 +9155,7 @@ a {
 }
 
 .portfolio-holding-row {
-  min-height: 50px;
+  min-height: 56px;
   padding: 8px 14px;
   border-top: 1px solid #edf2f7;
 }
@@ -9142,9 +9168,11 @@ a {
 .portfolio-holding-row span,
 .portfolio-holding-row small,
 .portfolio-holding-row em {
+  min-width: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .portfolio-holding-row strong {
@@ -9279,7 +9307,7 @@ a {
 }
 
 .portfolio-import-panel article {
-  grid-template-columns: 96px minmax(0, 1fr) minmax(100px, 0.9fr) 44px;
+  grid-template-columns: minmax(74px, 0.86fr) minmax(0, 1.1fr) minmax(82px, 0.9fr) 42px;
   align-items: center;
 }
 
@@ -9293,7 +9321,7 @@ a {
 }
 
 .portfolio-ledger-panel article {
-  grid-template-columns: 80px minmax(0, 1fr) 92px;
+  grid-template-columns: minmax(70px, 0.7fr) minmax(0, 1fr) minmax(72px, 0.78fr);
   align-items: center;
 }
 
@@ -9304,24 +9332,30 @@ a {
 .portfolio-orders-panel em,
 .portfolio-ledger-panel span,
 .portfolio-ledger-panel em {
+  min-width: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
   color: #64748b;
   font-size: 11px;
   font-style: normal;
   font-weight: 730;
+  line-height: 1.35;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .portfolio-import-panel strong,
 .portfolio-orders-panel strong,
 .portfolio-ledger-panel strong {
+  min-width: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
   color: #172033;
   font-size: 12px;
   font-weight: 900;
+  line-height: 1.35;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .portfolio-import-panel b {
@@ -9746,6 +9780,27 @@ a {
     flex-direction: column;
   }
 
+  .portfolio-holding-head {
+    display: none;
+  }
+
+  .portfolio-holding-row,
+  .portfolio-import-panel article,
+  .portfolio-orders-panel article,
+  .portfolio-ledger-panel article {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    align-items: start;
+  }
+
+  .portfolio-orders-panel article em {
+    grid-column: auto;
+  }
+
+  .portfolio-import-panel b {
+    text-align: left;
+  }
+
   .indicator-row-head,
   .indicator-anomaly-panel article {
     min-width: 620px;
@@ -9764,18 +9819,18 @@ a {
   .portfolio-import-panel,
   .portfolio-orders-panel,
   .portfolio-ledger-panel {
-    overflow-x: auto;
+    overflow-x: hidden;
   }
 
   .portfolio-holding-head,
   .portfolio-holding-row {
-    min-width: 820px;
+    min-width: 0;
   }
 
   .portfolio-import-panel article,
   .portfolio-orders-panel article,
   .portfolio-ledger-panel article {
-    min-width: 560px;
+    min-width: 0;
   }
 
   .human-view-tabs.compact {
@@ -9833,6 +9888,36 @@ a {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.map-return-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid rgba(251, 146, 60, 0.36);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.18), rgba(239, 68, 68, 0.16));
+  color: #fff7ed;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
+}
+
+.map-return-cta span {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.map-return-cta strong {
+  font: inherit;
 }
 
 .realestate-map-layout {
@@ -9894,6 +9979,28 @@ a {
   gap: 8px;
 }
 
+.map-toolbar-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.map-back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid rgba(251, 146, 60, 0.28);
+  border-radius: 8px;
+  background: rgba(251, 146, 60, 0.1);
+  color: #fed7aa;
+  font-size: 12px;
+  font-weight: 820;
+  text-decoration: none;
+}
+
 .map-legend span {
   display: inline-flex;
   align-items: center;
@@ -9944,6 +10051,11 @@ a {
   width: min(92%, calc((var(--map-panel-height) - 160px) * 0.68), 1040px);
   max-height: none;
   aspect-ratio: 430 / 630;
+}
+
+.region-drilldown-map-board {
+  width: min(94%, calc((var(--map-panel-height) - 160px) * 0.88), 1080px);
+  aspect-ratio: 1;
 }
 
 .korea-region-map {
@@ -10045,6 +10157,23 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.subregion-target-buttons button {
+  width: 72px;
+  height: 32px;
+  padding: 0 6px;
+  border-color: rgba(219, 234, 254, 0.22);
+  background: rgba(7, 15, 26, 0.58);
+  font-size: 10px;
+}
+
+.subregion-shape {
+  stroke-width: 1.8;
+}
+
+.subregion-labels text {
+  font-size: 8px;
 }
 
 .map-stage-footer {
@@ -10421,6 +10550,11 @@ a {
     flex-direction: column;
   }
 
+  .map-toolbar-right {
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
   .realestate-map-layout.centered,
   .realestate-map-layout.split,
   .report-metric-grid,
@@ -10609,6 +10743,11 @@ a {
   stroke-width: 5px;
 }
 
+.realestate-map-page .subregion-labels text {
+  font-size: 8px;
+  opacity: 0.84;
+}
+
 .realestate-map-page .complex-preview-pins circle {
   fill: #fef3c7;
   stroke: #fb923c;
@@ -10637,6 +10776,28 @@ a {
   box-shadow:
     0 0 24px rgba(253, 186, 116, 0.36),
     inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.realestate-map-page .subregion-target-buttons button {
+  width: 70px;
+  height: 30px;
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(4, 11, 22, 0.56);
+  color: #f8fbff;
+  font-size: 10px;
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.realestate-map-page .subregion-shape {
+  stroke-width: 1.2;
+}
+
+.realestate-map-page .subregion-shape:hover,
+.realestate-map-page .subregion-shape:focus-visible,
+.realestate-map-page .subregion-shape.active {
+  stroke-width: 2.4;
 }
 
 .realestate-map-page .map-stage-footer {

@@ -1,7 +1,7 @@
 {
   "asOf": "2026-06-01",
   "sourceLabel": "시도 단위 mock heat layer",
-  "mapDataSource": "southkorea/southkorea-maps KOSTAT 2018 TopoJSON",
+  "mapDataSource": "southkorea/southkorea-maps KOSTAT 2018 시도/시군구 TopoJSON",
   "periods": ["week", "month", "halfYear"],
   "targets": [
     {
