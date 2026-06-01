@@ -87,8 +87,8 @@ const dismissNewsroomMenu = () => {
               </RouterLink>
             </span>
           </span>
-          <RouterLink data-testid="nav-stock" to="/stocks">지역/단지</RouterLink>
-          <RouterLink data-testid="nav-communities" to="/communities">반응 지표</RouterLink>
+          <RouterLink data-testid="nav-map" to="/realestate/map">지도</RouterLink>
+          <RouterLink data-testid="nav-region-reactions" to="/realestate/reactions">지역 반응</RouterLink>
           <RouterLink data-testid="nav-indicators" to="/indicators">주요 지표</RouterLink>
           <RouterLink data-testid="nav-portfolio" to="/portfolio">관심 지역</RouterLink>
         </nav>
@@ -134,7 +134,7 @@ const dismissNewsroomMenu = () => {
             <h3 id="footer-features-title">서비스 특징</h3>
             <span>관심 지역·단지 반응 변화 브리핑</span>
             <span>정책·교통·전세·매물 이벤트 연결</span>
-            <span>커뮤니티별 반응 비교와 유사 과거 상황</span>
+            <span>지역별 상승률과 유사 과거 상황</span>
             <span>AI 에이전트 근거 로그</span>
           </section>
 

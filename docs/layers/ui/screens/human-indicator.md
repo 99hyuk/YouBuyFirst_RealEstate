@@ -1,47 +1,51 @@
-# 인간 지표 화면
-
-> Legacy stock reference: 이 문서는 기존 주식 커뮤니티/성과 비교 화면 참고용입니다. 새 부동산 지표 화면은 `realestate-dashboard.md`와 `realestate-target-detail.md`를 기준으로 다시 설계합니다.
+# 반응 지표 화면
 
 ## Route
 
 - Parent: root
-- Route: `/communities`
-- `/agents`는 `/communities?view=agents`로 redirect합니다.
-- 종목 신호와 판단 로그의 종목명은 `/stocks/:symbol` 상세로 연결합니다.
+- Route 정보: `/communities?view=`
+- 연결 route:
+  - 표준 화면: `/realestate/reactions?view=signals`
+  - 지역/단지 상세: `/realestate/targets/:symbol`
+  - `/agents`: 현재는 `/realestate/reactions?view=agents`로 redirect
+
+> 이 brief는 기존 `/communities` URL의 호환 설명입니다. 새 반응 지표 UI는 `region-reactions.md`의 지역 반응 화면에 통합되었습니다.
 
 ## 화면 목적
 
-커뮤니티 반응을 긴 문장 목록이 아니라 투자 참고용 관찰 보드로 압축합니다. 사용자는 어떤 종목이 지금 뜨는지, 어떤 종목의 부정 반응이 강한지, 통합 지표 기반 모의 전략이 어떤 흐름을 보였는지 빠르게 훑고 종목 상세로 들어갈 수 있어야 합니다.
+부동산 커뮤니티 반응을 긴 글 목록이 아니라 관찰 지표로 압축합니다. 사용자는 어떤 지역의 언급량이 갑자기 늘었는지, 어떤 지역은 우려가 늘었는지, 어떤 이유로 반응이 커졌는지 빠르게 확인합니다.
 
 ## 현재 섹션
 
-- 상단 헤더: `인간 지표`, 하위 탭 `반응 한눈에 / 성과 비교 / 모의 에이전트`
-- 핵심 종목 모자이크: `지금 뜨는 종목`, `부정적인 종목`, `언급 많은 종목`, `라이징 스타`
-- 각 종목 신호: 종목명, 대표 수치, 반응 일관성/신뢰도, 짧은 이유 3개, 종목 상세 링크
-- 통합 지표 기반 모의 성과 그래프: `지표 추종`과 `통합 지표 역추종`
-- 전략 요약: 전략 버전, 판단 key 수, 후보/스킵 기준
-- 통합 반응 품질: coverage, 표본 수, 소스 편중 주의, 반응 일관성, 주요 쟁점
-- 모의 에이전트 판단 기록: 시간, 종목, 전략, 상태, 판단 입력값, 판단 key
+- 상단 summary: 전체 언급량, 기대/우려/중립 비율, 수집 시점
+- 핵심 타일: 지금 뜨는 지역, 우려 증가 지역, 언급 많은 지역, 라이징 단지군
+- 각 신호: 지역/단지명, 대표 수치, 반응 일관성, 신뢰도, 이유 keyword
+- 근거 로그: 수집된 source, keyword, alias match, 중복 제거 상태
 
-## UI 기준
+## 상태와 빈 화면
 
-- 대시보드와 같은 정보 밀도 기준을 따릅니다.
-- 긴 설명 문장보다 타일, 막대, 선 그래프, 칩, 표 형태로 해결합니다.
-- 상단은 3열 모자이크로 배치해 카드가 위에서 아래로만 나열되는 느낌을 피합니다.
-- 모의 성과는 수익 보장처럼 보이지 않게 `paper`, `모의`, `관찰`, `스킵` 표현을 유지합니다.
+- loading: summary와 signal tile skeleton을 보여줍니다.
+- empty: 수집된 반응이 없으면 수집 대상/키워드 설정을 안내합니다.
+- error: 커뮤니티별 수집 실패와 파싱 실패를 분리합니다.
+- stale/mock: 수집 시점, 공개 가능한 원문 링크 여부, mock 여부를 표시합니다.
 
 ## API 후보
 
-| Field | Owner Domain/Layer | Description |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `signalTiles` | indicator/agent | 지금 뜨는 종목, 부정적인 종목, 언급 많은 종목, 라이징 스타 |
-| `reactionQuality` | community/indicator | coverage, 표본 수, 소스 편중 주의, 반응 일관성, 주요 쟁점 |
-| `strategySeries` | agent/simulation | 지표 추종과 통합 지표 역추종의 paper 수익률 비교 |
-| `agentLogs` | agent/simulation | 모의 판단 로그, 판단 입력값, 판단 key, 스킵 사유 |
-| `strategyRules` | agent | 전략 버전, 판단 key 생성 기준, 중복 판단 방지 규칙 |
+| `reactionSummary` | indicator/community | 전체 언급량과 기대/우려/중립 비율 |
+| `signalTiles` | indicator/community | 지금 뜨는 지역, 우려 증가 지역 등 핵심 타일 |
+| `evidenceRows` | backend/community | 원문 링크, alias match, keyword, 중복 제거 상태 |
+| `agentLogs` | agent/backend | 에이전트 판단 근거와 상태 |
 
 ## 기획 확인 필요
 
-- `지표 추종`과 `통합 지표 역추종`의 정확한 계산 기간과 기준 수익률.
-- source별 수집 상태를 공개하지 않고 `reactionQuality`로 압축하는 기준.
-- 실제 API 연결 시 종목 상세에서 어떤 근거 링크까지 이어 보여줄지.
+- 커뮤니티 출처 30개 후보의 우선순위와 접근 가능성.
+- 별칭 DB에서 지역명과 단지명이 충돌할 때 우선순위.
+- 원문 링크를 어디까지 공개하고, 유료/로그인 콘텐츠는 어떻게 처리할지.
+
+## 변경 로그
+
+- 2026-06-01: 사람 지표/성과 비교 성격을 부동산 커뮤니티 반응 지표 화면으로 전환.
+- 2026-06-01: `/communities`를 `/realestate/reactions?view=`로 redirect하는 legacy URL로 전환.
+- 2026-06-01: 지역 반응 화면에서 ranking table과 중복되던 커뮤니티별 반응 비율 표를 제거.
