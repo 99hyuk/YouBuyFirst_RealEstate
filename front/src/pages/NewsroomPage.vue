@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
 import dashboardSummary from '../fixtures/dashboard-summary.json';
+import { sourceIconUrl } from '../lib/source-icons';
 
 type NewsroomFilter = 'all' | 'news' | 'reports' | 'videos' | 'links';
 type FeedTone = 'news' | 'report' | 'video' | 'link';
@@ -31,14 +32,6 @@ const filterLabels: Record<NewsroomFilter, string> = {
 };
 
 const pageSize = 15;
-
-const sourceIconInitial = (domain: string) => domain.replace(/^(www|new|cafe)\./, '').charAt(0).toUpperCase() || 'Y';
-const faviconUrl = (domain: string) => {
-  const label = sourceIconInitial(domain);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#fff7ed"/><text x="32" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#b45309">${label}</text></svg>`;
-
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-};
 
 const hideBrokenIcon = (event: Event) => {
   const image = event.target as HTMLImageElement;
@@ -411,7 +404,7 @@ const listStatusLabel = computed(() =>
               :aria-label="`${item.source} ${item.category}`"
               role="img"
             >
-              <img :src="faviconUrl(item.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+              <img :src="sourceIconUrl(item.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
             </span>
             <span class="feed-copy">
               <strong :title="item.title">{{ item.title }}</strong>
@@ -446,7 +439,7 @@ const listStatusLabel = computed(() =>
             :aria-label="`${item.source} ${item.category}`"
             role="img"
           >
-            <img :src="faviconUrl(item.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+            <img :src="sourceIconUrl(item.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
           </span>
           <span class="feed-copy">
             <strong :title="item.title">{{ item.title }}</strong>

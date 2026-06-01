@@ -1,47 +1,47 @@
-# 내 포트폴리오 화면
-
-> Legacy stock reference: 부동산 1차 범위에서는 포트폴리오/원장 화면을 활성 기능으로 보지 않습니다.
+# 관심 지역 화면
 
 ## Route
 
 - Parent: root
-- Route 후보: `/portfolio`
-- Child screens: OCR 상세 확인 drawer 후보
+- Route 정보: `/portfolio`
+- Child screens: 관심 지역 추가 drawer, alias/source 설정 drawer 후보
 
 ## 화면 목적
 
-가상 예수금, 보유 종목, 주문/원장, OCR 후보, 체결 후 복기를 한 화면에서 비교합니다. 실제 계좌 연동이 아니라 포트폴리오 mock과 향후 OCR 연동 설계를 보여줍니다.
+사용자가 직접 추적하고 싶은 지역과 단지군을 모아 보는 화면입니다. 보유 자산이나 실거래 내역을 관리하는 화면이 아니라, 관심 지역의 지표 변화, 커뮤니티 반응, 알림 조건, 근거 링크를 관리합니다.
 
 ## 현재 섹션
 
-- 포트폴리오 제목과 `실거래 아님` badge
-- 요약 KPI: 가상 예수금, 평가금액, 총 손익, 30일 수익률, OCR 후보, 미확인 원문
-- 보유 종목 table: 수량, 평균단가, 현재가, 손익, 커뮤니티 반응, 모의 판단 연결
-- 자산 OCR · 주식 계좌 연결 준비 panel: 민감정보 마스킹, 가상 원장 매핑, 이미지 선택 mock
-- 자산 배분 stack: 섹터/현금 비중을 막대로 표시
-- OCR/거래내역 후보, 주문 내역, 원장 내역을 같은 높이의 dense panel로 표시
-- 체결 후 복기 strip: 체결 이후 언급, 뉴스, 가격 지연, 원문 확인 상태
+- 관심 지역 summary: 등록 수, 알림 수, stale 데이터 수, 우려 증가 수
+- 관심 지역 ledger: 지역/단지명, 주요 지표, 언급 변화, 최근 이슈, 상세 링크
+- 알림 조건 panel: 거래량 급증, 전세가율 변화, 미분양 변화, 정책/교통 keyword
+- source/alias DB 연결 panel: 별칭, 커뮤니티 source, 키워드 매핑 상태
+- 관찰 로그: 최근 지표 변화, 커뮤니티 반응, 확인해야 할 링크
 
 ## 상태와 빈 화면
 
-- loading: KPI와 보유 종목 skeleton을 보여줍니다.
-- empty: 가상 포트폴리오가 없으면 OCR/수기 입력 후보만 보여줍니다.
-- error: OCR 파싱, 주문 내역, 원장 내역 실패를 분리합니다.
-- stale/mock: 수수료 mock, 체결 mock, 가격 snapshot mock을 명확히 표시합니다.
+- loading: summary와 관심 지역 table skeleton을 보여줍니다.
+- empty: 관심 지역이 없으면 지도와 지역/단지 순위 화면으로 이동할 수 있게 합니다.
+- error: 관심 목록, 알림 조건, source/alias DB 실패를 분리합니다.
+- stale/mock: 공공데이터 지연과 커뮤니티 수집 지연을 badge로 표시합니다.
 
 ## API 후보
 
 | 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `summary` | simulation | 가상 예수금, 평가금액, 총 손익, 기간별 수익률 |
-| `holdings` | simulation/market | 보유 종목, 수량, 평균단가, 현재가, 평가손익 |
-| `orders` | simulation/agent | 주문 요청, 체결, 취소, 실패, 스킵 |
-| `ledger` | simulation | 현금 변동, 체결 금액, 수수료 mock, 포지션 갱신 |
-| `importPreview` | layers/ui/simulation | OCR/CSV/수기 입력 후보와 confidence |
-| `reviews` | simulation/indicator/agent | 체결 후 커뮤니티 반응, 뉴스, 가격 변화 복기 |
+| `watchSummary` | user/backend | 관심 지역 수, 알림 수, stale 수 |
+| `watchTargets` | user/realestate | 관심 지역/단지 목록과 내부 target id |
+| `alertRules` | user/indicator | 알림 조건과 threshold |
+| `aliasMappings` | community/backend | 별칭, 단지명, 생활권 keyword 매핑 |
+| `sourceMappings` | community/backend | 커뮤니티/source별 수집 상태 |
+| `observationLogs` | indicator/community | 최근 관찰 로그와 근거 링크 |
 
-## 기획자 확인 필요
+## 기획 확인 필요
 
-- OCR은 실제 업로드 전 로컬 미저장 mock으로만 둘지.
-- 계좌번호, 이름, 주문번호 같은 민감정보 제거 기준.
-- 에이전트 판단과 내 포트폴리오 연결을 어느 화면에서 상세화할지.
+- 로그인 전 mock 관심 지역을 유지할지, 로그인 후 사용자별 저장으로만 둘지.
+- 알림 조건을 로컬 mock으로 둘지, backend rule로 저장할지.
+- 단지명 alias DB를 사용자가 직접 제보/수정할 수 있게 할지.
+
+## 변경 로그
+
+- 2026-06-01: 기존 원장형 화면을 관심 지역 관리 화면으로 전환.

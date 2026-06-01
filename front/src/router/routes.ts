@@ -1,12 +1,11 @@
 import type { RouteRecordRaw } from 'vue-router';
 
-import CommunitiesPage from '../pages/CommunitiesPage.vue';
 import DashboardPage from '../pages/DashboardPage.vue';
 import IndicatorsPage from '../pages/IndicatorsPage.vue';
 import NewsroomPage from '../pages/NewsroomPage.vue';
 import PortfolioPage from '../pages/PortfolioPage.vue';
-import StockDetailPage from '../pages/StockDetailPage.vue';
-import StockListPage from '../pages/StockListPage.vue';
+import RegionDetailPage from '../pages/RegionDetailPage.vue';
+import RegionReactionPage from '../pages/RegionReactionPage.vue';
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -19,24 +18,45 @@ export const routes: RouteRecordRaw[] = [
     component: DashboardPage
   },
   {
+    path: '/realestate/map',
+    name: 'realestate-map',
+    component: () => import('../pages/RealEstateMapPage.vue')
+  },
+  {
     path: '/newsroom',
     name: 'newsroom',
     component: NewsroomPage
   },
   {
+    path: '/realestate/reactions',
+    name: 'region-reactions',
+    component: RegionReactionPage
+  },
+  {
+    path: '/realestate/targets/:symbol',
+    name: 'region-detail',
+    component: RegionDetailPage
+  },
+  {
     path: '/stocks',
-    name: 'stocks',
-    component: StockListPage
+    name: 'legacy-region-reactions',
+    redirect: '/realestate/reactions'
   },
   {
     path: '/stocks/:symbol',
-    name: 'stock-detail',
-    component: StockDetailPage
+    name: 'legacy-region-detail',
+    redirect: (to) => ({
+      path: `/realestate/targets/${String(to.params.symbol ?? '')}`,
+      query: to.query
+    })
   },
   {
     path: '/communities',
-    name: 'communities',
-    component: CommunitiesPage
+    name: 'legacy-community-reactions',
+    redirect: (to) => ({
+      path: '/realestate/reactions',
+      query: to.query
+    })
   },
   {
     path: '/indicators',
@@ -52,7 +72,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/agents',
     name: 'agents',
     redirect: {
-      path: '/communities',
+      path: '/realestate/reactions',
       query: { view: 'agents' }
     }
   },

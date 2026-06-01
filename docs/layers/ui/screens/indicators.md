@@ -1,62 +1,70 @@
 # 주요 지표 화면
 
-> Refactor needed: 부동산 market fact와 지역/단지 반응 지표 화면으로 전환해야 합니다.
-
 ## Route
 
 - Parent: root
 - Overview route: `/indicators`
 - Detail routes:
-  - `/indicators/domestic`
-  - `/indicators/us`
-  - `/indicators/bonds`
-  - `/indicators/commodities`
+  - `/indicators/price-transaction`
+  - `/indicators/supply-demand`
+  - `/indicators/sentiment-demand`
+  - `/indicators/macro-finance`
 
 ## 화면 목적
 
-시장 전체 분위기를 일반 금융 대시보드처럼 길게 설명하지 않고, 핵심 지표와 커뮤니티 반응의 괴리를 한눈에 보여줍니다. 상세한 지표 묶음은 국내주식, 미국주식, 채권, 원자재 상세 route에서 확인합니다.
+부동산 시장을 하나의 등락률로 단순화하지 않고, 가격·거래량, 공급·수급, 수요·심리, 거시·금융 지표를 분리해 보여줍니다. 사용자는 어떤 지표가 지역 반응과 함께 움직이는지, 어떤 지표는 반응과 엇갈리는지 확인합니다.
 
 ## 현재 섹션
 
-- 핵심 지표 카드: 국내주식, 미국주식, 채권, 원자재
-- 각 카드: 대표 변화율, 한 줄 해석, 지표 chip, 상세 route 링크
-- 국장 섹터 방향: 정사각형에 가까운 섹터 타일, 상승/하락 방향, 강도 막대
-- 미장 섹터 방향: AI 반도체, 빅테크, 에너지, 소비재, 헬스케어, 리츠
-- 가격과 반응이 엇갈린 종목: 가격 변화, 반응 변화, 이유를 표로 표시
-- 섹터·테마별 반응 히트맵: chip map
-- 지표별 데이터 신선도
-- 주요 일정: CPI, FOMC, 실적, 공시
+- 지표 hub hero: 데이터 기준 시각, 공개 지연 안내
+- 핵심 지표 카테고리 카드: 네 가지 지표 묶음과 대표 수치
+- 지역별 지표 방향: 상승/하락 지역군과 핵심 키워드
+- 지표 묶음별 관찰 포인트: 가격, 공급, 심리, 금융의 해석 포인트
+- 지표와 반응이 엇갈린 지역: 공식 지표와 커뮤니티 반응 괴리 후보
+- 지표별 반응 히트맵: 핵심 수치 chip
+- 데이터 신선도: 한국부동산원, 국토부, 한국은행, 통계청 기준
+- 주요 일정: 가격동향, 실거래, 미분양, 금리 발표 후보
 
 ## 상세 route 섹션
 
-- 별도 분석 hero: 카테고리명, 대표 변화율, 전체 핵심 보기 링크
-- 상세 KPI grid: 상승 섹터 수, 커뮤니티 괴리, 일정 민감도, 시장 폭
-- 가격·반응 동시 변화 chart shell
-- 지표별 데이터 신선도와 연결 키워드
-- 가격과 반응이 엇갈린 종목 table
+- 상세 hero: 지표 묶음명, 요약, 방향성
+- 상세 KPI grid: 개별 지표의 값과 해석
+- 지표와 지역 반응 동시 변화 chart shell
+- 지표별 데이터 신선도
+- 연결 키워드 chip
+- 지표와 반응이 엇갈린 지역 table
 
-## UI 기준
+## 지표 정의
 
-- 탭 첫 화면은 핵심 정보만 보여줍니다.
-- 긴 설명은 카드, chip, 막대, 표, 섹터 타일로 치환합니다.
-- 상세 내용은 overview 카드 아래에 붙이지 않고 별도 route의 분석 페이지로 분리합니다.
-- 상승은 빨강, 하락은 파랑 계열을 유지합니다.
-- `추천`, `진입`, `확정 시그널` 같은 투자 자문형 표현은 쓰지 않습니다.
+- 가격 및 거래량: 매매가격지수, 전세가격지수, 실거래가 지수, 매매·전월세 거래량
+- 공급 및 수급: 미분양 주택 현황, 준공 후 미분양, 인허가·착공·준공 실적, 전세가율
+- 수요 및 심리: 매매수급지수, 전세수급지수, 부동산시장 소비심리지수
+- 거시경제 및 금융: 주택구입부담지수(K-HAI), 기준금리, 통화량(M2), 물가상승률
+
+## 상태와 빈 화면
+
+- loading: 카테고리 카드와 상세 KPI skeleton을 먼저 보여줍니다.
+- empty: 지표 값이 없으면 해당 출처와 다음 갱신 예정일을 보여줍니다.
+- error: 지표 묶음별로 실패 상태를 분리합니다.
+- stale/mock: 지표 공개 주기와 mock 여부를 같은 위치에 표시합니다.
 
 ## API 후보
 
-| Field | Owner Domain/Layer | Description |
+| 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `marketGroups` | market/indicator | 국내주식, 미국주식, 채권, 원자재 핵심 지표 묶음 |
-| `detailRows` | market/indicator | 상세 route별 지표 목록 |
-| `domesticSectors` | market/indicator | 국장 섹터 방향과 강도 |
-| `usSectors` | market/indicator | 미장 섹터 방향과 강도 |
-| `anomalyRows` | market/indicator | 가격과 반응이 엇갈린 종목 |
-| `freshnessRows` | backend | 지표별 데이터 신선도 |
-| `schedules` | market/backend | 주요 일정 |
+| `marketGroups` | market/realestate | 네 가지 핵심 지표 묶음 |
+| `detailRows` | market/realestate | 상세 route별 지표 목록 |
+| `regionTiles` | market/indicator | 지역군별 방향과 heat |
+| `anomalyRows` | indicator/community | 지표와 반응이 엇갈린 지역 |
+| `freshnessRows` | backend | 지표 출처별 공개 주기와 stale 상태 |
+| `schedules` | backend/content | 주요 발표 일정 |
 
 ## 기획 확인 필요
 
-- 상세 route의 최종 정보량과 API 응답 단위.
-- 섹터 분류 기준: KRX 업종, 자체 테마, 외부 provider 분류 중 무엇을 우선할지.
-- 채권/원자재 지표의 공개 배포 가능 데이터 provider.
+- 실거래가 지수는 전국/시도/시군구 중 어떤 단위까지 1차로 제공할지.
+- 수급지수와 소비심리지수의 기준선 100을 카드에서 얼마나 명확히 설명할지.
+- K-HAI, M2, 물가상승률은 전국 지표이므로 지역 화면에서 어떻게 가중치를 줄지.
+
+## 변경 로그
+
+- 2026-06-01: 금융시장 지표 묶음을 부동산 핵심 지표 네 그룹으로 교체.

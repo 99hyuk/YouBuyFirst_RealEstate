@@ -3,9 +3,10 @@ import { ref } from 'vue';
 import dashboardSummary from '../fixtures/dashboard-summary.json';
 import quoteSnapshots from '../fixtures/quote-snapshots.json';
 import reactionRanking from '../fixtures/reaction-ranking.json';
+import { sourceIconUrl } from '../lib/source-icons';
 
 const marketFilters = ['전체', '언급 증가', '정책 변화', '공공데이터 stale'];
-const returnTimeModes = ['일', '주', '월', '년'];
+const returnTimeModes = ['주', '월', '6개월', '년'];
 const drawerTabs = [
   { id: 'reaction', label: '반응' },
   { id: 'metrics', label: '지표' },
@@ -39,13 +40,6 @@ const reactionSignalGroups = [
 const formatPct = (value: number) => `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
 const trendClass = (trend: string) => (trend === 'down' ? 'down' : 'up');
-const sourceIconInitial = (domain: string) => domain.replace(/^(www|new|cafe)\./, '').charAt(0).toUpperCase() || 'Y';
-const faviconUrl = (domain: string) => {
-  const label = sourceIconInitial(domain);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#fff7ed"/><text x="32" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#b45309">${label}</text></svg>`;
-
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-};
 const hideBrokenIcon = (event: Event) => {
   const image = event.target as HTMLImageElement;
   image.hidden = true;
@@ -70,12 +64,6 @@ const externalIconClass = (item: { type: string; source?: string; iconDomain?: s
   if (item.iconDomain === 'finance.naver.com') return 'naver';
   if (item.iconDomain === 'www.tossinvest.com') return 'toss';
   return item.type;
-};
-const areaPointString = (pointString: string) => {
-  const pairs = pointString.split(' ');
-  const firstX = pairs[0]?.split(',')[0] ?? '0';
-  const lastX = pairs[pairs.length - 1]?.split(',')[0] ?? '128';
-  return `${pointString} ${lastX},46 ${firstX},46`;
 };
 type SeriesPoint = { x: number; y: number };
 
@@ -116,7 +104,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
       <p class="eyebrow">{{ reactionRanking.windowLabel }} · mock data</p>
       <div class="search-line">
         <div class="search-primary-row">
-          <aside class="retail-sentiment-gauge-card" aria-label="지역 반응 지수">
+          <aside class="retail-sentiment-gauge-card" aria-label="부동산 투기 과열 지표">
             <div class="retail-sentiment-copy">
               <span>{{ retailSentimentIndex.label }}</span>
               <strong>{{ retailSentimentIndex.value }}<small>{{ retailSentimentIndex.unit }}</small></strong>
@@ -140,7 +128,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
               </svg>
               <div class="retail-gauge-scale" aria-hidden="true">
                 <span>냉각</span>
-                <span>균형</span>
+                <span>주의</span>
                 <span>과열</span>
               </div>
             </div>
@@ -179,18 +167,18 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
           <article class="return-chart" aria-labelledby="return-title">
             <div class="panel-header">
               <div>
-                <p class="label">reaction history</p>
-                <h3 id="return-title">유사 과거 흐름 비교</h3>
+                <p class="label">regional momentum</p>
+                <h3 id="return-title">핵심 지역별 상승률</h3>
               </div>
               <div class="section-actions">
                 <span class="status-pill warning">mock</span>
-                <RouterLink class="detail-link" to="/communities">자세히 보기 →</RouterLink>
+                <RouterLink class="detail-link" to="/realestate/map">지도에서 보기 →</RouterLink>
               </div>
             </div>
 
-            <div class="community-graph" aria-label="커뮤니티별 mock 지표 그래프">
+            <div class="community-graph regional-graph" aria-label="핵심 지역별 상승률 그래프">
               <div class="community-graph-topline">
-                <div class="return-range-tabs in-graph-tabs" aria-label="커뮤니티 비교 단위">
+                <div class="return-range-tabs in-graph-tabs" aria-label="지역 상승률 기간">
                   <button
                     v-for="mode in returnTimeModes"
                     :key="mode"
@@ -200,15 +188,15 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                     {{ mode }}
                   </button>
                 </div>
-                <div class="graph-legend in-graph" aria-label="커뮤니티별 색상 범례">
-                  <div v-for="series in dashboardSummary.communityReturnSeries" :key="series.community" class="legend-item">
+                <div class="graph-legend in-graph" aria-label="지역별 색상 범례">
+                  <div v-for="series in dashboardSummary.regionalReturnSeries" :key="series.region" class="legend-item">
                     <span class="legend-swatch" :style="`--swatch: ${series.color}`"></span>
-                    <strong>{{ series.community }}</strong>
+                    <strong>{{ series.region }}</strong>
                   </div>
                 </div>
               </div>
               <svg viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="return-title">
-                <text class="axis-title" x="50" y="50">reaction delta (%)</text>
+                <text class="axis-title" x="50" y="50">price change (%)</text>
                 <line class="chart-grid" x1="50" x2="1142" y1="90" y2="90" />
                 <line class="chart-grid" x1="50" x2="1142" y1="250" y2="250" />
                 <line class="chart-grid" x1="50" x2="1142" y1="410" y2="410" />
@@ -235,16 +223,16 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <text class="axis-label x-axis" x="933" y="850">D-3</text>
                 <text class="axis-label x-axis" x="1138" y="850">현재</text>
                 <polyline
-                  v-for="series in dashboardSummary.communityReturnSeries"
-                  :key="`${series.community}-line`"
+                  v-for="series in dashboardSummary.regionalReturnSeries"
+                  :key="`${series.region}-line`"
                   class="return-line"
                   :points="widePointString(series.pointString)"
                   :stroke="series.color"
                 />
-                <g v-for="series in dashboardSummary.communityReturnSeries" :key="`${series.community}-points`">
+                <g v-for="series in dashboardSummary.regionalReturnSeries" :key="`${series.region}-points`">
                   <circle
                     v-for="point in series.points"
-                    :key="`${series.community}-${point.x}-${point.y}`"
+                    :key="`${series.region}-${point.x}-${point.y}`"
                     class="return-dot"
                     :cx="wideX(point.x)"
                     :cy="wideY(point.y)"
@@ -253,8 +241,8 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                   />
                 </g>
                 <text
-                  v-for="series in dashboardSummary.communityReturnSeries"
-                  :key="`${series.community}-end-label`"
+                  v-for="series in dashboardSummary.regionalReturnSeries"
+                  :key="`${series.region}-end-label`"
                   class="series-end-label"
                   :x="endLabelX(series.points)"
                   :y="wideY(series.points[series.points.length - 1].y) + 8"
@@ -265,10 +253,10 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
               </svg>
             </div>
 
-            <p class="chart-note">유사 과거 흐름 fixture · 부동산 자문 아님</p>
+            <p class="chart-note">핵심 지역별 상승률 fixture · 실거래 신고 지연 보정 전 · 부동산 자문 아님</p>
           </article>
 
-          <section class="mood-board stock-bubble-section reaction-panel" aria-labelledby="mood-title">
+          <section class="mood-board region-bubble-section reaction-panel" aria-labelledby="mood-title">
             <div class="mood-header">
               <div>
                 <p class="label">지금 뜨는 반응</p>
@@ -285,7 +273,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                     {{ period }}
                   </button>
                 </div>
-                <RouterLink class="detail-link" to="/stocks/SEOUL-MAPO">자세히 보기 →</RouterLink>
+                <RouterLink class="detail-link" to="/realestate/targets/SEOUL-MAPO">자세히 보기 →</RouterLink>
               </div>
             </div>
 
@@ -344,6 +332,16 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
               <h3 id="indicator-title">주요 부동산 지표</h3>
             </div>
             <div class="section-actions">
+              <div class="period-tabs indicator-period-tabs" aria-label="주요 부동산 지표 기간">
+                <button
+                  v-for="mode in returnTimeModes"
+                  :key="`indicator-${mode}`"
+                  type="button"
+                  :class="{ active: mode === '월' }"
+                >
+                  {{ mode }}
+                </button>
+              </div>
               <span class="status-pill warning">mock · 지연 가능</span>
               <RouterLink class="detail-link" to="/indicators">자세히 보기 →</RouterLink>
             </div>
@@ -360,10 +358,6 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <strong>{{ indicator.value }}</strong>
                 <em>{{ formatPct(indicator.changePct) }}</em>
               </div>
-              <svg viewBox="0 0 128 48" aria-hidden="true">
-                <polygon class="spark-area" :points="areaPointString(indicator.pointString)" />
-                <polyline :points="indicator.pointString" />
-              </svg>
               <small>{{ indicator.updatedLabel }}</small>
             </article>
           </div>
@@ -394,7 +388,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                   :aria-label="`${news.source} ${news.tag}`"
                   role="img"
                 >
-                  <img :src="faviconUrl(news.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(news.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="news.title">{{ news.title }}</strong>
@@ -428,7 +422,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                   :aria-label="`${report.source} ${report.tag}`"
                   role="img"
                 >
-                  <img :src="faviconUrl(report.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(report.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="report.title">{{ report.title }}</strong>
@@ -463,7 +457,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                   :aria-label="`${video.source} ${video.typeLabel}`"
                   role="img"
                 >
-                  <img :src="faviconUrl(video.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(video.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="video.title">{{ video.title }}</strong>
@@ -498,7 +492,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                   :aria-label="`${link.source} ${link.typeLabel}`"
                   role="img"
                 >
-                  <img :src="faviconUrl(link.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(link.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="link.title">{{ link.title }}</strong>
@@ -557,12 +551,12 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
         </div>
 
         <section v-show="activeDrawerTab === 'reaction'" class="drawer-tab-screen drawer-reaction-screen">
-          <div class="drawer-card hot-stock-panel" aria-labelledby="hot-stock-title">
+          <div class="drawer-card hot-region-panel" aria-labelledby="hot-region-title">
             <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
-            <h3 id="hot-stock-title">{{ topRiser.name }}</h3>
+            <h3 id="hot-region-title">{{ topRiser.name }}</h3>
             <strong>{{ formatPct(topRiser.mentionDeltaPct) }}</strong>
             <span>{{ topRiser.symbol }} · 언급 {{ topRiser.previousMentionCount }} → {{ topRiser.mentionCount }}</span>
-            <div class="hot-stock-metrics">
+            <div class="hot-region-metrics">
               <div>
                 <span>열기</span>
                 <em>{{ topRiser.heatScore }}</em>
@@ -572,10 +566,10 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <em>{{ topRiser.market }}</em>
               </div>
             </div>
-            <div class="hot-stock-drivers" aria-label="이 지역 반응이 움직인 이유">
+            <div class="hot-region-drivers" aria-label="이 지역 반응이 움직인 이유">
               <p>왜 움직였나</p>
               <div>
-                <span v-for="driver in topRiser.reactionDrivers" :key="`${driver.type}-${driver.label}`" class="hot-stock-driver">
+                <span v-for="driver in topRiser.reactionDrivers" :key="`${driver.type}-${driver.label}`" class="hot-region-driver">
                   <small>{{ driver.type }}</small>
                   {{ driver.label }}
                 </span>
@@ -589,7 +583,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
             <div class="drawer-section-title">
               <p class="label">early signal</p>
               <h3 id="drawer-rising-title">라이징 스타</h3>
-              <RouterLink class="detail-link" to="/stocks/SEOUL-MAPO">자세히 보기 →</RouterLink>
+              <RouterLink class="detail-link" to="/realestate/targets/SEOUL-MAPO">자세히 보기 →</RouterLink>
             </div>
             <div class="drawer-rising-list">
               <article v-for="item in dashboardSummary.risingStars" :key="item.symbol">

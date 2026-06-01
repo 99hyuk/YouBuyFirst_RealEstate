@@ -16,7 +16,15 @@ type MarketGroup = {
   metrics: { name: string; value: string; tone: Tone }[];
 };
 
-type SectorTile = {
+type IndicatorItem = {
+  category: string;
+  name: string;
+  value: string;
+  note: string;
+  tone: Tone;
+};
+
+type RegionTile = {
   name: string;
   direction: 'up' | 'down';
   change: string;
@@ -28,91 +36,91 @@ const route = useRoute();
 
 const marketGroups: MarketGroup[] = [
   {
-    id: 'domestic',
-    label: 'KR market',
-    title: '국내주식',
-    headline: '반도체가 지수를 끌고 2차전지는 식는 중',
-    change: '+0.44%',
+    id: 'price-transaction',
+    label: 'price & volume',
+    title: '가격 및 거래량',
+    headline: '실거래가와 거래량이 방향을 먼저 갈라줍니다',
+    change: '+0.31%',
     tone: 'up',
-    summary: 'KOSPI는 강보합, KOSDAQ은 약세입니다. 커뮤니티는 반도체와 장비주에 몰려 있습니다.',
-    chips: ['KOSPI 2,742.18', 'KOSDAQ 874.32', '반도체 언급 +28%'],
+    summary: '매매·전세가격지수, 실거래가 지수, 매매·전월세 거래량을 함께 보며 가격 흐름과 거래 강도를 분리합니다.',
+    chips: ['매매가격지수 101.8', '실거래가 지수 103.4', '거래량 -6.8%'],
     metrics: [
-      { name: 'KOSPI', value: '2,742.18', tone: 'up' },
-      { name: 'KOSDAQ', value: '874.32', tone: 'down' },
-      { name: 'KRX 반도체', value: '+1.4%', tone: 'up' }
+      { name: '매매가격지수', value: '101.8', tone: 'up' },
+      { name: '전세가격지수', value: '100.9', tone: 'up' },
+      { name: '거래량', value: '8.4만건', tone: 'down' }
     ]
   },
   {
-    id: 'us',
-    label: 'US market',
-    title: '미국주식',
-    headline: 'AI 대형주는 강한데 소비주는 눌림',
-    change: '+0.72%',
-    tone: 'up',
-    summary: 'NASDAQ과 SOX가 강하고 VIX는 낮습니다. 미국주식 게시글은 AI, GPU, 레버리지 ETF에 집중됩니다.',
-    chips: ['NASDAQ 16,340.87', 'SOX +1.12%', 'VIX 14.8'],
-    metrics: [
-      { name: 'NASDAQ', value: '16,340.87', tone: 'up' },
-      { name: 'SOX', value: '5,218.4', tone: 'up' },
-      { name: 'VIX', value: '14.8', tone: 'down' }
-    ]
-  },
-  {
-    id: 'bonds',
-    label: 'rates',
-    title: '채권',
-    headline: '금리 민감주는 눈치 보는 구간',
-    change: '+0.03p',
+    id: 'supply-demand',
+    label: 'supply balance',
+    title: '공급 및 수급',
+    headline: '미분양과 착공 감소는 2~3년 뒤를 보는 선행 신호입니다',
+    change: '-3.2%',
     tone: 'down',
-    summary: '미국 10년물은 소폭 상승했습니다. 성장주와 리츠 관련 반응은 조심스럽게 바뀌었습니다.',
-    chips: ['미국 10Y 4.41%', '한국 3Y 3.38%', 'FOMC 대기'],
+    summary: '미분양, 준공 후 미분양, 인허가·착공·준공 실적, 전세가율을 묶어 공급 부담과 실수요 압력을 봅니다.',
+    chips: ['미분양 5.7만호', '착공 -11.4%', '전세가율 62.4%'],
     metrics: [
-      { name: '미국 10Y', value: '4.41%', tone: 'down' },
-      { name: '한국 3Y', value: '3.38%', tone: 'neutral' },
-      { name: '금리 반응', value: '+9%', tone: 'up' }
+      { name: '준공 후 미분양', value: '1.2만호', tone: 'down' },
+      { name: '인허가', value: '-8.1%', tone: 'down' },
+      { name: '전세가율', value: '62.4%', tone: 'up' }
     ]
   },
   {
-    id: 'commodities',
-    label: 'commodity',
-    title: '원자재',
-    headline: '유가는 오르고 금은 안전자산 쪽으로 유지',
-    change: '+0.60%',
+    id: 'sentiment-demand',
+    label: 'demand mood',
+    title: '수요 및 심리',
+    headline: '수급지수와 소비심리가 가격보다 먼저 방향을 암시합니다',
+    change: '+4.8p',
     tone: 'up',
-    summary: 'WTI와 금이 모두 소폭 상승했습니다. 정유, 운송, 안전자산 키워드가 분리되어 움직입니다.',
-    chips: ['WTI 78.4', '금 2,380', '정유 관심 +4%'],
+    summary: '매매수급동향, 전세수급동향, 부동산시장 소비심리지수를 기준선 100과 비교해 수요 우위를 확인합니다.',
+    chips: ['매매수급 104.2', '전세수급 107.8', '소비심리 112.5'],
     metrics: [
-      { name: 'WTI', value: '78.4', tone: 'up' },
-      { name: '금', value: '2,380', tone: 'up' },
-      { name: '구리', value: '+0.3%', tone: 'neutral' }
+      { name: '매매수급지수', value: '104.2', tone: 'up' },
+      { name: '전세수급지수', value: '107.8', tone: 'up' },
+      { name: '소비심리지수', value: '112.5', tone: 'up' }
+    ]
+  },
+  {
+    id: 'macro-finance',
+    label: 'macro finance',
+    title: '거시경제 및 금융',
+    headline: '구매력과 자금 조달 비용이 지역 반응의 상한선을 만듭니다',
+    change: '3.50%',
+    tone: 'neutral',
+    summary: '주택구입부담지수, 기준금리, 통화량 M2, 물가상승률을 함께 보며 자금 유입 가능성과 부담을 분리합니다.',
+    chips: ['K-HAI 172.4', '기준금리 3.50%', 'M2 +5.1%'],
+    metrics: [
+      { name: 'K-HAI', value: '172.4', tone: 'down' },
+      { name: '기준금리', value: '3.50%', tone: 'neutral' },
+      { name: '물가상승률', value: '2.7%', tone: 'neutral' }
     ]
   }
 ];
 
 const detailRows: Record<string, { label: string; value: string; note: string; tone: Tone }[]> = {
-  domestic: [
-    { label: '상승 섹터 수', value: '4 / 6', note: '반도체, 로봇, 금융 우세', tone: 'up' },
-    { label: '커뮤니티 괴리', value: 'NAVER', note: '가격 상승인데 부정 반응 증가', tone: 'down' },
-    { label: '일정 민감도', value: '실적 발표', note: '반도체 장비주 댓글 속도 증가', tone: 'up' },
-    { label: '시장 폭', value: '58%', note: '상승 종목이 우세하지만 대형주 편중', tone: 'neutral' }
+  'price-transaction': [
+    { label: '매매가격지수', value: '101.8', note: '기준 시점 100 대비 가격 레벨을 비교합니다.', tone: 'up' },
+    { label: '전세가격지수', value: '100.9', note: '전세 압력이 매매 전환 수요로 이어지는지 봅니다.', tone: 'up' },
+    { label: '실거래가 지수', value: '103.4', note: '실제 계약가 기반이라 후행이지만 방향 신뢰도가 높습니다.', tone: 'up' },
+    { label: '매매·전월세 거래량', value: '8.4만건', note: '평년 대비 급감하면 관망 또는 침체 신호로 봅니다.', tone: 'down' }
   ],
-  us: [
-    { label: '상승 섹터 수', value: '3 / 6', note: 'AI와 에너지 우세', tone: 'up' },
-    { label: '커뮤니티 괴리', value: 'SOXS', note: 'ETF 상승인데 부정 언급 우세', tone: 'down' },
-    { label: '일정 민감도', value: 'PCE', note: '금리 민감 글 증가', tone: 'neutral' },
-    { label: '시장 폭', value: '51%', note: 'AI 대형주 중심으로 폭이 좁음', tone: 'neutral' }
+  'supply-demand': [
+    { label: '미분양 주택', value: '5.7만호', note: '감소는 분양 소화, 증가는 공급 부담으로 읽습니다.', tone: 'down' },
+    { label: '준공 후 미분양', value: '1.2만호', note: '악성 미분양으로 분리해 더 강한 침체 신호로 봅니다.', tone: 'down' },
+    { label: '인허가·착공·준공', value: '-11.4%', note: '착공 감소는 2~3년 뒤 입주 부족 후보입니다.', tone: 'down' },
+    { label: '전세가율', value: '62.4%', note: '높을수록 실수요 기반과 매매 전환 압력을 같이 봅니다.', tone: 'up' }
   ],
-  bonds: [
-    { label: '미국 10Y', value: '4.41%', note: '성장주 반응을 누르는 구간', tone: 'down' },
-    { label: '한국 3Y', value: '3.38%', note: '금융주 배당 글과 연결', tone: 'neutral' },
-    { label: '반응 키워드', value: 'FOMC', note: '리츠, 성장주, 환율 글에서 반복', tone: 'up' },
-    { label: '환율 민감도', value: '+12%', note: '수출주 글에서 원달러 키워드 증가', tone: 'up' }
+  'sentiment-demand': [
+    { label: '매매수급지수', value: '104.2', note: '100보다 높으면 수요가 공급보다 많다는 뜻입니다.', tone: 'up' },
+    { label: '전세수급지수', value: '107.8', note: '전세 매물 부족 체감과 함께 확인합니다.', tone: 'up' },
+    { label: '소비심리지수', value: '112.5', note: '중개업소와 가구 설문 기반의 선행 심리 지표입니다.', tone: 'up' },
+    { label: '커뮤니티 언급량', value: '+38%', note: '공식 심리 지표가 늦게 반영하는 체감 변화를 보조합니다.', tone: 'up' }
   ],
-  commodities: [
-    { label: 'WTI', value: '78.4', note: '정유와 운송 키워드가 갈림', tone: 'up' },
-    { label: '금', value: '2,380', note: '안전자산 글에서 유지', tone: 'up' },
-    { label: '원자재 반응', value: '+7%', note: '방산, 에너지 글에서 보조 지표로 등장', tone: 'neutral' },
-    { label: '달러 영향', value: '중립', note: '원자재보다 환율 글로 분산', tone: 'neutral' }
+  'macro-finance': [
+    { label: '주택구입부담지수(K-HAI)', value: '172.4', note: '높을수록 중간 소득 가구의 구매력이 떨어집니다.', tone: 'down' },
+    { label: '기준금리', value: '3.50%', note: '담보대출 금리와 수요 자극 가능성을 연결해 봅니다.', tone: 'neutral' },
+    { label: '통화량(M2)', value: '+5.1%', note: '시중 유동성이 부동산으로 유입될 여지를 봅니다.', tone: 'up' },
+    { label: '물가상승률', value: '2.7%', note: '실질 구매력과 금리 경로를 같이 판단합니다.', tone: 'neutral' }
   ]
 };
 
@@ -121,46 +129,38 @@ const selectedGroup = computed(() => {
   return marketGroups.find((group) => group.id === category) ?? null;
 });
 
-const domesticSectors: SectorTile[] = [
-  { name: '반도체', direction: 'up', change: '+1.8%', heat: 92, keyword: 'HBM·장비' },
-  { name: '로봇', direction: 'up', change: '+1.4%', heat: 76, keyword: '수주·공시' },
-  { name: '금융', direction: 'up', change: '+0.9%', heat: 61, keyword: '배당·금리' },
-  { name: '자동차', direction: 'up', change: '+0.6%', heat: 54, keyword: '환율·수출' },
-  { name: '2차전지', direction: 'down', change: '-1.1%', heat: 68, keyword: '마진·수급' },
-  { name: '바이오', direction: 'down', change: '-0.2%', heat: 43, keyword: '임상·공시' }
-];
-
-const usSectors: SectorTile[] = [
-  { name: 'AI 반도체', direction: 'up', change: '+2.1%', heat: 94, keyword: 'GPU·서버' },
-  { name: '빅테크', direction: 'up', change: '+0.8%', heat: 78, keyword: 'CAPEX' },
-  { name: '에너지', direction: 'up', change: '+0.5%', heat: 52, keyword: 'WTI' },
-  { name: '소비재', direction: 'down', change: '-0.7%', heat: 51, keyword: '소비 둔화' },
-  { name: '헬스케어', direction: 'down', change: '-0.3%', heat: 46, keyword: '실적' },
-  { name: '리츠', direction: 'down', change: '-1.3%', heat: 59, keyword: '금리' }
+const regionTiles: RegionTile[] = [
+  { name: '서울 핵심지', direction: 'up', change: '+0.42%', heat: 88, keyword: '전세가율·수급' },
+  { name: '수도권 외곽', direction: 'down', change: '-0.18%', heat: 54, keyword: '거래량 둔화' },
+  { name: '광역시', direction: 'up', change: '+0.12%', heat: 61, keyword: '미분양 감소' },
+  { name: '지방 중소도시', direction: 'down', change: '-0.24%', heat: 48, keyword: '준공 후 미분양' },
+  { name: '전세 압력 지역', direction: 'up', change: '+0.37%', heat: 77, keyword: '전세수급 100+' },
+  { name: '입주 부담 지역', direction: 'down', change: '-0.31%', heat: 59, keyword: '준공 물량' }
 ];
 
 const anomalyRows = [
-  { stock: 'NAVER', type: '가격 상승 · 부정 증가', price: '+0.7%', reaction: '부정 +14p', reason: '비용 우려' },
-  { stock: '에코프로', type: '가격 하락 · 관심 증가', price: '-1.1%', reaction: '관심 +24%', reason: '수급 논쟁' },
-  { stock: '한미반도체', type: '가격 상승 · 긍정 확산', price: '+2.3%', reaction: '긍정 +18p', reason: 'HBM 장비' },
-  { stock: 'SOXS', type: 'ETF 상승 · 부정 우세', price: '+1.6%', reaction: '부정 +9p', reason: '변동성 회피' }
+  { target: '마포구 아파트', type: '전세수급 상승 · 거래량 둔화', price: '+0.18%', reaction: '우려 +21p', reason: '전세 매물 감소' },
+  { target: '동탄역권', type: '교통 기대 · 입주 물량 부담', price: '+0.11%', reaction: '관심 +38%', reason: 'GTX·입주 논쟁' },
+  { target: '송도국제도시', type: '미분양 부담 · 학군 기대 공존', price: '-0.16%', reaction: '중립 42%', reason: '공급 소화 확인 필요' },
+  { target: '분당·판교', type: '매매수급 우위 · 가격 지연', price: '+0.27%', reaction: '기대 +26p', reason: '재건축·일자리' }
 ];
 
 const schedules = [
-  { date: '05.20', time: '03:00', title: 'FOMC 의사록', watch: '금리·환율 반응' },
-  { date: '05.22', time: '21:30', title: '미국 CPI 수정치', watch: '성장주·채권' },
-  { date: '05.23', time: '장중', title: '국내 주요 실적 발표', watch: '반도체 장비주' },
-  { date: '05.24', time: '수시', title: '공시 일정 갱신', watch: '로봇·바이오' }
+  { date: '06.03', time: '주간', title: '한국부동산원 주간 가격동향', watch: '매매·전세가격지수' },
+  { date: '06.05', time: '월간', title: '실거래가 지수 갱신', watch: '신고 지연 보정' },
+  { date: '06.10', time: '월간', title: '미분양·인허가 통계', watch: '준공 후 미분양' },
+  { date: '06.12', time: '수시', title: '기준금리·대출 금리 변화', watch: 'K-HAI·수요 심리' }
 ];
 
 const freshnessRows = [
-  { source: '국내 지수', state: '15분 지연', used: '국내주식 카드' },
-  { source: '미국 지수', state: 'mock', used: '미국주식 카드' },
-  { source: '환율·금리', state: '지연', used: '채권·환율 민감도' },
-  { source: '커뮤니티 반응', state: '10:05 수집', used: '괴리 보드' }
+  { source: '한국부동산원 가격지수', state: '주간 공개', used: '매매·전세가격지수' },
+  { source: '국토부 실거래가', state: '신고·공개 지연', used: '실거래가 지수·거래량' },
+  { source: '국토부 주택통계', state: '월간 공개', used: '미분양·인허가·착공·준공' },
+  { source: '한국은행·통계청', state: '월간·수시', used: '기준금리·M2·물가' }
 ];
 
-const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
+const themeChips = ['매매가격지수 101.8', '전세가율 62.4%', '미분양 5.7만호', '매매수급 104.2', 'K-HAI 172.4', 'M2 +5.1%'];
+const detailChartTicks = ['D-30', 'D-21', 'D-14', 'D-7', 'D-3', '현재'];
 </script>
 
 <template>
@@ -187,8 +187,8 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
       <article class="indicator-detail-chart-panel">
         <div class="section-band-title">
           <div>
-            <p class="label">market x reaction</p>
-            <h3>가격·반응 동시 변화</h3>
+            <p class="label">indicator x reaction</p>
+            <h3>지표와 지역 반응 동시 변화</h3>
           </div>
           <span>mock trend</span>
         </div>
@@ -239,15 +239,15 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
       <div class="section-band-title">
         <div>
           <p class="label">reaction anomaly</p>
-          <h3>가격과 반응이 엇갈린 종목</h3>
+          <h3>지표와 반응이 엇갈린 지역</h3>
         </div>
         <span>관찰 후보</span>
       </div>
       <div class="indicator-row-head">
-        <span>종목</span><span>괴리</span><span>가격</span><span>반응</span><span>이유</span>
+        <span>지역/단지</span><span>괴리</span><span>지표</span><span>반응</span><span>이유</span>
       </div>
-      <article v-for="row in anomalyRows" :key="`${row.stock}-${row.type}`">
-        <strong>{{ row.stock }}</strong>
+      <article v-for="row in anomalyRows" :key="`${row.target}-${row.type}`">
+        <strong>{{ row.target }}</strong>
         <span>{{ row.type }}</span>
         <em :class="row.price.startsWith('-') ? 'down' : 'up'">{{ row.price }}</em>
         <b>{{ row.reaction }}</b>
@@ -259,13 +259,13 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
   <section v-else class="surface-page indicators-page indicator-hub-page">
     <section class="indicator-hub-hero" aria-labelledby="indicators-title">
       <div>
-        <p class="label">market context</p>
+        <p class="label">real estate context</p>
         <h2 id="indicators-title">주요 지표</h2>
-        <span>시장 지표 자체보다 커뮤니티 반응과 엇갈리는 구간을 먼저 봅니다.</span>
+        <span>가격·거래량, 공급·수급, 수요·심리, 거시·금융 지표를 지역 반응과 함께 봅니다.</span>
       </div>
       <div class="indicator-hub-clock">
         <strong>10:05</strong>
-        <span>mock · 지연 혼합</span>
+        <span>mock · 공개 지연 혼합</span>
       </div>
     </section>
 
@@ -298,21 +298,21 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
       <article class="sector-map-panel">
         <div class="section-band-title">
           <div>
-            <p class="label">sector breadth</p>
-            <h3>국장 섹터 방향</h3>
+            <p class="label">regional breadth</p>
+            <h3>지역별 지표 방향</h3>
           </div>
-          <span>상승 4 · 하락 2</span>
+          <span>상승 3 · 하락 3</span>
         </div>
         <div class="sector-square-grid">
           <article
-            v-for="sector in domesticSectors"
-            :key="sector.name"
-            :class="['sector-square', sector.direction]"
+            v-for="tile in regionTiles"
+            :key="tile.name"
+            :class="['sector-square', tile.direction]"
           >
-            <strong>{{ sector.name }}</strong>
-            <b>{{ sector.change }}</b>
-            <span>{{ sector.keyword }}</span>
-            <i><mark :style="{ width: `${sector.heat}%` }"></mark></i>
+            <strong>{{ tile.name }}</strong>
+            <b>{{ tile.change }}</b>
+            <span>{{ tile.keyword }}</span>
+            <i><mark :style="{ width: `${tile.heat}%` }"></mark></i>
           </article>
         </div>
       </article>
@@ -320,21 +320,17 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
       <article class="sector-map-panel">
         <div class="section-band-title">
           <div>
-            <p class="label">sector breadth</p>
-            <h3>미장 섹터 방향</h3>
+            <p class="label">indicator map</p>
+            <h3>지표 묶음별 관찰 포인트</h3>
           </div>
-          <span>상승 3 · 하락 3</span>
+          <span>가격 · 공급 · 심리 · 금융</span>
         </div>
         <div class="sector-square-grid">
-          <article
-            v-for="sector in usSectors"
-            :key="sector.name"
-            :class="['sector-square', sector.direction]"
-          >
-            <strong>{{ sector.name }}</strong>
-            <b>{{ sector.change }}</b>
-            <span>{{ sector.keyword }}</span>
-            <i><mark :style="{ width: `${sector.heat}%` }"></mark></i>
+          <article v-for="item in marketGroups" :key="item.id" :class="['sector-square', item.tone === 'down' ? 'down' : 'up']">
+            <strong>{{ item.title }}</strong>
+            <b>{{ item.change }}</b>
+            <span>{{ item.headline }}</span>
+            <i><mark :style="{ width: item.tone === 'neutral' ? '58%' : '78%' }"></mark></i>
           </article>
         </div>
       </article>
@@ -345,15 +341,15 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
         <div class="section-band-title">
           <div>
             <p class="label">reaction anomaly</p>
-            <h3>가격과 반응이 엇갈린 종목</h3>
+            <h3>지표와 반응이 엇갈린 지역</h3>
           </div>
           <span>관찰 후보</span>
         </div>
         <div class="indicator-row-head">
-          <span>종목</span><span>괴리</span><span>가격</span><span>반응</span><span>이유</span>
+          <span>지역/단지</span><span>괴리</span><span>지표</span><span>반응</span><span>이유</span>
         </div>
-        <article v-for="row in anomalyRows" :key="`${row.stock}-${row.type}`">
-          <strong>{{ row.stock }}</strong>
+        <article v-for="row in anomalyRows" :key="`${row.target}-${row.type}`">
+          <strong>{{ row.target }}</strong>
           <span>{{ row.type }}</span>
           <em :class="row.price.startsWith('-') ? 'down' : 'up'">{{ row.price }}</em>
           <b>{{ row.reaction }}</b>
@@ -365,17 +361,12 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
         <section>
           <div class="section-band-title compact">
             <div>
-              <p class="label">theme heatmap</p>
-              <h3>섹터·테마별 반응 히트맵</h3>
+              <p class="label">indicator heatmap</p>
+              <h3>지표별 반응 히트맵</h3>
             </div>
           </div>
           <div class="theme-chip-map">
-            <span class="hot">반도체 92</span>
-            <span class="hot">미국주식 82</span>
-            <span>2차전지 76</span>
-            <span>로봇 69</span>
-            <span class="cool">바이오 48</span>
-            <span class="cool">배당 35</span>
+            <span v-for="chip in themeChips" :key="chip" :class="chip.includes('K-HAI') ? 'cool' : 'hot'">{{ chip }}</span>
           </div>
         </section>
 
@@ -401,7 +392,7 @@ const detailChartTicks = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00'];
           <p class="label">calendar</p>
           <h3>주요 일정</h3>
         </div>
-        <span>CPI · FOMC · 실적 · 공시</span>
+        <span>가격지수 · 실거래 · 미분양 · 금리</span>
       </div>
       <article v-for="schedule in schedules" :key="`${schedule.date}-${schedule.title}`">
         <time>{{ schedule.date }}</time>
