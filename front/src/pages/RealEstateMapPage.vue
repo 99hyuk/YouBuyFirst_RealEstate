@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { geoCentroid, geoMercator, geoPath } from 'd3-geo';
+import { geoCentroid, geoContains, geoMercator, geoPath } from 'd3-geo';
 import type { Feature, FeatureCollection, Geometry, Position } from 'geojson';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
@@ -36,6 +36,7 @@ type MunicipalityTopology = Topology<{
 }>;
 type MapFeature = {
   code: string;
+  depthTransform: string;
   label: { x: number; y: number };
   path: string;
   pathTransform?: string;
@@ -129,6 +130,46 @@ const trimSmallMultipolygons = <P,>(feature: Feature<Geometry, P>, minRatio = 0.
   };
 };
 
+const projectedInteriorPoint = (
+  feature: ProvinceFeature,
+  projection: ReturnType<typeof geoMercator>,
+  pathGenerator: ReturnType<typeof geoPath>
+) => {
+  const centroid = pathGenerator.centroid(feature);
+  const projectedToCoordinates = projection.invert?.(centroid);
+
+  if (projectedToCoordinates && geoContains(feature, projectedToCoordinates)) {
+    return centroid;
+  }
+
+  const [[minX, minY], [maxX, maxY]] = pathGenerator.bounds(feature);
+  const center = [(minX + maxX) / 2, (minY + maxY) / 2];
+  const steps = 28;
+  let bestPoint = centroid;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (let yIndex = 0; yIndex <= steps; yIndex += 1) {
+    for (let xIndex = 0; xIndex <= steps; xIndex += 1) {
+      const point: [number, number] = [
+        minX + ((maxX - minX) * xIndex) / steps,
+        minY + ((maxY - minY) * yIndex) / steps
+      ];
+      const coordinates = projection.invert?.(point);
+
+      if (!coordinates || !geoContains(feature, coordinates)) continue;
+
+      const score = (point[0] - center[0]) ** 2 + (point[1] - center[1]) ** 2;
+
+      if (score < bestScore) {
+        bestPoint = point;
+        bestScore = score;
+      }
+    }
+  }
+
+  return bestPoint;
+};
+
 const provinceDisplayCollection: FeatureCollection<Geometry, ProvinceProperties> = {
   ...provinceFeatureCollection,
   features: provinceFeatureCollection.features.map((feature) => trimSmallMultipolygons(feature as ProvinceFeature, 0.04))
@@ -154,14 +195,15 @@ const countryPath = nationalPathGenerator(countryOutlineFeatureCollection) ?? ''
 const mapFeatures = provinceDisplayCollection.features.reduce<MapFeature[]>((items, feature: ProvinceFeature) => {
   const target = targetByRegionCode.get(feature.properties.code);
   const path = nationalPathGenerator(feature);
-  const centroid = nationalProjection(geoCentroid(feature));
+  const centroid = projectedInteriorPoint(feature, nationalProjection, nationalPathGenerator);
 
-  if (!target || !path || !centroid) return items;
+  if (!target || !path || !Number.isFinite(centroid[0]) || !Number.isFinite(centroid[1])) return items;
 
   const visualOffsetY = target.id === 'jeju' ? -56 : 0;
 
   items.push({
     code: feature.properties.code,
+    depthTransform: `translate(0 ${visualOffsetY + 13})`,
     label: { x: centroid[0], y: centroid[1] + visualOffsetY },
     path,
     pathTransform: visualOffsetY ? `translate(0 ${visualOffsetY})` : undefined,
@@ -172,25 +214,9 @@ const mapFeatures = provinceDisplayCollection.features.reduce<MapFeature[]>((ite
   return items;
 }, []);
 const samplePins = mapFeatures.filter((feature) => ['seoul', 'gyeonggi', 'busan'].includes(feature.target.id));
-const compactRegionIds = new Set(['seoul', 'incheon', 'sejong', 'daejeon', 'daegu', 'gwangju', 'ulsan', 'busan']);
-const labelOffsetByRegionId: Record<string, { x: number; y: number }> = {
-  busan: { x: 38, y: 20 },
-  chungbuk: { x: 26, y: -4 },
-  chungnam: { x: -36, y: 18 },
-  daegu: { x: 42, y: 26 },
-  daejeon: { x: 16, y: 28 },
-  gangwon: { x: 26, y: -8 },
-  gwangju: { x: -50, y: 2 },
-  gyeongbuk: { x: 34, y: -18 },
-  gyeonggi: { x: 42, y: -44 },
-  gyeongnam: { x: -10, y: 28 },
-  incheon: { x: -38, y: -12 },
-  jeju: { x: 0, y: -10 },
-  jeonbuk: { x: -28, y: -4 },
-  jeonnam: { x: -26, y: 34 },
-  sejong: { x: -10, y: -32 },
-  seoul: { x: 8, y: -4 },
-  ulsan: { x: 42, y: -18 }
+const labelNudgeByRegionId: Record<string, { x: number; y: number }> = {
+  chungbuk: { x: -8, y: -4 },
+  gyeonggi: { x: 0, y: 36 }
 };
 
 const routeRegionId = computed(() => String(route.params.regionId ?? '').toLowerCase());
@@ -329,15 +355,10 @@ const subregionSampleCount = (feature: SubregionFeature) => {
 };
 const subregionConfidence = (feature: SubregionFeature) =>
   Math.max(38, Math.min(92, feature.parent.confidence - 8 + (numberSeed(feature.code) % 19)));
-const labelButtonStyle = (feature: MapFeature) => {
-  const offset = labelOffsetByRegionId[feature.target.id] ?? { x: 0, y: 0 };
-
-  return {
-    left: `${((feature.label.x + offset.x) / nationalMapSize.width) * 100}%`,
-    top: `${((feature.label.y + offset.y - 4) / nationalMapSize.height) * 100}%`,
-    zIndex: compactRegionIds.has(feature.target.id) ? 4 : 2
-  };
-};
+const labelButtonStyle = (feature: MapFeature) => ({
+  left: `${((feature.label.x + (labelNudgeByRegionId[feature.target.id]?.x ?? 0)) / nationalMapSize.width) * 100}%`,
+  top: `${((feature.label.y + (labelNudgeByRegionId[feature.target.id]?.y ?? 0)) / nationalMapSize.height) * 100}%`
+});
 const subregionButtonStyle = (feature: SubregionFeature) => ({
   left: `${(feature.label.x / detailMapSize.width) * 100}%`,
   top: `${(feature.label.y / detailMapSize.height) * 100}%`
@@ -533,10 +554,6 @@ watch(
         <p>{{ pageDescription }}</p>
       </div>
       <div class="map-header-actions">
-        <RouterLink v-if="selectedRegion" class="map-return-cta" to="/realestate/map" aria-label="전국 지도로 돌아가기">
-          <span>←</span>
-          <strong>전국 지도로 돌아가기</strong>
-        </RouterLink>
         <span class="status-pill warning">mock · {{ mapFixture.asOf }}</span>
         <div class="period-tabs" aria-label="지도 기간 선택">
           <button
@@ -566,7 +583,6 @@ watch(
             </h3>
           </div>
           <div class="map-toolbar-right">
-            <RouterLink v-if="selectedRegion" class="map-back-link" to="/realestate/map">← 전국</RouterLink>
             <div class="map-legend" aria-label="지역 색상 범례">
               <span><i class="up"></i>상승</span>
               <span><i class="down"></i>하락</span>
@@ -576,6 +592,15 @@ watch(
         </div>
 
         <div class="korea-map-shell">
+          <RouterLink
+            v-if="selectedRegion"
+            class="map-return-cta map-surface-return"
+            to="/realestate/map"
+            aria-label="전국 지도로 돌아가기"
+          >
+            <span>←</span>
+            <strong>전국 지도로 돌아가기</strong>
+          </RouterLink>
           <div :class="['korea-map-board', { 'region-drilldown-map-board': selectedRegion }]">
             <svg
               v-if="!selectedRegion"
@@ -590,7 +615,7 @@ watch(
                   v-for="feature in mapFeatures"
                   :key="`${feature.code}-depth`"
                   :d="feature.path"
-                  :transform="feature.pathTransform"
+                  :transform="feature.depthTransform"
                 />
               </g>
               <g class="region-glow-layer" aria-hidden="true">
@@ -645,7 +670,12 @@ watch(
             >
               <path class="korea-outline region-detail-outline" :d="detailOutlinePath" />
               <g class="region-extrusion" aria-hidden="true">
-                <path v-for="feature in subregionFeatures" :key="`${feature.code}-depth`" :d="feature.path" />
+                <path
+                  v-for="feature in subregionFeatures"
+                  :key="`${feature.code}-depth`"
+                  :d="feature.path"
+                  transform="translate(0 13)"
+                />
               </g>
               <g class="region-glow-layer" aria-hidden="true">
                 <path
