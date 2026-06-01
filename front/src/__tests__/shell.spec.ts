@@ -108,7 +108,9 @@ describe('front dashboard shell', () => {
     expect(reactions.text()).toContain('단지군 관심 TOP 6');
     expect(reactions.text()).toContain('지역·단지 순위, 급증 신호');
     expect(reactions.text()).toContain('정렬 기준');
-    expect(reactions.text()).toContain('커뮤니티별 언급 급증 지역');
+    expect(reactions.text()).toContain('커뮤니티 언급 급증 지역');
+    expect(reactions.text()).toContain('언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합');
+    expect(reactions.text()).not.toContain('커뮤니티별 언급 급증 지역');
     expect(reactions.text()).toContain('모의 에이전트 판단 기록');
     expect(reactions.text()).not.toContain('커뮤니티별 언급 급증과 반응 비율');
     expect(reactions.text()).not.toContain('커뮤니티 반응과 공식 지표 비교 그래프');
@@ -144,10 +146,11 @@ describe('front dashboard shell', () => {
 
     const communities = await mountAt('/communities');
     expect(communities.text()).toContain('지역 반응');
-    expect(communities.text()).toContain('커뮤니티별 언급 급증 지역');
+    expect(communities.text()).toContain('커뮤니티 언급 급증 지역');
+    expect(communities.text()).not.toContain('커뮤니티별 언급 급증 지역');
     expect(communities.text()).not.toContain('커뮤니티별 반응 비교');
     expect(communities.text()).not.toContain('커뮤니티별 언급 급증과 반응 비율');
-    expect(communities.text()).toContain('인기글·댓글·지역 블로그 레이어');
+    expect(communities.text()).toContain('언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합');
     expect(communities.text()).not.toContain('지역별 반응 선행성 실험');
     expect(communities.text()).toContain('모의 에이전트');
     expect(communities.text()).toContain('모의 에이전트 판단 기록');
