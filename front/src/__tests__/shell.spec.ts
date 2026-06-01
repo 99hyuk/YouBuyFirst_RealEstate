@@ -137,6 +137,11 @@ describe('front dashboard shell', () => {
     expect(otherTarget.text()).toContain('GTX 기대와 입주 물량 우려');
     expect(otherTarget.text()).toContain('전세수급지수');
 
+    const unsupportedTarget = await mountAt('/realestate/targets/SEONGSU-DONG');
+    expect(unsupportedTarget.find('.unsupported-region-state').exists()).toBe(true);
+    expect(unsupportedTarget.text()).toContain('SEONGSU-DONG');
+    expect(unsupportedTarget.find('.region-reaction-card').exists()).toBe(false);
+
     const communities = await mountAt('/communities');
     expect(communities.text()).toContain('지역 반응');
     expect(communities.text()).toContain('커뮤니티별 언급 급증 지역');
@@ -239,6 +244,7 @@ describe('front dashboard shell', () => {
     expect(styles).toContain('--surface');
     expect(styles).toContain('--market-up');
     expect(styles).toContain('--market-down');
+    expect(styles).toContain('.realestate-map-layout.centered,\n  .realestate-map-layout.split');
     expect(styles).toContain('.region-hero');
     expect(styles).toContain('.event-chain-flow');
     expect(styles).toContain('.community-table');

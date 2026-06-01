@@ -23,7 +23,7 @@
 | `agent` | `docs/domains/agent/AGENTS.md` | 지역/단지 평가, 근거 로그, 유사 과거 비교 설명 |
 | `ui` (`front`) | `docs/layers/ui/AGENTS.md` | `front/`, 화면별 Screen Brief, fixture/API 후보 |
 | `ops` | `docs/layers/ops/AGENTS.md` | 문서 구조, Git/PR, Notion, 브랜치/worktree, 컨텍스트 예산 |
-| `stock`, `market`, `simulation` | 각 도메인 문서 | 주식 프로젝트에서 넘어온 참고/비활성 영역. 첫 정렬 단계에서 삭제하지 않습니다. |
+| `stock`, `market`, `simulation` | 각 도메인 문서 | 주식 프로젝트에서 넘어온 참고/비활성 영역. 부동산 전용 전환 승인 전에는 삭제하지 않고, 승인 후에는 런타임 화면 보존 대상이 아니라 git history와 문서 참고 대상으로 봅니다. |
 
 ## 공통 게이트
 

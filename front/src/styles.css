@@ -1450,10 +1450,10 @@ a {
   top: var(--topbar-height);
   right: var(--edge-rail-width);
   z-index: 39;
-  width: var(--edge-panel-open-width);
+  width: 0;
   height: calc(100vh - var(--topbar-height));
-  padding: 16px 16px 20px;
-  overflow-y: auto;
+  padding: 16px 0 20px;
+  overflow: hidden;
   border-left: 1px solid var(--line);
   background: #f8fafc;
   box-shadow: -18px 0 34px rgba(39, 51, 67, 0.08);
@@ -1462,13 +1462,22 @@ a {
   transform: translateX(100%);
   transition:
     opacity 180ms ease,
+    width 180ms ease,
+    padding 180ms ease,
     transform 180ms ease;
 }
 
 .edge-panel.open {
+  width: var(--edge-panel-open-width);
+  padding: 16px 16px 20px;
+  overflow-y: auto;
   opacity: 1;
   pointer-events: auto;
   transform: translateX(0);
+}
+
+.edge-panel:not(.open) .edge-panel-screen {
+  display: none;
 }
 
 .edge-panel-screen {
@@ -10339,8 +10348,33 @@ a {
 }
 
 @media (max-width: 1080px) and (min-width: 761px) {
+  body:has(.realestate-map-page) .topbar,
+  body:has(.realestate-map-page) .site-footer {
+    min-width: 0;
+  }
+
+  body:has(.realestate-map-page) .topbar-inner,
+  body:has(.realestate-map-page) .page-frame,
+  body:has(.realestate-map-page) .site-footer-inner {
+    width: min(100% - 32px, 1180px);
+    min-width: 0;
+    margin-right: auto;
+    margin-left: auto;
+    transform: none;
+  }
+
+  body:has(.realestate-map-page) .site-footer-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .realestate-map-layout.centered,
   .realestate-map-layout.split {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .realestate-map-layout.centered {
+    justify-content: stretch;
   }
 
   .map-report-panel,
