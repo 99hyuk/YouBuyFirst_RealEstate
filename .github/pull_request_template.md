@@ -13,7 +13,7 @@ PR template guard:
 
 | 항목 | 내용 |
 | --- | --- |
-| 작업 영역 | `track:<community/stock/indicator/market/simulation/agent/ui/ops>` |
+| 작업 영역 | `track:<realestate/community/indicator/agent/ui/ops>` |
 | 작업 타입 | `type:` |
 | 변경 파트 | `part:` 필요할 때만 |
 | 크기 | `size:` |
