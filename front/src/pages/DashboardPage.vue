@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import dashboardSummary from '../fixtures/dashboard-summary.json';
 import quoteSnapshots from '../fixtures/quote-snapshots.json';
 import reactionRanking from '../fixtures/reaction-ranking.json';
@@ -36,6 +36,86 @@ const reactionSignalGroups = [
   buildReactionGroup('positive', '언급+기대 TOP 3', '언급량 x 기대', 'bullish'),
   buildReactionGroup('negative', '언급+우려 TOP 3', '언급량 x 우려', 'bearish')
 ];
+
+const currentSlide = ref(0);
+const isPaused = ref(false);
+const totalSlides = reactionRanking.items.length;
+let autoSlideTimer: ReturnType<typeof setInterval> | undefined;
+
+const startTimer = () => {
+  if (autoSlideTimer) clearInterval(autoSlideTimer);
+  autoSlideTimer = setInterval(() => { currentSlide.value = (currentSlide.value + 1) % totalSlides; }, 4500);
+};
+const resetTimer = () => { if (!isPaused.value) startTimer(); };
+const prevSlide = () => { currentSlide.value = (currentSlide.value - 1 + totalSlides) % totalSlides; resetTimer(); };
+const nextSlide = () => { currentSlide.value = (currentSlide.value + 1) % totalSlides; resetTimer(); };
+const goToSlide = (i: number) => { currentSlide.value = i; resetTimer(); };
+const togglePause = () => {
+  isPaused.value = !isPaused.value;
+  if (isPaused.value) { clearInterval(autoSlideTimer); autoSlideTimer = undefined; }
+  else startTimer();
+};
+// Word-cloud placement: grid candidates sorted center-first, then collision-test each word
+const CLOUD_W = 218, CLOUD_H = 92;
+const CLOUD_CANDIDATES: [number, number][] = (() => {
+  const pts: [number, number][] = [];
+  for (let y = 4; y <= CLOUD_H - 10; y += 11)
+    for (let x = 4; x <= CLOUD_W - 8; x += 16) pts.push([x, y]);
+  return pts.sort((a, b) =>
+    Math.hypot(a[0] - CLOUD_W / 2, a[1] - CLOUD_H / 2) -
+    Math.hypot(b[0] - CLOUD_W / 2, b[1] - CLOUD_H / 2)
+  );
+})();
+
+const kwWordBox = (kw: { word: string; weight: number }) => {
+  const fs = [9, 11, 14, 18, 22][Math.min(kw.weight - 1, 4)];
+  return { w: kw.word.length * fs * 0.94 + 6, h: fs * 1.45, fs };
+};
+
+const placeWords = (keywords: { word: string; weight: number }[]) => {
+  const GAP = 5;
+  const placed: { x: number; y: number; w: number; h: number }[] = [];
+  const hits = (x: number, y: number, w: number, h: number) =>
+    placed.some(p => x < p.x + p.w + GAP && x + w + GAP > p.x && y < p.y + p.h + GAP && y + h + GAP > p.y);
+
+  // heaviest word placed first so it gets the prime center spot
+  const sorted = [...keywords].map((kw, i) => ({ kw, i })).sort((a, b) => b.kw.weight - a.kw.weight);
+  const styles: Record<number, Record<string, string>> = {};
+
+  sorted.forEach(({ kw, i }, rank) => {
+    const { w, h, fs } = kwWordBox(kw);
+    let px = 0, py = 0;
+    for (const [cx, cy] of CLOUD_CANDIDATES) {
+      const x = Math.max(0, Math.min(cx, CLOUD_W - w));
+      const y = Math.max(0, Math.min(cy, CLOUD_H - h));
+      if (!hits(x, y, w, h)) { px = x; py = y; break; }
+    }
+    placed.push({ x: px, y: py, w, h });
+    styles[i] = {
+      position: 'absolute',
+      left: `${px}px`,
+      top: `${py}px`,
+      fontSize: `${fs}px`,
+      '--kw-opacity': String(0.5 + kw.weight * 0.10),
+      animationDelay: `${rank * 120}ms`,
+    };
+  });
+
+  return (idx: number) => styles[idx] ?? {};
+};
+
+const kwWordStyles = Object.fromEntries(
+  reactionRanking.items.map(item => [
+    item.symbol,
+    { pos: placeWords(item.positiveKeywords), neg: placeWords(item.negativeKeywords) },
+  ])
+);
+
+onMounted(startTimer);
+onUnmounted(() => clearInterval(autoSlideTimer));
+
+type TooltipPoint = { x: number; y: number; value: number; color: string; region: string } | null;
+const hoveredPoint = ref<TooltipPoint>(null);
 
 const formatPct = (value: number) => `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
@@ -238,6 +318,19 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                     :cy="wideY(point.y)"
                     r="10"
                     :fill="series.color"
+                    pointer-events="none"
+                  />
+                  <!-- transparent hit area for easier hover -->
+                  <circle
+                    v-for="point in series.points"
+                    :key="`hit-${series.region}-${point.x}-${point.y}`"
+                    :cx="wideX(point.x)"
+                    :cy="wideY(point.y)"
+                    r="24"
+                    fill="transparent"
+                    style="cursor: crosshair"
+                    @mouseenter="hoveredPoint = { x: wideX(point.x), y: wideY(point.y), value: point.value, color: series.color, region: series.region }"
+                    @mouseleave="hoveredPoint = null"
                   />
                 </g>
                 <text
@@ -250,6 +343,27 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 >
                   {{ formatPct(series.returnPct) }}
                 </text>
+
+                <!-- hover tooltip -->
+                <g
+                  v-if="hoveredPoint"
+                  :transform="`translate(${hoveredPoint.x}, ${hoveredPoint.y})`"
+                  class="chart-tooltip-group"
+                  pointer-events="none"
+                >
+                  <template v-if="hoveredPoint.y >= 120">
+                    <path d="M -11,-22 L 0,-7 L 11,-22 Z" :fill="hoveredPoint.color"/>
+                    <rect x="-88" y="-96" width="176" height="74" rx="10" :fill="hoveredPoint.color" opacity="0.94"/>
+                    <text x="0" y="-72" text-anchor="middle" class="tooltip-region-text">{{ hoveredPoint.region }}</text>
+                    <text x="0" y="-40" text-anchor="middle" class="tooltip-value-text">{{ formatPct(hoveredPoint.value) }}</text>
+                  </template>
+                  <template v-else>
+                    <path d="M -11,22 L 0,7 L 11,22 Z" :fill="hoveredPoint.color"/>
+                    <rect x="-88" y="24" width="176" height="74" rx="10" :fill="hoveredPoint.color" opacity="0.94"/>
+                    <text x="0" y="48" text-anchor="middle" class="tooltip-region-text">{{ hoveredPoint.region }}</text>
+                    <text x="0" y="80" text-anchor="middle" class="tooltip-value-text">{{ formatPct(hoveredPoint.value) }}</text>
+                  </template>
+                </g>
               </svg>
             </div>
 
@@ -277,50 +391,184 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
               </div>
             </div>
 
-            <div class="reaction-legend" aria-label="지역·단지 반응 색상 설명">
-              <span><i class="positive"></i>기대 반응</span>
-              <span><i class="negative"></i>우려 반응</span>
-              <span><i class="neutral"></i>중립·기타</span>
+            <div class="reaction-legend" aria-label="반응 아이콘 설명">
+              <span>
+                <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                  <circle class="face-bg positive-bg" cx="10" cy="10" r="9.5"/>
+                  <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
+                  <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
+                  <path d="M 6.5 12 Q 10 15.5 13.5 12" class="face-mouth"/>
+                </svg>
+                기대 반응
+              </span>
+              <span>
+                <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                  <circle class="face-bg negative-bg" cx="10" cy="10" r="9.5"/>
+                  <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
+                  <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
+                  <path d="M 5.5 6.8 Q 7 5.5 8.5 6.8" class="face-brow"/>
+                  <path d="M 11.5 6.8 Q 13 5.5 14.5 6.8" class="face-brow"/>
+                  <path d="M 6.5 14 Q 10 11 13.5 14" class="face-mouth"/>
+                </svg>
+                우려 반응
+              </span>
+              <span>
+                <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                  <circle class="face-bg neutral-bg" cx="10" cy="10" r="9.5"/>
+                  <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
+                  <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
+                  <line x1="7" y1="13" x2="13" y2="13" class="face-mouth face-neutral-mouth"/>
+                </svg>
+                중립·기타
+              </span>
             </div>
 
-            <div class="reaction-split-board" aria-label="기대 우려 반응별 지역 순위">
-              <section
-                v-for="group in reactionSignalGroups"
-                :key="group.id"
-                :class="['reaction-rank-group', `rank-group-${group.id}`]"
-              >
-                <div class="reaction-group-title">
-                  <span>{{ group.label }}</span>
-                  <small>{{ group.caption }}</small>
-                </div>
-                <div class="reaction-rank-list">
+            <div class="reaction-carousel" aria-label="지역별 반응 슬라이드">
+              <div class="carousel-track-wrap">
+                <div class="carousel-track" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
                   <article
-                    v-for="(item, index) in group.items"
-                    :key="`${group.id}-${item.symbol}`"
-                    :class="['reaction-rank-row', `rank-${group.id}`]"
-                    :data-rank="index + 1"
-                    :data-tone="group.id"
+                    v-for="item in reactionRanking.items"
+                    :key="item.symbol"
+                    class="reaction-carousel-card"
+                    :data-tone="item.reactionDirectionRatio.bullish >= item.reactionDirectionRatio.bearish ? 'positive' : 'negative'"
                   >
-                    <strong class="rank-number">{{ index + 1 }}</strong>
-                    <div class="rank-main">
-                      <strong>{{ item.name }}</strong>
-                      <span>{{ item.symbol }} · {{ item.market }}</span>
+                    <div class="carousel-card-header">
+                      <div class="carousel-card-title">
+                        <strong class="carousel-region-name">{{ item.name }}</strong>
+                        <span class="carousel-region-meta">{{ item.market }} · 열기 {{ item.heatScore }}</span>
+                      </div>
+                      <div class="carousel-mention-badge">
+                        <em>{{ item.mentionCount }}</em>
+                        <span>언급</span>
+                      </div>
                     </div>
-                    <div class="rank-signal">
-                      <em>{{ reactionSignalScore(item, group.metric) }}건</em>
-                      <span>{{ ratioPct(item.reactionDirectionRatio[group.metric]) }} {{ group.ratioLabel }} · {{ item.mentionCount }} 언급</span>
+
+                    <div class="carousel-kw-columns">
+                      <div class="kw-col kw-col-positive">
+                        <div class="kw-col-label">
+                          <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                            <circle class="face-bg positive-bg" cx="10" cy="10" r="9.5"/>
+                            <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
+                            <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
+                            <path d="M 6.5 12 Q 10 15.5 13.5 12" class="face-mouth"/>
+                          </svg>
+                          <span>기대</span>
+                        </div>
+                        <div :key="`pos-${currentSlide}`" class="kw-cloud">
+                          <span
+                            v-for="(kw, idx) in item.positiveKeywords"
+                            :key="kw.word"
+                            class="kw-word kw-word-positive"
+                            :style="kwWordStyles[item.symbol].pos(idx)"
+                          >{{ kw.word }}</span>
+                        </div>
+                      </div>
+                      <div class="kw-divider" aria-hidden="true"></div>
+                      <div class="kw-col kw-col-negative">
+                        <div class="kw-col-label">
+                          <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                            <circle class="face-bg negative-bg" cx="10" cy="10" r="9.5"/>
+                            <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
+                            <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
+                            <path d="M 5.5 6.8 Q 7 5.5 8.5 6.8" class="face-brow"/>
+                            <path d="M 11.5 6.8 Q 13 5.5 14.5 6.8" class="face-brow"/>
+                            <path d="M 6.5 14 Q 10 11 13.5 14" class="face-mouth"/>
+                          </svg>
+                          <span>우려</span>
+                        </div>
+                        <div :key="`neg-${currentSlide}`" class="kw-cloud">
+                          <span
+                            v-for="(kw, idx) in item.negativeKeywords"
+                            :key="kw.word"
+                            class="kw-word kw-word-negative"
+                            :style="kwWordStyles[item.symbol].neg(idx)"
+                          >{{ kw.word }}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div class="rank-keywords">
-                      <span v-for="keyword in item.topKeywords.slice(0, 3)" :key="`${group.id}-${item.symbol}-${keyword}`">{{ keyword }}</span>
+
+                    <div class="carousel-link-section">
+                      <div class="carousel-link-col link-col-positive">
+                        <span class="link-col-heading">기대 관련</span>
+                        <a
+                          v-for="link in item.positiveLinks"
+                          :key="link.title"
+                          class="carousel-link-row"
+                          href="#"
+                          @click.prevent
+                        >
+                          <span class="link-source">{{ link.source }}</span>
+                          <span class="link-title">{{ link.title }}</span>
+                        </a>
+                      </div>
+                      <div class="carousel-link-divider" aria-hidden="true"></div>
+                      <div class="carousel-link-col link-col-negative">
+                        <span class="link-col-heading">우려 관련</span>
+                        <a
+                          v-for="link in item.negativeLinks"
+                          :key="link.title"
+                          class="carousel-link-row"
+                          href="#"
+                          @click.prevent
+                        >
+                          <span class="link-source">{{ link.source }}</span>
+                          <span class="link-title">{{ link.title }}</span>
+                        </a>
+                      </div>
                     </div>
-                    <div class="sentiment-track" aria-label="긍정 부정 중립 비율">
-                      <i class="positive" :style="`width: ${ratioPct(item.reactionDirectionRatio.bullish)}`"></i>
-                      <i class="negative" :style="`width: ${ratioPct(item.reactionDirectionRatio.bearish)}`"></i>
-                      <i class="neutral" :style="`width: ${ratioPct(item.reactionDirectionRatio.neutral)}`"></i>
+
+                    <div class="sentiment-track-wrap">
+                      <div class="sentiment-tooltip" aria-hidden="true">
+                        <span class="st-positive">😊 기대 {{ ratioPct(item.reactionDirectionRatio.bullish) }}</span>
+                        <span class="st-divider">·</span>
+                        <span class="st-negative">😟 우려 {{ ratioPct(item.reactionDirectionRatio.bearish) }}</span>
+                        <span class="st-divider">·</span>
+                        <span class="st-neutral">중립 {{ ratioPct(item.reactionDirectionRatio.neutral) }}</span>
+                      </div>
+                      <div class="sentiment-track" aria-label="긍정 부정 중립 비율">
+                        <i class="positive" :style="`width: ${ratioPct(item.reactionDirectionRatio.bullish)}`"></i>
+                        <i class="negative" :style="`width: ${ratioPct(item.reactionDirectionRatio.bearish)}`"></i>
+                        <i class="neutral" :style="`width: ${ratioPct(item.reactionDirectionRatio.neutral)}`"></i>
+                      </div>
                     </div>
                   </article>
                 </div>
-              </section>
+              </div>
+            </div>
+
+            <div class="carousel-controls">
+              <button class="carousel-btn" type="button" @click="prevSlide" aria-label="이전 지역">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 L5 8 L10 13"/></svg>
+              </button>
+              <div class="carousel-dots" role="tablist" aria-label="슬라이드 선택">
+                <button
+                  v-for="(item, i) in reactionRanking.items"
+                  :key="`dot-${item.symbol}`"
+                  :class="['carousel-dot', { active: i === currentSlide }]"
+                  type="button"
+                  role="tab"
+                  :aria-selected="i === currentSlide"
+                  :aria-label="`${item.name} 슬라이드`"
+                  @click="goToSlide(i)"
+                >{{ i + 1 }}</button>
+              </div>
+              <button class="carousel-btn" type="button" @click="nextSlide" aria-label="다음 지역">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3 L11 8 L6 13"/></svg>
+              </button>
+              <button
+                :class="['carousel-btn', 'carousel-pause-btn', { paused: isPaused }]"
+                type="button"
+                @click="togglePause"
+                :aria-label="isPaused ? '자동 재생' : '슬라이드 고정'"
+              >
+                <svg v-if="isPaused" viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M5 3 L13 8 L5 13 Z" class="play-triangle"/>
+                </svg>
+                <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+                  <rect x="4" y="3" width="3" height="10" rx="1" class="pause-bar"/>
+                  <rect x="9" y="3" width="3" height="10" rx="1" class="pause-bar"/>
+                </svg>
+              </button>
             </div>
           </section>
         </section>

@@ -8,13 +8,29 @@
       "market": "서울",
       "mentionCount": 128,
       "mentionDeltaPct": 42.3,
-      "reactionDirectionRatio": {
-        "bullish": 0.49,
-        "bearish": 0.33,
-        "neutral": 0.18
-      },
+      "reactionDirectionRatio": { "bullish": 0.49, "bearish": 0.33, "neutral": 0.18 },
       "heatScore": 82,
       "topKeywords": ["전세", "공덕", "학군"],
+      "positiveKeywords": [
+        { "word": "역세권입지", "weight": 5 },
+        { "word": "학군우수",   "weight": 4 },
+        { "word": "교통호재",   "weight": 3 },
+        { "word": "공덕개발",   "weight": 2 },
+        { "word": "홍대상권",   "weight": 1 }
+      ],
+      "negativeKeywords": [
+        { "word": "고분양가", "weight": 4 },
+        { "word": "전세불안", "weight": 3 },
+        { "word": "주차부족", "weight": 1 }
+      ],
+      "positiveLinks": [
+        { "title": "마포구 실거래가 현황", "source": "국토부" },
+        { "title": "공덕역 상권 개발 계획", "source": "서울시" }
+      ],
+      "negativeLinks": [
+        { "title": "전세 시장 리스크 진단", "source": "KB리서치" },
+        { "title": "마포구 분양가 추이", "source": "부동산원" }
+      ],
       "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
@@ -24,13 +40,28 @@
       "market": "경기",
       "mentionCount": 74,
       "mentionDeltaPct": 18.7,
-      "reactionDirectionRatio": {
-        "bullish": 0.44,
-        "bearish": 0.39,
-        "neutral": 0.17
-      },
+      "reactionDirectionRatio": { "bullish": 0.44, "bearish": 0.39, "neutral": 0.17 },
       "heatScore": 68,
       "topKeywords": ["GTX", "입주", "전세"],
+      "positiveKeywords": [
+        { "word": "GTX개통기대", "weight": 5 },
+        { "word": "입주호재",   "weight": 4 },
+        { "word": "신도시쾌적", "weight": 3 },
+        { "word": "역세권형성", "weight": 1 }
+      ],
+      "negativeKeywords": [
+        { "word": "원거리출퇴근",  "weight": 5 },
+        { "word": "전세물량부담", "weight": 3 },
+        { "word": "공급과잉",     "weight": 2 }
+      ],
+      "positiveLinks": [
+        { "title": "GTX-A 동탄역 개통 효과 분석", "source": "한국교통연구원" },
+        { "title": "동탄2 입주 물량 현황", "source": "부동산원" }
+      ],
+      "negativeLinks": [
+        { "title": "수도권 광역 전세 동향", "source": "KB" },
+        { "title": "경기 남부 공급 과잉 리포트", "source": "경기도" }
+      ],
       "priceStatus": "stale public data",
       "dataStatus": "mock"
     },
@@ -40,13 +71,29 @@
       "market": "서울",
       "mentionCount": 41,
       "mentionDeltaPct": 86.4,
-      "reactionDirectionRatio": {
-        "bullish": 0.56,
-        "bearish": 0.25,
-        "neutral": 0.19
-      },
+      "reactionDirectionRatio": { "bullish": 0.56, "bearish": 0.25, "neutral": 0.19 },
       "heatScore": 77,
       "topKeywords": ["상권", "개발", "임대료"],
+      "positiveKeywords": [
+        { "word": "상권활성화", "weight": 5 },
+        { "word": "개발기대",   "weight": 4 },
+        { "word": "젊은수요",   "weight": 3 },
+        { "word": "카페거리",   "weight": 2 },
+        { "word": "브랜드가치", "weight": 1 }
+      ],
+      "negativeKeywords": [
+        { "word": "임대료급등",    "weight": 5 },
+        { "word": "젠트리피케이션","weight": 3 },
+        { "word": "노후건물",      "weight": 1 }
+      ],
+      "positiveLinks": [
+        { "title": "성수 도시재생 개발 현황", "source": "서울시" },
+        { "title": "성동구 상권 분석 리포트", "source": "소상공인진흥원" }
+      ],
+      "negativeLinks": [
+        { "title": "서울 주요 상권 임대료 동향", "source": "한국감정원" },
+        { "title": "젠트리피케이션 영향 분석", "source": "서울연구원" }
+      ],
       "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
@@ -56,13 +103,29 @@
       "market": "서울",
       "mentionCount": 43,
       "mentionDeltaPct": 53.6,
-      "reactionDirectionRatio": {
-        "bullish": 0.47,
-        "bearish": 0.29,
-        "neutral": 0.24
-      },
+      "reactionDirectionRatio": { "bullish": 0.47, "bearish": 0.29, "neutral": 0.24 },
       "heatScore": 64,
       "topKeywords": ["토허제", "재건축", "전세"],
+      "positiveKeywords": [
+        { "word": "재건축기대", "weight": 5 },
+        { "word": "학군양호",   "weight": 4 },
+        { "word": "생활인프라", "weight": 3 },
+        { "word": "한강조망",   "weight": 2 }
+      ],
+      "negativeKeywords": [
+        { "word": "토허제부담", "weight": 5 },
+        { "word": "매물잠김",   "weight": 3 },
+        { "word": "고가부담",   "weight": 2 },
+        { "word": "거래절벽",   "weight": 1 }
+      ],
+      "positiveLinks": [
+        { "title": "잠실 재건축 추진 현황", "source": "서울시" },
+        { "title": "송파구 학군 분석", "source": "부동산114" }
+      ],
+      "negativeLinks": [
+        { "title": "토지거래허가구역 현황", "source": "국토부" },
+        { "title": "잠실 아파트 거래량 통계", "source": "부동산원" }
+      ],
       "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
@@ -72,13 +135,29 @@
       "market": "경기",
       "mentionCount": 66,
       "mentionDeltaPct": 29.8,
-      "reactionDirectionRatio": {
-        "bullish": 0.58,
-        "bearish": 0.24,
-        "neutral": 0.18
-      },
+      "reactionDirectionRatio": { "bullish": 0.58, "bearish": 0.24, "neutral": 0.18 },
       "heatScore": 75,
       "topKeywords": ["일자리", "재건축", "학군"],
+      "positiveKeywords": [
+        { "word": "일자리풍부", "weight": 5 },
+        { "word": "우수학군",   "weight": 4 },
+        { "word": "재건축기대", "weight": 4 },
+        { "word": "쾌적환경",   "weight": 2 },
+        { "word": "IT인프라",   "weight": 1 }
+      ],
+      "negativeKeywords": [
+        { "word": "노후화우려", "weight": 4 },
+        { "word": "고가매물",   "weight": 3 },
+        { "word": "교통혼잡",   "weight": 2 }
+      ],
+      "positiveLinks": [
+        { "title": "판교 테크노밸리 고용 동향", "source": "경기도" },
+        { "title": "분당 재건축 추진 단지 현황", "source": "성남시" }
+      ],
+      "negativeLinks": [
+        { "title": "분당 아파트 노후화 실태", "source": "국토부" },
+        { "title": "판교·분당 교통 혼잡 현황", "source": "한국교통연구원" }
+      ],
       "priceStatus": "public data pending",
       "dataStatus": "mock"
     },
@@ -88,13 +167,28 @@
       "market": "인천",
       "mentionCount": 38,
       "mentionDeltaPct": 21.4,
-      "reactionDirectionRatio": {
-        "bullish": 0.42,
-        "bearish": 0.36,
-        "neutral": 0.22
-      },
+      "reactionDirectionRatio": { "bullish": 0.42, "bearish": 0.36, "neutral": 0.22 },
       "heatScore": 59,
       "topKeywords": ["공급", "국제학교", "전세"],
+      "positiveKeywords": [
+        { "word": "개발여지",    "weight": 5 },
+        { "word": "국제학교인접","weight": 4 },
+        { "word": "쾌적환경",   "weight": 3 },
+        { "word": "미래가치",   "weight": 2 }
+      ],
+      "negativeKeywords": [
+        { "word": "공급과잉우려","weight": 5 },
+        { "word": "서울접근성", "weight": 4 },
+        { "word": "공실리스크", "weight": 2 }
+      ],
+      "positiveLinks": [
+        { "title": "송도 2·3공구 개발 계획", "source": "인천시" },
+        { "title": "국제학교 입학 현황 분석", "source": "교육부" }
+      ],
+      "negativeLinks": [
+        { "title": "인천 공급 과잉 리포트", "source": "부동산원" },
+        { "title": "광역 교통망 개선 현황", "source": "국토부" }
+      ],
       "priceStatus": "stale public data",
       "dataStatus": "mock"
     }
