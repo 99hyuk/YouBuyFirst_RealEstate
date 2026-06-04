@@ -3,7 +3,7 @@
 # 너나사 부동산 YouBuyFirst RealEstate
 
 커뮤니티 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 데이터를 연결해<br/>
-"지금 사람들이 어떤 지역과 단지를 왜 말하는지"를 읽는 부동산 관찰형 분석 서비스
+사람들의 말과 데이터로 읽는 AI 부동산 인사이트 서비스
 
 ![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?style=flat-square)
