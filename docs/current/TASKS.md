@@ -37,7 +37,7 @@
 - [ ] 공공데이터 API 응답 필드와 실제 갱신 지연 기준 확인
 - [x] 부동산 source registry 1차 후보와 30개 확장 슬롯 정리 (`docs/domains/community/REAL_ESTATE_SOURCE_CANDIDATES.md`)
 - [x] 부동산 커뮤니티 분산성 가설과 대표 source 공개 접근성 1차 검토
-- [ ] 부동산 source registry 후보 30개 실명/URL과 공개 접근성 확정
+- [x] 부동산 source registry 후보 30개 내외 실명/URL과 1차 공개 접근성 분류 확정
 - [ ] region/complex/living_area/policy_area target graph 설계
 - [ ] 정책/교통/공급/대출/청약/학군/재건축 이벤트 taxonomy 정리
 - [ ] `pipeline/src/youbuyfirst_pipeline/realestate/` matcher 초안 설계
@@ -64,7 +64,7 @@
 
 - [x] 부동산 커뮤니티/뉴스/컬럼 source registry 1차 후보와 30개 확장 슬롯 정리
 - [x] 부동산 source가 전국 카페/지역 카페/앱 후기/일반 게시판으로 분산된다는 가설 검토
-- [ ] 부동산 커뮤니티/뉴스/컬럼 source registry 후보 30개 실명/URL 확정
+- [x] 부동산 커뮤니티/뉴스/컬럼 source registry 후보 30개 내외 실명/URL 확정
 - [ ] 네이버 카페/다음 카페 후보 중 비로그인 공개 목록 접근 가능 source만 분리
 - [ ] 공개 HTTP 우선, Playwright fallback, 금지 행위 기준 재확인
 - [ ] 지역/단지 alias DB와 matcher 초안 작성
@@ -100,7 +100,8 @@
 
 - [x] 부동산 게시판/커뮤니티/뉴스/컬럼 source registry 1차 후보와 30개 확장 슬롯 정리 (`docs/domains/community/REAL_ESTATE_SOURCE_CANDIDATES.md`)
 - [x] 대표 P0/P1 source 공개 접근성, robots 단서, 로그인 필요성 1차 실측
-- [ ] source registry 30개 실명/URL에 대해 공개 접근성, robots/약관, 로그인 필요 여부 반복 확인
+- [x] source registry 30개 내외 실명/URL에 대해 1차 공개 접근성, robots 단서, 로그인 필요 여부 분류
+- [ ] adapter 활성화 전 source별 robots/약관/게시판 단위 최종 정책 리뷰
 - [ ] P0 후보 2-3곳 최신글 list parser spike
 - [ ] 네이버 카페/다음 카페 후보의 공개 접근성, robots/약관, 로그인 필요 여부 기록
 - [ ] 일반 게시판형과 부동산 대상형 source 분리

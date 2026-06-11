@@ -68,6 +68,55 @@
 | `daum_happytech` | 행복재테크 | 다음 카페 | `disabled` | 경매, 공매, 재테크, 투자자 반응 | P1 | 다음 프리미엄 우수카페 선정과 회원 규모 관련 언론 근거 |
 | `asil_app` | 아실 | 앱/웹 정보 서비스 | `local-research-only` | 실거래, 순위, 개발정보, 사용자 관심 지역 | P2 | Google Play/App Store 설명에서 다운로드와 기능 확인 |
 
+## 30개 seed 후보
+
+아래 목록은 source registry에 먼저 `disabled` 또는 `local-research-only`로 넣을 seed 후보입니다. `public-http-candidate`는 parser spike 후보일 뿐이고, adapter 활성화 전에는 board별 robots/약관과 저장 범위를 다시 확인해야 합니다.
+
+| # | sourceId | 이름 | URL | 분류 | 1차 접근성 | 우선순위 | 쓰임 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `ppomppu_house` | 뽐뿌 부동산포럼 | https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1 | general_board | `public-http-candidate` | P0 | 전세, 대출, 계약, 실수요 고민 |
+| 2 | `dc_immovables` | 디시인사이드 부동산 갤러리 | https://gall.dcinside.com/board/lists/?id=immovables | general_board | `public-http-candidate` | P0 | 빠른 감정 반응, 과열/우려 신호 |
+| 3 | `blind_realestate_topic` | 블라인드 부동산 토픽 | https://www.teamblind.com/kr/topics/%EB%B6%80%EB%8F%99%EC%82%B0 | general_board | `local-research-only` | P1 | 직장인 실수요, 갈아타기, 대출 고민 |
+| 4 | `clien_park_realestate` | 클리앙 모두의공원 부동산 글 | https://m.clien.net/service/board/park | general_board | `public-http-review` | P2 | 정책/시장 일반 여론 보조 |
+| 5 | `theqoo_realestate_posts` | 더쿠 부동산 관련 공개글 | https://theqoo.net/stock | general_board | `public-http-review` | P2 | 2030 체감, 정책/거주 팁 보조 |
+| 6 | `cook82_freeboard_realestate` | 82cook 자유게시판 부동산 글 | https://www.82cook.com/entiz/enti.php?bn=15 | general_board | `public-http-review` | P2 | 전월세, 생활형 실거주 고민 |
+| 7 | `hogangnono_community` | 호갱노노 이야기 | https://hogangnono.com/community | proptech_review | `excluded-permission-required` | P1 | 단지 실거주 후기, 지역 경험 |
+| 8 | `hogangnono_expert_columns` | 호갱노노 전문가 칼럼 | https://hogangnono.com/community/expert-columns | news_content | `excluded-permission-required` | P2 | 정책/시장 해설 링크 근거 |
+| 9 | `naver_boodongsan_study` | 부동산스터디 | https://cafe.naver.com/jaegebal | national_investment | `excluded-naver-cafe` | P1 | 전국 투자 심리, 정책 반응 |
+| 10 | `naver_peterpanz` | 피터팬의 좋은방 구하기 | https://cafe.naver.com/kig | national_investment | `excluded-naver-cafe` | P1 | 전월세, 직거래, 거주 후기 |
+| 11 | `naver_rainup` | 아름다운 내집갖기 | https://cafe.naver.com/rainup | national_investment | `excluded-naver-cafe` | P1 | 내집마련, 임차/매도자 반응 |
+| 12 | `naver_wolbu` | 월급쟁이부자들 | https://cafe.naver.com/wecando7 | national_investment | `excluded-naver-cafe` | P1 | 임장, 투자 학습, 지역 분석 |
+| 13 | `daum_happytech` | 행복재테크 | https://cafe.daum.net/happy-tech | national_investment | `daum-cafe-review` | P1 | 경매, 공매, 투자자 경험 |
+| 14 | `naver_ishift` | 내집장만 아카데미 | https://cafe.naver.com/ishift | national_investment | `excluded-naver-cafe` | P1 | 청약, 공공분양, 신혼부부 주거 |
+| 15 | `naver_bsinveststory` | 투자놀이터 | https://cafe.naver.com/bsinveststory | national_investment | `excluded-naver-cafe` | P2 | 토지, 특수경매, 투자자 담론 |
+| 16 | `naver_arcadestudy` | 살모사의 커피하우스 | https://cafe.naver.com/arcadestudy | national_investment | `excluded-naver-cafe` | P2 | 상가, 건물, 고액 투자 담론 |
+| 17 | `naver_bujilearn` | 부룡/부동산 노포 관련 카페 | https://cafe.naver.com/bujilearn | national_investment | `excluded-naver-cafe` | P2 | 가치투자, 시장 해설 |
+| 18 | `naver_2008bunsamo` | 분따 - 분당·판교·위례 따라잡기 | https://cafe.naver.com/2008bunsamo | local_living | `excluded-naver-cafe` | P1 | 분당/판교/위례 생활권, 학군, 실거주 |
+| 19 | `naver_dongtanmom` | 동탄맘들 모여라 | https://cafe.naver.com/dongtanmom | local_living | `excluded-naver-cafe` | P1 | 동탄 생활권, 신도시 수요 |
+| 20 | `naver_dongtantwomom` | 동탄2신도시맘 | https://cafe.naver.com/dongtantwomom | local_living | `excluded-naver-cafe` | P1 | 동탄2 생활권, 입주/학군 |
+| 21 | `naver_bbbx` | 송파맘·위례맘홀릭 | https://cafe.naver.com/bbbx | local_living | `excluded-naver-cafe` | P1 | 송파/위례 생활권 |
+| 22 | `naver_school_bundang` | 분당 학군지 카페 후보 | https://cafe.naver.com/endudfun | local_living | `excluded-naver-cafe` | P2 | 학군지 수요 신호 |
+| 23 | `naver_school_mokdong` | 목동 학군지 카페 후보 | https://cafe.naver.com/studymokdong | local_living | `excluded-naver-cafe` | P2 | 목동 학군/전세 수요 |
+| 24 | `naver_school_gwanggyo` | 광교 학군지 카페 후보 | https://cafe.naver.com/greatgwanggyo | local_living | `excluded-naver-cafe` | P2 | 광교 생활권/학군 |
+| 25 | `naver_school_songdo` | 송도신도시 학군지 카페 후보 | https://cafe.naver.com/songdoeduall | local_living | `excluded-naver-cafe` | P2 | 송도 신도시/학군 |
+| 26 | `naver_school_sejong` | 세종신도시 학군지 카페 후보 | https://cafe.naver.com/sjmaengmo | local_living | `excluded-naver-cafe` | P2 | 세종 생활권/학군 |
+| 27 | `asil_app` | 아실 | https://asil.kr/ | official_data | `excluded-robots-blocked` | P2 | 실거래, 순위, 개발정보 참고 |
+| 28 | `aptgin` | 부동산지인 | https://aptgin.com/ | official_data | `local-research-only` | P2 | 지역/거래량/아파트 TOP 흐름 |
+| 29 | `richgo` | 리치고 | https://m.richgo.ai/ | official_data | `local-research-only` | P2 | 학군, 청약, 개발정보, 통계 |
+| 30 | `kb_land_datahub` | KB부동산 데이터허브 | https://data.kbland.kr/ | official_data | `official-data-candidate` | P0 | 주간/월간 가격지수, 매매/전세 지표 |
+| 31 | `reb_rone` | 한국부동산원 R-ONE | https://www.reb.or.kr/r-one/portal/main/indexPage.do | official_data | `official-data-candidate` | P0 | 가격지수, 거래현황, 공표 일정 |
+| 32 | `data_go_apt_trade` | 국토교통부 아파트 매매 실거래가 API | https://www.data.go.kr/data/15126469/openapi.do | official_data | `official-api-candidate` | P0 | 실거래 fact |
+| 33 | `r114` | 부동산R114 | https://r114.com/ | news_content | `local-research-only` | P2 | 시세/분양/입주 분석 |
+| 34 | `ddangzipgo` | 땅집고 | https://realty.chosun.com/ | news_content | `link-snippet-only` | P2 | 정책/개발/지역 뉴스 |
+| 35 | `realcast` | 리얼캐스트 | https://www.rcast.co.kr/ | news_content | `link-snippet-only` | P2 | 분양, 정책, 시장 해설 |
+
+1차 결론:
+
+- 실제 crawler spike는 `ppomppu_house`, `dc_immovables`, `kb_land_datahub`, `reb_rone`, `data_go_apt_trade`부터 시작한다.
+- 네이버 카페 seed는 source registry에는 남기되 자동 수집은 하지 않는다. 공식 API/제휴/수동 리서치 또는 검색 노출 범위가 확인될 때만 별도 검토한다.
+- 지역/학군/맘카페는 부동산 반응 분산성의 중요한 근거지만 개인정보와 가입형 커뮤니티 리스크가 커서 화면 지표에는 source coverage caveat를 반드시 붙인다.
+- 일반 커뮤니티(클리앙, 더쿠, 82cook)는 부동산 전용 source가 아니므로 지표 가중치를 낮추고 정책/생활형 반응 보조로만 쓴다.
+
 ## 30개 내외 registry 확장 슬롯
 
 아래는 바로 크롤러를 만들 목록이 아니라 source registry의 `disabled` 후보를 채우기 위한 슬롯이다. 실제 이름과 URL은 공개 접근성 확인 뒤 확정한다.
@@ -141,6 +190,20 @@
 - 국토교통부 실거래가 공개시스템 자료제공: https://rt.molit.go.kr/pt/xls/xls.do?mobileAt=
 - 네이버 지역 기반 카페 기능 보도자료: https://navercorp.com/media/pressReleasesDetail?seq=30319
 - 네이버/다음 부동산 카페 목록 규모 참고: https://kmong.com/gig/137951
+- 부동산 카페 URL 참고: https://www.teamblind.com/kr/post/%EC%9E%90%EC%A3%BC%EA%B0%80%EB%8A%94-%EB%B6%80%EB%8F%99%EC%82%B0%EC%B9%B4%ED%8E%98-%EC%A0%95%EB%B3%B4-%EA%B3%B5%EC%9C%A0-otYWq1nS
+- 분당·판교·위례 지역 카페 참고: https://borathis.com/entry/%EB%B6%84%EB%94%B0
+- 학군지 지역 카페 URL 참고: https://investment-ai.tistory.com/entry/%ED%95%99%EA%B5%B0%EC%A7%80-%EB%B3%84-%EB%84%A4%EC%9D%B4%EB%B2%84-%EA%B9%8C%ED%8E%98-%EB%AA%A8%EC%9E%84-List
+- 동탄맘 카페 URL 참고: https://www.i-boss.co.kr/ab-1958-61179
+- 일반 커뮤니티 부동산 글 예시: https://www.82cook.com/entiz/read.php?bn=15&num=4168009
+- 일반 커뮤니티 부동산 글 예시: https://theqoo.net/stock/3984082614
+- 일반 커뮤니티 부동산 글 예시: https://m.clien.net/service/board/park/19077823?type=recommend
+- 부동산지인: https://aptgin.com/
+- 리치고: https://m.richgo.ai/
+- KB부동산 데이터허브: https://data.kbland.kr/
+- 한국부동산원 R-ONE: https://www.reb.or.kr/r-one/portal/main/indexPage.do
+- 부동산R114: https://r114.com/
+- 땅집고: https://realty.chosun.com/
+- 리얼캐스트: https://www.rcast.co.kr/
 - 주식 종목토론방 규모 비교 기사: https://v.daum.net/v/HVDlD6ZwUB
 - 네이버 카페 robots: https://cafe.naver.com/robots.txt
 - 다음 카페 robots: https://cafe.daum.net/robots.txt

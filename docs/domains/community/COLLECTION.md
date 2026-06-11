@@ -37,11 +37,12 @@
 
 ## 현재 우선순위
 
-1. 부동산 source registry 후보 30개 내외를 `disabled` 상태로 정리
-2. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
-3. 지역/단지 alias matcher가 필요한 입력 필드 정리
-4. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
-5. pipeline이 backend readiness를 기다리도록 개선
+1. `REAL_ESTATE_SOURCE_CANDIDATES.md`의 30개 내외 seed 후보를 source registry seed로 옮기기
+2. P0 후보의 공개 HTTP 목록 parser spike와 source별 정책 리뷰
+3. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
+4. 지역/단지 alias matcher가 필요한 입력 필드 정리
+5. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
+6. pipeline이 backend readiness를 기다리도록 개선
 
 source policy는 `CrawlTarget`보다 상위 게이트이고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/target을 언제 다시 수집할지 정하는 실행 단위입니다.
 
