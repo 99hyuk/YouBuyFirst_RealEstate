@@ -35,7 +35,8 @@
 - [x] `docs/layers/ui/screens/realestate-dashboard.md` 작성
 - [x] `docs/layers/ui/screens/realestate-target-detail.md` 작성
 - [ ] 공공데이터 API 응답 필드와 실제 갱신 지연 기준 확인
-- [ ] 부동산 source registry 후보 30개 내외 정리
+- [x] 부동산 source registry 1차 후보와 30개 확장 슬롯 정리 (`docs/domains/community/REAL_ESTATE_SOURCE_CANDIDATES.md`)
+- [ ] 부동산 source registry 후보 30개 실명/URL과 공개 접근성 확정
 - [ ] region/complex/living_area/policy_area target graph 설계
 - [ ] 정책/교통/공급/대출/청약/학군/재건축 이벤트 taxonomy 정리
 - [ ] `pipeline/src/youbuyfirst_pipeline/realestate/` matcher 초안 설계
@@ -60,7 +61,8 @@
 
 ### Slice C. 수집과 matcher
 
-- [ ] 부동산 커뮤니티/뉴스/컬럼 source registry 후보 30개 내외 정리
+- [x] 부동산 커뮤니티/뉴스/컬럼 source registry 1차 후보와 30개 확장 슬롯 정리
+- [ ] 부동산 커뮤니티/뉴스/컬럼 source registry 후보 30개 실명/URL 확정
 - [ ] 네이버 카페/다음 카페 후보 중 비로그인 공개 목록 접근 가능 source만 분리
 - [ ] 공개 HTTP 우선, Playwright fallback, 금지 행위 기준 재확인
 - [ ] 지역/단지 alias DB와 matcher 초안 작성
@@ -94,7 +96,9 @@
 
 ### community
 
-- [ ] 부동산 게시판/커뮤니티/뉴스/컬럼 source registry 후보 30개 내외 정리
+- [x] 부동산 게시판/커뮤니티/뉴스/컬럼 source registry 1차 후보와 30개 확장 슬롯 정리 (`docs/domains/community/REAL_ESTATE_SOURCE_CANDIDATES.md`)
+- [ ] P0/P1 source별 공개 접근성, robots/약관, 로그인 필요 여부 실측
+- [ ] P0 후보 2-3곳 최신글 list parser spike
 - [ ] 네이버 카페/다음 카페 후보의 공개 접근성, robots/약관, 로그인 필요 여부 기록
 - [ ] 일반 게시판형과 부동산 대상형 source 분리
 - [ ] 제목, 제한 snippet, URL, 작성자 hash, 작성 시각, 원문 hash 저장 정책 점검
@@ -109,6 +113,10 @@
 
 ### agent
 
+- [x] AI 실행 위치와 LangGraph 도입 기준 정리 (`docs/domains/agent/REAL_ESTATE_AI_WORKFLOW.md`)
+- [ ] `realestate-eval-v1` 입력/출력 JSON schema 확정
+- [ ] Python pipeline의 stock mention prompt와 부동산 target mention prompt 분리
+- [ ] forbidden copy guardrail 테스트 추가
 - [ ] 지역/단지 평가와 evidence log 입력 필드 정의
 - [ ] 유사 과거 상황 설명 방식 정리
 - [ ] 행동 지시처럼 보이는 평가 문구 금지 기준 정리
