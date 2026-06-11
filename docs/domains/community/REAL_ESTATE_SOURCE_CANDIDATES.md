@@ -140,11 +140,11 @@
 
 ## P0 spike 순서
 
-1. `ppomppu_house` 최신글 목록 parser spike
-2. `dc_immovables` 최신글 목록 parser spike
-3. 다음 카페 중 공개 `bbs_list`가 허용되는 부동산 카페 1곳 source-specific 확인
-4. 위 3곳의 source registry 필드 확정
-5. source별 `blocked`, `failed`, `partial`, `complete` coverage 샘플 작성
+1. 완료: `ppomppu_house`와 `dc_immovables`는 기존 generic board parser를 부동산 board id로 재사용하는 target/parser spike를 통과했다.
+2. 다음: 실제 HTML fixture를 저장해 parser 회귀 테스트를 보강한다.
+3. 다음: 다음 카페 중 공개 `bbs_list`가 허용되는 부동산 카페 1곳을 source-specific으로 확인한다.
+4. 다음: 위 3곳의 source registry 필드를 확정한다.
+5. 다음: source별 `blocked`, `failed`, `partial`, `complete` coverage 샘플을 작성한다.
 
 ## source registry 필드 후보
 

@@ -5,6 +5,8 @@ from youbuyfirst_pipeline.crawl_targets import (
     build_naver_stock_board_targets,
     community_board_registry,
     default_crawl_targets,
+    real_estate_community_board_registry,
+    real_estate_seed_crawl_targets,
 )
 from youbuyfirst_pipeline import main
 from youbuyfirst_pipeline.main import _adapters_from_targets
@@ -109,6 +111,35 @@ def test_community_diffusion_target_builds_separate_target_identity():
     assert target.diffusion_type == "concept"
     assert target.url == "https://example.com/concept"
     assert target.priority == 215
+
+
+def test_real_estate_community_registry_keeps_p0_candidates_out_of_default_crawl():
+    registry = real_estate_community_board_registry()
+
+    assert [(entry.source, entry.board_id, entry.enabled_by_default) for entry in registry] == [
+        ("PPOMPPU", "house", False),
+        ("DCINSIDE", "immovables", False),
+    ]
+    assert registry[0].latest_url == "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1"
+    assert registry[1].latest_url == "https://gall.dcinside.com/board/lists/?id=immovables"
+    assert {entry.crawl_policy for entry in registry} == {"realestate-general-board-latest"}
+
+    default_targets = default_crawl_targets([], stock_board_target_limit=0)
+
+    assert "PPOMPPU:house" not in [target.target_id for target in default_targets]
+    assert "DCINSIDE:immovables" not in [target.target_id for target in default_targets]
+
+
+def test_real_estate_seed_crawl_targets_can_create_existing_board_adapters():
+    targets = real_estate_seed_crawl_targets()
+    fetcher = BrowserCapableFetcher(user_agent="test")
+
+    adapters = _adapters_from_targets(targets, fetcher)
+
+    assert [target.target_id for target in targets] == ["PPOMPPU:house", "DCINSIDE:immovables"]
+    assert [target.kind for target in targets] == [CrawlTargetKind.COMMUNITY_BOARD, CrawlTargetKind.COMMUNITY_BOARD]
+    assert [target.crawl_interval_seconds for target in targets] == [3600, 3600]
+    assert [adapter.source for adapter in adapters] == ["PPOMPPU", "DCINSIDE"]
 
 
 def test_default_crawl_targets_do_not_expand_to_all_kr_instruments_when_watchlist_is_empty():

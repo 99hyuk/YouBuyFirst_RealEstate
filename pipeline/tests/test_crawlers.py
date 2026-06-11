@@ -158,6 +158,39 @@ def test_dcinside_missing_reply_count_is_zero():
     assert posts[0].comment_count == 0
 
 
+def test_dcinside_real_estate_gallery_rows_keep_immovables_board_identity():
+    html = """
+    <table>
+      <tr class="ub-content">
+        <td class="gall_num">8537920</td>
+        <td class="gall_tit">
+          <a href="/board/view/?id=immovables&no=8537920">서울 전세 물건이 줄었다는 얘기</a>
+          <span class="reply_num">[12]</span>
+        </td>
+        <td><span class="gall_writer" data-nick="ㅇㅇ"></span></td>
+        <td class="gall_date" title="2026-06-11 10:05:00">10:05</td>
+        <td class="gall_count">1,204</td>
+        <td class="gall_recommend">8</td>
+      </tr>
+    </table>
+    """
+
+    posts = DcinsideAdapter.parse_list_html(
+        html,
+        board_id="immovables",
+        base_url="https://gall.dcinside.com/board/lists/?id=immovables",
+    )
+
+    assert len(posts) == 1
+    assert posts[0].board_id == "immovables"
+    assert posts[0].external_id == "DCINSIDE-immovables-8537920"
+    assert posts[0].url == "https://gall.dcinside.com/board/view/?id=immovables&no=8537920"
+    assert posts[0].title == "서울 전세 물건이 줄었다는 얘기"
+    assert posts[0].comment_count == 12
+    assert posts[0].view_count == 1204
+    assert posts[0].recommend_count == 8
+
+
 def test_ppomppu_fixture_parses_board_counts_from_table_cells():
     html = """
     <table>
@@ -183,6 +216,40 @@ def test_ppomppu_fixture_parses_board_counts_from_table_cells():
     assert posts[0].view_count == 1788
     assert posts[0].recommend_count == 8
     assert posts[0].comment_count == 19
+
+
+def test_ppomppu_real_estate_forum_rows_keep_house_board_identity():
+    html = """
+    <table>
+      <tr align="center" class="baseList">
+        <td class="baseList-space baseList-numb" colspan="2">253149</td>
+        <td align="left" class="baseList-space">
+          <a class="baseList-title" href="/new/bbs_view.php?id=house&no=253149&page=1"><span>전세대출 만기 연장 질문</span></a>
+          <span class="baseList-c">6</span>
+        </td>
+        <td align="left" class="baseList-space" colspan="2"><div class="list_name"><nobr>realuser</nobr></div></td>
+        <td class="baseList-space" colspan="2" title="26.06.11 10:05:00"><time class="baseList-time">10:05:00</time></td>
+        <td class="baseList-space baseList-rec" colspan="2">3 - 0</td>
+        <td class="baseList-space baseList-views" colspan="2">812</td>
+      </tr>
+    </table>
+    """
+
+    posts = PpomppuAdapter.parse_list_html(
+        html,
+        board_id="house",
+        base_url="https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1",
+    )
+
+    assert len(posts) == 1
+    assert posts[0].board_id == "house"
+    assert posts[0].external_id == "PPOMPPU-house-253149"
+    assert posts[0].url == "https://m.ppomppu.co.kr/new/bbs_view.php?id=house&no=253149&page=1"
+    assert posts[0].title == "전세대출 만기 연장 질문"
+    assert posts[0].author == "realuser"
+    assert posts[0].comment_count == 6
+    assert posts[0].recommend_count == 3
+    assert posts[0].view_count == 812
 
 
 def test_ppomppu_realistic_stock_rows_ignore_news_links_and_parse_metadata():

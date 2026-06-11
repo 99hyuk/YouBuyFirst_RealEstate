@@ -11,6 +11,8 @@ DCINSIDE_US_STOCK_BOARD_URL = "https://gall.dcinside.com/mini/board/lists/?id=ny
 DCINSIDE_STOCK_BOARD_URL = "https://gall.dcinside.com/board/lists/?id=neostock"
 DCINSIDE_KOREA_STOCK_BOARD_URL = "https://gall.dcinside.com/mini/board/lists/?id=koreastock"
 PPOMPPU_STOCK_BOARD_URL = "https://www.ppomppu.co.kr/zboard/zboard.php?id=stock"
+DCINSIDE_REALESTATE_BOARD_URL = "https://gall.dcinside.com/board/lists/?id=immovables"
+PPOMPPU_REALESTATE_BOARD_URL = "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1"
 
 
 class CrawlTargetKind(str, Enum):
@@ -279,6 +281,45 @@ def community_board_registry(fmkorea_url: str | None = None) -> tuple[CommunityB
             ),
         ),
     )
+
+
+def real_estate_community_board_registry() -> tuple[CommunityBoardRegistryEntry, ...]:
+    return (
+        CommunityBoardRegistryEntry(
+            source="PPOMPPU",
+            board_id="house",
+            display_name="PPOMPPU real estate forum",
+            market_scope="KR_REALESTATE",
+            latest_url=PPOMPPU_REALESTATE_BOARD_URL,
+            latest_priority=200,
+            enabled_by_default=False,
+            crawl_policy="realestate-general-board-latest",
+        ),
+        CommunityBoardRegistryEntry(
+            source="DCINSIDE",
+            board_id="immovables",
+            display_name="DCInside real estate gallery",
+            market_scope="KR_REALESTATE",
+            latest_url=DCINSIDE_REALESTATE_BOARD_URL,
+            latest_priority=210,
+            enabled_by_default=False,
+            crawl_policy="realestate-general-board-latest",
+        ),
+    )
+
+
+def real_estate_seed_crawl_targets() -> list[CrawlTarget]:
+    return [
+        CrawlTarget.community_board(
+            entry.source,
+            board_id=entry.board_id,
+            url=entry.latest_url,
+            priority=entry.latest_priority,
+            label=entry.display_name,
+            crawl_interval_seconds=3600,
+        )
+        for entry in real_estate_community_board_registry()
+    ]
 
 
 def default_crawl_targets(

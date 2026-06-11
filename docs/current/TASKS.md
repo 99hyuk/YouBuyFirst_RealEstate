@@ -102,7 +102,8 @@
 - [x] 대표 P0/P1 source 공개 접근성, robots 단서, 로그인 필요성 1차 실측
 - [x] source registry 30개 내외 실명/URL에 대해 1차 공개 접근성, robots 단서, 로그인 필요 여부 분류
 - [ ] adapter 활성화 전 source별 robots/약관/게시판 단위 최종 정책 리뷰
-- [ ] P0 후보 2-3곳 최신글 list parser spike
+- [x] P0 후보 2곳(`PPOMPPU:house`, `DCINSIDE:immovables`) 최신글 list parser/target spike
+- [ ] P0 후보 실제 HTML fixture 저장과 source별 최종 정책 리뷰
 - [ ] 네이버 카페/다음 카페 후보의 공개 접근성, robots/약관, 로그인 필요 여부 기록
 - [ ] 일반 게시판형과 부동산 대상형 source 분리
 - [ ] 제목, 제한 snippet, URL, 작성자 hash, 작성 시각, 원문 hash 저장 정책 점검

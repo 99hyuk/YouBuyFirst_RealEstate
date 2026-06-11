@@ -38,7 +38,7 @@
 ## 현재 우선순위
 
 1. `REAL_ESTATE_SOURCE_CANDIDATES.md`의 30개 내외 seed 후보를 source registry seed로 옮기기
-2. P0 후보의 공개 HTTP 목록 parser spike와 source별 정책 리뷰
+2. P0 후보의 실제 HTML fixture 저장과 source별 정책 리뷰
 3. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
 4. 지역/단지 alias matcher가 필요한 입력 필드 정리
 5. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
