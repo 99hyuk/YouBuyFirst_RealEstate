@@ -58,24 +58,37 @@ class PpomppuAdapter:
                 continue
             seen.add(external_id)
             row = anchor.find_parent("tr")
-            cells = row.find_all("td") if row else []
-            if not _is_regular_row(cells):
-                continue
-            posts.append(
-                RawPost(
-                    source=PpomppuAdapter.source,
-                    board_id=board_id,
-                    external_id=external_id,
-                    url=urljoin(base_url, href),
-                    title=title,
-                    content="",
-                    author=_cell_text(cells, 2),
-                    published_at=parse_datetime(_cell_text(cells, 3, attr="title")),
-                    recommend_count=_parse_recommend_count(_cell_text(cells, 4)),
-                    view_count=_parse_count(_cell_text(cells, 5)),
-                    comment_count=_comment_count(row, title),
+            if row:
+                cells = row.find_all("td")
+                if not _is_regular_row(cells):
+                    continue
+                posts.append(
+                    RawPost(
+                        source=PpomppuAdapter.source,
+                        board_id=board_id,
+                        external_id=external_id,
+                        url=urljoin(base_url, href),
+                        title=title,
+                        content="",
+                        author=_cell_text(cells, 2),
+                        published_at=parse_datetime(_cell_text(cells, 3, attr="title")),
+                        recommend_count=_parse_recommend_count(_cell_text(cells, 4)),
+                        view_count=_parse_count(_cell_text(cells, 5)),
+                        comment_count=_comment_count(row, title),
+                    )
                 )
+                continue
+
+            list_item = anchor.find_parent("li")
+            mobile_post = _mobile_post_from_list_item(
+                list_item=list_item,
+                board_id=board_id,
+                external_id=external_id,
+                href=href,
+                base_url=base_url,
             )
+            if mobile_post:
+                posts.append(mobile_post)
         return posts
 
 
@@ -127,6 +140,50 @@ def _comment_count(row, title: str) -> int | None:
             return parsed
     marker = title.rsplit(" ", 1)[-1].strip("[]")
     return int(marker) if marker.isdigit() else 0
+
+
+def _mobile_post_from_list_item(
+    list_item,
+    board_id: str,
+    external_id: str,
+    href: str,
+    base_url: str,
+) -> RawPost | None:
+    if not list_item:
+        return None
+    title_node = list_item.select_one("strong")
+    if not title_node:
+        return None
+    comment = title_node.select_one(".rp")
+    comment_count = _parse_count(comment.get_text(" ", strip=True) if comment else None) or 0
+    for decorative in title_node.select("img, .rp"):
+        decorative.decompose()
+    title = title_node.get_text(" ", strip=True)
+    if not title:
+        return None
+    time_node = list_item.select_one(".times time")
+    view_node = list_item.select_one(".rec_view .view")
+    author_node = list_item.select_one(".names")
+    return RawPost(
+        source=PpomppuAdapter.source,
+        board_id=board_id,
+        external_id=external_id,
+        url=urljoin(base_url, href),
+        title=title,
+        content="",
+        author=author_node.get_text(" ", strip=True) if author_node else "",
+        published_at=parse_datetime(time_node.get_text(" ", strip=True) if time_node else None),
+        recommend_count=0,
+        view_count=_parse_embedded_count(view_node.get_text(" ", strip=True) if view_node else None),
+        comment_count=comment_count,
+    )
+
+
+def _parse_embedded_count(value: str | None) -> int | None:
+    if not value:
+        return None
+    digits = "".join(char for char in value if char.isdigit())
+    return int(digits) if digits else None
 
 
 def _page_url(base_url: str, cursor: str | None) -> str:

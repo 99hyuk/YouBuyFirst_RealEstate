@@ -53,6 +53,22 @@
 | `daum_cafe_sources` | 카페 robots 확인 | PC `_c21_/bbs_list`, `_c21_/bbs_read` 등 일부 Allow. 모바일은 다수 관리 경로 Disallow | source별 공개 게시판이면 검토 가능. 개별 카페 단위 확인 필요 |
 | `asil_app` | 사이트/앱 정보 확인 | robots에서 일반 bot `Disallow: /`, 일부 검색봇만 Allow | 자동 수집 제외. 앱/시장 fact 연구 후보 |
 
+## P0 board-level 리뷰
+
+2026-06-11 기준 `ppomppu_house`, `dc_immovables`는 실제 목록 페이지가 HTTP 200으로 열리고 기존 generic board adapter 계열에서 파싱 가능함을 확인했다. 다만 원천 게시판 원문을 fixture로 저장하지 않고, 공개 목록의 DOM 구조만 재현한 sanitized fixture를 회귀 테스트에 사용한다.
+
+| sourceId | live smoke | fixture | 수집 상태 | 남은 승인 |
+| --- | --- | --- | --- | --- |
+| `ppomppu_house` | 모바일 목록에서 게시글 15건 파싱 확인 | `ppomppu_realestate_house_mobile_sanitized.html` | `local-research-only` 유지 | Crawl-delay 준수, 게시판 약관/운영 정책 최종 리뷰 |
+| `dc_immovables` | PC 목록에서 게시글 49건 파싱 확인 | `dcinside_realestate_immovables_sanitized.html` | `local-research-only` 유지 | AI bot 차단 문구와 개별 차단 경로를 고려한 저빈도 목록 수집 정책 리뷰 |
+
+운영 원칙:
+
+- fixture에는 실제 원문 제목/작성자 목록을 그대로 저장하지 않는다.
+- 공개 환경에서는 외부 요청을 보내지 않는다.
+- adapter 활성화는 `enabled`가 아니라 `local-research-only`에서 시작한다.
+- 저장 payload는 제목, 제한 snippet, URL, 작성자 hash, 작성 시각, 조회/댓글/추천 수로 제한한다.
+
 ## 우선 검증 후보
 
 | sourceId | 이름 | 유형 | 후보 정책 | 신호 | 우선순위 | 확인 근거 |
@@ -141,7 +157,7 @@
 ## P0 spike 순서
 
 1. 완료: `ppomppu_house`와 `dc_immovables`는 기존 generic board parser를 부동산 board id로 재사용하는 target/parser spike를 통과했다.
-2. 다음: 실제 HTML fixture를 저장해 parser 회귀 테스트를 보강한다.
+2. 완료: 실제 공개 목록 구조를 반영한 sanitized HTML fixture로 parser 회귀 테스트를 보강했다.
 3. 다음: 다음 카페 중 공개 `bbs_list`가 허용되는 부동산 카페 1곳을 source-specific으로 확인한다.
 4. 다음: 위 3곳의 source registry 필드를 확정한다.
 5. 다음: source별 `blocked`, `failed`, `partial`, `complete` coverage 샘플을 작성한다.

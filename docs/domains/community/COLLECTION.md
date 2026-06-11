@@ -38,11 +38,12 @@
 ## 현재 우선순위
 
 1. `REAL_ESTATE_SOURCE_CANDIDATES.md`의 30개 내외 seed 후보를 source registry seed로 옮기기
-2. P0 후보의 실제 HTML fixture 저장과 source별 정책 리뷰
-3. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
-4. 지역/단지 alias matcher가 필요한 입력 필드 정리
-5. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
-6. pipeline이 backend readiness를 기다리도록 개선
+2. 다음 카페 공개 `bbs_list` 후보 1곳 source-specific 확인
+3. P0 후보의 source별 약관/게시판 단위 최종 정책 승인
+4. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
+5. 지역/단지 alias matcher가 필요한 입력 필드 정리
+6. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
+7. pipeline이 backend readiness를 기다리도록 개선
 
 source policy는 `CrawlTarget`보다 상위 게이트이고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/target을 언제 다시 수집할지 정하는 실행 단위입니다.
 
