@@ -107,15 +107,19 @@
 | --- | --- | --- |
 | `id` | string | `naver-cafe-foo`, `public-api-molit-apt-trade` 같은 안정 id |
 | `displayName` | string | 운영자가 보는 이름 |
-| `sourceType` | enum | `public_api`, `public_board`, `cafe`, `news`, `blog`, `column`, `official_notice` |
+| `sourceType` | enum | `public_api`, `public_board`, `cafe`, `regional_cafe`, `app_community`, `news`, `blog`, `column`, `official_notice` |
+| `sourceCategory` | enum | `national_investment`, `local_living`, `general_board`, `proptech_review`, `news_content`, `official_data` |
 | `rootUrl` | string | source root |
 | `accessMode` | enum | `public_http`, `rendered_public`, `login_required`, `blocked` |
 | `status` | enum | `disabled`, `local-research-only`, `public-demo-only`, `enabled` |
 | `robotsStatus` | enum | `unknown`, `allowed`, `restricted`, `blocked` |
 | `termsStatus` | enum | `unknown`, `reviewed`, `restricted`, `blocked` |
 | `targetScope` | enum | `general_market`, `region`, `complex`, `policy`, `news` |
+| `geoScope` | enum | `national`, `sido`, `sigungu`, `eupmyeondong`, `complex`, `unknown` |
+| `topicScope` | string[] | 전세, 매매, 청약, 재건축, 교통, 학군, 정책, 경매 등 source가 강한 주제 |
 | `expectedVolume` | enum | `low`, `medium`, `high` |
 | `parserStatus` | enum | `none`, `candidate`, `implemented`, `failing` |
+| `coverageCaveat` | string/null | 로그인 필요, robots 제한, 앱 의존, 특정 지역 편중 같은 해석 주의점 |
 | `rateLimitPolicy` | string | 요청 간격과 일일 한도 |
 | `lastReviewedAt` | datetime/null | 정책 검토 시각 |
 

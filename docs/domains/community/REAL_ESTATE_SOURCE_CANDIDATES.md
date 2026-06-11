@@ -16,13 +16,50 @@
 
 이 문서는 "수집 승인 목록"이 아니라 "후보 목록"이다. `crawlPolicyCandidate`가 `public-http-candidate`여도 adapter 구현 전에는 source별 정책 검토가 필요하다.
 
+## 분산성 검토
+
+사용자의 "부동산 커뮤니티는 주식보다 특정 커뮤니티 한 곳에 덜 몰려 있을 것 같다"는 가설은 현재 확인 가능한 공개 근거 기준으로는 맞는 방향이다. 다만 아직 전체 글 수를 source별로 센 것이 아니므로 통계적 확정이 아니라 제품/수집 설계 가설로 둔다.
+
+판단 근거:
+
+1. 부동산은 대상 자체가 종목 코드처럼 하나의 표준 namespace로 묶이지 않는다. 지역, 단지, 생활권, 학군, 전세, 청약, 재건축, 경매, 상가, 정책처럼 관심 단위가 나뉜다.
+2. 대형 전국 카페만 보아도 부동산스터디, 피터팬, 아름다운 내집갖기, 월급쟁이부자들, 행복재테크처럼 목적과 이용자층이 다르다.
+3. 네이버는 지역 기반 카페 이용 증가와 지역 단위 카페 노출을 별도 기능으로 설명했다. 부동산 체감 반응은 이런 지역/맘카페 층에 많이 묻힐 가능성이 크다.
+4. 호갱노노처럼 단지 실거주 후기와 앱 내부 커뮤니티가 따로 존재한다. 이는 투자 커뮤니티와 다른 신호다.
+5. 뽐뿌, 디시인사이드, 블라인드처럼 일반 게시판형 source에도 부동산 전용 흐름이 있다.
+6. 반대로 주식은 커뮤니티가 늘었어도 "종목토론방"이라는 강한 공통 패턴이 있다. 2024년 기사 기준 네이버페이 증권 종목토론실은 국내 최대 증권 커뮤니티로 월간 이용자와 일 게시물 수가 매우 크고, 토스증권 커뮤니티도 같은 종목토론방 구조로 경쟁한다.
+
+따라서 부동산은 "대표 커뮤니티 몇 개의 언급량"보다 "source category coverage"를 먼저 봐야 한다. 화면과 지표에서도 단순 언급량보다 다음 값을 함께 저장해야 한다.
+
+| 필드 | 이유 |
+| --- | --- |
+| `sourceCategory` | 전국 투자 카페, 지역/맘카페, 일반 게시판, 앱 후기, 뉴스/컬럼을 분리 |
+| `geoScope` | 전국, 시도, 시군구, 읍면동, 단지 단위 신호를 구분 |
+| `topicScope` | 전세, 매매, 청약, 재건축, 교통, 학군, 정책, 경매 등 관심사를 구분 |
+| `sourceSkew` | 한 source에 몰린 급증을 시장 전체 관심처럼 보이지 않게 함 |
+| `coverageStatus` | 공개 접근 실패, 로그인 필요, 정책 차단, 부분 수집을 화면 caveat로 연결 |
+
+## 1차 공개 접근성 점검
+
+2026-06-11에 대표 후보 URL과 robots.txt를 직접 확인했다. 아래 결과는 "접근 가능성 점검"이지 "수집 승인"이 아니다.
+
+| sourceId | 페이지 확인 | robots/정책 단서 | 1차 판단 |
+| --- | --- | --- | --- |
+| `ppomppu_house` | 모바일 부동산포럼 목록 HTTP 200, 제목/목록 확인 | `Crawl-delay: 1`, 부동산포럼 목록은 명시 차단 목록에 없음 | P0 parser spike 가능. 지연 준수와 낮은 빈도 필요 |
+| `dc_immovables` | PC 부동산 갤러리 목록 HTTP 200, 글번호/작성일/조회/추천 확인 | `User-agent: *`는 Allow지만 AI bot 차단과 개별 차단 경로 존재 | P0 후보 유지. 정책 리뷰 후 목록 중심 저빈도 수집만 검토 |
+| `hogangnono_community` | 커뮤니티 페이지 HTTP 200 | robots 첫 줄에서 명시적 허가 없는 crawling 금지 고지 | 자동 수집 제외. 링크/수동 조사/제휴 후보 |
+| `blind_realestate_topic` | 부동산 토픽 HTTP 200 | 일반 history 경로 외 대부분 공개이나 AI bot 차단, 앱/로그인 의존성 큼 | 자동 수집 제외에 가깝다. 공개 링크 연구 후보 |
+| `naver_cafe_sources` | 카페 robots 확인 | `User-agent: * Disallow: /` | 자동 수집 제외. 공식 API/허가/수동 조사 없이는 adapter 금지 |
+| `daum_cafe_sources` | 카페 robots 확인 | PC `_c21_/bbs_list`, `_c21_/bbs_read` 등 일부 Allow. 모바일은 다수 관리 경로 Disallow | source별 공개 게시판이면 검토 가능. 개별 카페 단위 확인 필요 |
+| `asil_app` | 사이트/앱 정보 확인 | robots에서 일반 bot `Disallow: /`, 일부 검색봇만 Allow | 자동 수집 제외. 앱/시장 fact 연구 후보 |
+
 ## 우선 검증 후보
 
 | sourceId | 이름 | 유형 | 후보 정책 | 신호 | 우선순위 | 확인 근거 |
 | --- | --- | --- | --- | --- | --- | --- |
 | `ppomppu_house` | 뽐뿌 부동산포럼 | 공개 게시판 | `public-http-candidate` | 내집마련, 계약, 이사, 대출, 전세 이슈 | P0 | 공식 목록에 부동산포럼과 최신글 노출 |
-| `dc_immovables` | 디시인사이드 부동산 갤러리 | 공개 게시판 | `public-http-candidate` | 빠른 감정 반응, 지역/정책 논쟁, 과열/우려 신호 | P0 | 공식 갤러리 목록에 게시글 번호, 작성일, 조회/추천 노출 |
-| `hogangnono_community` | 호갱노노 이야기 | 앱/웹 커뮤니티 | `local-research-only` | 실거주 후기, 아파트 단지 단위 체감 | P0 | 공식 커뮤니티 페이지와 직방 보도자료에서 이야기 탭 운영 확인 |
+| `dc_immovables` | 디시인사이드 부동산 갤러리 | 공개 게시판 | `public-http-candidate` | 빠른 감정 반응, 지역/정책 논쟁, 과열/우려 신호 | P0 | 공식 갤러리 목록에 게시글 번호, 작성일, 조회/추천 노출. 정책 리뷰 필요 |
+| `hogangnono_community` | 호갱노노 이야기 | 앱/웹 커뮤니티 | `local-research-only` | 실거주 후기, 아파트 단지 단위 체감 | P1 | 공식 커뮤니티 페이지와 직방 보도자료에서 이야기 탭 운영 확인. robots상 자동 수집 제외 |
 | `blind_realestate_topic` | 블라인드 부동산 토픽 | 직장인 커뮤니티 | `local-research-only` | 직장인 실수요, 고소득권역, 대출/갈아타기 고민 | P1 | 공개 토픽 페이지와 게시글 일부 확인. 앱/로그인 의존성 검토 필요 |
 | `naver_boodongsan_study` | 부동산스터디 | 네이버 카페 | `disabled` | 시장 심리, 정책 반응, 지역별 논쟁 | P1 | 언론에서 대형 부동산 카페 영향력과 회원 규모 언급 |
 | `naver_peterpanz` | 피터팬의 좋은방 구하기 | 네이버 카페/앱 | `disabled` | 전월세, 직거래, 거주 후기, 임차 수요 | P1 | 카페 회원 300만 돌파와 거주/거래 후기 제공 언급 |
@@ -56,7 +93,7 @@
 
 1. `ppomppu_house` 최신글 목록 parser spike
 2. `dc_immovables` 최신글 목록 parser spike
-3. `hogangnono_community` 공개 웹 범위 확인
+3. 다음 카페 중 공개 `bbs_list`가 허용되는 부동산 카페 1곳 source-specific 확인
 4. 위 3곳의 source registry 필드 확정
 5. source별 `blocked`, `failed`, `partial`, `complete` coverage 샘플 작성
 
@@ -86,6 +123,7 @@
 3. 네이버/다음 카페는 공개 목록 접근성 확인 결과에 따라 `excluded-login-required` 또는 `local-research-only`로 분리한다.
 4. 지역/단지 alias DB 초안과 연결해, source별로 어떤 별칭이 많이 필요한지 기록한다.
 5. source skew가 큰 source는 지표 산식에서 가중치를 낮추거나 별도 caveat를 붙인다.
+6. 부동산 dashboard/지역 반응 지표에는 source category coverage를 표시할지 결정한다.
 
 ## 외부 확인 근거
 
@@ -101,3 +139,11 @@
 - 행복재테크 관련 언론: https://www.lawissue.co.kr/view.php?ud=20180303021621903107f28b58b8_12
 - 아실 Google Play: https://play.google.com/store/apps/details?hl=ko&id=kr.co.koreachart.city
 - 국토교통부 실거래가 공개시스템 자료제공: https://rt.molit.go.kr/pt/xls/xls.do?mobileAt=
+- 네이버 지역 기반 카페 기능 보도자료: https://navercorp.com/media/pressReleasesDetail?seq=30319
+- 네이버/다음 부동산 카페 목록 규모 참고: https://kmong.com/gig/137951
+- 주식 종목토론방 규모 비교 기사: https://v.daum.net/v/HVDlD6ZwUB
+- 네이버 카페 robots: https://cafe.naver.com/robots.txt
+- 다음 카페 robots: https://cafe.daum.net/robots.txt
+- 호갱노노 robots: https://hogangnono.com/robots.txt
+- 블라인드 robots: https://www.teamblind.com/robots.txt
+- 아실 robots: https://asil.kr/robots.txt
