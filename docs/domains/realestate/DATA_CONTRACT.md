@@ -459,6 +459,7 @@ GET /api/realestate/targets/{targetId}/graph?direction=&edgeType=
 GET /api/realestate/targets/{targetId}/reaction-graph?direction=&edgeType=&windowStart=&windowMinutes=
 GET /api/realestate/targets/{targetId}/reaction-snapshot?windowStart=&windowMinutes=
 GET /api/realestate/targets/{targetId}/market-facts
+GET /api/realestate/targets/{targetId}/nearby-complexes?limit=
 GET /api/realestate/targets/{targetId}/content?feed=&limit=
 GET /api/realestate/targets/{targetId}/evidence-logs?limit=
 GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=
@@ -493,7 +494,7 @@ POST /internal/community/crawl-sources
 
 `GET /api/realestate/map/layers`는 자체 도식화 지도 heat layer 입력입니다. `layerType=sido`는 전국 시도, `layerType=sigungu&parentTargetId=region-seoul`은 특정 시도 하위 시군구를 반환합니다. 응답은 `targets[].targetId`를 정본 식별자로 쓰고, 각 기간 값에 `provider`, `asOf`, `dataStatus`, `stale`, `changePct`, `sampleCount`, `confidence`를 포함합니다. 실제 데이터 집계 전 seed 값은 `dataStatus=mock`, `stale=true`로 표시합니다.
 
-동/단지 상세의 내장 지도는 초기에는 front fixture marker로 동작합니다. 실제 API로 승격할 때는 `GET /api/realestate/targets/{targetId}/nearby-complexes` 또는 상세 응답의 `embeddedMap.markers[]`에 `targetId`, `name`, `address`, `latitude`, `longitude`, `priceSummary`, `reactionSummary`, `provider`, `asOf`, `dataStatus`, `stale`을 같이 내려야 합니다. 좌표가 없거나 검증 전이면 값을 숨기지 않고 `dataStatus=mock|candidate|unknown`으로 표시합니다.
+동/단지 상세의 내장 지도는 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 우선 조회합니다. 응답은 `items[]`에 `targetId`, `name`, `address`, `region`, `latitude`, `longitude`, `tone`, `price`, `change`, `reaction`, `provider`, `asOf`, `dataStatus`, `stale`, `note`, `legalDongCode`, `coordinateProvider`, `coordinateStatus`를 포함합니다. API가 실패하거나 좌표가 없는 row만 내려오면 front fixture marker로 fallback하되, 좌표가 검증 전이면 값을 숨기지 않고 `dataStatus=mock|candidate|unknown`, `stale=true`로 표시합니다.
 
 `GET /api/realestate/reactions/rankings`는 `real_estate_reaction_snapshots`를 지역/단지 랭킹 화면용으로 반환합니다. `windowStart`가 없으면 해당 target type의 최신 window를 반환하고, 없으면 빈 `items`와 `coverageStatus=empty`를 반환합니다.
 

@@ -100,7 +100,8 @@
 
 - [ ] region/complex 기본 정보와 alias 표시 기준 정리
 - [x] 동/단지 상세 카카오맵 SDK prototype 구현
-- [ ] 실제 단지 좌표/주소/법정동 코드 DB 필드와 API 응답으로 내장 지도 marker 승격
+- [x] 실제 단지 좌표/주소 DB 필드와 `nearby-complexes` API 응답으로 내장 지도 marker 1차 승격
+- [ ] 법정동 코드/provider key 검증과 실제 단지 좌표 보강
 - [x] 상위 지역/생활권/정책 영향권과 하위 대상 연결용 target graph API 작성
 - [x] `approved contains` target graph를 반응 snapshot 상위 roll-up 산식에 반영
 - [x] target graph 기반 drill-down/관련 target snapshot 응답 API 구현
