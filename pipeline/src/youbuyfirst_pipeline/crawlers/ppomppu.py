@@ -23,7 +23,7 @@ class PpomppuAdapter:
             raise ValueError(f"{target.target_id} is missing url")
         self.fetcher = fetcher
         self.target = target
-        self.board_id = target.board_id or "stock"
+        self.board_id = target.board_id or "house"
         self.url = target.url
         self.stream_crawler = stream_crawler or BoardStreamCrawler()
 

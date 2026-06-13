@@ -7,7 +7,7 @@
 - Detail routes:
   - `/indicators/price-transaction`
   - `/indicators/supply-demand`
-  - `/indicators/sentiment-demand`
+  - `/indicators/demand-mood`
   - `/indicators/macro-finance`
 
 ## 화면 목적

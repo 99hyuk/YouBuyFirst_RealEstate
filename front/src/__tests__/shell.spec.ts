@@ -87,19 +87,14 @@ describe('front dashboard shell', () => {
       '/realestate/map/:regionId',
       '/newsroom',
       '/realestate/reactions',
-      '/realestate/targets/:symbol',
-      '/stocks',
-      '/stocks/:symbol',
-      '/communities',
+      '/realestate/targets/:targetId',
       '/indicators',
       '/indicators/:category',
-      '/agents',
-      '/portfolio'
+      '/realestate/watchlist'
     ]);
     expect(routes[0]).toMatchObject({ redirect: '/dashboard' });
-    expect(routes.find((route) => route.path === '/agents')).toMatchObject({
-      redirect: { path: '/realestate/reactions', query: { view: 'agents' } }
-    });
+    expect(routePaths).not.toContain('/communities');
+    expect(routePaths).not.toContain('/agents');
   });
 
   it('declares an inline favicon so browser checks do not request /favicon.ico', () => {
@@ -122,8 +117,9 @@ describe('front dashboard shell', () => {
     expect(wrapper.get('[data-testid="nav-region-reactions"]').text()).toContain('지역 반응');
     expect(wrapper.get('[data-testid="nav-indicators"]').text()).toContain('주요 지표');
     expect(wrapper.find('[data-testid="nav-agents"]').exists()).toBe(false);
-    expect(wrapper.get('[data-testid="nav-portfolio"]').text()).toContain('관심 지역');
-    expect(wrapper.find('.topbar .live-ticker').exists()).toBe(true);
+    expect(wrapper.get('[data-testid="nav-watchlist"]').text()).toContain('관심 지역');
+    expect(wrapper.get('[data-testid="nav-watchlist"]').attributes('href')).toBe('/realestate/watchlist');
+    expect(wrapper.find('.topbar .live-strip').exists()).toBe(true);
     expect(wrapper.text()).toContain('부동산 투기 과열 지표');
     expect(wrapper.text()).toContain('73점');
     expect(wrapper.text()).toContain('어제 대비 +6.4%');
@@ -167,22 +163,19 @@ describe('front dashboard shell', () => {
     expect(reactions.text()).not.toContain('커뮤니티 반응과 공식 지표 비교 그래프');
     expect(reactions.findAll('.region-ranking-row').length).toBe(12);
 
-    const legacyStocks = await mountAt('/stocks');
-    expect(legacyStocks.text()).toContain('지역 반응');
-
-    const stock = await mountAt('/realestate/targets/SEOUL-MAPO');
-    expect(stock.text()).toContain('지역 반응 목록으로');
-    expect(stock.text()).toContain('마포구 아파트');
-    expect(stock.text()).toContain('전세 매물 체감과 학군 키워드');
-    expect(stock.text()).toContain('지역 한줄 브리핑');
-    expect(stock.text()).toContain('실거래가 흐름');
-    expect(stock.text()).toContain('전세가율');
-    expect(stock.text()).toContain('공급 신호');
-    expect(stock.text()).toContain('시간대별 변화');
-    expect(stock.text()).toContain('커뮤니티 반응 추이');
-    expect(stock.text()).toContain('신호 신뢰도');
-    expect(stock.findAll('.vertical-timeline article')).toHaveLength(4);
-    expect(stock.findAll('.evidence-list a').length).toBeGreaterThanOrEqual(3);
+    const target = await mountAt('/realestate/targets/SEOUL-MAPO');
+    expect(target.text()).toContain('지역 반응 목록으로');
+    expect(target.text()).toContain('마포구 아파트');
+    expect(target.text()).toContain('전세 매물 체감과 학군 키워드');
+    expect(target.text()).toContain('지역 한줄 브리핑');
+    expect(target.text()).toContain('실거래가 흐름');
+    expect(target.text()).toContain('전세가율');
+    expect(target.text()).toContain('공급 신호');
+    expect(target.text()).toContain('시간대별 변화');
+    expect(target.text()).toContain('커뮤니티 반응 추이');
+    expect(target.text()).toContain('신호 신뢰도');
+    expect(target.findAll('.vertical-timeline article')).toHaveLength(4);
+    expect(target.findAll('.evidence-list a').length).toBeGreaterThanOrEqual(3);
 
     const otherTarget = await mountAt('/realestate/targets/DONGTAN-STATION');
     expect(otherTarget.text()).toContain('동탄역권');
@@ -194,19 +187,6 @@ describe('front dashboard shell', () => {
     expect(unsupportedTarget.find('.unsupported-region-state').exists()).toBe(true);
     expect(unsupportedTarget.text()).toContain('SEONGSU-DONG');
     expect(unsupportedTarget.find('.region-reaction-card').exists()).toBe(false);
-
-    const communities = await mountAt('/communities');
-    expect(communities.text()).toContain('지역 반응');
-    expect(communities.text()).toContain('커뮤니티 언급 급증 지역');
-    expect(communities.text()).not.toContain('커뮤니티별 언급 급증 지역');
-    expect(communities.text()).not.toContain('커뮤니티별 반응 비교');
-    expect(communities.text()).not.toContain('커뮤니티별 언급 급증과 반응 비율');
-    expect(communities.text()).toContain('언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합');
-    expect(communities.text()).not.toContain('지역별 반응 선행성 실험');
-    expect(communities.text()).toContain('모의 에이전트');
-    expect(communities.text()).toContain('모의 에이전트 판단 기록');
-    expect(communities.text()).toContain('판단 입력값');
-    expect(communities.text()).toContain('전략 버전과 판단 key 기준');
 
     const newsroomAll = await mountAt('/newsroom');
     expect(newsroomAll.text()).toContain('뉴스룸');
@@ -249,22 +229,14 @@ describe('front dashboard shell', () => {
     expect(indicatorDetail.text()).toContain('가격 및 거래량 상세 지표');
     expect(indicatorDetail.text()).toContain('전체 핵심 보기');
 
-    const agents = await mountAt('/agents');
-    expect(agents.text()).toContain('지역 반응');
-    expect(agents.text()).toContain('모의 에이전트 판단 기록');
-    expect(agents.text()).toContain('전략 버전과 판단 key 기준');
-    expect(agents.text()).toContain('최근 판단 로그');
-    expect(agents.text()).toContain('판단 입력값');
-    expect(agents.text()).toContain('판단 key');
-
-    const portfolio = await mountAt('/portfolio');
-    expect(portfolio.text()).toContain('관심 지역');
-    expect(portfolio.text()).toContain('부동산 자문 아님');
-    expect(portfolio.text()).toContain('커뮤니티 원문 · 별칭 DB 연결 준비');
-    expect(portfolio.text()).toContain('원문/공공데이터 후보');
-    expect(portfolio.text()).toContain('민감정보 마스킹');
-    expect(portfolio.text()).toContain('관찰 로그');
-    expect(portfolio.text()).toContain('알림 후 복기');
+    const watchlist = await mountAt('/realestate/watchlist');
+    expect(watchlist.text()).toContain('관심 지역');
+    expect(watchlist.text()).toContain('부동산 자문 아님');
+    expect(watchlist.text()).toContain('커뮤니티 원문 · 별칭 DB 연결 준비');
+    expect(watchlist.text()).toContain('원문/공공데이터 후보');
+    expect(watchlist.text()).toContain('민감정보 마스킹');
+    expect(watchlist.text()).toContain('관찰 로그');
+    expect(watchlist.text()).toContain('알림 후 복기');
   });
 
   it('opens a full regional drilldown map from the national map', async () => {
@@ -332,7 +304,7 @@ describe('front dashboard shell', () => {
     expect(styles).toContain('.community-table');
     expect(styles).toContain('.theme-heatmap');
     expect(styles).toContain('.decision-log-list');
-    expect(styles).toContain('.portfolio-table');
+    expect(styles).toContain('.watchlist-table');
     expect(styles).toContain('.account-sync-grid');
     expect(wrapper.text()).toContain('실제 매수·매도 지시나 개인화 부동산 자문을 제공하지 않습니다');
     expect(wrapper.text()).not.toContain('매수 추천');

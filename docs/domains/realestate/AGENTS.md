@@ -20,7 +20,6 @@ realestate는 부동산 프로젝트의 주 도메인입니다. 지역, 단지, 
 - window 단위 반응 지표와 유사 상황 검색 후보는 `indicator`가 소유합니다.
 - AI가 지표와 market fact를 읽고 사용자용 평가를 남기는 구조는 `agent`가 소유합니다.
 - 화면 문구와 배치는 `layers/ui`가 소유합니다.
-- 기존 `stock`, `market`, `simulation`은 참고 영역이며 부동산 모델 안으로 직접 끌어오지 않습니다.
 
 ## 문구와 데이터 원칙
 

@@ -1,0 +1,2495 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>너나사 부동산 ERD</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef2f6;
+      --panel: #ffffff;
+      --ink: #111827;
+      --muted: #64748b;
+      --line: #d7dee8;
+      --accent: #f97316;
+      --accent-soft: #fff1e8;
+      --dark: #101827;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Pretendard, Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    header {
+      position: relative;
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 72px;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      min-width: 260px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill.strong {
+      border-color: rgba(249, 115, 22, 0.34);
+      background: var(--accent-soft);
+      color: #c2410c;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      height: calc(100vh - 72px);
+      min-height: 0;
+    }
+
+    .workspace {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .view-switch {
+      display: inline-flex;
+      flex: 0 0 auto;
+      gap: 4px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .view-switch button {
+      min-height: 28px;
+      padding: 0 9px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .view-switch button.is-active {
+      background: var(--accent-soft);
+      color: #c2410c;
+    }
+
+    button {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--dark);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.primary {
+      border-color: #ea580c;
+      background: #f97316;
+      color: #ffffff;
+    }
+
+    button.is-active {
+      border-color: rgba(249, 115, 22, 0.5);
+      background: var(--accent-soft);
+      color: #c2410c;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .viewport {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background:
+        linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        #ffffff;
+      background-size: 28px 28px;
+      box-shadow: var(--shadow);
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .viewport.is-dragging {
+      cursor: grabbing;
+    }
+
+    .canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      transform-origin: 0 0;
+      padding: 28px;
+      width: max-content;
+      transition: transform 80ms ease;
+      will-change: transform;
+    }
+
+    .mermaid {
+      width: max-content;
+      min-width: 1200px;
+      pointer-events: none;
+    }
+
+    .mermaid svg {
+      max-width: none !important;
+      height: auto !important;
+      overflow: visible;
+    }
+
+    .mermaid svg g.node .outer-path path[stroke],
+    .mermaid svg g.node path[stroke="#f97316"] {
+      stroke-width: 2.4px !important;
+    }
+
+    .mermaid svg g.node foreignObject {
+      overflow: visible;
+    }
+
+    .mermaid svg g.node foreignObject div {
+      max-width: none !important;
+      overflow: visible !important;
+      color: #111827 !important;
+      font-weight: 850 !important;
+    }
+
+    .mermaid svg g.node .label.name foreignObject div {
+      color: #0f172a !important;
+      font-weight: 950 !important;
+    }
+
+    .mermaid svg g.edgeLabels,
+    .mermaid svg g.edgeLabel {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+
+    .diagram-overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 2;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+    }
+
+    .erd-group-frame {
+      position: absolute;
+      pointer-events: none;
+      z-index: 1;
+      border: 4px solid var(--overlay-color, #f97316);
+      border-radius: 18px;
+      background: transparent;
+      opacity: 0.86;
+      box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.78), 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .erd-group-frame.group-focus-node {
+      opacity: 1;
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.95), 0 0 0 6px rgba(249, 115, 22, 0.22), 0 16px 36px rgba(249, 115, 22, 0.22);
+    }
+
+    .canvas.relation-focus-mode .erd-group-frame:not(.group-focus-node),
+    .canvas.relation-focus-mode .erd-group-title:not(.group-focus-node),
+    .canvas.relation-focus-mode .erd-table-ko-pill:not(.relation-node-primary):not(.relation-node-connected) {
+      opacity: 0.16;
+    }
+
+    .erd-group-title,
+    .erd-table-ko-text {
+      position: absolute;
+      pointer-events: none;
+      font-family: Pretendard, Inter, "Segoe UI", system-ui, sans-serif;
+      white-space: nowrap;
+    }
+
+    .erd-group-title {
+      z-index: 3;
+      padding: 5px 10px;
+      border: 2px solid currentColor;
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.96);
+      font-size: 28px;
+      font-weight: 950;
+      letter-spacing: 0;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
+    }
+
+    .erd-table-ko-text {
+      font-size: 21px;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .erd-table-ko-pill {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      min-width: 112px;
+      height: 42px;
+      padding: 0 14px;
+      border: 3px solid var(--overlay-color, #f97316);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.96);
+      pointer-events: none;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+    }
+
+    .mermaid text.table-focus-text {
+      fill: #ea580c !important;
+      font-weight: 900 !important;
+    }
+
+    .mermaid .table-focus-node .outer-path path,
+    .mermaid .table-focus-node .outer-path rect {
+      stroke: #ea580c !important;
+      stroke-width: 6px !important;
+    }
+
+    .canvas.relation-focus-mode .mermaid svg g.node {
+      opacity: 0.13;
+      transition: opacity 160ms ease, filter 160ms ease;
+    }
+
+    .canvas.relation-focus-mode .mermaid svg g.node.relation-node-connected {
+      opacity: 0.52;
+    }
+
+    .canvas.relation-focus-mode .mermaid svg g.node.relation-node-primary {
+      opacity: 1;
+      filter: drop-shadow(0 10px 18px rgba(249, 115, 22, 0.18));
+    }
+
+    .canvas.relation-focus-mode .mermaid svg path.relationshipLine {
+      opacity: 0.08;
+      transition: opacity 160ms ease, stroke-width 160ms ease;
+    }
+
+    .canvas.relation-focus-mode .mermaid svg path.relationshipLine.relation-edge-hot {
+      opacity: 0.92;
+      stroke: #ea580c !important;
+      stroke-width: 2.1px !important;
+    }
+
+    .canvas.relation-focus-mode .erd-table-ko-pill.relation-node-connected {
+      opacity: 0.62;
+    }
+
+    .canvas.relation-focus-mode .erd-table-ko-pill.relation-node-primary {
+      opacity: 1;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.16), 0 12px 24px rgba(249, 115, 22, 0.18);
+    }
+
+    .cluster-board {
+      display: grid;
+      grid-template-columns: repeat(4, 360px);
+      align-items: start;
+      gap: 18px;
+      width: max-content;
+      padding: 10px;
+      pointer-events: auto;
+    }
+
+    .cluster-panel {
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-top: 4px solid var(--group-color, #f97316);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    .cluster-panel.group-focus-node {
+      border-color: #ea580c;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18), 0 22px 48px rgba(249, 115, 22, 0.16);
+    }
+
+    .cluster-panel-head {
+      padding: 13px 14px 11px;
+      border-bottom: 1px solid #edf1f5;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), var(--group-soft, #fff7ed));
+    }
+
+    .cluster-kicker {
+      display: block;
+      color: var(--group-color, #f97316);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .cluster-title {
+      margin: 3px 0 0;
+      color: #111827;
+      font-size: 18px;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .cluster-summary {
+      margin: 6px 0 0;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .cluster-table-list {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .cluster-table {
+      border: 1px solid #e6ebf1;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .cluster-table.table-focus-node {
+      border-color: #ea580c;
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20), 0 14px 30px rgba(249, 115, 22, 0.16);
+    }
+
+    .cluster-table-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      padding: 10px;
+      border-bottom: 1px solid #edf1f5;
+      background: #f8fafc;
+    }
+
+    .cluster-table-ko {
+      display: block;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 950;
+      letter-spacing: 0;
+      line-height: 1.25;
+    }
+
+    .cluster-table-en {
+      display: block;
+      margin-top: 4px;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 900;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .cluster-focus {
+      align-self: start;
+      min-height: 26px;
+      padding: 0 7px;
+      border-radius: 999px;
+      font-size: 10px;
+    }
+
+    .cluster-table-desc {
+      margin: 0;
+      padding: 9px 10px 0;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .field-list {
+      display: grid;
+      gap: 3px;
+      max-height: 172px;
+      margin: 9px 10px 10px;
+      padding: 8px;
+      overflow: auto;
+      border: 1px solid #edf1f5;
+      border-radius: 7px;
+      background: #ffffff;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 6px;
+      min-height: 22px;
+      font-size: 11px;
+    }
+
+    .field-type {
+      color: #c2410c;
+      font-weight: 950;
+    }
+
+    .field-name {
+      overflow: hidden;
+      color: #111827;
+      font-weight: 850;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .field-key {
+      color: #64748b;
+      font-weight: 950;
+    }
+
+    .canvas[data-mode="relation"] .cluster-board,
+    .canvas[data-mode="relation"] .schema-board,
+    .canvas[data-mode="cluster"] .mermaid,
+    .canvas[data-mode="cluster"] .diagram-overlay,
+    .canvas[data-mode="cluster"] .schema-board {
+      display: none;
+    }
+
+    .schema-board {
+      position: relative;
+      width: 2140px;
+      height: 1540px;
+      border: 1px solid rgba(148, 163, 184, 0.34);
+      border-radius: 18px;
+      background:
+        linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+        radial-gradient(circle at 50% 8%, rgba(249, 115, 22, 0.11), transparent 34%),
+        #f8fafc;
+      background-size: 32px 32px, 32px 32px, auto, auto;
+      overflow: hidden;
+    }
+
+    .schema-link-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .schema-link {
+      fill: none;
+      stroke: #94a3b8;
+      stroke-linecap: round;
+      stroke-width: 1.6px;
+      opacity: 0.48;
+    }
+
+    .schema-link.hub {
+      stroke: #f97316;
+      stroke-width: 2.2px;
+      opacity: 0.78;
+    }
+
+    .schema-link.cross {
+      stroke: #64748b;
+      stroke-width: 1.8px;
+      opacity: 0.58;
+    }
+
+    .schema-link.local {
+      stroke: #cbd5e1;
+      stroke-width: 1.2px;
+      opacity: 0.34;
+    }
+
+    .schema-panel {
+      position: absolute;
+      z-index: 2;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      border: 1px solid rgba(148, 163, 184, 0.38);
+      border-top: 5px solid var(--group-color, #f97316);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    .schema-panel.group-focus-node {
+      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.18), 0 22px 48px rgba(249, 115, 22, 0.18);
+    }
+
+    .schema-panel.is-hub {
+      border-width: 2px;
+      border-top-width: 6px;
+      background: rgba(255, 251, 247, 0.98);
+      box-shadow: 0 24px 54px rgba(249, 115, 22, 0.16);
+    }
+
+    .schema-panel-head {
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), var(--group-soft, #fff7ed));
+    }
+
+    .schema-kicker {
+      display: block;
+      color: var(--group-color, #f97316);
+      font-size: 11px;
+      font-weight: 950;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .schema-title {
+      margin: 4px 0 0;
+      color: #111827;
+      font-size: 20px;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .schema-summary {
+      margin: 7px 0 0;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 750;
+      line-height: 1.5;
+    }
+
+    .schema-table-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-content: start;
+      gap: 10px;
+      padding: 13px;
+    }
+
+    .schema-panel.is-hub .schema-table-grid {
+      grid-template-columns: 1.2fr 1fr 1fr;
+    }
+
+    .schema-table {
+      position: relative;
+      z-index: 2;
+      min-height: 78px;
+      padding: 11px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #ffffff;
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.045);
+    }
+
+    .schema-table.is-primary {
+      border-color: rgba(249, 115, 22, 0.66);
+      background: linear-gradient(135deg, #ffffff, #fff7ed);
+    }
+
+    .schema-table.is-abstract {
+      grid-row: span 2;
+      min-height: 172px;
+      border-width: 2px;
+      border-color: #f97316;
+      background: linear-gradient(135deg, #fff7ed, #ffffff);
+    }
+
+    .schema-table.table-focus-node {
+      border-color: #ea580c;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.18), 0 14px 30px rgba(249, 115, 22, 0.16);
+    }
+
+    .schema-table-role {
+      display: inline-flex;
+      margin-bottom: 7px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      background: rgba(249, 115, 22, 0.10);
+      color: #c2410c;
+      font-size: 10px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .schema-table-ko {
+      display: block;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 950;
+      line-height: 1.25;
+    }
+
+    .schema-table-en {
+      display: block;
+      margin-top: 5px;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 850;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .schema-table-meta {
+      display: block;
+      margin-top: 8px;
+      color: #94a3b8;
+      font-size: 10px;
+      font-weight: 850;
+    }
+
+    .viewer-note {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      z-index: 2;
+      max-width: 360px;
+      padding: 9px 11px;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .sidebar {
+      min-height: 0;
+      overflow: auto;
+      border-left: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+    }
+
+    .sidebar-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    }
+
+    .panel-head {
+      padding: 13px 14px 10px;
+      border-bottom: 1px solid #edf1f5;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 4px;
+      color: #f97316;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .panel-copy {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .group-list {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .group-button {
+      display: grid;
+      grid-template-columns: 8px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      min-height: 42px;
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    .group-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--group-color, #f97316);
+    }
+
+    .group-name {
+      overflow: hidden;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .group-count {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .table-list {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+    }
+
+    .table-card {
+      width: 100%;
+      min-height: 0;
+      padding: 0;
+      border: 1px solid #e6ebf1;
+      border-radius: 8px;
+      background: #ffffff;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .table-card.is-active {
+      border-color: rgba(249, 115, 22, 0.55);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+    }
+
+    .table-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 10px 6px;
+    }
+
+    .table-name {
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .table-badge {
+      flex: 0 0 auto;
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .table-desc {
+      margin: 0;
+      padding: 0 10px 10px;
+      color: #475569;
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.55;
+    }
+
+    [contenteditable="true"] {
+      outline: 2px solid rgba(249, 115, 22, 0.24);
+      outline-offset: 2px;
+      border-radius: 4px;
+      cursor: text;
+    }
+
+    .edit-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .edit-actions button {
+      width: 100%;
+    }
+
+    .edit-help {
+      margin: 0;
+      padding: 0 12px 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .summary-item {
+      padding: 10px;
+      border: 1px solid #edf1f5;
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .summary-value {
+      display: block;
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    .summary-label {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .tone-orange { --group-color: #f97316; --group-soft: #fff7ed; }
+    .tone-blue { --group-color: #2563eb; --group-soft: #eff6ff; }
+    .tone-slate { --group-color: #475569; --group-soft: #f8fafc; }
+    .tone-red { --group-color: #ef4444; --group-soft: #fff1f2; }
+    .tone-green { --group-color: #16a34a; --group-soft: #f0fdf4; }
+    .tone-purple { --group-color: #7c3aed; --group-soft: #f5f3ff; }
+    .tone-amber { --group-color: #d97706; --group-soft: #fffbeb; }
+
+    @media (max-width: 1040px) {
+      body {
+        overflow: auto;
+      }
+
+      .shell {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .workspace {
+        height: 72vh;
+      }
+
+      .sidebar {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+
+    @media (max-width: 760px) {
+      header,
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .meta {
+        justify-content: flex-start;
+        min-width: 0;
+      }
+
+      .workspace {
+        padding: 12px;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>너나사 부동산 ERD</h1>
+      <p class="subtitle">사람들의 반응, 시장 사실, 지도 흐름, AI 근거 로그를 target 중심으로 연결한 논리 ERD입니다.</p>
+    </div>
+    <div class="meta" aria-label="ERD summary">
+      <span class="pill strong">35 tables</span>
+      <span class="pill">44 relations</span>
+      <span class="pill">drag canvas</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="workspace" aria-label="ERD viewer">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <span class="hint">캔버스를 마우스로 잡아 끌어 이동하고, 우측 테이블명을 누르면 해당 테이블 쪽으로 이동합니다.</span>
+          <div class="view-switch" aria-label="보기 전환">
+            <button type="button" data-mode="relation">관계선 보기</button>
+            <button type="button" data-mode="cluster">군집 보기</button>
+          </div>
+        </div>
+        <div class="toolbar-actions">
+          <button type="button" data-view="fit">전체 보기</button>
+          <button type="button" data-zoom="out">축소</button>
+          <button type="button" data-zoom="reset">100%</button>
+          <button type="button" data-zoom="in" class="primary">확대</button>
+        </div>
+      </div>
+      <section class="viewport" id="viewport" aria-label="ERD canvas">
+        <div class="canvas" id="canvas" data-mode="relation">
+          <pre class="mermaid">erDiagram
+  APP_USERS ||--o{ USER_WATCH_TARGETS : saves
+  APP_USERS ||--o{ ALERT_RULES : owns
+  APP_USERS ||--o{ OBSERVATION_LOGS : writes
+  REAL_ESTATE_TARGETS ||--|| REAL_ESTATE_REGIONS : region_profile
+  REAL_ESTATE_TARGETS ||--|| REAL_ESTATE_COMPLEXES : complex_profile
+  REAL_ESTATE_REGIONS ||--o{ REAL_ESTATE_COMPLEXES : contains
+  REAL_ESTATE_TARGETS ||--o{ REAL_ESTATE_TARGET_EDGES : from_target
+  REAL_ESTATE_TARGETS ||--o{ REAL_ESTATE_TARGET_EDGES : to_target
+  REAL_ESTATE_TARGETS ||--o{ REAL_ESTATE_ALIASES : has_alias
+  MAP_BOUNDARY_ASSETS ||--o{ MAP_FEATURES : contains
+  REAL_ESTATE_TARGETS ||--o{ MAP_FEATURES : mapped_to
+  REAL_ESTATE_TARGETS ||--o{ MAP_LAYER_SNAPSHOTS : heat_values
+  CRAWL_SOURCES ||--o{ SOURCE_BOARDS : has_board
+  CRAWL_SOURCES ||--o{ COMMUNITY_POSTS : collects
+  SOURCE_BOARDS ||--o{ COMMUNITY_POSTS : contains
+  CRAWL_SOURCES ||--o{ CONTENT_ITEMS : publishes
+  CONTENT_ITEMS ||--o{ CONTENT_TARGET_LINKS : links
+  REAL_ESTATE_TARGETS ||--o{ CONTENT_TARGET_LINKS : mentioned_by_content
+  COMMUNITY_POSTS ||--o{ REAL_ESTATE_MENTIONS : has_mention
+  REAL_ESTATE_TARGETS ||--o{ REAL_ESTATE_MENTIONS : mentioned_target
+  REAL_ESTATE_ALIASES ||--o{ REAL_ESTATE_MENTIONS : matched_by
+  REAL_ESTATE_MENTIONS ||--o{ REACTION_ANALYSES : analyzed_as
+  ISSUE_TAXONOMY ||--o{ REACTION_ANALYSES : classifies
+  REAL_ESTATE_TARGETS ||--o{ REACTION_SNAPSHOTS : aggregated_for
+  REACTION_SNAPSHOTS ||--o{ REACTION_SNAPSHOT_ISSUES : issue_mix
+  ISSUE_TAXONOMY ||--o{ REACTION_SNAPSHOT_ISSUES : issue
+  REACTION_RANKING_SNAPSHOTS ||--o{ REACTION_RANKING_ROWS : ranks
+  REAL_ESTATE_TARGETS ||--o{ REACTION_RANKING_ROWS : ranked_target
+  REAL_ESTATE_TARGETS ||--o{ REAL_ESTATE_MARKET_FACTS : has_fact
+  MARKET_INDICATOR_DEFS ||--o{ MARKET_INDICATOR_VALUES : measured_as
+  REAL_ESTATE_TARGETS ||--o{ MARKET_INDICATOR_VALUES : target_value
+  MARKET_INDICATOR_DEFS ||--o{ MARKET_DATA_SCHEDULES : has_schedule
+  POLICY_EVENTS ||--o{ POLICY_EVENT_TARGETS : impacts
+  REAL_ESTATE_TARGETS ||--o{ POLICY_EVENT_TARGETS : impacted_target
+  REAL_ESTATE_TARGETS ||--o{ TIMELINE_EVENTS : timeline
+  REACTION_SNAPSHOTS ||--o{ SIMILAR_WINDOW_MATCHES : source_window
+  REACTION_SNAPSHOTS ||--o{ SIMILAR_WINDOW_MATCHES : matched_window
+  REAL_ESTATE_TARGETS ||--o{ EVIDENCE_LOGS : evaluated
+  REACTION_SNAPSHOTS ||--o{ EVIDENCE_LOGS : uses_snapshot
+  EVIDENCE_LOGS ||--o{ EVIDENCE_LOG_ITEMS : cites
+  REAL_ESTATE_TARGETS ||--o{ USER_WATCH_TARGETS : watched
+  REAL_ESTATE_TARGETS ||--o{ ALERT_RULES : alert_target
+  ALERT_RULES ||--o{ ALERT_EVENTS : triggers
+  REAL_ESTATE_TARGETS ||--o{ OBSERVATION_LOGS : observed
+
+  APP_USERS {
+    CHAR36 id PK
+    VARCHAR255 email
+    VARCHAR255 display_name
+    VARCHAR255 auth_provider
+    DATETIME created_at
+    DATETIME last_seen_at
+  }
+  REAL_ESTATE_TARGETS {
+    CHAR36 id PK
+    VARCHAR255 target_type
+    VARCHAR255 display_name
+    VARCHAR255 slug
+    VARCHAR255 normalized_name
+    VARCHAR255 review_state
+    VARCHAR255 data_status
+    DATETIME created_at
+    DATETIME updated_at
+  }
+  REAL_ESTATE_REGIONS {
+    CHAR36 target_id PK,FK
+    VARCHAR255 region_level
+    CHAR36 parent_region_id FK
+    VARCHAR255 legal_dong_code
+    VARCHAR255 region_code
+    VARCHAR255 geometry_id
+    VARCHAR255 source
+  }
+  REAL_ESTATE_COMPLEXES {
+    CHAR36 target_id PK,FK
+    CHAR36 region_target_id FK
+    VARCHAR255 address
+    VARCHAR255 legal_dong_code
+    INT built_year
+    INT household_count
+    DECIMAL12_4 latitude
+    DECIMAL12_4 longitude
+    JSON provider_keys
+  }
+  REAL_ESTATE_TARGET_EDGES {
+    CHAR36 from_target_id PK,FK
+    CHAR36 to_target_id PK,FK
+    VARCHAR255 edge_type PK
+    DECIMAL12_4 confidence
+    VARCHAR255 source
+    VARCHAR255 review_state
+  }
+  REAL_ESTATE_ALIASES {
+    CHAR36 id PK
+    CHAR36 target_id FK
+    VARCHAR255 alias
+    VARCHAR255 normalized_alias
+    VARCHAR255 alias_type
+    VARCHAR255 source
+    VARCHAR255 evidence_url
+    DECIMAL12_4 confidence
+    VARCHAR255 review_state
+    VARCHAR255 created_by
+  }
+  MAP_BOUNDARY_ASSETS {
+    CHAR36 id PK
+    VARCHAR255 asset_type
+    VARCHAR255 source_label
+    VARCHAR255 base_year
+    VARCHAR255 asset_url
+    DATETIME imported_at
+  }
+  MAP_FEATURES {
+    CHAR36 id PK
+    CHAR36 boundary_asset_id FK
+    CHAR36 target_id FK
+    VARCHAR255 geometry_id
+    VARCHAR255 region_code
+    VARCHAR255 parent_region_code
+  }
+  MAP_LAYER_SNAPSHOTS {
+    CHAR36 id PK
+    CHAR36 target_id FK
+    VARCHAR255 layer_type
+    VARCHAR255 period_key
+    DECIMAL12_4 change_pct
+    INT sample_count
+    DECIMAL12_4 confidence
+    DATETIME as_of
+    VARCHAR255 data_status
+  }
+  CRAWL_SOURCES {
+    VARCHAR255 id PK
+    VARCHAR255 display_name
+    VARCHAR255 source_type
+    VARCHAR255 root_url
+    VARCHAR255 access_mode
+    VARCHAR255 status
+    VARCHAR255 robots_status
+    VARCHAR255 terms_status
+    VARCHAR255 target_scope
+    VARCHAR255 parser_status
+    VARCHAR255 rate_limit_policy
+    DATETIME last_reviewed_at
+  }
+  SOURCE_BOARDS {
+    CHAR36 id PK
+    VARCHAR255 source_id FK
+    VARCHAR255 board_key
+    VARCHAR255 board_name
+    VARCHAR255 board_url
+    VARCHAR255 status
+    DATETIME last_crawled_at
+  }
+  COMMUNITY_POSTS {
+    CHAR36 id PK
+    VARCHAR255 source_id FK
+    CHAR36 board_id FK
+    VARCHAR255 external_id
+    VARCHAR255 url
+    VARCHAR255 title
+    VARCHAR255 content_snippet
+    DATETIME published_at
+    VARCHAR255 time_confidence
+    VARCHAR255 author_hash
+    INT view_count
+    INT recommend_count
+    INT comment_count
+    VARCHAR255 content_hash
+    DATETIME ingested_at
+  }
+  CONTENT_ITEMS {
+    CHAR36 id PK
+    VARCHAR255 source_id FK
+    VARCHAR255 content_type
+    VARCHAR255 title
+    VARCHAR255 snippet
+    VARCHAR255 url
+    VARCHAR255 domain
+    DATETIME published_at
+    VARCHAR255 metric_label
+    VARCHAR255 status_label
+    DATETIME ingested_at
+  }
+  CONTENT_TARGET_LINKS {
+    CHAR36 content_item_id PK,FK
+    CHAR36 target_id PK,FK
+    VARCHAR255 link_type PK
+    DECIMAL12_4 confidence
+  }
+  REAL_ESTATE_MENTIONS {
+    CHAR36 id PK
+    CHAR36 post_id FK
+    CHAR36 target_id FK
+    CHAR36 matched_alias_id FK
+    VARCHAR255 matched_text
+    VARCHAR255 match_source
+    DECIMAL12_4 confidence
+    VARCHAR255 review_state
+  }
+  ISSUE_TAXONOMY {
+    VARCHAR255 id PK
+    VARCHAR255 label
+    VARCHAR255 group_name
+    VARCHAR255 description
+    TINYINT1 active
+  }
+  REACTION_ANALYSES {
+    CHAR36 id PK
+    CHAR36 mention_id FK
+    VARCHAR255 reaction_direction
+    VARCHAR255 issue_id FK
+    DECIMAL12_4 confidence
+    VARCHAR255 evidence_snippet
+    VARCHAR255 model_version
+    DATETIME analyzed_at
+  }
+  REACTION_SNAPSHOTS {
+    CHAR36 id PK
+    CHAR36 target_id FK
+    DATETIME window_start
+    DATETIME window_end
+    INT mention_count
+    DECIMAL12_4 expectation_score
+    DECIMAL12_4 concern_score
+    INT neutral_count
+    VARCHAR255 overall_reaction
+    INT source_count
+    DECIMAL12_4 source_skew
+    DECIMAL12_4 confidence
+    VARCHAR255 coverage_status
+    DATETIME as_of
+  }
+  REACTION_SNAPSHOT_ISSUES {
+    CHAR36 snapshot_id PK,FK
+    VARCHAR255 issue_id PK,FK
+    DECIMAL12_4 share_pct
+    VARCHAR255 direction PK
+    VARCHAR255 summary
+    DECIMAL12_4 confidence
+  }
+  REACTION_RANKING_SNAPSHOTS {
+    CHAR36 id PK
+    VARCHAR255 ranking_type
+    VARCHAR255 window_key
+    DATETIME window_start
+    DATETIME window_end
+    DATETIME as_of
+    VARCHAR255 data_status
+  }
+  REACTION_RANKING_ROWS {
+    CHAR36 id PK
+    CHAR36 ranking_snapshot_id FK
+    CHAR36 target_id FK
+    INT rank_no
+    INT mention_count
+    DECIMAL12_4 mention_delta_pct
+    DECIMAL12_4 heat_score
+    VARCHAR255 headline_issue
+    VARCHAR255 freshness_label
+  }
+  REAL_ESTATE_MARKET_FACTS {
+    CHAR36 id PK
+    CHAR36 target_id FK
+    VARCHAR255 fact_type
+    VARCHAR255 provider
+    VARCHAR255 provider_dataset
+    VARCHAR255 provider_object_id
+    DATETIME observed_at
+    DATETIME as_of
+    DATETIME source_updated_at
+    DATETIME ingested_at
+    JSON value_json
+    VARCHAR255 data_status
+    TINYINT1 stale
+  }
+  MARKET_INDICATOR_DEFS {
+    CHAR36 id PK
+    VARCHAR255 category
+    VARCHAR255 indicator_key
+    VARCHAR255 display_name
+    VARCHAR255 unit
+    VARCHAR255 provider
+    VARCHAR255 provider_dataset
+    VARCHAR255 default_period
+  }
+  MARKET_INDICATOR_VALUES {
+    CHAR36 id PK
+    CHAR36 indicator_id FK
+    CHAR36 target_id FK
+    DATETIME period_start
+    DATETIME period_end
+    DECIMAL12_4 value_num
+    VARCHAR255 value_text
+    DECIMAL12_4 change_pct
+    DATETIME as_of
+    VARCHAR255 data_status
+  }
+  MARKET_DATA_SCHEDULES {
+    CHAR36 id PK
+    CHAR36 indicator_id FK
+    VARCHAR255 schedule_label
+    VARCHAR255 title
+    DATETIME expected_at
+    VARCHAR255 watch_note
+    VARCHAR255 status
+  }
+  POLICY_EVENTS {
+    CHAR36 id PK
+    VARCHAR255 event_type
+    VARCHAR255 title
+    VARCHAR255 summary
+    VARCHAR255 source_url
+    DATETIME published_at
+    DATETIME effective_from
+    DATETIME effective_to
+    VARCHAR255 target_scope
+    VARCHAR255 data_status
+  }
+  POLICY_EVENT_TARGETS {
+    CHAR36 policy_event_id PK,FK
+    CHAR36 target_id PK,FK
+    VARCHAR255 impact_type PK
+    DECIMAL12_4 confidence
+    VARCHAR255 review_state
+  }
+  TIMELINE_EVENTS {
+    CHAR36 id PK
+    CHAR36 target_id FK
+    VARCHAR255 event_type
+    VARCHAR255 source_ref_type
+    CHAR36 source_ref_id
+    VARCHAR255 title
+    VARCHAR255 summary
+    DATETIME occurred_at
+    DATETIME as_of
+    VARCHAR255 data_status
+  }
+  SIMILAR_WINDOW_MATCHES {
+    CHAR36 source_snapshot_id PK,FK
+    CHAR36 matched_snapshot_id PK,FK
+    DECIMAL12_4 similarity_score
+    VARCHAR255 match_reason
+    JSON after_market_summary
+    VARCHAR255 caveat
+  }
+  EVIDENCE_LOGS {
+    CHAR36 id PK
+    CHAR36 target_id FK
+    CHAR36 snapshot_id FK
+    VARCHAR255 evaluation_version
+    VARCHAR255 tone
+    VARCHAR255 summary
+    VARCHAR255 subtitle
+    JSON caveats_json
+    VARCHAR255 data_quality
+    DATETIME evaluated_at
+    DATETIME as_of
+  }
+  EVIDENCE_LOG_ITEMS {
+    CHAR36 id PK
+    CHAR36 evidence_log_id FK
+    VARCHAR255 evidence_type
+    VARCHAR255 ref_type
+    CHAR36 ref_id
+    VARCHAR255 label
+    VARCHAR255 value_text
+    VARCHAR255 severity
+  }
+  USER_WATCH_TARGETS {
+    CHAR36 user_id PK,FK
+    CHAR36 target_id PK,FK
+    VARCHAR255 watch_label
+    VARCHAR255 status
+    DATETIME created_at
+  }
+  ALERT_RULES {
+    CHAR36 id PK
+    CHAR36 user_id FK
+    CHAR36 target_id FK
+    VARCHAR255 rule_type
+    JSON threshold_json
+    TINYINT1 enabled
+    DATETIME created_at
+  }
+  ALERT_EVENTS {
+    CHAR36 id PK
+    CHAR36 alert_rule_id FK
+    CHAR36 target_id FK
+    VARCHAR255 event_title
+    VARCHAR255 event_summary
+    DATETIME triggered_at
+    VARCHAR255 status
+  }
+  OBSERVATION_LOGS {
+    CHAR36 id PK
+    CHAR36 user_id FK
+    CHAR36 target_id FK
+    VARCHAR255 log_type
+    VARCHAR255 summary
+    CHAR36 source_ref_id
+    DATETIME created_at
+          }</pre>
+          <div class="diagram-overlay" id="diagramOverlay" aria-hidden="true"></div>
+          <div class="schema-board" id="schemaBoard" aria-label="추상화 중심 관계도"></div>
+          <div class="cluster-board" id="clusterBoard" aria-label="군집형 ERD 테이블 보드"></div>
+        </div>
+        <div class="viewer-note">관계선 보기에는 기존 ERD 관계선 위에 군집 배경과 한글명을 얹고, 군집 보기에서는 테이블 설명을 직접 수정할 수 있습니다.</div>
+      </section>
+    </section>
+
+    <aside class="sidebar" aria-label="테이블 설명">
+      <div class="sidebar-inner">
+        <section class="panel">
+          <div class="panel-head">
+            <span class="eyebrow">overview</span>
+            <h2 class="panel-title">계층별로 읽기</h2>
+            <p class="panel-copy">기존 ERD 관계선을 기준으로 보되, 우측에서 군집을 골라 각 테이블이 무슨 역할인지 한국어로 확인합니다.</p>
+          </div>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <span class="summary-value">35</span>
+              <span class="summary-label">테이블</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-value">44</span>
+              <span class="summary-label">관계</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="eyebrow">groups</span>
+            <h2 class="panel-title">테이블 군집</h2>
+          </div>
+          <div class="group-list" id="groupList"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="eyebrow">edit</span>
+            <h2 class="panel-title">직접 수정</h2>
+            <p class="panel-copy">편집 모드에서 한글 테이블명과 설명을 바꾸면 캔버스 라벨과 군집 보드에 즉시 반영됩니다.</p>
+          </div>
+          <div class="edit-actions">
+            <button type="button" id="editToggle">편집 모드</button>
+            <button type="button" id="exportJson">JSON 내보내기</button>
+            <button type="button" id="resetEdits">원본 복구</button>
+            <button type="button" id="copyJson">복사</button>
+          </div>
+          <p class="edit-help" id="editHelp">브라우저에서 바꾼 값은 이 페이지의 localStorage에 저장됩니다. repo 파일에 반영하려면 JSON을 공유해 주세요.</p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <span class="eyebrow" id="activeGroupEyebrow">selected group</span>
+            <h2 class="panel-title" id="activeGroupTitle">부동산 대상 정본</h2>
+            <p class="panel-copy" id="activeGroupSummary"></p>
+          </div>
+          <div class="table-list" id="tableList"></div>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <script type="application/json" id="table-groups">[{"id":"target","label":"부동산 대상 정본","tone":"orange","summary":"지역, 단지, 생활권, 정책 영향권을 하나의 target_id로 묶는 중심 계층입니다.","tables":[{"name":"REAL_ESTATE_TARGETS","ko":"부동산 대상","description":"서비스가 관찰하는 모든 지역/단지/생활권/정책 영향권의 공통 식별자입니다. 지도, 반응, 뉴스, 지표, 관심 지역이 모두 이 target에 붙습니다."},{"name":"REAL_ESTATE_REGIONS","ko":"지역 프로필","description":"시도, 시군구, 읍면동, 생활권 같은 지역 계층과 행정 코드를 저장합니다. 상위 지역 관계도 이 테이블 안에서 이어집니다."},{"name":"REAL_ESTATE_COMPLEXES","ko":"단지 프로필","description":"아파트/주거 단지의 주소, 준공연도, 세대수, 좌표, 외부 provider 키를 담는 단지 프로필입니다."},{"name":"REAL_ESTATE_TARGET_EDGES","ko":"대상 관계","description":"target 간 포함, 인접, 같은 생활권, 학군, 교통권, 정책 영향 관계를 표현하는 연결 테이블입니다."},{"name":"REAL_ESTATE_ALIASES","ko":"별칭 사전","description":"커뮤니티에서 쓰이는 줄임말, 별칭, 오타, 주변지명 표현을 target에 매핑하기 위한 별칭 사전입니다."}]},{"id":"map","label":"지도와 지역 흐름","tone":"blue","summary":"전국/시도/시군구 지도 위에 가격 변화, 언급량, 정책 이벤트 같은 heat 값을 얹는 계층입니다.","tables":[{"name":"MAP_BOUNDARY_ASSETS","ko":"지도 경계 자산","description":"시도/시군구/동 경계 TopoJSON 또는 GeoJSON 같은 지도 원천 자산을 관리합니다."},{"name":"MAP_FEATURES","ko":"지도 영역 매핑","description":"지도 feature의 geometry id와 real_estate_targets를 연결해서 클릭 가능한 지도 영역을 만듭니다."},{"name":"MAP_LAYER_SNAPSHOTS","ko":"지도 레이어 스냅샷","description":"1주, 1개월, 6개월, 1년 단위 가격 변화율, 언급 heat, 전세 압력 같은 지도 색상 값을 저장합니다."}]},{"id":"collection","label":"크롤링과 콘텐츠","tone":"slate","summary":"공개 커뮤니티, 뉴스, 리포트, 영상, 블로그 링크를 수집하고 target과 연결하는 계층입니다.","tables":[{"name":"CRAWL_SOURCES","ko":"수집 출처","description":"네이버/다음 카페, 커뮤니티, 뉴스, 블로그 등 source 후보와 공개 수집 가능 상태를 관리하는 registry입니다."},{"name":"SOURCE_BOARDS","ko":"출처 게시판","description":"source 안의 게시판, 카페 보드, 섹션 단위를 저장합니다. 크롤링 단위와 rate limit 기준이 됩니다."},{"name":"COMMUNITY_POSTS","ko":"커뮤니티 게시글","description":"커뮤니티 게시글의 제목, snippet, URL, 작성시각, 조회/추천/댓글수, 원문 hash를 제한 저장합니다."},{"name":"CONTENT_ITEMS","ko":"외부 콘텐츠","description":"뉴스, 리포트, 영상, 블로그, 외부 링크처럼 뉴스룸과 대시보드에 노출할 콘텐츠 메타데이터입니다."},{"name":"CONTENT_TARGET_LINKS","ko":"콘텐츠-대상 연결","description":"콘텐츠와 지역/단지 target의 다대다 연결입니다. 하나의 기사나 영상이 여러 지역에 영향을 줄 수 있습니다."},{"name":"REAL_ESTATE_MENTIONS","ko":"부동산 언급","description":"게시글에서 어떤 target이 언급됐는지, 어떤 별칭으로 매칭됐는지, 신뢰도는 어떤지를 저장합니다."}]},{"id":"reaction","label":"반응 지표와 쟁점","tone":"red","summary":"사람들의 말을 기대, 우려, 중립, 정보성으로 분류하고 기간별 지표와 순위로 집계합니다.","tables":[{"name":"ISSUE_TAXONOMY","ko":"쟁점 분류","description":"교통, 학군, 전세, 재건축, 청약, 대출, 공급, 정책 같은 쟁점 분류 사전입니다."},{"name":"REACTION_ANALYSES","ko":"반응 분석","description":"개별 mention을 기대/우려/중립/정보성 반응과 쟁점으로 분석한 결과입니다."},{"name":"REACTION_SNAPSHOTS","ko":"반응 스냅샷","description":"target별 기간 window의 언급 수, 기대 점수, 우려 점수, 표본 신뢰도, source 편중을 집계합니다."},{"name":"REACTION_SNAPSHOT_ISSUES","ko":"쟁점 비율","description":"반응 snapshot 안에서 쟁점별 비중과 방향을 저장합니다. 상세 리포트의 핵심 쟁점 카드가 여기서 나옵니다."},{"name":"REACTION_RANKING_SNAPSHOTS","ko":"반응 순위 스냅샷","description":"대시보드/지역 반응 화면에서 쓰는 순위표의 특정 시점 snapshot입니다."},{"name":"REACTION_RANKING_ROWS","ko":"반응 순위 행","description":"순위 snapshot 안의 개별 행입니다. 급증 지역, 언급량, heat score, 대표 쟁점을 담습니다."}]},{"id":"market","label":"시장 사실과 주요 지표","tone":"green","summary":"실거래, 전세, 매물, 미분양, 수급, 금리 등 관찰 가능한 시장 데이터를 저장합니다.","tables":[{"name":"REAL_ESTATE_MARKET_FACTS","ko":"시장 사실","description":"실거래, 전월세, 매물 수, 공급 이벤트, 교통 이벤트 같은 원천 사실 데이터를 provider/asOf/stale와 함께 저장합니다."},{"name":"MARKET_INDICATOR_DEFS","ko":"지표 정의","description":"가격·거래량, 공급·수급, 수요·심리, 거시·금융 지표의 정의와 provider 정보를 담습니다."},{"name":"MARKET_INDICATOR_VALUES","ko":"지표 값","description":"각 지표의 실제 값, 변화율, 기간, 전국/지역 target 값을 저장합니다. 주요 지표 페이지의 기본 데이터입니다."},{"name":"MARKET_DATA_SCHEDULES","ko":"데이터 일정","description":"한국부동산원, 국토부, 한은 등 주요 데이터 공개 일정과 관찰 메모를 관리합니다."}]},{"id":"intelligence","label":"정책, 타임라인, AI 근거","tone":"purple","summary":"정책/개발 이벤트, 유사 과거 비교, AI 리포트와 근거 로그를 묶는 분석 계층입니다.","tables":[{"name":"POLICY_EVENTS","ko":"정책 이벤트","description":"대출 규제, 청약, 교통, 공급, 재개발, 교육 정책 같은 이벤트 자체를 저장합니다."},{"name":"POLICY_EVENT_TARGETS","ko":"정책 영향 대상","description":"정책/교통/공급 이벤트와 영향을 받는 지역/단지 target의 다대다 연결입니다."},{"name":"TIMELINE_EVENTS","ko":"타임라인 이벤트","description":"상세 리포트 화면에서 반응, 시장 사실, 정책, 콘텐츠를 시간순으로 묶어 보여주는 캐시 성격의 테이블입니다."},{"name":"SIMILAR_WINDOW_MATCHES","ko":"유사 과거 매칭","description":"현재 반응 snapshot과 과거 유사 window를 연결하고 이후 시장 흐름 요약과 caveat를 저장합니다."},{"name":"EVIDENCE_LOGS","ko":"AI 근거 로그","description":"AI가 지역/단지를 요약 평가할 때 사용자에게 보여줄 요약, 부제, 주의사항, 데이터 품질을 저장합니다."},{"name":"EVIDENCE_LOG_ITEMS","ko":"근거 항목","description":"AI 리포트가 인용한 개별 근거 항목입니다. 반응, 시장 사실, 정책, 콘텐츠, 유사 window를 논리 참조합니다."}]},{"id":"user","label":"사용자 관심과 알림","tone":"amber","summary":"관심 지역/단지, 알림 조건, 알림 발생, 사용자의 관찰 메모를 저장하는 계층입니다.","tables":[{"name":"APP_USERS","ko":"사용자 계정","description":"로그인 사용자 계정입니다. MVP에서는 mock으로 둘 수 있지만 저장/공유 기능에서는 필요합니다."},{"name":"USER_WATCH_TARGETS","ko":"관심 대상","description":"사용자와 관심 지역/단지 target의 다대다 연결입니다. 관심 지역 페이지의 기준이 됩니다."},{"name":"ALERT_RULES","ko":"알림 규칙","description":"언급 급증, 전세가율, 미분양, 정책 키워드 같은 사용자별 알림 조건을 저장합니다."},{"name":"ALERT_EVENTS","ko":"알림 이벤트","description":"알림 조건이 실제로 트리거된 이벤트와 읽음/해제 상태를 저장합니다."},{"name":"OBSERVATION_LOGS","ko":"관찰 로그","description":"사용자가 남기는 관찰 메모나 AI가 생성한 관찰 로그를 target 단위로 저장합니다."}]}]</script>
+  <script type="application/json" id="table-fields">{"APP_USERS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"email","key":""},{"type":"VARCHAR255","name":"display_name","key":""},{"type":"VARCHAR255","name":"auth_provider","key":""},{"type":"DATETIME","name":"created_at","key":""},{"type":"DATETIME","name":"last_seen_at","key":""}],"REAL_ESTATE_TARGETS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"target_type","key":""},{"type":"VARCHAR255","name":"display_name","key":""},{"type":"VARCHAR255","name":"slug","key":""},{"type":"VARCHAR255","name":"normalized_name","key":""},{"type":"VARCHAR255","name":"review_state","key":""},{"type":"VARCHAR255","name":"data_status","key":""},{"type":"DATETIME","name":"created_at","key":""},{"type":"DATETIME","name":"updated_at","key":""}],"REAL_ESTATE_REGIONS":[{"type":"CHAR36","name":"target_id","key":"PK,FK"},{"type":"VARCHAR255","name":"region_level","key":""},{"type":"CHAR36","name":"parent_region_id","key":"FK"},{"type":"VARCHAR255","name":"legal_dong_code","key":""},{"type":"VARCHAR255","name":"region_code","key":""},{"type":"VARCHAR255","name":"geometry_id","key":""},{"type":"VARCHAR255","name":"source","key":""}],"REAL_ESTATE_COMPLEXES":[{"type":"CHAR36","name":"target_id","key":"PK,FK"},{"type":"CHAR36","name":"region_target_id","key":"FK"},{"type":"VARCHAR255","name":"address","key":""},{"type":"VARCHAR255","name":"legal_dong_code","key":""},{"type":"INT","name":"built_year","key":""},{"type":"INT","name":"household_count","key":""},{"type":"DECIMAL12_4","name":"latitude","key":""},{"type":"DECIMAL12_4","name":"longitude","key":""},{"type":"JSON","name":"provider_keys","key":""}],"REAL_ESTATE_TARGET_EDGES":[{"type":"CHAR36","name":"from_target_id","key":"PK,FK"},{"type":"CHAR36","name":"to_target_id","key":"PK,FK"},{"type":"VARCHAR255","name":"edge_type","key":"PK"},{"type":"DECIMAL12_4","name":"confidence","key":""},{"type":"VARCHAR255","name":"source","key":""},{"type":"VARCHAR255","name":"review_state","key":""}],"REAL_ESTATE_ALIASES":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"alias","key":""},{"type":"VARCHAR255","name":"normalized_alias","key":""},{"type":"VARCHAR255","name":"alias_type","key":""},{"type":"VARCHAR255","name":"source","key":""},{"type":"VARCHAR255","name":"evidence_url","key":""},{"type":"DECIMAL12_4","name":"confidence","key":""},{"type":"VARCHAR255","name":"review_state","key":""},{"type":"VARCHAR255","name":"created_by","key":""}],"MAP_BOUNDARY_ASSETS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"asset_type","key":""},{"type":"VARCHAR255","name":"source_label","key":""},{"type":"VARCHAR255","name":"base_year","key":""},{"type":"VARCHAR255","name":"asset_url","key":""},{"type":"DATETIME","name":"imported_at","key":""}],"MAP_FEATURES":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"boundary_asset_id","key":"FK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"geometry_id","key":""},{"type":"VARCHAR255","name":"region_code","key":""},{"type":"VARCHAR255","name":"parent_region_code","key":""}],"MAP_LAYER_SNAPSHOTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"layer_type","key":""},{"type":"VARCHAR255","name":"period_key","key":""},{"type":"DECIMAL12_4","name":"change_pct","key":""},{"type":"INT","name":"sample_count","key":""},{"type":"DECIMAL12_4","name":"confidence","key":""},{"type":"DATETIME","name":"as_of","key":""},{"type":"VARCHAR255","name":"data_status","key":""}],"CRAWL_SOURCES":[{"type":"VARCHAR255","name":"id","key":"PK"},{"type":"VARCHAR255","name":"display_name","key":""},{"type":"VARCHAR255","name":"source_type","key":""},{"type":"VARCHAR255","name":"root_url","key":""},{"type":"VARCHAR255","name":"access_mode","key":""},{"type":"VARCHAR255","name":"status","key":""},{"type":"VARCHAR255","name":"robots_status","key":""},{"type":"VARCHAR255","name":"terms_status","key":""},{"type":"VARCHAR255","name":"target_scope","key":""},{"type":"VARCHAR255","name":"parser_status","key":""},{"type":"VARCHAR255","name":"rate_limit_policy","key":""},{"type":"DATETIME","name":"last_reviewed_at","key":""}],"SOURCE_BOARDS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"source_id","key":"FK"},{"type":"VARCHAR255","name":"board_key","key":""},{"type":"VARCHAR255","name":"board_name","key":""},{"type":"VARCHAR255","name":"board_url","key":""},{"type":"VARCHAR255","name":"status","key":""},{"type":"DATETIME","name":"last_crawled_at","key":""}],"COMMUNITY_POSTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"source_id","key":"FK"},{"type":"CHAR36","name":"board_id","key":"FK"},{"type":"VARCHAR255","name":"external_id","key":""},{"type":"VARCHAR255","name":"url","key":""},{"type":"VARCHAR255","name":"title","key":""},{"type":"VARCHAR255","name":"content_snippet","key":""},{"type":"DATETIME","name":"published_at","key":""},{"type":"VARCHAR255","name":"time_confidence","key":""},{"type":"VARCHAR255","name":"author_hash","key":""},{"type":"INT","name":"view_count","key":""},{"type":"INT","name":"recommend_count","key":""},{"type":"INT","name":"comment_count","key":""},{"type":"VARCHAR255","name":"content_hash","key":""},{"type":"DATETIME","name":"ingested_at","key":""}],"CONTENT_ITEMS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"source_id","key":"FK"},{"type":"VARCHAR255","name":"content_type","key":""},{"type":"VARCHAR255","name":"title","key":""},{"type":"VARCHAR255","name":"snippet","key":""},{"type":"VARCHAR255","name":"url","key":""},{"type":"VARCHAR255","name":"domain","key":""},{"type":"DATETIME","name":"published_at","key":""},{"type":"VARCHAR255","name":"metric_label","key":""},{"type":"VARCHAR255","name":"status_label","key":""},{"type":"DATETIME","name":"ingested_at","key":""}],"CONTENT_TARGET_LINKS":[{"type":"CHAR36","name":"content_item_id","key":"PK,FK"},{"type":"CHAR36","name":"target_id","key":"PK,FK"},{"type":"VARCHAR255","name":"link_type","key":"PK"},{"type":"DECIMAL12_4","name":"confidence","key":""}],"REAL_ESTATE_MENTIONS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"post_id","key":"FK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"CHAR36","name":"matched_alias_id","key":"FK"},{"type":"VARCHAR255","name":"matched_text","key":""},{"type":"VARCHAR255","name":"match_source","key":""},{"type":"DECIMAL12_4","name":"confidence","key":""},{"type":"VARCHAR255","name":"review_state","key":""}],"ISSUE_TAXONOMY":[{"type":"VARCHAR255","name":"id","key":"PK"},{"type":"VARCHAR255","name":"label","key":""},{"type":"VARCHAR255","name":"group_name","key":""},{"type":"VARCHAR255","name":"description","key":""},{"type":"TINYINT1","name":"active","key":""}],"REACTION_ANALYSES":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"mention_id","key":"FK"},{"type":"VARCHAR255","name":"reaction_direction","key":""},{"type":"VARCHAR255","name":"issue_id","key":"FK"},{"type":"DECIMAL12_4","name":"confidence","key":""},{"type":"VARCHAR255","name":"evidence_snippet","key":""},{"type":"VARCHAR255","name":"model_version","key":""},{"type":"DATETIME","name":"analyzed_at","key":""}],"REACTION_SNAPSHOTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"DATETIME","name":"window_start","key":""},{"type":"DATETIME","name":"window_end","key":""},{"type":"INT","name":"mention_count","key":""},{"type":"DECIMAL12_4","name":"expectation_score","key":""},{"type":"DECIMAL12_4","name":"concern_score","key":""},{"type":"INT","name":"neutral_count","key":""},{"type":"VARCHAR255","name":"overall_reaction","key":""},{"type":"INT","name":"source_count","key":""},{"type":"DECIMAL12_4","name":"source_skew","key":""},{"type":"DECIMAL12_4","name":"confidence","key":""},{"type":"VARCHAR255","name":"coverage_status","key":""},{"type":"DATETIME","name":"as_of","key":""}],"REACTION_SNAPSHOT_ISSUES":[{"type":"CHAR36","name":"snapshot_id","key":"PK,FK"},{"type":"VARCHAR255","name":"issue_id","key":"PK,FK"},{"type":"DECIMAL12_4","name":"share_pct","key":""},{"type":"VARCHAR255","name":"direction","key":"PK"},{"type":"VARCHAR255","name":"summary","key":""},{"type":"DECIMAL12_4","name":"confidence","key":""}],"REACTION_RANKING_SNAPSHOTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"ranking_type","key":""},{"type":"VARCHAR255","name":"window_key","key":""},{"type":"DATETIME","name":"window_start","key":""},{"type":"DATETIME","name":"window_end","key":""},{"type":"DATETIME","name":"as_of","key":""},{"type":"VARCHAR255","name":"data_status","key":""}],"REACTION_RANKING_ROWS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"ranking_snapshot_id","key":"FK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"INT","name":"rank_no","key":""},{"type":"INT","name":"mention_count","key":""},{"type":"DECIMAL12_4","name":"mention_delta_pct","key":""},{"type":"DECIMAL12_4","name":"heat_score","key":""},{"type":"VARCHAR255","name":"headline_issue","key":""},{"type":"VARCHAR255","name":"freshness_label","key":""}],"REAL_ESTATE_MARKET_FACTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"fact_type","key":""},{"type":"VARCHAR255","name":"provider","key":""},{"type":"VARCHAR255","name":"provider_dataset","key":""},{"type":"VARCHAR255","name":"provider_object_id","key":""},{"type":"DATETIME","name":"observed_at","key":""},{"type":"DATETIME","name":"as_of","key":""},{"type":"DATETIME","name":"source_updated_at","key":""},{"type":"DATETIME","name":"ingested_at","key":""},{"type":"JSON","name":"value_json","key":""},{"type":"VARCHAR255","name":"data_status","key":""},{"type":"TINYINT1","name":"stale","key":""}],"MARKET_INDICATOR_DEFS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"category","key":""},{"type":"VARCHAR255","name":"indicator_key","key":""},{"type":"VARCHAR255","name":"display_name","key":""},{"type":"VARCHAR255","name":"unit","key":""},{"type":"VARCHAR255","name":"provider","key":""},{"type":"VARCHAR255","name":"provider_dataset","key":""},{"type":"VARCHAR255","name":"default_period","key":""}],"MARKET_INDICATOR_VALUES":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"indicator_id","key":"FK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"DATETIME","name":"period_start","key":""},{"type":"DATETIME","name":"period_end","key":""},{"type":"DECIMAL12_4","name":"value_num","key":""},{"type":"VARCHAR255","name":"value_text","key":""},{"type":"DECIMAL12_4","name":"change_pct","key":""},{"type":"DATETIME","name":"as_of","key":""},{"type":"VARCHAR255","name":"data_status","key":""}],"MARKET_DATA_SCHEDULES":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"indicator_id","key":"FK"},{"type":"VARCHAR255","name":"schedule_label","key":""},{"type":"VARCHAR255","name":"title","key":""},{"type":"DATETIME","name":"expected_at","key":""},{"type":"VARCHAR255","name":"watch_note","key":""},{"type":"VARCHAR255","name":"status","key":""}],"POLICY_EVENTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"VARCHAR255","name":"event_type","key":""},{"type":"VARCHAR255","name":"title","key":""},{"type":"VARCHAR255","name":"summary","key":""},{"type":"VARCHAR255","name":"source_url","key":""},{"type":"DATETIME","name":"published_at","key":""},{"type":"DATETIME","name":"effective_from","key":""},{"type":"DATETIME","name":"effective_to","key":""},{"type":"VARCHAR255","name":"target_scope","key":""},{"type":"VARCHAR255","name":"data_status","key":""}],"POLICY_EVENT_TARGETS":[{"type":"CHAR36","name":"policy_event_id","key":"PK,FK"},{"type":"CHAR36","name":"target_id","key":"PK,FK"},{"type":"VARCHAR255","name":"impact_type","key":"PK"},{"type":"DECIMAL12_4","name":"confidence","key":""},{"type":"VARCHAR255","name":"review_state","key":""}],"TIMELINE_EVENTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"event_type","key":""},{"type":"VARCHAR255","name":"source_ref_type","key":""},{"type":"CHAR36","name":"source_ref_id","key":""},{"type":"VARCHAR255","name":"title","key":""},{"type":"VARCHAR255","name":"summary","key":""},{"type":"DATETIME","name":"occurred_at","key":""},{"type":"DATETIME","name":"as_of","key":""},{"type":"VARCHAR255","name":"data_status","key":""}],"SIMILAR_WINDOW_MATCHES":[{"type":"CHAR36","name":"source_snapshot_id","key":"PK,FK"},{"type":"CHAR36","name":"matched_snapshot_id","key":"PK,FK"},{"type":"DECIMAL12_4","name":"similarity_score","key":""},{"type":"VARCHAR255","name":"match_reason","key":""},{"type":"JSON","name":"after_market_summary","key":""},{"type":"VARCHAR255","name":"caveat","key":""}],"EVIDENCE_LOGS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"CHAR36","name":"snapshot_id","key":"FK"},{"type":"VARCHAR255","name":"evaluation_version","key":""},{"type":"VARCHAR255","name":"tone","key":""},{"type":"VARCHAR255","name":"summary","key":""},{"type":"VARCHAR255","name":"subtitle","key":""},{"type":"JSON","name":"caveats_json","key":""},{"type":"VARCHAR255","name":"data_quality","key":""},{"type":"DATETIME","name":"evaluated_at","key":""},{"type":"DATETIME","name":"as_of","key":""}],"EVIDENCE_LOG_ITEMS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"evidence_log_id","key":"FK"},{"type":"VARCHAR255","name":"evidence_type","key":""},{"type":"VARCHAR255","name":"ref_type","key":""},{"type":"CHAR36","name":"ref_id","key":""},{"type":"VARCHAR255","name":"label","key":""},{"type":"VARCHAR255","name":"value_text","key":""},{"type":"VARCHAR255","name":"severity","key":""}],"USER_WATCH_TARGETS":[{"type":"CHAR36","name":"user_id","key":"PK,FK"},{"type":"CHAR36","name":"target_id","key":"PK,FK"},{"type":"VARCHAR255","name":"watch_label","key":""},{"type":"VARCHAR255","name":"status","key":""},{"type":"DATETIME","name":"created_at","key":""}],"ALERT_RULES":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"user_id","key":"FK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"rule_type","key":""},{"type":"JSON","name":"threshold_json","key":""},{"type":"TINYINT1","name":"enabled","key":""},{"type":"DATETIME","name":"created_at","key":""}],"ALERT_EVENTS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"alert_rule_id","key":"FK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"event_title","key":""},{"type":"VARCHAR255","name":"event_summary","key":""},{"type":"DATETIME","name":"triggered_at","key":""},{"type":"VARCHAR255","name":"status","key":""}],"OBSERVATION_LOGS":[{"type":"CHAR36","name":"id","key":"PK"},{"type":"CHAR36","name":"user_id","key":"FK"},{"type":"CHAR36","name":"target_id","key":"FK"},{"type":"VARCHAR255","name":"log_type","key":""},{"type":"VARCHAR255","name":"summary","key":""},{"type":"CHAR36","name":"source_ref_id","key":""},{"type":"DATETIME","name":"created_at","key":""}]}</script>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    const originalGroups = JSON.parse(document.querySelector('#table-groups').textContent);
+    const tableFields = JSON.parse(document.querySelector('#table-fields').textContent);
+    const mermaidSource = document.querySelector('.mermaid').textContent;
+    const storageKey = 'ybf-realestate-erd-table-groups-v1';
+    const viewStorageKey = 'ybf-realestate-erd-view-mode-v1';
+    let groups = loadGroups();
+    let editMode = false;
+
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#fff7ed',
+        primaryTextColor: '#111827',
+        primaryBorderColor: '#f97316',
+        lineColor: '#64748b',
+        secondaryColor: '#eff6ff',
+        tertiaryColor: '#f8fafc',
+        fontFamily: 'Pretendard, Inter, Segoe UI, sans-serif',
+        fontSize: '16px'
+      },
+      er: {
+        diagramPadding: 42,
+        entityPadding: 22,
+        minEntityWidth: 260,
+        minEntityHeight: 96,
+        layoutDirection: 'TB'
+      }
+    });
+
+    const viewport = document.querySelector('#viewport');
+    const canvas = document.querySelector('#canvas');
+    const groupList = document.querySelector('#groupList');
+    const tableList = document.querySelector('#tableList');
+    const schemaBoard = document.querySelector('#schemaBoard');
+    const clusterBoard = document.querySelector('#clusterBoard');
+    const diagramOverlay = document.querySelector('#diagramOverlay');
+    const activeGroupTitle = document.querySelector('#activeGroupTitle');
+    const activeGroupSummary = document.querySelector('#activeGroupSummary');
+    const activeGroupEyebrow = document.querySelector('#activeGroupEyebrow');
+    const editToggle = document.querySelector('#editToggle');
+    const exportJson = document.querySelector('#exportJson');
+    const resetEdits = document.querySelector('#resetEdits');
+    const copyJson = document.querySelector('#copyJson');
+    const editHelp = document.querySelector('#editHelp');
+
+    let zoom = 0.86;
+    let panX = 34;
+    let panY = 24;
+    let dragState = null;
+    let activeGroupId = groups[0].id;
+    let activeTableName = null;
+    let activeViewMode = window.localStorage.getItem(viewStorageKey) || 'relation';
+    let diagramReadyPromise = null;
+
+    const schemaLayout = {
+      target: { x: 650, y: 44, width: 840, height: 342, hub: true },
+      map: { x: 52, y: 498, width: 430, height: 352 },
+      collection: { x: 518, y: 498, width: 500, height: 500 },
+      reaction: { x: 1054, y: 498, width: 500, height: 520 },
+      market: { x: 1590, y: 498, width: 470, height: 424 },
+      intelligence: { x: 498, y: 1110, width: 760, height: 396 },
+      user: { x: 1294, y: 1110, width: 520, height: 376 }
+    };
+
+    const primaryTablesByGroup = {
+      target: ['REAL_ESTATE_TARGETS'],
+      map: ['MAP_FEATURES'],
+      collection: ['CRAWL_SOURCES', 'CONTENT_ITEMS'],
+      reaction: ['REACTION_SNAPSHOTS'],
+      market: ['REAL_ESTATE_MARKET_FACTS', 'MARKET_INDICATOR_DEFS'],
+      intelligence: ['POLICY_EVENTS', 'EVIDENCE_LOGS'],
+      user: ['APP_USERS']
+    };
+
+    function loadGroups() {
+      try {
+        const saved = window.localStorage.getItem(storageKey);
+        if (!saved) return cloneGroups(originalGroups);
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed) || parsed.length === 0) return cloneGroups(originalGroups);
+        return mergeGroups(cloneGroups(originalGroups), parsed);
+      } catch {
+        return cloneGroups(originalGroups);
+      }
+    }
+
+    function cloneGroups(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function mergeGroups(baseGroups, savedGroups) {
+      const savedById = new Map(savedGroups.map((group) => [group.id, group]));
+      return baseGroups.map((group) => {
+        const savedGroup = savedById.get(group.id);
+        if (!savedGroup) return group;
+        const savedTables = new Map((savedGroup.tables || []).map((table) => [table.name, table]));
+        return {
+          ...group,
+          label: savedGroup.label || group.label,
+          summary: savedGroup.summary || group.summary,
+          tables: group.tables.map((table) => {
+            const savedTable = savedTables.get(table.name);
+            if (!savedTable) return table;
+            return {
+              ...table,
+              ko: savedTable.ko || table.ko,
+              description: savedTable.description || table.description
+            };
+          })
+        };
+      });
+    }
+
+    function saveGroups() {
+      window.localStorage.setItem(storageKey, JSON.stringify(groups));
+    }
+
+    function findGroup(groupId) {
+      return groups.find((item) => item.id === groupId) || groups[0];
+    }
+
+    function findTable(tableName) {
+      for (const group of groups) {
+        const table = group.tables.find((item) => item.name === tableName);
+        if (table) return { group, table };
+      }
+      return null;
+    }
+
+    function applyTransform(animated) {
+      canvas.style.transition = animated ? 'transform 140ms ease' : 'none';
+      canvas.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + zoom + ')';
+      window.setTimeout(() => {
+        canvas.style.transition = 'transform 80ms ease';
+      }, 160);
+    }
+
+    function renderGroups() {
+      groupList.innerHTML = '';
+      groups.forEach((group) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'group-button tone-' + group.tone;
+        if (group.id === activeGroupId) button.classList.add('is-active');
+        button.dataset.groupId = group.id;
+        button.innerHTML =
+          '<span class="group-dot"></span>' +
+          '<span class="group-name">' + escapeText(group.label) + '</span>' +
+          '<span class="group-count">' + group.tables.length + '</span>';
+        button.addEventListener('click', () => {
+          activeGroupId = group.id;
+          activeTableName = null;
+          renderGroups();
+          renderTables();
+          window.setTimeout(() => focusGroup(group.id), activeViewMode === 'cluster' ? 80 : 180);
+        });
+        groupList.appendChild(button);
+      });
+    }
+
+    function renderTables() {
+      const group = findGroup(activeGroupId);
+      activeGroupTitle.textContent = group.label;
+      activeGroupSummary.textContent = group.summary;
+      activeGroupEyebrow.textContent = group.id + ' layer';
+      tableList.innerHTML = '';
+
+      group.tables.forEach((table) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'table-card';
+        if (table.name === activeTableName) card.classList.add('is-active');
+        card.innerHTML =
+          '<span class="table-card-head">' +
+          '<span class="table-name">' + escapeText(table.ko) + '<br><small>' + escapeText(table.name) + '</small></span>' +
+          '<span class="table-badge">focus</span>' +
+          '</span>' +
+          '<p class="table-desc">' + escapeText(table.description) + '</p>';
+        card.addEventListener('click', () => {
+          activeTableName = table.name;
+          focusTable(table.name);
+          renderTables();
+        });
+        tableList.appendChild(card);
+      });
+    }
+
+    function renderClusterBoard() {
+      clusterBoard.innerHTML = '';
+      groups.forEach((group) => {
+        const panel = document.createElement('section');
+        panel.className = 'cluster-panel tone-' + group.tone;
+        panel.dataset.groupId = group.id;
+        panel.innerHTML =
+          '<div class="cluster-panel-head">' +
+          '<span class="cluster-kicker">' + escapeText(group.id) + ' layer</span>' +
+          '<h3 class="cluster-title" data-edit-field="group-label" data-group-id="' + escapeText(group.id) + '">' + escapeText(group.label) + '</h3>' +
+          '<p class="cluster-summary" data-edit-field="group-summary" data-group-id="' + escapeText(group.id) + '">' + escapeText(group.summary) + '</p>' +
+          '</div>' +
+          '<div class="cluster-table-list"></div>';
+
+        const list = panel.querySelector('.cluster-table-list');
+        group.tables.forEach((table) => {
+          const fields = tableFields[table.name] || [];
+          const card = document.createElement('article');
+          card.className = 'cluster-table';
+          card.dataset.tableName = table.name;
+          card.innerHTML =
+            '<div class="cluster-table-head">' +
+            '<div>' +
+            '<span class="cluster-table-ko" data-edit-field="table-ko" data-group-id="' + escapeText(group.id) + '" data-table-name="' + escapeText(table.name) + '">' + escapeText(table.ko) + '</span>' +
+            '<span class="cluster-table-en">' + escapeText(table.name) + '</span>' +
+            '</div>' +
+            '<button type="button" class="cluster-focus" data-focus-table="' + escapeText(table.name) + '">focus</button>' +
+            '</div>' +
+            '<p class="cluster-table-desc" data-edit-field="table-description" data-group-id="' + escapeText(group.id) + '" data-table-name="' + escapeText(table.name) + '">' + escapeText(table.description) + '</p>' +
+            renderFieldList(fields);
+          list.appendChild(card);
+        });
+
+        clusterBoard.appendChild(panel);
+      });
+
+      applyEditMode();
+    }
+
+    function renderSchemaBoard() {
+      schemaBoard.innerHTML = '<svg class="schema-link-layer" id="schemaLinkLayer" viewBox="0 0 2140 1540" aria-hidden="true"></svg>';
+
+      groups.forEach((group) => {
+        const layout = schemaLayout[group.id] || fallbackSchemaLayout(groups.indexOf(group));
+        const panel = document.createElement('section');
+        const tone = getTone(group.tone);
+        panel.className = 'schema-panel tone-' + group.tone + (layout.hub ? ' is-hub' : '');
+        panel.dataset.groupId = group.id;
+        panel.style.left = layout.x + 'px';
+        panel.style.top = layout.y + 'px';
+        panel.style.width = layout.width + 'px';
+        panel.style.height = layout.height + 'px';
+        panel.style.setProperty('--group-color', tone.color);
+        panel.style.setProperty('--group-soft', tone.soft);
+        panel.innerHTML =
+          '<div class="schema-panel-head">' +
+          '<span class="schema-kicker">' + escapeText(group.id) + ' abstraction cluster</span>' +
+          '<h3 class="schema-title">' + escapeText(group.label) + '</h3>' +
+          '<p class="schema-summary">' + escapeText(group.summary) + '</p>' +
+          '</div>' +
+          '<div class="schema-table-grid"></div>';
+
+        const primaryTables = new Set(primaryTablesByGroup[group.id] || [group.tables[0]?.name].filter(Boolean));
+        const grid = panel.querySelector('.schema-table-grid');
+        group.tables.forEach((table) => {
+          const fields = tableFields[table.name] || [];
+          const card = document.createElement('article');
+          const isAbstract = table.name === 'REAL_ESTATE_TARGETS';
+          const isPrimary = primaryTables.has(table.name) || isAbstract;
+          card.className = 'schema-table' + (isPrimary ? ' is-primary' : '') + (isAbstract ? ' is-abstract' : '');
+          card.dataset.tableName = table.name;
+          card.dataset.groupId = group.id;
+          card.innerHTML =
+            '<span class="schema-table-role">' + (isAbstract ? 'abstract root' : isPrimary ? 'anchor' : 'child') + '</span>' +
+            '<strong class="schema-table-ko">' + escapeText(table.ko) + '</strong>' +
+            '<span class="schema-table-en">' + escapeText(table.name) + '</span>' +
+            '<span class="schema-table-meta">' + fields.length + ' fields</span>';
+          card.addEventListener('click', () => {
+            activeGroupId = group.id;
+            activeTableName = table.name;
+            renderGroups();
+            renderTables();
+            focusTable(table.name);
+          });
+          grid.appendChild(card);
+        });
+
+        schemaBoard.appendChild(panel);
+      });
+
+      window.setTimeout(drawSchemaRelations, 40);
+    }
+
+    function fallbackSchemaLayout(index) {
+      const col = index % 3;
+      const row = Math.floor(index / 3);
+      return { x: 80 + col * 620, y: 80 + row * 480, width: 520, height: 380 };
+    }
+
+    function drawSchemaRelations() {
+      const svg = document.querySelector('#schemaLinkLayer');
+      if (!svg) return;
+      svg.innerHTML = '';
+
+      try {
+        const relations = parseMermaidRelations();
+        let drawn = 0;
+        let skipped = 0;
+
+        relations.forEach((relation) => {
+          const from = getSchemaTableCenter(relation.from);
+          const to = getSchemaTableCenter(relation.to);
+          if (!from || !to) {
+            skipped += 1;
+            return;
+          }
+
+          const fromGroup = findTable(relation.from)?.group.id;
+          const toGroup = findTable(relation.to)?.group.id;
+          const isHub = relation.from === 'REAL_ESTATE_TARGETS' || relation.to === 'REAL_ESTATE_TARGETS';
+          const isLocal = fromGroup === toGroup;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('class', 'schema-link ' + (isHub ? 'hub' : isLocal ? 'local' : 'cross'));
+          path.setAttribute('d', buildSchemaPath(from, to));
+          path.setAttribute('data-from', relation.from);
+          path.setAttribute('data-to', relation.to);
+          path.setAttribute('data-label', relation.label);
+          path.appendChild(svgTitle(relation.from + ' -> ' + relation.to + ' : ' + relation.label));
+          svg.appendChild(path);
+          drawn += 1;
+        });
+
+        window.__schemaRelationStatus = { ok: true, relationCount: relations.length, drawn, skipped };
+      } catch (error) {
+        window.__schemaRelationStatus = { ok: false, reason: error.message };
+        console.error('Schema relation draw failed', error);
+      }
+    }
+
+    function parseMermaidRelations() {
+      const source = mermaidSource;
+      const pattern = /^\s{2}([A-Z0-9_]+)\s+[|}o{][|}o{]--[|}o{][|}o{]\s+([A-Z0-9_]+)\s*:\s*(.+)$/gm;
+      return Array.from(source.matchAll(pattern)).map((match) => ({
+        from: match[1],
+        to: match[2],
+        label: match[3].trim()
+      }));
+    }
+
+    function getSchemaTableCenter(tableName) {
+      const node = schemaBoard.querySelector('.schema-table[data-table-name="' + cssEscape(tableName) + '"]');
+      if (!node) return null;
+      const rect = node.getBoundingClientRect();
+      const boardRect = schemaBoard.getBoundingClientRect();
+      return {
+        x: rect.left - boardRect.left + rect.width / 2,
+        y: rect.top - boardRect.top + rect.height / 2
+      };
+    }
+
+    function buildSchemaPath(from, to) {
+      const dx = Math.abs(to.x - from.x);
+      const dy = Math.abs(to.y - from.y);
+      if (dy > dx * 1.1) {
+        const midY = (from.y + to.y) / 2;
+        return 'M ' + from.x + ' ' + from.y + ' C ' + from.x + ' ' + midY + ', ' + to.x + ' ' + midY + ', ' + to.x + ' ' + to.y;
+      }
+
+      const bend = Math.max(90, Math.min(240, dx / 2));
+      const fromBend = from.x < to.x ? from.x + bend : from.x - bend;
+      const toBend = from.x < to.x ? to.x - bend : to.x + bend;
+      return 'M ' + from.x + ' ' + from.y + ' C ' + fromBend + ' ' + from.y + ', ' + toBend + ' ' + to.y + ', ' + to.x + ' ' + to.y;
+    }
+
+    function svgTitle(text) {
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      title.textContent = text;
+      return title;
+    }
+
+    function renderFieldList(fields) {
+      if (!fields.length) return '<div class="field-list"><div class="field-row"><span class="field-name">필드 없음</span></div></div>';
+      return '<div class="field-list">' + fields.map((field) =>
+        '<div class="field-row">' +
+        '<span class="field-type">' + escapeText(field.type) + '</span>' +
+        '<span class="field-name">' + escapeText(field.name) + '</span>' +
+        '<span class="field-key">' + escapeText(field.key || '') + '</span>' +
+        '</div>'
+      ).join('') + '</div>';
+    }
+
+    function setViewMode(mode) {
+      activeViewMode = mode === 'cluster' ? 'cluster' : 'relation';
+      canvas.dataset.mode = activeViewMode;
+      window.localStorage.setItem(viewStorageKey, activeViewMode);
+      document.querySelectorAll('.view-switch [data-mode]').forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.mode === activeViewMode);
+      });
+      if (activeViewMode === 'cluster') {
+        clearSchemaFocus();
+        clearRelationFocus();
+        renderClusterBoard();
+        fitToScreen();
+      } else {
+        setReadableRelationView();
+      }
+    }
+
+    function setReadableRelationView() {
+      ensureDiagramReady().then(() => {
+        clearSchemaFocus();
+        clearRelationFocus();
+        decorateDiagram();
+        fitToScreen();
+      });
+    }
+
+    function ensureDiagramReady() {
+      if (document.querySelector('.mermaid svg')) {
+        decorateDiagram();
+        return Promise.resolve();
+      }
+
+      if (!diagramReadyPromise) {
+        diagramReadyPromise = mermaid.run({ querySelector: '.mermaid' })
+          .then(() => {
+            decorateDiagram();
+          })
+          .catch((error) => {
+            window.__erdDecorateStatus = { ok: false, reason: error.message };
+            console.error('ERD render failed', error);
+          });
+      }
+
+      return diagramReadyPromise;
+    }
+
+    function applyEditMode() {
+      editToggle.classList.toggle('is-active', editMode);
+      editToggle.textContent = editMode ? '편집 종료' : '편집 모드';
+      editHelp.textContent = editMode
+        ? '한글 테이블명, 군집명, 설명을 바로 수정할 수 있습니다. 입력값은 자동 저장됩니다.'
+        : '브라우저에서 바꾼 값은 이 페이지의 localStorage에 저장됩니다. repo 파일에 반영하려면 JSON을 공유해 주세요.';
+      document.querySelectorAll('[data-edit-field]').forEach((node) => {
+        node.contentEditable = editMode ? 'true' : 'false';
+      });
+    }
+
+    function handleEditableInput(node) {
+      const field = node.dataset.editField;
+      const group = findGroup(node.dataset.groupId);
+      const value = node.textContent.trim();
+      if (!group || !value) return;
+
+      if (field === 'group-label') group.label = value;
+      if (field === 'group-summary') group.summary = value;
+
+      if (field === 'table-ko' || field === 'table-description') {
+        const table = group.tables.find((item) => item.name === node.dataset.tableName);
+        if (!table) return;
+        if (field === 'table-ko') table.ko = value;
+        if (field === 'table-description') table.description = value;
+      }
+
+      saveGroups();
+      renderGroups();
+      renderTables();
+      decorateDiagram();
+    }
+
+    function exportGroupJson() {
+      const payload = JSON.stringify(groups, null, 2);
+      const blob = new Blob([payload], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'youbuyfirst-realestate-erd-labels.json';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function copyGroupJson() {
+      const payload = JSON.stringify(groups, null, 2);
+      await navigator.clipboard.writeText(payload);
+      editHelp.textContent = '현재 한글명/설명 JSON을 클립보드에 복사했습니다.';
+    }
+
+    function resetGroupEdits() {
+      window.localStorage.removeItem(storageKey);
+      groups = cloneGroups(originalGroups);
+      activeGroupId = groups[0].id;
+      activeTableName = null;
+      renderGroups();
+      renderTables();
+      renderClusterBoard();
+      decorateDiagram();
+      applyEditMode();
+    }
+
+    function focusTable(tableName) {
+      clearTableFocus();
+      if (activeViewMode === 'relation') {
+        clearSchemaFocus();
+        clearRelationFocus();
+      } else {
+        clearGroupFocus();
+      }
+
+      if (activeViewMode === 'cluster') {
+        const clusterNode = document.querySelector('.cluster-table[data-table-name="' + cssEscape(tableName) + '"]');
+        if (!clusterNode) return;
+
+        clusterNode.classList.add('table-focus-node');
+        centerElement(clusterNode);
+        return;
+      }
+
+      if (!document.querySelector('.mermaid svg')) {
+        ensureDiagramReady().then(() => focusTable(tableName));
+        return;
+      }
+
+      const entityNode = findEntityNode(tableName);
+      if (!entityNode) return;
+
+      entityNode.classList.add('table-focus-node');
+      const pill = document.querySelector('.erd-table-ko-pill[data-table-name="' + cssEscape(tableName) + '"]');
+      if (pill) pill.classList.add('table-focus-node');
+      centerElement(entityNode);
+    }
+
+    function focusGroup(groupId) {
+      clearTableFocus();
+      clearGroupFocus();
+      if (activeViewMode === 'relation') {
+        clearSchemaFocus();
+        if (!document.querySelector('.mermaid svg')) {
+          ensureDiagramReady().then(() => focusGroup(groupId));
+          return;
+        }
+
+        applyRelationGroupFocus(groupId);
+        const groupNode = document.querySelector('.erd-group-frame[data-group-id="' + cssEscape(groupId) + '"]')
+          || document.querySelector('.erd-group-title[data-group-id="' + cssEscape(groupId) + '"]');
+        if (groupNode) {
+          groupNode.classList.add('group-focus-node');
+          centerElement(groupNode);
+        }
+        return;
+      }
+
+      const selector = '.cluster-panel[data-group-id="' + cssEscape(groupId) + '"]';
+      const groupNode = document.querySelector(selector);
+      if (!groupNode) return;
+
+      groupNode.classList.add('group-focus-node');
+      centerElement(groupNode);
+    }
+
+    function clearTableFocus() {
+      document.querySelectorAll('.table-focus-node').forEach((node) => {
+        node.classList.remove('table-focus-node');
+      });
+    }
+
+    function clearGroupFocus() {
+      document.querySelectorAll('.group-focus-node').forEach((node) => {
+        node.classList.remove('group-focus-node');
+      });
+    }
+
+    function clearSchemaFocus() {
+      schemaBoard.querySelectorAll('.group-focus-node, .table-focus-node').forEach((node) => {
+        node.classList.remove('group-focus-node', 'table-focus-node');
+      });
+    }
+
+    function applyRelationGroupFocus(groupId) {
+      const group = findGroup(groupId);
+      if (!group) return;
+
+      canvas.classList.add('relation-focus-mode');
+      clearRelationFocusClasses();
+
+      const primaryTables = new Set(group.tables.map((table) => table.name));
+      const connectedTables = new Set(primaryTables);
+      const hotEdges = [];
+
+      document.querySelectorAll('.mermaid svg path.relationshipLine').forEach((edge) => {
+        const endpoints = parseEdgeEndpoints(edge.id);
+        if (!endpoints) return;
+        const [fromTable, toTable] = endpoints;
+        if (primaryTables.has(fromTable) || primaryTables.has(toTable)) {
+          hotEdges.push(edge);
+          connectedTables.add(fromTable);
+          connectedTables.add(toTable);
+        }
+      });
+
+      connectedTables.forEach((tableName) => {
+        const node = findEntityNode(tableName);
+        if (!node) return;
+        node.classList.add(primaryTables.has(tableName) ? 'relation-node-primary' : 'relation-node-connected');
+      });
+
+      document.querySelectorAll('.erd-table-ko-pill[data-table-name]').forEach((pill) => {
+        const tableName = pill.dataset.tableName;
+        if (primaryTables.has(tableName)) pill.classList.add('relation-node-primary');
+        else if (connectedTables.has(tableName)) pill.classList.add('relation-node-connected');
+      });
+
+      hotEdges.forEach((edge) => edge.classList.add('relation-edge-hot'));
+    }
+
+    function clearRelationFocus() {
+      canvas.classList.remove('relation-focus-mode');
+      clearRelationFocusClasses();
+      clearGroupFocus();
+    }
+
+    function clearRelationFocusClasses() {
+      document.querySelectorAll('.relation-node-primary, .relation-node-connected, .relation-edge-hot').forEach((node) => {
+        node.classList.remove('relation-node-primary', 'relation-node-connected', 'relation-edge-hot');
+      });
+    }
+
+    function centerElement(element) {
+      const rect = element.getBoundingClientRect();
+      const viewRect = viewport.getBoundingClientRect();
+      const currentCenterX = rect.left + rect.width / 2;
+      const currentCenterY = rect.top + rect.height / 2;
+      const targetCenterX = viewRect.left + viewRect.width / 2;
+      const targetCenterY = viewRect.top + viewRect.height / 2;
+      panX += targetCenterX - currentCenterX;
+      panY += targetCenterY - currentCenterY;
+      applyTransform(true);
+    }
+
+    function cssEscape(value) {
+      if (window.CSS && typeof window.CSS.escape === 'function') return window.CSS.escape(value);
+      return String(value).replace(/"/g, '\\"');
+    }
+
+    function findEntityNode(tableName) {
+      const nodes = Array.from(document.querySelectorAll('.mermaid svg g.node'));
+      return nodes.find((node) => node.id.includes('-entity-' + tableName + '-')) || null;
+    }
+
+    function parseEdgeEndpoints(edgeId) {
+      const match = edgeId.match(/_entity-([A-Z0-9_]+)-\d+_entity-([A-Z0-9_]+)-\d+_/);
+      if (!match) return null;
+      return [match[1], match[2]];
+    }
+
+    function decorateDiagram() {
+      try {
+        const svg = document.querySelector('.mermaid svg');
+        if (!svg) {
+          window.__erdDecorateStatus = { ok: false, reason: 'diagram-not-ready' };
+          return;
+        }
+
+        normalizeDiagramSvgSize(svg);
+        improveMermaidReadability(svg);
+        diagramOverlay.innerHTML = '';
+
+        let frameCount = 0;
+        let groupTitleCount = 0;
+        let labelCount = 0;
+
+        groups.forEach((group) => {
+          const tone = getTone(group.tone);
+          const boxes = group.tables
+            .map((table) => ({ table, box: getEntityCanvasBounds(table.name) }))
+            .filter((item) => item.box);
+
+          if (!boxes.length) return;
+
+          const groupBox = unionBoxes(boxes.map((item) => item.box), 36);
+          const frame = document.createElement('div');
+          frame.classList.add('erd-group-frame');
+          frame.dataset.groupId = group.id;
+          frame.style.left = groupBox.x + 'px';
+          frame.style.top = groupBox.y + 'px';
+          frame.style.width = groupBox.width + 'px';
+          frame.style.height = groupBox.height + 'px';
+          frame.style.setProperty('--overlay-color', tone.color);
+          frame.style.setProperty('--overlay-soft', tone.soft);
+          diagramOverlay.appendChild(frame);
+          frameCount += 1;
+
+          const groupText = document.createElement('div');
+          groupText.classList.add('erd-group-title');
+          groupText.dataset.groupId = group.id;
+          groupText.style.left = groupBox.x + 10 + 'px';
+          groupText.style.top = Math.max(0, groupBox.y - 46) + 'px';
+          groupText.style.color = tone.color;
+          groupText.textContent = group.label;
+          diagramOverlay.appendChild(groupText);
+          groupTitleCount += 1;
+
+          boxes.forEach(({ table, box }) => {
+            const labelWidth = Math.max(118, Math.min(260, table.ko.length * 26 + 34));
+            const labelHeight = 42;
+            const labelX = box.x + Math.max(8, (box.width - labelWidth) / 2);
+            const labelY = Math.max(0, box.y - labelHeight - 12);
+
+            const pill = document.createElement('div');
+            pill.classList.add('erd-table-ko-pill');
+            pill.dataset.tableName = table.name;
+            pill.style.left = labelX + 'px';
+            pill.style.top = labelY + 'px';
+            pill.style.width = labelWidth + 'px';
+            pill.style.height = labelHeight + 'px';
+            pill.style.setProperty('--overlay-color', tone.color);
+
+            const tableText = document.createElement('span');
+            tableText.classList.add('erd-table-ko-text');
+            tableText.style.position = 'static';
+            tableText.style.color = tone.color;
+            tableText.textContent = table.ko;
+            pill.appendChild(tableText);
+            diagramOverlay.appendChild(pill);
+            labelCount += 1;
+          });
+        });
+
+        window.__erdDecorateStatus = { ok: true, frameCount, groupTitleCount, labelCount };
+      } catch (error) {
+        window.__erdDecorateStatus = { ok: false, reason: error.message };
+        console.error('ERD annotation failed', error);
+      }
+    }
+
+    function improveMermaidReadability(svg) {
+      svg.querySelectorAll('g.node foreignObject').forEach((node) => {
+        node.setAttribute('overflow', 'visible');
+      });
+      svg.querySelectorAll('g.node foreignObject div').forEach((node) => {
+        node.style.maxWidth = 'none';
+        node.style.overflow = 'visible';
+        node.style.fontWeight = '850';
+      });
+      svg.querySelectorAll('g.node .outer-path path[stroke], g.node path[stroke="#f97316"]').forEach((node) => {
+        node.setAttribute('stroke-width', '2.4');
+      });
+    }
+
+    function normalizeDiagramSvgSize(svg) {
+      const viewBox = getSvgViewBox(svg);
+      if (!viewBox) return;
+      svg.style.width = viewBox.width + 'px';
+      svg.style.height = viewBox.height + 'px';
+    }
+
+    function getSvgViewBox(svg) {
+      const raw = svg.getAttribute('viewBox');
+      if (!raw) return null;
+      const [x, y, width, height] = raw.split(/\s+/).map(Number);
+      if ([x, y, width, height].some((value) => Number.isNaN(value))) return null;
+      return { x, y, width, height };
+    }
+
+    function getEntityCanvasBounds(tableName) {
+      const node = findEntityNode(tableName);
+      if (!node) return null;
+
+      const svg = document.querySelector('.mermaid svg');
+      const shape = node.querySelector('.outer-path path, .outer-path rect, path, rect');
+      if (!svg || !shape) return null;
+
+      const offset = getSvgCanvasOffset(svg);
+      const translate = parseSvgTranslate(node.getAttribute('transform'));
+      const bounds = getShapeBounds(shape);
+      if (!bounds) return null;
+
+      return {
+        x: offset.x + translate.x + bounds.minX,
+        y: offset.y + translate.y + bounds.minY,
+        width: bounds.maxX - bounds.minX,
+        height: bounds.maxY - bounds.minY
+      };
+    }
+
+    function getSvgCanvasOffset(svg) {
+      const scale = getCanvasScale();
+      const svgRect = svg.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      return {
+        x: (svgRect.left - canvasRect.left) / scale,
+        y: (svgRect.top - canvasRect.top) / scale
+      };
+    }
+
+    function getCanvasScale() {
+      const transform = window.getComputedStyle(canvas).transform;
+      const match = transform && transform.match(/^matrix\(([-0-9.]+)/);
+      if (!match) return zoom || 1;
+      const scale = Number(match[1]);
+      return Number.isFinite(scale) && scale > 0 ? scale : zoom || 1;
+    }
+
+    function parseSvgTranslate(value) {
+      const match = String(value || '').match(/translate\(([-0-9.]+)[,\s]+([-0-9.]+)\)/);
+      if (!match) return { x: 0, y: 0 };
+      return { x: Number(match[1]), y: Number(match[2]) };
+    }
+
+    function getShapeBounds(shape) {
+      const tagName = shape.tagName.toLowerCase();
+      if (tagName === 'rect') {
+        const x = Number(shape.getAttribute('x') || 0);
+        const y = Number(shape.getAttribute('y') || 0);
+        const width = Number(shape.getAttribute('width') || 0);
+        const height = Number(shape.getAttribute('height') || 0);
+        if ([x, y, width, height].some((value) => Number.isNaN(value))) return null;
+        return { minX: x, minY: y, maxX: x + width, maxY: y + height };
+      }
+
+      const values = String(shape.getAttribute('d') || '').match(/-?\d+(?:\.\d+)?/g);
+      if (!values || values.length < 4) return null;
+      const xs = [];
+      const ys = [];
+      values.map(Number).forEach((value, index) => {
+        if (index % 2 === 0) xs.push(value);
+        else ys.push(value);
+      });
+      return {
+        minX: Math.min(...xs),
+        minY: Math.min(...ys),
+        maxX: Math.max(...xs),
+        maxY: Math.max(...ys)
+      };
+    }
+
+    function unionBoxes(boxes, padding) {
+      const minX = Math.min(...boxes.map((box) => box.x)) - padding;
+      const minY = Math.min(...boxes.map((box) => box.y)) - padding;
+      const maxX = Math.max(...boxes.map((box) => box.x + box.width)) + padding;
+      const maxY = Math.max(...boxes.map((box) => box.y + box.height)) + padding;
+      return {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY
+      };
+    }
+
+    function getTone(tone) {
+      const tones = {
+        orange: { color: '#f97316', soft: '#fff7ed' },
+        blue: { color: '#2563eb', soft: '#eff6ff' },
+        slate: { color: '#475569', soft: '#f8fafc' },
+        red: { color: '#ef4444', soft: '#fff1f2' },
+        green: { color: '#16a34a', soft: '#f0fdf4' },
+        purple: { color: '#7c3aed', soft: '#f5f3ff' },
+        amber: { color: '#d97706', soft: '#fffbeb' }
+      };
+      return tones[tone] || tones.orange;
+    }
+
+    function fitToScreen() {
+      if (activeViewMode === 'cluster') {
+        const box = { width: clusterBoard.offsetWidth, height: clusterBoard.offsetHeight };
+        const viewWidth = viewport.clientWidth - 64;
+        const viewHeight = viewport.clientHeight - 64;
+        zoom = Math.max(0.34, Math.min(1.1, Math.min(viewWidth / box.width, viewHeight / box.height)));
+        panX = 32;
+        panY = 32;
+        applyTransform(true);
+        return;
+      }
+
+      const svg = document.querySelector('.mermaid svg');
+      const viewBox = svg ? getSvgViewBox(svg) : null;
+      const box = viewBox
+        ? { width: viewBox.width, height: viewBox.height }
+        : { width: 2200, height: 1700 };
+      const viewWidth = viewport.clientWidth - 64;
+      const viewHeight = viewport.clientHeight - 64;
+      zoom = Math.max(0.24, Math.min(1.05, Math.min(viewWidth / box.width, viewHeight / box.height)));
+      panX = 32;
+      panY = 32;
+      applyTransform(true);
+    }
+
+    function setZoom(nextZoom, originX, originY) {
+      const bounded = Math.max(0.18, Math.min(5, nextZoom));
+      const rect = viewport.getBoundingClientRect();
+      const ox = originX == null ? rect.width / 2 : originX - rect.left;
+      const oy = originY == null ? rect.height / 2 : originY - rect.top;
+      const worldX = (ox - panX) / zoom;
+      const worldY = (oy - panY) / zoom;
+      zoom = bounded;
+      panX = ox - worldX * zoom;
+      panY = oy - worldY * zoom;
+      applyTransform(false);
+    }
+
+    viewport.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('button, [contenteditable="true"], .cluster-board, .schema-table')) {
+        return;
+      }
+      dragState = {
+        x: event.clientX,
+        y: event.clientY,
+        panX,
+        panY
+      };
+      viewport.classList.add('is-dragging');
+      viewport.setPointerCapture(event.pointerId);
+    });
+
+    viewport.addEventListener('pointermove', (event) => {
+      if (!dragState) return;
+      panX = dragState.panX + event.clientX - dragState.x;
+      panY = dragState.panY + event.clientY - dragState.y;
+      applyTransform(false);
+    });
+
+    viewport.addEventListener('pointerup', (event) => {
+      dragState = null;
+      viewport.classList.remove('is-dragging');
+      viewport.releasePointerCapture(event.pointerId);
+    });
+
+    viewport.addEventListener('pointerleave', () => {
+      dragState = null;
+      viewport.classList.remove('is-dragging');
+    });
+
+    viewport.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      const delta = event.deltaY > 0 ? -0.08 : 0.08;
+      setZoom(zoom + delta, event.clientX, event.clientY);
+    }, { passive: false });
+
+    document.querySelectorAll('[data-zoom]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.zoom;
+        if (action === 'in') setZoom(zoom + 0.15);
+        if (action === 'out') setZoom(zoom - 0.15);
+        if (action === 'reset') {
+          zoom = 1;
+          panX = 34;
+          panY = 24;
+          applyTransform(true);
+        }
+      });
+    });
+
+    document.querySelector('[data-view="fit"]').addEventListener('click', () => {
+      clearSchemaFocus();
+      clearTableFocus();
+      if (activeViewMode === 'relation') {
+        clearRelationFocus();
+        ensureDiagramReady().then(fitToScreen);
+      } else {
+        clearGroupFocus();
+        fitToScreen();
+      }
+    });
+
+    document.querySelectorAll('.view-switch [data-mode]').forEach((button) => {
+      button.addEventListener('click', () => setViewMode(button.dataset.mode));
+    });
+
+    clusterBoard.addEventListener('click', (event) => {
+      const focusButton = event.target.closest('[data-focus-table]');
+      if (!focusButton) return;
+      activeTableName = focusButton.dataset.focusTable;
+      window.setTimeout(() => {
+        focusTable(activeTableName);
+        renderTables();
+      }, 80);
+    });
+
+    clusterBoard.addEventListener('blur', (event) => {
+      const editable = event.target.closest('[data-edit-field]');
+      if (editable) handleEditableInput(editable);
+    }, true);
+
+    clusterBoard.addEventListener('keydown', (event) => {
+      if (!event.target.closest('[data-edit-field]')) return;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.target.blur();
+      }
+    });
+
+    editToggle.addEventListener('click', () => {
+      editMode = !editMode;
+      if (activeViewMode !== 'cluster' && editMode) setViewMode('cluster');
+      applyEditMode();
+    });
+
+    exportJson.addEventListener('click', exportGroupJson);
+    copyJson.addEventListener('click', copyGroupJson);
+    resetEdits.addEventListener('click', resetGroupEdits);
+
+    function escapeText(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    renderGroups();
+    renderTables();
+    renderClusterBoard();
+    setViewMode(activeViewMode);
+    applyTransform(false);
+    window.setTimeout(() => {
+      if (activeViewMode === 'cluster') fitToScreen();
+      else setReadableRelationView();
+    }, 500);
+  </script>
+</body>
+</html>

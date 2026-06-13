@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import dashboardSummary from '../fixtures/dashboard-summary.json';
-import quoteSnapshots from '../fixtures/quote-snapshots.json';
 import reactionRanking from '../fixtures/reaction-ranking.json';
+import {
+  buildMarketFactRows,
+  buildMarketSummaryIndicators,
+  fetchRealEstateMarketFacts,
+  fetchRealEstateMarketSummary,
+  type RealEstateMarketIndicatorCard,
+  type RealEstateMarketFactRow
+} from '../lib/realestate-market-facts';
 import { sourceIconUrl } from '../lib/source-icons';
 
 const marketFilters = ['전체', '언급 증가', '정책 변화', '공공데이터 stale'];
@@ -13,10 +20,13 @@ const drawerTabs = [
   { id: 'watch', label: '관심' }
 ];
 const activeDrawerTab = ref('reaction');
-const retailSentimentIndex = dashboardSummary.retailSentimentIndex;
+const speculationHeatIndex = dashboardSummary.speculationHeatIndex;
 const topRiser = dashboardSummary.risingStars[0];
 const totalMentions = reactionRanking.items.reduce((sum, item) => sum + item.mentionCount, 0);
-const staleQuoteCount = quoteSnapshots.items.filter((quote) => quote.stale).length;
+const marketIndicators = ref<RealEstateMarketIndicatorCard[]>(dashboardSummary.marketIndicators);
+const marketFactRows = ref<RealEstateMarketFactRow[]>(buildMarketFactRows([]));
+const marketIndicatorLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const marketFactLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 type ReactionRankingItem = (typeof reactionRanking.items)[number];
 type ReactionMetric = 'bullish' | 'bearish';
 
@@ -45,6 +55,26 @@ let autoSlideTimer: ReturnType<typeof setInterval> | undefined;
 const startTimer = () => {
   if (autoSlideTimer) clearInterval(autoSlideTimer);
   autoSlideTimer = setInterval(() => { currentSlide.value = (currentSlide.value + 1) % totalSlides; }, 4500);
+};
+const refreshMarketFacts = async () => {
+  try {
+    const facts = await fetchRealEstateMarketFacts();
+    marketFactRows.value = buildMarketFactRows(facts);
+    marketFactLoadState.value = facts.length ? 'live' : 'fallback';
+  } catch {
+    marketFactRows.value = buildMarketFactRows([]);
+    marketFactLoadState.value = 'fallback';
+  }
+};
+const refreshMarketSummary = async () => {
+  try {
+    const summary = await fetchRealEstateMarketSummary();
+    marketIndicators.value = buildMarketSummaryIndicators(summary, dashboardSummary.marketIndicators);
+    marketIndicatorLoadState.value = summary.items.length ? 'live' : 'fallback';
+  } catch {
+    marketIndicators.value = dashboardSummary.marketIndicators;
+    marketIndicatorLoadState.value = 'fallback';
+  }
 };
 const resetTimer = () => { if (!isPaused.value) startTimer(); };
 const prevSlide = () => { currentSlide.value = (currentSlide.value - 1 + totalSlides) % totalSlides; resetTimer(); };
@@ -106,20 +136,29 @@ const placeWords = (keywords: { word: string; weight: number }[]) => {
 
 const kwWordStyles = Object.fromEntries(
   reactionRanking.items.map(item => [
-    item.symbol,
+    item.targetId,
     { pos: placeWords(item.positiveKeywords), neg: placeWords(item.negativeKeywords) },
   ])
 );
 
-onMounted(startTimer);
+onMounted(() => {
+  startTimer();
+  void refreshMarketSummary();
+  void refreshMarketFacts();
+});
 onUnmounted(() => clearInterval(autoSlideTimer));
 
 type TooltipPoint = { x: number; y: number; value: number; color: string; region: string } | null;
 const hoveredPoint = ref<TooltipPoint>(null);
 
-const formatPct = (value: number) => `${value > 0 ? '+' : ''}${value}%`;
+const formatPct = (value: number | null) => value === null ? '최신' : `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
 const trendClass = (trend: string) => (trend === 'down' ? 'down' : 'up');
+const marketIndicatorStatusLabel = () => {
+  if (marketIndicatorLoadState.value === 'live') return 'API 반영';
+  if (marketIndicatorLoadState.value === 'loading') return '불러오는 중';
+  return 'mock fallback';
+};
 const hideBrokenIcon = (event: Event) => {
   const image = event.target as HTMLImageElement;
   image.hidden = true;
@@ -128,12 +167,11 @@ const hideBrokenIcon = (event: Event) => {
 const newsIconClass = (tag: string) => {
   const map: Record<string, string> = {
     macro: 'news-macro',
-    stock: 'news-stock',
     index: 'news-index',
     community: 'community',
     research: 'news-research',
     strategy: 'news-research',
-    disclosure: 'news-stock'
+    disclosure: 'news-market'
   };
 
   return map[tag] ?? 'news';
@@ -175,7 +213,7 @@ const gaugeArcPath = (start: number, end: number) => {
 
   return `M ${startPoint.x} ${startPoint.y} A ${gaugeRadius} ${gaugeRadius} 0 ${largeArcFlag} 1 ${endPoint.x} ${endPoint.y}`;
 };
-const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
+const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
 </script>
 
 <template>
@@ -184,20 +222,20 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
       <p class="eyebrow">{{ reactionRanking.windowLabel }} · mock data</p>
       <div class="search-line">
         <div class="search-primary-row">
-          <aside class="retail-sentiment-gauge-card" aria-label="부동산 투기 과열 지표">
-            <div class="retail-sentiment-copy">
-              <span>{{ retailSentimentIndex.label }}</span>
-              <strong>{{ retailSentimentIndex.value }}<small>{{ retailSentimentIndex.unit }}</small></strong>
-              <em>{{ retailSentimentIndex.status }} · {{ retailSentimentIndex.changeLabel }} {{ formatPct(retailSentimentIndex.changePct) }}</em>
-              <div class="retail-sentiment-keywords" aria-label="대표 반응 키워드">
-                <span v-for="keyword in retailSentimentIndex.keywords.slice(0, 2)" :key="keyword">{{ keyword }}</span>
+          <aside class="speculation-heat-gauge-card" aria-label="부동산 투기 과열 지표">
+            <div class="speculation-heat-copy">
+              <span>{{ speculationHeatIndex.label }}</span>
+              <strong>{{ speculationHeatIndex.value }}<small>{{ speculationHeatIndex.unit }}</small></strong>
+              <em>{{ speculationHeatIndex.status }} · {{ speculationHeatIndex.changeLabel }} {{ formatPct(speculationHeatIndex.changePct) }}</em>
+              <div class="speculation-heat-keywords" aria-label="대표 반응 키워드">
+                <span v-for="keyword in speculationHeatIndex.keywords.slice(0, 2)" :key="keyword">{{ keyword }}</span>
               </div>
             </div>
-            <div class="retail-gauge-wrap">
-              <svg class="retail-gauge" viewBox="0 0 184 104" role="img" :aria-label="`${retailSentimentIndex.label} ${retailSentimentIndex.value}${retailSentimentIndex.unit}`">
+            <div class="speculation-gauge-wrap">
+              <svg class="speculation-gauge" viewBox="0 0 184 104" role="img" :aria-label="`${speculationHeatIndex.label} ${speculationHeatIndex.value}${speculationHeatIndex.unit}`">
                 <path class="gauge-base" :d="gaugeArcPath(0, 100)" />
                 <path
-                  v-for="segment in retailSentimentIndex.segments"
+                  v-for="segment in speculationHeatIndex.segments"
                   :key="segment.label"
                   class="gauge-segment"
                   :d="gaugeArcPath(segment.start, segment.end)"
@@ -206,7 +244,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <line class="gauge-needle" :x1="gaugeCenter.x" :y1="gaugeCenter.y" :x2="needleEnd.x" :y2="needleEnd.y" />
                 <circle class="gauge-hub" :cx="gaugeCenter.x" :cy="gaugeCenter.y" r="4.6" />
               </svg>
-              <div class="retail-gauge-scale" aria-hidden="true">
+              <div class="speculation-gauge-scale" aria-hidden="true">
                 <span>냉각</span>
                 <span>주의</span>
                 <span>과열</span>
@@ -235,7 +273,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
       </div>
       <div class="dashboard-meta-strip" aria-label="대시보드 집계 메타">
         <span>언급 합계 <strong>{{ totalMentions }}</strong></span>
-        <span>지연 지표 <strong>{{ staleQuoteCount }}건</strong></span>
+        <span>지연 지표 <strong>{{ marketFactRows.filter((row) => row.stale).length }}건</strong></span>
         <span>관찰 <strong>{{ reactionRanking.items.length }}곳</strong></span>
         <span>부동산 자문 아님</span>
       </div>
@@ -393,7 +431,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
 
             <div class="reaction-legend" aria-label="반응 아이콘 설명">
               <span>
-                <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
                   <circle class="face-bg positive-bg" cx="10" cy="10" r="9.5"/>
                   <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
                   <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
@@ -402,7 +440,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 기대 반응
               </span>
               <span>
-                <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
                   <circle class="face-bg negative-bg" cx="10" cy="10" r="9.5"/>
                   <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
                   <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
@@ -413,7 +451,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 우려 반응
               </span>
               <span>
-                <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
                   <circle class="face-bg neutral-bg" cx="10" cy="10" r="9.5"/>
                   <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
                   <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
@@ -428,7 +466,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                 <div class="carousel-track" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
                   <article
                     v-for="item in reactionRanking.items"
-                    :key="item.symbol"
+                    :key="item.targetId"
                     class="reaction-carousel-card"
                     :data-tone="item.reactionDirectionRatio.bullish >= item.reactionDirectionRatio.bearish ? 'positive' : 'negative'"
                   >
@@ -446,7 +484,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                     <div class="carousel-kw-columns">
                       <div class="kw-col kw-col-positive">
                         <div class="kw-col-label">
-                          <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                          <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
                             <circle class="face-bg positive-bg" cx="10" cy="10" r="9.5"/>
                             <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
                             <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
@@ -459,14 +497,14 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                             v-for="(kw, idx) in item.positiveKeywords"
                             :key="kw.word"
                             class="kw-word kw-word-positive"
-                            :style="kwWordStyles[item.symbol].pos(idx)"
+                            :style="kwWordStyles[item.targetId].pos(idx)"
                           >{{ kw.word }}</span>
                         </div>
                       </div>
                       <div class="kw-divider" aria-hidden="true"></div>
                       <div class="kw-col kw-col-negative">
                         <div class="kw-col-label">
-                          <svg class="sentiment-icon" viewBox="0 0 20 20" aria-hidden="true">
+                          <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
                             <circle class="face-bg negative-bg" cx="10" cy="10" r="9.5"/>
                             <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
                             <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
@@ -481,7 +519,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                             v-for="(kw, idx) in item.negativeKeywords"
                             :key="kw.word"
                             class="kw-word kw-word-negative"
-                            :style="kwWordStyles[item.symbol].neg(idx)"
+                            :style="kwWordStyles[item.targetId].neg(idx)"
                           >{{ kw.word }}</span>
                         </div>
                       </div>
@@ -517,15 +555,15 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                       </div>
                     </div>
 
-                    <div class="sentiment-track-wrap">
-                      <div class="sentiment-tooltip" aria-hidden="true">
+                    <div class="reaction-track-wrap">
+                      <div class="reaction-tooltip" aria-hidden="true">
                         <span class="st-positive">😊 기대 {{ ratioPct(item.reactionDirectionRatio.bullish) }}</span>
                         <span class="st-divider">·</span>
                         <span class="st-negative">😟 우려 {{ ratioPct(item.reactionDirectionRatio.bearish) }}</span>
                         <span class="st-divider">·</span>
                         <span class="st-neutral">중립 {{ ratioPct(item.reactionDirectionRatio.neutral) }}</span>
                       </div>
-                      <div class="sentiment-track" aria-label="긍정 부정 중립 비율">
+                      <div class="reaction-track" aria-label="긍정 부정 중립 비율">
                         <i class="positive" :style="`width: ${ratioPct(item.reactionDirectionRatio.bullish)}`"></i>
                         <i class="negative" :style="`width: ${ratioPct(item.reactionDirectionRatio.bearish)}`"></i>
                         <i class="neutral" :style="`width: ${ratioPct(item.reactionDirectionRatio.neutral)}`"></i>
@@ -543,7 +581,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
               <div class="carousel-dots" role="tablist" aria-label="슬라이드 선택">
                 <button
                   v-for="(item, i) in reactionRanking.items"
-                  :key="`dot-${item.symbol}`"
+                  :key="`dot-${item.targetId}`"
                   :class="['carousel-dot', { active: i === currentSlide }]"
                   type="button"
                   role="tab"
@@ -590,14 +628,16 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
                   {{ mode }}
                 </button>
               </div>
-              <span class="status-pill warning">mock · 지연 가능</span>
+              <span :class="['status-pill', marketIndicatorLoadState === 'live' ? '' : 'warning']">
+                {{ marketIndicatorStatusLabel() }}
+              </span>
               <RouterLink class="detail-link" to="/indicators">자세히 보기 →</RouterLink>
             </div>
           </div>
 
           <div class="indicator-grid">
             <article
-              v-for="indicator in dashboardSummary.marketIndicators"
+              v-for="indicator in marketIndicators"
               :key="indicator.label"
               :class="['indicator-card', trendClass(indicator.trend)]"
             >
@@ -752,20 +792,26 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
         </section>
 
         <section class="page-grid">
-          <article class="panel" aria-labelledby="quote-title">
+          <article class="panel" aria-labelledby="market-facts-title">
             <div class="panel-header">
               <div>
-                <p class="label">public data placeholder</p>
-                <h3 id="quote-title">실거래·지표 상태</h3>
+                <p class="label">market facts</p>
+                <h3 id="market-facts-title">실거래·지표 상태</h3>
               </div>
-              <RouterLink class="detail-link" to="/indicators">자세히 보기 →</RouterLink>
+              <div class="section-actions">
+                <span :class="['status-pill', marketFactLoadState === 'live' ? '' : 'warning']">
+                  {{ marketFactLoadState === 'live' ? 'API 반영' : '공공데이터 대기' }}
+                </span>
+                <RouterLink class="detail-link" to="/indicators">자세히 보기 →</RouterLink>
+              </div>
             </div>
             <div class="compact-list">
-              <div v-for="quote in quoteSnapshots.items" :key="quote.symbol" class="compact-row">
-                <strong>{{ quote.name }}</strong>
-                <span>{{ quote.price.toLocaleString() }}원</span>
-                <span :class="['status-pill', quote.stale ? 'warning' : '']">
-                  {{ quote.stale ? 'stale public data' : 'mock public data' }}
+              <div v-for="row in marketFactRows" :key="row.id" class="compact-row market-fact-row">
+                <strong>{{ row.name }}</strong>
+                <span>{{ row.value }}</span>
+                <em>{{ row.meta }}</em>
+                <span :class="['status-pill', row.stale ? 'warning' : '']">
+                  {{ row.statusLabel }}
                 </span>
               </div>
             </div>
@@ -803,7 +849,7 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
             <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
             <h3 id="hot-region-title">{{ topRiser.name }}</h3>
             <strong>{{ formatPct(topRiser.mentionDeltaPct) }}</strong>
-            <span>{{ topRiser.symbol }} · 언급 {{ topRiser.previousMentionCount }} → {{ topRiser.mentionCount }}</span>
+            <span>{{ topRiser.targetId }} · 언급 {{ topRiser.previousMentionCount }} → {{ topRiser.mentionCount }}</span>
             <div class="hot-region-metrics">
               <div>
                 <span>열기</span>
@@ -834,9 +880,9 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
               <RouterLink class="detail-link" to="/realestate/targets/SEOUL-MAPO">자세히 보기 →</RouterLink>
             </div>
             <div class="drawer-rising-list">
-              <article v-for="item in dashboardSummary.risingStars" :key="item.symbol">
+              <article v-for="item in dashboardSummary.risingStars" :key="item.targetId">
                 <strong>{{ item.name }}</strong>
-                <span>{{ item.symbol }} · 언급 {{ item.previousMentionCount }} → {{ item.mentionCount }}</span>
+                <span>{{ item.targetId }} · 언급 {{ item.previousMentionCount }} → {{ item.mentionCount }}</span>
                 <em>{{ formatPct(item.mentionDeltaPct) }}</em>
               </article>
             </div>
@@ -878,9 +924,9 @@ const needleEnd = gaugePoint(retailSentimentIndex.value, 56);
             <h3>관심</h3>
           </div>
           <div class="drawer-watch-list">
-            <article v-for="item in reactionRanking.items.slice(0, 4)" :key="`${item.symbol}-watch`">
+            <article v-for="item in reactionRanking.items.slice(0, 4)" :key="`${item.targetId}-watch`">
               <strong>{{ item.name }}</strong>
-              <span>{{ item.symbol }}</span>
+              <span>{{ item.targetId }}</span>
               <em>{{ formatPct(item.mentionDeltaPct) }}</em>
             </article>
           </div>

@@ -1,26 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import dashboardSummary from '../fixtures/dashboard-summary.json';
+import {
+  buildNewsroomFeedItems,
+  fetchRealEstateNewsroom,
+  type NewsroomFeedItem,
+  type NewsroomFilter
+} from '../lib/realestate-content';
 import { sourceIconUrl } from '../lib/source-icons';
-
-type NewsroomFilter = 'all' | 'news' | 'reports' | 'videos' | 'links';
-type FeedTone = 'news' | 'report' | 'video' | 'link';
-
-type NewsroomItem = {
-  id: string;
-  category: Exclude<NewsroomFilter, 'all'>;
-  tone: FeedTone;
-  title: string;
-  source: string;
-  iconDomain: string;
-  iconClass: string;
-  url: string;
-  meta: string;
-  statusLabel: string;
-  rankLabel?: string;
-};
 
 const filterIds: NewsroomFilter[] = ['all', 'news', 'reports', 'videos', 'links'];
 const filterLabels: Record<NewsroomFilter, string> = {
@@ -42,12 +31,11 @@ const hideBrokenIcon = (event: Event) => {
 const newsIconClass = (tag: string) => {
   const map: Record<string, string> = {
     macro: 'news-macro',
-    stock: 'news-stock',
     index: 'news-index',
     community: 'community',
     research: 'news-research',
     strategy: 'news-research',
-    disclosure: 'news-stock'
+    disclosure: 'news-market'
   };
 
   return map[tag] ?? 'news';
@@ -61,7 +49,7 @@ const externalIconClass = (item: { type: string; iconDomain?: string }) => {
   return item.type;
 };
 
-const feedItems: NewsroomItem[] = [
+const fallbackFeedItems: NewsroomFeedItem[] = [
   ...dashboardSummary.liveNews.map((item) => ({
     id: `news-${item.title}`,
     category: 'news' as const,
@@ -132,7 +120,7 @@ const feedItems: NewsroomItem[] = [
       title: '입주 물량 감소 이슈로 전세 키워드 동반 증가',
       source: '한국부동산원',
       iconDomain: 'www.reb.or.kr',
-      iconClass: 'news-stock',
+      iconClass: 'news-market',
       url: 'https://www.reb.or.kr/',
       meta: '42분 전',
       statusLabel: 'mock'
@@ -274,10 +262,14 @@ const activeFilter = computed<NewsroomFilter>(() => {
   const value = Array.isArray(feed) ? feed[0] : feed;
   return filterIds.includes(value as NewsroomFilter) ? (value as NewsroomFilter) : 'all';
 });
+const feedItems = ref<NewsroomFeedItem[]>(fallbackFeedItems);
+const newsroomLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 
 const activeTab = computed(() => filterLabels[activeFilter.value]);
 const activeItems = computed(() =>
-  activeFilter.value === 'all' ? feedItems : feedItems.filter((item) => item.category === activeFilter.value)
+  activeFilter.value === 'all'
+    ? feedItems.value
+    : feedItems.value.filter((item) => item.category === activeFilter.value)
 );
 
 const totalPages = computed(() => Math.max(1, Math.ceil(activeItems.value.length / pageSize)));
@@ -302,7 +294,7 @@ const feedTypeLabels: Record<Exclude<NewsroomFilter, 'all'>, string> = {
 };
 
 const itemsByCategory = (category: Exclude<NewsroomFilter, 'all'>) =>
-  feedItems.filter((item) => item.category === category);
+  feedItems.value.filter((item) => item.category === category);
 
 const overviewColumns = computed(() => [
   {
@@ -359,6 +351,39 @@ const pageRangeLabel = computed(() => {
 const listStatusLabel = computed(() =>
   activeFilter.value === 'all' ? '요약 보기' : `${pageRangeLabel.value} · 링크 원문 이동`
 );
+
+const newsroomSourceLabel = computed(() => {
+  if (newsroomLoadState.value === 'live') return 'content API 반영';
+  if (newsroomLoadState.value === 'loading') return 'content API 확인 중';
+  return 'mock fallback';
+});
+
+const titleStatusLabel = computed(() => `뉴스 · 리포트 · 영상 · 원문 · ${newsroomSourceLabel.value}`);
+
+const refreshNewsroomContent = async () => {
+  newsroomLoadState.value = 'loading';
+  try {
+    const contentItems = await fetchRealEstateNewsroom({
+      feed: activeFilter.value,
+      page: 1,
+      pageSize: 100
+    });
+    const mappedItems = buildNewsroomFeedItems(contentItems);
+    feedItems.value = mappedItems.length ? mappedItems : fallbackFeedItems;
+    newsroomLoadState.value = mappedItems.length ? 'live' : 'fallback';
+  } catch {
+    feedItems.value = fallbackFeedItems;
+    newsroomLoadState.value = 'fallback';
+  }
+};
+
+onMounted(() => {
+  void refreshNewsroomContent();
+});
+
+watch(activeFilter, () => {
+  void refreshNewsroomContent();
+});
 </script>
 
 <template>
@@ -369,7 +394,7 @@ const listStatusLabel = computed(() =>
           <p class="label">newsroom</p>
           <h2 id="newsroom-title">뉴스룸</h2>
         </div>
-        <span class="status-pill subtle">뉴스 · 리포트 · 영상 · 원문</span>
+        <span class="status-pill subtle">{{ titleStatusLabel }}</span>
       </div>
     </section>
 

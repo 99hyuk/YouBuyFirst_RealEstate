@@ -9,7 +9,7 @@ from youbuyfirst_pipeline.models import RawPost
 def _post(external_id: str, published_at: str) -> RawPost:
     return RawPost(
         source="FMKOREA",
-        board_id="stock",
+        board_id="realestate",
         external_id=external_id,
         url=f"https://example.com/{external_id}",
         title=external_id,

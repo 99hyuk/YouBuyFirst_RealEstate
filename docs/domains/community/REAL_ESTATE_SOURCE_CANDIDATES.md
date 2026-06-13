@@ -18,16 +18,15 @@
 
 ## 분산성 검토
 
-사용자의 "부동산 커뮤니티는 주식보다 특정 커뮤니티 한 곳에 덜 몰려 있을 것 같다"는 가설은 현재 확인 가능한 공개 근거 기준으로는 맞는 방향이다. 다만 아직 전체 글 수를 source별로 센 것이 아니므로 통계적 확정이 아니라 제품/수집 설계 가설로 둔다.
+사용자의 "부동산 커뮤니티는 특정 커뮤니티 한 곳에 덜 몰려 있을 것 같다"는 가설은 현재 확인 가능한 공개 근거 기준으로는 맞는 방향이다. 다만 아직 전체 글 수를 source별로 센 것이 아니므로 통계적 확정이 아니라 제품/수집 설계 가설로 둔다.
 
 판단 근거:
 
-1. 부동산은 대상 자체가 종목 코드처럼 하나의 표준 namespace로 묶이지 않는다. 지역, 단지, 생활권, 학군, 전세, 청약, 재건축, 경매, 상가, 정책처럼 관심 단위가 나뉜다.
+1. 부동산은 대상 자체가 표준 코드처럼 하나의 표준 namespace로 묶이지 않는다. 지역, 단지, 생활권, 학군, 전세, 청약, 재건축, 경매, 상가, 정책처럼 관심 단위가 나뉜다.
 2. 대형 전국 카페만 보아도 부동산스터디, 피터팬, 아름다운 내집갖기, 월급쟁이부자들, 행복재테크처럼 목적과 이용자층이 다르다.
 3. 네이버는 지역 기반 카페 이용 증가와 지역 단위 카페 노출을 별도 기능으로 설명했다. 부동산 체감 반응은 이런 지역/맘카페 층에 많이 묻힐 가능성이 크다.
 4. 호갱노노처럼 단지 실거주 후기와 앱 내부 커뮤니티가 따로 존재한다. 이는 투자 커뮤니티와 다른 신호다.
 5. 뽐뿌, 디시인사이드, 블라인드처럼 일반 게시판형 source에도 부동산 전용 흐름이 있다.
-6. 반대로 주식은 커뮤니티가 늘었어도 "종목토론방"이라는 강한 공통 패턴이 있다. 2024년 기사 기준 네이버페이 증권 종목토론실은 국내 최대 증권 커뮤니티로 월간 이용자와 일 게시물 수가 매우 크고, 토스증권 커뮤니티도 같은 종목토론방 구조로 경쟁한다.
 
 따라서 부동산은 "대표 커뮤니티 몇 개의 언급량"보다 "source category coverage"를 먼저 봐야 한다. 화면과 지표에서도 단순 언급량보다 다음 값을 함께 저장해야 한다.
 
@@ -94,7 +93,7 @@
 | 2 | `dc_immovables` | 디시인사이드 부동산 갤러리 | https://gall.dcinside.com/board/lists/?id=immovables | general_board | `public-http-candidate` | P0 | 빠른 감정 반응, 과열/우려 신호 |
 | 3 | `blind_realestate_topic` | 블라인드 부동산 토픽 | https://www.teamblind.com/kr/topics/%EB%B6%80%EB%8F%99%EC%82%B0 | general_board | `local-research-only` | P1 | 직장인 실수요, 갈아타기, 대출 고민 |
 | 4 | `clien_park_realestate` | 클리앙 모두의공원 부동산 글 | https://m.clien.net/service/board/park | general_board | `public-http-review` | P2 | 정책/시장 일반 여론 보조 |
-| 5 | `theqoo_realestate_posts` | 더쿠 부동산 관련 공개글 | https://theqoo.net/stock | general_board | `public-http-review` | P2 | 2030 체감, 정책/거주 팁 보조 |
+| 5 | `theqoo_realestate_posts` | 더쿠 부동산 관련 공개글 | https://theqoo.net/square | general_board | `public-http-review` | P2 | 2030 체감, 정책/거주 팁 보조 |
 | 6 | `cook82_freeboard_realestate` | 82cook 자유게시판 부동산 글 | https://www.82cook.com/entiz/enti.php?bn=15 | general_board | `public-http-review` | P2 | 전월세, 생활형 실거주 고민 |
 | 7 | `hogangnono_community` | 호갱노노 이야기 | https://hogangnono.com/community | proptech_review | `excluded-permission-required` | P1 | 단지 실거주 후기, 지역 경험 |
 | 8 | `hogangnono_expert_columns` | 호갱노노 전문가 칼럼 | https://hogangnono.com/community/expert-columns | news_content | `excluded-permission-required` | P2 | 정책/시장 해설 링크 근거 |
@@ -190,6 +189,12 @@
 5. source skew가 큰 source는 지표 산식에서 가중치를 낮추거나 별도 caveat를 붙인다.
 6. 부동산 dashboard/지역 반응 지표에는 source category coverage를 표시할지 결정한다.
 
+진행된 연결:
+
+- `realestate-crawl-target-manifest` 명령으로 source 후보 JSONL을 읽어 실행 가능한 P0 게시판형 crawl target manifest를 출력할 수 있습니다.
+- 네이버 카페, 로그인 필요 source, 공개 목록 미확인 source, adapter 미지원 source는 `skipped`에 사유를 남기며 실제 요청 대상에서 제외합니다.
+- 공개 배포 런타임에서는 `local-research-only` source가 manifest에 포함되지 않습니다.
+
 ## 외부 확인 근거
 
 - 뽐뿌 부동산포럼: https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1
@@ -211,7 +216,7 @@
 - 학군지 지역 카페 URL 참고: https://investment-ai.tistory.com/entry/%ED%95%99%EA%B5%B0%EC%A7%80-%EB%B3%84-%EB%84%A4%EC%9D%B4%EB%B2%84-%EA%B9%8C%ED%8E%98-%EB%AA%A8%EC%9E%84-List
 - 동탄맘 카페 URL 참고: https://www.i-boss.co.kr/ab-1958-61179
 - 일반 커뮤니티 부동산 글 예시: https://www.82cook.com/entiz/read.php?bn=15&num=4168009
-- 일반 커뮤니티 부동산 글 예시: https://theqoo.net/stock/3984082614
+- 일반 커뮤니티 부동산 글 예시: https://theqoo.net/square/4191575821
 - 일반 커뮤니티 부동산 글 예시: https://m.clien.net/service/board/park/19077823?type=recommend
 - 부동산지인: https://aptgin.com/
 - 리치고: https://m.richgo.ai/
@@ -220,7 +225,6 @@
 - 부동산R114: https://r114.com/
 - 땅집고: https://realty.chosun.com/
 - 리얼캐스트: https://www.rcast.co.kr/
-- 주식 종목토론방 규모 비교 기사: https://v.daum.net/v/HVDlD6ZwUB
 - 네이버 카페 robots: https://cafe.naver.com/robots.txt
 - 다음 카페 robots: https://cafe.daum.net/robots.txt
 - 호갱노노 robots: https://hogangnono.com/robots.txt

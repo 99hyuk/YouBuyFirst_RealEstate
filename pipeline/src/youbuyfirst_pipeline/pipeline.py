@@ -1,6 +1,5 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 from uuid import uuid4
@@ -10,15 +9,10 @@ from youbuyfirst_pipeline.backoff import CrawlBackoffDecision, CrawlBackoffPolic
 from youbuyfirst_pipeline.client import SpringIngestionClient
 from youbuyfirst_pipeline.crawl_targets import CrawlTargetKind
 from youbuyfirst_pipeline.crawlers.base import CommunityAdapter, SourceBlockedError
-from youbuyfirst_pipeline.llm import LLMProvider
-from youbuyfirst_pipeline.matcher import InstrumentMatcher
 from youbuyfirst_pipeline.models import (
-    Analysis,
     CommentCollectionTarget,
     DiffusionEvent,
     EnrichedPost,
-    Mention,
-    MentionDecision,
     RawPost,
 )
 from youbuyfirst_pipeline.source_policy import (
@@ -33,8 +27,6 @@ class CommunityPipeline:
     def __init__(
         self,
         adapters: list[CommunityAdapter],
-        matcher: InstrumentMatcher,
-        llm_provider: LLMProvider,
         client: SpringIngestionClient,
         source_policy_registry: SourcePolicyRegistry | None = None,
         runtime_environment: CrawlRuntimeEnvironment = CrawlRuntimeEnvironment.PUBLIC,
@@ -49,8 +41,6 @@ class CommunityPipeline:
         diffusion_max_comments: int = 50,
     ) -> None:
         self.adapters = adapters
-        self.matcher = matcher
-        self.llm_provider = llm_provider
         self.client = client
         self.source_policy_registry = source_policy_registry or default_source_policy_registry()
         self.runtime_environment = runtime_environment
@@ -225,42 +215,6 @@ class CommunityPipeline:
         return results
 
     def _enrich(self, post: RawPost) -> EnrichedPost:
-        text = f"{post.title}\n{post.content}"
-        candidates = self.matcher.match(text)
-        find_alias_candidates = getattr(self.matcher, "alias_candidates", None)
-        alias_candidates = [
-            replace(
-                candidate,
-                context_snippet=_trim_to(text, 500),
-                sample_url=post.url,
-                observed_at=post.published_at,
-            )
-            for candidate in (find_alias_candidates(text) if find_alias_candidates else [])
-        ]
-        decisions = self.llm_provider.resolve_mentions(post.title, post.content, candidates)
-        candidates_by_key = {_mention_key(candidate): candidate for candidate in candidates}
-        accepted_decisions = _accepted_decisions(candidates, decisions)
-        mentions = [
-            Mention(
-                market=decision.market,
-                symbol=decision.symbol,
-                matched_text=decision.matched_text,
-                instrument_id=_candidate_instrument_id(candidates_by_key, decision),
-            )
-            for decision in accepted_decisions
-        ]
-        analyses = [
-            Analysis(
-                market=decision.market,
-                symbol=decision.symbol,
-                sentiment=decision.reaction_direction,
-                confidence=decision.confidence,
-                rationale=decision.rationale,
-                model=decision.model,
-                instrument_id=_candidate_instrument_id(candidates_by_key, decision),
-            )
-            for decision in accepted_decisions
-        ]
         return EnrichedPost(
             source=post.source,
             board_id=post.board_id,
@@ -273,9 +227,6 @@ class CommunityPipeline:
             view_count=post.view_count,
             recommend_count=post.recommend_count,
             comment_count=post.comment_count,
-            mentions=mentions,
-            analyses=analyses,
-            alias_candidates=alias_candidates,
         )
 
     def _safe_record_run(
@@ -302,36 +253,6 @@ class CommunityPipeline:
         if self.default_board_lookback_hours is None or self.default_board_lookback_hours <= 0:
             return None
         return started - timedelta(hours=self.default_board_lookback_hours)
-
-
-def _accepted_decisions(candidates: list[Mention], decisions: list[MentionDecision]) -> list[MentionDecision]:
-    candidate_keys = {_mention_key(candidate) for candidate in candidates}
-    accepted: list[MentionDecision] = []
-    seen: set[tuple[str, str, str]] = set()
-    for decision in decisions:
-        key = _decision_key(decision)
-        if key in seen or key not in candidate_keys or not decision.is_mentioned:
-            continue
-        seen.add(key)
-        accepted.append(decision)
-    return accepted
-
-
-def _candidate_instrument_id(candidates_by_key: dict[tuple[str, str, str], Mention], decision: MentionDecision) -> int | None:
-    candidate = candidates_by_key.get(_decision_key(decision))
-    return candidate.instrument_id if candidate else None
-
-
-def _mention_key(mention: Mention) -> tuple[str, str, str]:
-    return (mention.market.upper(), mention.symbol.upper(), mention.matched_text)
-
-
-def _decision_key(decision: MentionDecision) -> tuple[str, str, str]:
-    return (decision.market.upper(), decision.symbol.upper(), decision.matched_text)
-
-
-def _trim_to(value: str, max_length: int) -> str:
-    return value if len(value) <= max_length else value[:max_length]
 
 
 async def _fetch_adapter_result(
@@ -399,10 +320,6 @@ def _target_result_context(adapter: CommunityAdapter) -> dict:
         "targetPriority": target.priority,
         "targetIntervalSeconds": target.crawl_interval_seconds,
     }
-    if target.market:
-        context["targetMarket"] = target.market
-    if target.symbol:
-        context["targetSymbol"] = target.symbol
     if target.url:
         context["targetUrl"] = target.url
     if getattr(target, "diffusion_type", None):

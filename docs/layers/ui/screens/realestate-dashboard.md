@@ -54,6 +54,14 @@
 | `issueFeed[]` | community/realestate | 뉴스/컬럼/커뮤니티 링크 |
 | `evidenceLogs[]` | agent | 최신 평가와 근거 요약 |
 
+현재 구현:
+
+- `GET /api/realestate/market-facts` 응답을 `실거래·지표 상태` 패널에 우선 표시합니다.
+- `GET /api/realestate/dashboard/market-summary` 응답을 `주요 부동산 지표` 카드에 우선 표시합니다.
+- API가 비어 있거나 실패하면 `수집 대기`, `데이터 없음`, `공공데이터 대기` 상태로 표시하고, fixture 값을 실제 데이터처럼 보이게 대체하지 않습니다.
+- 주요 지표 카드의 `changePct`가 없으면 `0%`로 보정하지 않고 `최신`으로 표시합니다.
+- row와 카드에는 `provider`, `observedAt`, `asOf`, `stale/dataStatus`를 함께 노출합니다.
+
 ## 기획자 확인 필요
 
 - 첫 화면 route를 `/dashboard`로 유지할지 `/realestate`로 둘지
@@ -68,3 +76,5 @@
 - 2026-06-01: 대시보드 좌상단 gauge를 부동산 투기 과열 지표로 전환하고, chart를 핵심 지역별 상승률 기준으로 변경
 - 2026-06-01: 주요 지표를 점수형보다 관찰 지표 묶음으로 재정의
 - 2026-06-01: 부동산 전용 대시보드 Screen Brief 생성
+- 2026-06-11: `실거래·지표 상태` 패널을 `GET /api/realestate/market-facts` 우선 표시로 연결
+- 2026-06-11: `주요 부동산 지표` 카드를 `GET /api/realestate/dashboard/market-summary` 우선 표시로 연결

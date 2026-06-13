@@ -3,13 +3,13 @@
 ## Route
 
 - Parent: `/realestate/reactions`
-- Route 정보: `/realestate/targets/:symbol`
+- Route 정보: `/realestate/targets/:targetId`
 - 연결 화면:
   - `/realestate/map`: 지도 기반 리포트
   - `/realestate/reactions?view=signals`: 반응 지표
   - `/indicators`: 주요 지표
 
-> `/stocks/:symbol`은 기존 링크 호환을 위한 legacy redirect입니다. 새 구현과 문서는 `/realestate/targets/:symbol`을 기준으로 둡니다.
+> 새 구현과 문서는 `/realestate/targets/:targetId`를 기준으로 둡니다. 레거시 상세 route는 active route에서 제거했습니다.
 
 ## 화면 목적
 
@@ -56,4 +56,4 @@
 ## 변경 로그
 
 - 2026-06-01: 기존 상세 화면을 지역/단지 상세 리포트 화면으로 전환.
-- 2026-06-01: 상세 route 표준을 `/realestate/targets/:symbol`로 변경하고 `/stocks/:symbol`은 legacy redirect로 전환.
+- 2026-06-12: 레거시 상세 route를 제거하고 상세 route param과 화면 문구를 부동산 대상 `targetId` 기준으로 정리.

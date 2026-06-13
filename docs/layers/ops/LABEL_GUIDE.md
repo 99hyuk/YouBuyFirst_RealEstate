@@ -39,7 +39,7 @@
 | `track:ui` | `ui` | 사용자 화면, 디자인 시스템, mock data, API 연동 |
 | `track:ops` | `ops` | 기획 조율, 문서, Notion, PR/CI, 배포 정책 |
 
-`track:stock`, `track:market`, `track:simulation`은 기존 주식 프로젝트에서 넘어온 참고/비활성 영역 또는 과거 기록 해석용으로만 봅니다. 과거 `track:crawl`, `track:data`, `track:trade`, `track:front`도 닫힌 PR이나 기존 Notion 카드 해석용입니다.
+과거 `track:crawl`, `track:data`, `track:front`는 닫힌 PR이나 기존 Notion 카드 해석용입니다. 새 PR은 `track:realestate`, `track:community`, `track:indicator`, `track:agent`, `track:ui`, `track:ops` 중 하나를 우선 사용합니다.
 
 ### 변경 파트 Part
 

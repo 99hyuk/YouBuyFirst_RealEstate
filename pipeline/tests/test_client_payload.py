@@ -6,16 +6,16 @@ import respx
 
 from youbuyfirst_pipeline.board_stream import BoardWatermark
 from youbuyfirst_pipeline.client import SpringIngestionClient
-from youbuyfirst_pipeline.models import Analysis, AliasCandidate, CommentCollectionTarget, DiffusionEvent, EnrichedPost, Mention
+from youbuyfirst_pipeline.models import CommentCollectionTarget, DiffusionEvent, EnrichedPost
 
 
-def test_post_payload_includes_board_and_engagement_counts():
+def test_post_payload_includes_board_and_engagement_counts_without_legacy_analysis_fields():
     post = EnrichedPost(
         source="PPOMPPU",
-        board_id="stock",
-        external_id="PPOMPPU-stock-359353",
-        url="https://www.ppomppu.co.kr/zboard/view.php?id=stock&no=359353",
-        title="Samsung union update",
+        board_id="house",
+        external_id="PPOMPPU-house-359353",
+        url="https://m.ppomppu.co.kr/new/bbs_view.php?id=house&no=359353",
+        title="Seoul rent discussion",
         content="limited snippet",
         author="sample",
         published_at=datetime(2026, 5, 24, 0, 57, tzinfo=timezone.utc),
@@ -26,57 +26,20 @@ def test_post_payload_includes_board_and_engagement_counts():
 
     payload = SpringIngestionClient._post_payload(post)
 
-    assert payload["boardId"] == "stock"
-    assert payload["viewCount"] == 1788
-    assert payload["recommendCount"] == 8
-    assert payload["commentCount"] == 19
-
-
-def test_post_payload_includes_instrument_ids_for_mentions_and_sentiments():
-    post = EnrichedPost(
-        source="FMKOREA",
-        board_id="stock",
-        external_id="fmk-107",
-        url="https://www.fmkorea.com/stock/107",
-        title="테슬라 강세",
-        content="테슬라 실적 기대",
-        author="sample",
-        published_at=datetime(2026, 5, 27, 0, 57, tzinfo=timezone.utc),
-        mentions=[Mention(instrument_id=7, market="US", symbol="TSLA", matched_text="테슬라")],
-        analyses=[
-            Analysis(
-                instrument_id=7,
-                market="US",
-                symbol="TSLA",
-                sentiment="bullish",
-                confidence=0.8,
-                rationale="실적 기대",
-                model="mock",
-            )
-        ],
-    )
-
-    payload = SpringIngestionClient._post_payload(post)
-
-    assert payload["mentions"] == [
-        {
-            "instrumentId": 7,
-            "market": "US",
-            "symbol": "TSLA",
-            "matchedText": "테슬라",
-        }
-    ]
-    assert payload["sentiments"] == [
-        {
-            "instrumentId": 7,
-            "market": "US",
-            "symbol": "TSLA",
-            "sentiment": "bullish",
-            "confidence": 0.8,
-            "rationale": "실적 기대",
-            "model": "mock",
-        }
-    ]
+    assert payload == {
+        "externalId": "PPOMPPU-house-359353",
+        "boardId": "house",
+        "url": "https://m.ppomppu.co.kr/new/bbs_view.php?id=house&no=359353",
+        "title": "Seoul rent discussion",
+        "contentSnippet": "limited snippet",
+        "authorDisplayName": "sample",
+        "publishedAt": "2026-05-24T00:57:00Z",
+        "viewCount": 1788,
+        "recommendCount": 8,
+        "commentCount": 19,
+    }
+    assert "mentions" not in payload
+    assert "senti" + "ments" not in payload
 
 
 @respx.mock
@@ -89,10 +52,10 @@ def test_ingest_sends_diffusion_events_as_separate_layer():
     )
     post = EnrichedPost(
         source="DCINSIDE",
-        board_id="stockus",
-        external_id="dc-us-777",
-        url="https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=777",
-        title="NVDA concept thread",
+        board_id="immovables",
+        external_id="DCINSIDE-immovables-777",
+        url="https://gall.dcinside.com/board/view/?id=immovables&no=777",
+        title="regional heat thread",
         content="limited snippet",
         author="sample",
         published_at=datetime(2026, 5, 24, 0, 58, tzinfo=timezone.utc),
@@ -101,8 +64,8 @@ def test_ingest_sends_diffusion_events_as_separate_layer():
         comment_count=86,
     )
     event = DiffusionEvent(
-        external_id="dc-us-777",
-        board_id="stockus",
+        external_id="DCINSIDE-immovables-777",
+        board_id="immovables",
         diffusion_type="concept",
         list_position=1,
         observed_at=datetime(2026, 5, 24, 1, 1, tzinfo=timezone.utc),
@@ -122,10 +85,11 @@ def test_ingest_sends_diffusion_events_as_separate_layer():
     )
 
     payload = json.loads(route.calls.last.request.content)
+    assert not any(key == "alias" + "Candidates" for key in payload)
     assert payload["diffusionEvents"] == [
         {
-            "externalId": "dc-us-777",
-            "boardId": "stockus",
+            "externalId": "DCINSIDE-immovables-777",
+            "boardId": "immovables",
             "diffusionType": "concept",
             "listPosition": 1,
             "observedAt": "2026-05-24T01:01:00Z",
@@ -133,58 +97,6 @@ def test_ingest_sends_diffusion_events_as_separate_layer():
             "recommendCount": 41,
             "commentCount": 86,
             "diffusionOnly": False,
-        }
-    ]
-
-
-@respx.mock
-def test_ingest_sends_alias_candidates_as_review_queue():
-    route = respx.post("http://backend/internal/ingestions/community-posts").mock(
-        return_value=httpx.Response(
-            200,
-            json={"source": "DCINSIDE", "runId": "run-1", "seenPosts": 1, "acceptedPosts": 1, "duplicatePosts": 0},
-        )
-    )
-    post = EnrichedPost(
-        source="DCINSIDE",
-        external_id="dc-us-888",
-        board_id="stockus",
-        url="https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888",
-        title="슬라 오늘 언급 많음",
-        content="슬라 실적 기대감",
-        author="dc-user",
-        published_at=datetime(2026, 5, 25, 1, 0, tzinfo=timezone.utc),
-        alias_candidates=[
-            AliasCandidate(
-                alias="슬라",
-                suggested_market="US",
-                suggested_symbol="TSLA",
-                reason="review-alias",
-                context_snippet="슬라 오늘 언급 많음",
-                sample_url="https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888",
-                observed_at=datetime(2026, 5, 25, 1, 0, tzinfo=timezone.utc),
-            )
-        ],
-    )
-
-    SpringIngestionClient("http://backend").ingest(
-        "DCINSIDE",
-        "run-1",
-        datetime(2026, 5, 25, 1, 0, tzinfo=timezone.utc),
-        datetime(2026, 5, 25, 1, 2, tzinfo=timezone.utc),
-        [post],
-    )
-
-    payload = json.loads(route.calls.last.request.content)
-    assert payload["aliasCandidates"] == [
-        {
-            "alias": "슬라",
-            "suggestedMarket": "US",
-            "suggestedSymbol": "TSLA",
-            "reason": "review-alias",
-            "contextSnippet": "슬라 오늘 언급 많음",
-            "sampleUrl": "https://gall.dcinside.com/mgallery/board/view/?id=stockus&no=888",
-            "observedAt": "2026-05-25T01:00:00Z",
         }
     ]
 
@@ -198,8 +110,8 @@ def test_ingest_sends_comment_collection_targets_as_limited_queue():
         )
     )
     target = CommentCollectionTarget(
-        external_id="dc-us-777",
-        board_id="stockus",
+        external_id="DCINSIDE-immovables-777",
+        board_id="immovables",
         trigger_reason="diffusion",
         triggered_at=datetime(2026, 5, 24, 1, 1, tzinfo=timezone.utc),
         max_comments=50,
@@ -221,8 +133,8 @@ def test_ingest_sends_comment_collection_targets_as_limited_queue():
     payload = json.loads(route.calls.last.request.content)
     assert payload["commentCollectionTargets"] == [
         {
-            "externalId": "dc-us-777",
-            "boardId": "stockus",
+            "externalId": "DCINSIDE-immovables-777",
+            "boardId": "immovables",
             "triggerReason": "diffusion",
             "triggeredAt": "2026-05-24T01:01:00Z",
             "maxComments": 50,
@@ -240,18 +152,18 @@ def test_client_reads_board_watermark_from_backend():
         return_value=httpx.Response(
             200,
             json={
-                "source": "FMKOREA",
-                "boardId": "stock",
-                "lastSeenExternalId": "FMKOREA-100",
+                "source": "PPOMPPU",
+                "boardId": "house",
+                "lastSeenExternalId": "PPOMPPU-house-100",
                 "lastSeenPublishedAt": "2026-05-24T02:00:00Z",
             },
         )
     )
 
-    watermark = SpringIngestionClient("http://backend").get_board_watermark("FMKOREA", "stock")
+    watermark = SpringIngestionClient("http://backend").get_board_watermark("PPOMPPU", "house")
 
     assert watermark == BoardWatermark(
-        last_seen_external_id="FMKOREA-100",
+        last_seen_external_id="PPOMPPU-house-100",
         cutoff_at=datetime(2026, 5, 24, 2, 0, tzinfo=timezone.utc),
     )
 
@@ -260,6 +172,6 @@ def test_client_reads_board_watermark_from_backend():
 def test_client_returns_none_when_backend_has_no_watermark():
     respx.get("http://backend/internal/crawl-watermarks").mock(return_value=httpx.Response(204))
 
-    watermark = SpringIngestionClient("http://backend").get_board_watermark("FMKOREA", "stock")
+    watermark = SpringIngestionClient("http://backend").get_board_watermark("PPOMPPU", "house")
 
     assert watermark is None

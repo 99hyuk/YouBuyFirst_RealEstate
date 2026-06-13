@@ -15,7 +15,7 @@
     <artifactId>youbuyfirst-backend</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>youbuyfirst-backend</name>
-    <description>Community sentiment ingestion API for YouBuyFirst MVP</description>
+    <description>Real-estate community reaction and market fact API for YouBuyFirst</description>
 
     <properties>
         <java.version>21</java.version>

@@ -32,6 +32,7 @@
 - 기간 선택: 최근 1주, 1개월, 6개월, 1년을 토글로 제공하고 `asOf`와 stale badge를 같이 표시
 - 색상 규칙: 국내 사용자 관습을 우선해 `빨강=상승`, `파랑=하락`, 진하기=변화 강도, 회색=표본 부족/데이터 없음
 - 확대 흐름: 시도 -> 시군구 -> 읍면동/생활권 -> 단지 순서로 drilldown
+- 하이브리드 기준: 전국부터 읍면동/생활권까지는 자체 도식화 heatmap을 쓰고, 특정 동 또는 단지 상세부터는 카카오맵 SDK를 사이트 내부에 내장
 - 현재 구현: `/realestate/map`에서 시도를 선택하면 `/realestate/map/:regionId`로 이동하고, 해당 시도의 실제 시군구 경계를 렌더링
 - 클릭 동작: 선택 지역의 가격 흐름, 거래 강도, 전세 압력, 공급/청약, 정책/교통 이벤트, 커뮤니티 반응을 side panel에 표시
 - 단지 매핑: 법정동 코드, 도로명/지번 주소, 단지명 별칭, 좌표를 묶어 `complex` target과 연결
@@ -51,6 +52,7 @@
 - heat 표현: 빨강=상승, 파랑=하락, 변화폭이 클수록 더 진하고 밝게 표현해 한눈에 강약을 구분
 - 리포트 밀도: 선택 지역 리포트는 언급량 급증, 커뮤니티 source mix, 핵심 쟁점, metric card, 후속 단지 후보까지 세로형 보고서로 제공
 - 단지 단위: 현재는 후보 단지 목록만 보여주고, 좌표·별칭 매핑 후 단지 클릭 리포트를 후속 구현
+- 내장 지도: 카카오맵 SDK key는 `front/.env.local`의 `VITE_KAKAO_JAVASCRIPT_KEY`에서만 읽고, key missing 상태에서는 mock/stale 배지를 표시
 - 닫기 동작: 리포트 패널을 닫으면 지도 단독 중앙 상태로 복귀
 
 ## 상태와 빈 화면
@@ -75,8 +77,26 @@
 | `mapLayers[].features[]` | realestate | region code, geometry id, changePct, sampleCount, confidence |
 | `municipalityTopologyAsset` | realestate/ui | 상세 지도 진입 시 fetch하는 시군구 경계 asset URL |
 | `selectedMunicipalityReport` | realestate/indicator/community | 시군구 선택 시 오른쪽 패널에 표시할 가격 흐름, 커뮤니티 언급, 핵심 쟁점 |
+| `reactionGraph.items[]` | indicator/realestate | target graph로 연결된 하위/관련 target과 각 target의 reaction snapshot |
 | `nearbyComplexes[]` | realestate | 지도 확대 시 노출할 단지 좌표와 시장 fact 요약 |
 | `selectedRegionReport` | realestate/indicator/community | 지도에서 선택한 지역의 가격 흐름, 거래 강도, 전세 압력, 정책 이벤트, 커뮤니티 반응 |
+| `embeddedMap` | ui/realestate | 특정 동/단지 상세 단계에서 카카오맵 SDK 로딩 상태, key 상태, marker 목록, 선택 단지 상태 |
+
+현재 구현:
+
+- `GET /api/realestate/targets/{targetId}/reaction-snapshot?windowMinutes=60` 응답을 상세 화면의 `reactionSnapshot`, `issueMix`, `data quality`, `freshness` 입력으로 사용합니다.
+- `GET /api/realestate/targets/{targetId}/reaction-graph?direction=out&edgeType=contains&windowMinutes=60` 응답을 시도 -> 시군구 drill-down 목록, 하위 지역별 언급량/쟁점 비교, 관련 리포트 후보 입력으로 사용합니다.
+- `GET /api/realestate/targets/{targetId}/market-facts?factType=&limit=` 응답을 실거래, 전세, 매물, 가격지수의 raw fact 상세/검증 입력으로 사용합니다.
+- `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답을 해당 지역/단지와 연결된 뉴스, 리포트, 영상, 링크 카드 입력으로 사용합니다.
+- `GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=` 응답을 정책, 공급, 교통, 뉴스/컬럼 맥락 이벤트, `market_fact`, `reaction`, `content` 시간축 입력으로 사용합니다. 이벤트는 가격 변화의 직접 원인처럼 쓰지 않고 함께 관찰된 맥락 또는 관측 사실로 표시합니다.
+- 프론트 상세 화면은 화면용 `targetId`(`SEOUL-MAPO` 등)와 백엔드 content API용 `apiTargetId`를 분리합니다. API 응답이 있으면 근거 링크 후보를 승인된 content row로 교체하고, 없거나 실패하면 기존 mock evidence를 `원문 확인 필요` 상태로 유지합니다.
+- content row는 원문 전문을 복제하지 않고 제목, 출처, URL, 발행일/metric label만 근거 링크 카드에 표시합니다.
+- `eventType=market_fact` 항목은 `sourceRefType=market_fact`, `sourceRefId=real_estate_market_facts.id`를 가지며, 제목은 `매매 실거래`, `전월세 실거래`, `매물 수`, `가격지수`처럼 사용자용 라벨로 표시합니다.
+- `eventType=reaction` 항목은 `sourceRefType=reaction_snapshot`, `sourceRefId=real_estate_reaction_snapshots.id`를 가지며, 제목은 `커뮤니티 기대 우세`, `커뮤니티 우려 우세`처럼 dominant reaction 중심으로 표시합니다.
+- `eventType=news|report|video|link|column` 항목은 `sourceRefType=content`, `sourceRefId=content_items.id`를 가지며, 제목과 제한 snippet만 표시하고 원문 전문은 외부 URL로 보냅니다.
+- 응답의 `dominantDirection`, `reactionDirectionRatio`, `mentionDeltaPct`는 리포트 요약과 반응 비율 막대에 사용합니다.
+- `quality.coverageStatus`, `quality.sourceSkew`, `quality.stale`은 표본 부족, 출처 편중, 수집 지연 배지로 표시합니다.
+- snapshot이 없는 target은 `quality.coverageStatus=empty`로 처리하고, 값을 0으로 표시하되 실제 반응이 0이라고 단정하지 않습니다.
 
 ## 기획자 확인 필요
 
@@ -88,6 +108,8 @@
 
 ## 변경 로그
 
+- 2026-06-13: 전국~동은 자체 도식화 heatmap, 동/단지 상세부터는 카카오맵 SDK 내장 지도로 보는 하이브리드 기준 추가.
+- 2026-06-12: 지역/단지 상세 근거 링크 후보를 target content API 우선 live/fallback 구조로 연결.
 - 2026-06-01: `/realestate/map` 1차 구현 방향과 지도-리포트 split interaction 추가, 실제 시도 TopoJSON 기반 3D 지도 방향 반영
 - 2026-06-01: `/realestate/map/:regionId` 시군구 drilldown route와 지연 로드되는 시군구 경계 asset 계약 추가
 - 2026-06-01: 지도 stage 확대, heat 색상 대비 강화, 커뮤니티 언급량/핵심 쟁점 리포트 강화

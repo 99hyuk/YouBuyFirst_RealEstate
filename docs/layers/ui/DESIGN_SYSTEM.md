@@ -4,11 +4,10 @@
 
 ## 너나사 시리즈 원칙
 
-너나사 주식과 너나사 부동산은 완전히 다른 사이트처럼 보이지 않습니다. 같은 shell, 같은 정보 밀도, 같은 컴포넌트 패턴을 쓰고, 대표 accent만 버티컬별로 다르게 둡니다.
+너나사 부동산은 너나사 시리즈의 공통 shell, 정보 밀도, 컴포넌트 패턴을 따르되 대표 accent는 warm orange 계열로 둡니다.
 
 | 버티컬 | accent 기준 | 사용 위치 |
 | --- | --- | --- |
-| 너나사 주식 | blue 계열 | 기존 stock reference의 브랜드 포인트 |
 | 너나사 부동산 | warm orange 계열 | 부동산 active 화면의 브랜드 포인트 |
 
 유지할 것:
@@ -56,7 +55,6 @@
 | 구분선 | `--line` | `#dfe5ec` |
 | 표면 | `--surface` | `#ffffff` |
 | 상단/강조 어두운 면 | `--nav` | `#1d1f23` |
-| 너나사 주식 accent | `--series-stock` | `#4f7fee` |
 | 너나사 부동산 accent | `--series-realestate` | `#f08a2b` |
 | 너나사 부동산 strong text/CTA | `--series-realestate-strong` | `#b45309` |
 | 너나사 부동산 soft bg | `--series-realestate-soft` | `#fff7ed` |

@@ -24,22 +24,12 @@ class FakeAdapter:
         self.source = source
         self.errors = errors or []
         self.calls = 0
-        self.target = CrawlTarget.stock_board(source, market="KR", symbol="005930")
+        self.target = CrawlTarget.community_board(source, board_id="house", url="https://example.com/house")
 
     async def fetch_posts(self) -> list:
         self.calls += 1
         if self.errors:
             raise self.errors.pop(0)
-        return []
-
-
-class FakeMatcher:
-    def match(self, text: str) -> list:
-        return []
-
-
-class FakeLLMProvider:
-    def resolve_mentions(self, title: str, content: str, mentions: list) -> list:
         return []
 
 
@@ -78,8 +68,6 @@ def _enabled_registry(source: str) -> SourcePolicyRegistry:
 def _pipeline(adapter: FakeAdapter, client: FakeClient) -> CommunityPipeline:
     return CommunityPipeline(
         adapters=[adapter],
-        matcher=FakeMatcher(),
-        llm_provider=FakeLLMProvider(),
         client=client,
         source_policy_registry=_enabled_registry(adapter.source),
         runtime_environment=CrawlRuntimeEnvironment.PUBLIC,
