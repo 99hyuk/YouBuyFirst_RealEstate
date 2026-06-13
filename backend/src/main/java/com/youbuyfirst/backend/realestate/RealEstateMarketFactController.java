@@ -28,11 +28,12 @@ public class RealEstateMarketFactController {
 
     @GetMapping("/api/realestate/market-facts")
     public RealEstateMarketFactListResponse list(
+            @RequestParam(required = false) String targetId,
             @RequestParam(required = false) String legalDongCode,
             @RequestParam(required = false) String factType,
             @RequestParam(defaultValue = "100") int limit
     ) {
-        return new RealEstateMarketFactListResponse(service.list(legalDongCode, factType, limit));
+        return new RealEstateMarketFactListResponse(service.list(targetId, legalDongCode, factType, limit));
     }
 
     @GetMapping("/api/realestate/targets/{targetId}/market-facts")
