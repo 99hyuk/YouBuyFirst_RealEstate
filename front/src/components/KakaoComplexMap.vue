@@ -30,9 +30,11 @@ const props = withDefaults(defineProps<{
   selectedTargetId?: string;
   center?: MapCenter;
   level?: number;
+  markerSourceStatus?: string;
 }>(), {
   selectedTargetId: '',
-  level: 5
+  level: 5,
+  markerSourceStatus: ''
 });
 
 const emit = defineEmits<{
@@ -63,6 +65,9 @@ const statusLabel = computed(() => {
   if (!kakaoKey.value) return 'key missing';
   return 'loading';
 });
+const displayStatusLabel = computed(() => (
+  props.markerSourceStatus ? `${statusLabel.value} · ${props.markerSourceStatus}` : statusLabel.value
+));
 
 const lngRange = computed(() => {
   const lngs = props.markers.map((marker) => marker.lng);
@@ -214,7 +219,7 @@ watch(() => props.markers, () => {
         <p class="label">embedded map</p>
         <h3>단지 위치 레이어</h3>
       </div>
-      <span>{{ statusLabel }}</span>
+      <span>{{ displayStatusLabel }}</span>
     </div>
 
     <div class="complex-map-layout">

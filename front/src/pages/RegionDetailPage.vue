@@ -7,6 +7,7 @@ import {
   fetchRealEstateTargetContent,
   type NewsroomFeedItem
 } from '../lib/realestate-content';
+import { fetchRealEstateNearbyComplexes } from '../lib/realestate-complex-map';
 import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
 
 type DetailTone = 'up' | 'down' | 'flat';
@@ -276,6 +277,8 @@ const targets: RealEstateTarget[] = [
 const routeTargetId = computed(() => String(route.params.targetId ?? '').trim());
 const target = computed(() => targets.find((item) => item.targetId === routeTargetId.value));
 const selectedMapMarkerId = ref('');
+const apiMapMarkers = ref<ComplexMapMarker[]>([]);
+const mapMarkerLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const confidenceValue = computed(() => (target.value ? Number.parseInt(target.value.confidence, 10) : 0));
 const evidenceLinks = ref<EvidenceLink[]>([]);
 const evidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
@@ -287,10 +290,22 @@ const evidenceStatusLabel = computed(() => {
   if (evidenceLoadState.value === 'loading') return 'content API 확인 중';
   return '원문 확인 필요';
 });
+const targetMapMarkers = computed(() => (
+  mapMarkerLoadState.value === 'live' ? apiMapMarkers.value : target.value?.mapMarkers ?? []
+));
+const mapMarkerSourceStatusLabel = computed(() => {
+  if (mapMarkerLoadState.value === 'live') return 'marker API 반영';
+  if (mapMarkerLoadState.value === 'loading') return 'marker API 확인 중';
+  return 'fixture fallback';
+});
+const mapCenter = computed(() => {
+  const firstMarker = targetMapMarkers.value[0];
+  return firstMarker ? { lat: firstMarker.lat, lng: firstMarker.lng } : target.value?.mapCenter;
+});
 const activeMapTargetId = computed(() => (
   selectedMapMarkerId.value ||
   target.value?.preferredMapTargetId ||
-  target.value?.mapMarkers?.[0]?.targetId ||
+  targetMapMarkers.value[0]?.targetId ||
   ''
 ));
 
@@ -324,17 +339,39 @@ const refreshTargetContent = async () => {
   }
 };
 
+const refreshTargetMapMarkers = async () => {
+  if (!target.value) {
+    apiMapMarkers.value = [];
+    mapMarkerLoadState.value = 'fallback';
+    return;
+  }
+
+  mapMarkerLoadState.value = 'loading';
+  try {
+    const markers = await fetchRealEstateNearbyComplexes(target.value.targetId, {
+      limit: 20
+    });
+    apiMapMarkers.value = markers;
+    mapMarkerLoadState.value = markers.length ? 'live' : 'fallback';
+  } catch {
+    apiMapMarkers.value = [];
+    mapMarkerLoadState.value = 'fallback';
+  }
+};
+
 const selectMapMarker = (marker: ComplexMapMarker) => {
   selectedMapMarkerId.value = marker.targetId;
 };
 
 onMounted(() => {
   void refreshTargetContent();
+  void refreshTargetMapMarkers();
 });
 
 watch(() => target.value?.targetId, () => {
   selectedMapMarkerId.value = '';
   void refreshTargetContent();
+  void refreshTargetMapMarkers();
 });
 </script>
 
@@ -404,11 +441,12 @@ watch(() => target.value?.targetId, () => {
     </section>
 
     <KakaoComplexMap
-      v-if="target.mapMarkers?.length"
-      :markers="target.mapMarkers"
+      v-if="targetMapMarkers.length"
+      :markers="targetMapMarkers"
       :selected-target-id="activeMapTargetId"
-      :center="target.mapCenter"
+      :center="mapCenter"
       :level="target.mapLevel"
+      :marker-source-status="mapMarkerSourceStatusLabel"
       @select="selectMapMarker"
     />
 

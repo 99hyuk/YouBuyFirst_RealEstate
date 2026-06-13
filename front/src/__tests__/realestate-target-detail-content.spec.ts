@@ -74,7 +74,46 @@ describe('real-estate target detail content feed', () => {
     expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('마포래미안푸르지오');
     expect(wrapper.text()).toContain('단지 위치 레이어');
     expect(wrapper.text()).toContain('mock fallback');
+    expect(wrapper.text()).toContain('fixture fallback');
     expect(wrapper.text()).toContain('mock 좌표');
+  });
+
+  it('uses nearby complex API markers before the local fixture markers', async () => {
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('/nearby-complexes')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              targetId: 'complex-api-marker',
+              name: 'API 단지 marker',
+              address: '서울 마포구 API로 일대',
+              region: '서울 마포구',
+              latitude: 37.551,
+              longitude: 126.955,
+              tone: 'up',
+              price: '16.1억',
+              change: '+0.44%',
+              reaction: 'API 반응 요약',
+              provider: 'complex_api_test',
+              asOf: '2026-06-14T00:00:00Z',
+              dataStatus: 'candidate',
+              stale: true,
+              note: 'API marker 우선 사용'
+            }
+          ]
+        }));
+      }
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountTargetDetail();
+
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/nearby-complexes?limit=20');
+    expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('API 단지 marker');
+    expect(wrapper.text()).toContain('marker API 반영');
+    expect(wrapper.text()).toContain('candidate · stale');
+    expect(wrapper.text()).not.toContain('마포래미안푸르지오');
   });
 
   it('opens a complex target detail with the same map and report frame', async () => {

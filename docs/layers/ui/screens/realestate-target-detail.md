@@ -53,7 +53,7 @@
 - 리포트 밀도: 선택 지역 리포트는 언급량 급증, 커뮤니티 source mix, 핵심 쟁점, metric card, 후속 단지 후보까지 세로형 보고서로 제공
 - 단지 단위: `/realestate/targets/:targetId` 상세 화면에 카카오맵 SDK 내장 prototype을 붙이고, SDK 비활성화/key missing/test 환경에서는 도식화 fallback으로 marker와 선택 패널을 보여줌
 - 내장 지도: 카카오맵 SDK key는 `front/.env.local`의 `VITE_KAKAO_JAVASCRIPT_KEY`에서만 읽고, key missing 상태에서는 mock/stale 배지를 표시
-- 단지 marker: `targetId`, 단지명, 주소, 좌표, 가격 흐름, 반응 요약, `provider/asOf/dataStatus`를 함께 표시하며, fixture 좌표는 `mock 좌표`로 드러냄
+- 단지 marker: `GET /api/realestate/targets/{targetId}/nearby-complexes`를 우선 사용하고 실패/빈 응답이면 fixture로 fallback. `targetId`, 단지명, 주소, 좌표, 가격 흐름, 반응 요약, `provider/asOf/dataStatus/stale`을 함께 표시하며, seed 좌표는 `mock/stale`로 드러냄
 - 닫기 동작: 리포트 패널을 닫으면 지도 단독 중앙 상태로 복귀
 
 ## 상태와 빈 화면
@@ -88,6 +88,7 @@
 - `GET /api/realestate/targets/{targetId}/reaction-snapshot?windowMinutes=60` 응답을 상세 화면의 `reactionSnapshot`, `issueMix`, `data quality`, `freshness` 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/reaction-graph?direction=out&edgeType=contains&windowMinutes=60` 응답을 시도 -> 시군구 drill-down 목록, 하위 지역별 언급량/쟁점 비교, 관련 리포트 후보 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/market-facts?factType=&limit=` 응답을 실거래, 전세, 매물, 가격지수의 raw fact 상세/검증 입력으로 사용합니다.
+- `GET /api/realestate/targets/{targetId}/nearby-complexes?limit=` 응답을 동/단지 상세 내장 지도 marker 입력으로 사용합니다. 화면은 유효한 좌표가 있는 `items[]`를 먼저 그리고, 실패하거나 빈 응답이면 기존 fixture marker를 `mock fallback`으로 유지합니다.
 - `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답을 해당 지역/단지와 연결된 뉴스, 리포트, 영상, 링크 카드 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=` 응답을 정책, 공급, 교통, 뉴스/컬럼 맥락 이벤트, `market_fact`, `reaction`, `content` 시간축 입력으로 사용합니다. 이벤트는 가격 변화의 직접 원인처럼 쓰지 않고 함께 관찰된 맥락 또는 관측 사실로 표시합니다.
 - 프론트 상세 화면은 route의 `targetId`를 그대로 backend API에 넘깁니다. 예시는 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`처럼 `real_estate_targets.id`와 같은 값입니다. API 응답이 있으면 근거 링크 후보를 승인된 content row로 교체하고, 없거나 실패하면 기존 mock evidence를 `원문 확인 필요` 상태로 유지합니다.
@@ -110,6 +111,7 @@
 
 ## 변경 로그
 
+- 2026-06-14: 단지 내장 지도 marker를 `nearby-complexes` API 우선 구조로 연결하고, 실패 시 fixture fallback을 유지하는 기준 추가.
 - 2026-06-13: 동/단지 상세 카카오맵 SDK 내장 prototype, marker 선택 패널, mock 좌표 fallback 표시 기준 추가.
 - 2026-06-13: 전국~동은 자체 도식화 heatmap, 동/단지 상세부터는 카카오맵 SDK 내장 지도로 보는 하이브리드 기준 추가.
 - 2026-06-12: 지역/단지 상세 근거 링크 후보를 target content API 우선 live/fallback 구조로 연결.

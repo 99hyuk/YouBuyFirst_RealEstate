@@ -48,17 +48,18 @@
 | `issueRows` | content/community | 핵심 쟁점과 원인 후보 |
 | `evidenceLinks` | backend/content | 근거 링크 후보 |
 | `quality` | backend | stale, confidence, source count |
-| `embeddedMap.markers[]` | ui/realestate | 특정 동/단지 단계의 내장 지도 marker 후보. `targetId`, 주소, 좌표, 가격 흐름, 반응 요약, `provider/asOf/dataStatus`를 함께 둡니다. |
+| `embeddedMap.markers[]` | realestate/ui | `GET /api/realestate/targets/{targetId}/nearby-complexes` 우선 응답. `targetId`, 주소, 좌표, 가격 흐름, 반응 요약, `provider/asOf/dataStatus/stale`를 함께 둡니다. API 실패나 좌표 누락 시 fixture fallback을 씁니다. |
 
 ## 기획 확인 필요
 
 - 지역 단위와 단지 단위는 현재 같은 `/realestate/targets/:targetId` 화면에서 처리합니다. 단지 상세가 커지면 하위 섹션을 분리할 수 있습니다.
 - 공공데이터가 없는 단지는 커뮤니티 반응만으로 얼마나 보여줄지.
 - 리포트 panel과 상세 page의 정보량을 어디서 나눌지.
-- 실제 좌표는 단지 provider key, 주소 정제, 법정동 코드와 함께 DB/API로 승격해야 합니다.
+- 실제 좌표는 단지 provider key, 주소 정제, 법정동 코드와 함께 계속 검증해야 합니다. 현재 seed 좌표는 API로 내려오지만 `mock/stale` 상태입니다.
 
 ## 변경 로그
 
+- 2026-06-14: 단지 marker를 `nearby-complexes` API 우선으로 연결하고, 좌표 검증 전 상태를 `mock/stale`로 노출하는 기준 추가.
 - 2026-06-13: 카카오맵 SDK 내장 prototype 기준과 key missing/mock fallback 상태를 상세 화면 기준에 추가.
 - 2026-06-01: 기존 상세 화면을 지역/단지 상세 리포트 화면으로 전환.
 - 2026-06-12: 레거시 상세 route를 제거하고 상세 route param과 화면 문구를 부동산 대상 `targetId` 기준으로 정리.
