@@ -503,6 +503,8 @@ async def async_main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
     if args.command == "realestate-public-data-providers":
         if args.realestate_provider_output == "sql":
             print(public_data_catalog_seed_sql())

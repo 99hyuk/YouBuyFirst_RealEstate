@@ -33,9 +33,9 @@ class RealEstateReactionSnapshotIntegrationTest {
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
                                 Map.entry("targetId", "region-seoul-jongno"),
-                                Map.entry("windowStart", "2026-06-11T00:00:00Z"),
-                                Map.entry("windowEnd", "2026-06-11T01:00:00Z"),
-                                Map.entry("asOf", "2026-06-11T01:02:00Z"),
+                                Map.entry("windowStart", "2026-06-13T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-13T01:00:00Z"),
+                                Map.entry("asOf", "2026-06-13T01:02:00Z"),
                                 Map.entry("mentionCount", 128),
                                 Map.entry("previousMentionCount", 88),
                                 Map.entry("expectationScore", 57),
@@ -69,9 +69,9 @@ class RealEstateReactionSnapshotIntegrationTest {
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
                                 Map.entry("targetId", "region-seoul"),
-                                Map.entry("windowStart", "2026-06-11T00:00:00Z"),
-                                Map.entry("windowEnd", "2026-06-11T01:00:00Z"),
-                                Map.entry("asOf", "2026-06-11T01:01:00Z"),
+                                Map.entry("windowStart", "2026-06-13T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-13T01:00:00Z"),
+                                Map.entry("asOf", "2026-06-13T01:01:00Z"),
                                 Map.entry("mentionCount", 45),
                                 Map.entry("previousMentionCount", 50),
                                 Map.entry("expectationScore", 20),
@@ -103,7 +103,7 @@ class RealEstateReactionSnapshotIntegrationTest {
                 String.class
         );
         ResponseEntity<String> ranking = restTemplate.getForEntity(
-                "/api/realestate/reactions/rankings?type=region&windowStart=2026-06-11T00:00:00Z&windowMinutes=60",
+                "/api/realestate/reactions/rankings?type=region&windowStart=2026-06-13T00:00:00Z&windowMinutes=60",
                 String.class
         );
         ResponseEntity<String> latestRanking = restTemplate.getForEntity(
@@ -125,10 +125,10 @@ class RealEstateReactionSnapshotIntegrationTest {
         JsonNode latestRoot = objectMapper.readTree(latestRanking.getBody());
         JsonNode targetRoot = objectMapper.readTree(targetSnapshot.getBody());
         assertThat(root.path("window").asText()).isEqualTo("60m");
-        assertThat(latestRoot.path("windowStart").asText()).isEqualTo("2026-06-11T00:00:00Z");
-        assertThat(root.path("windowStart").asText()).isEqualTo("2026-06-11T00:00:00Z");
-        assertThat(root.path("windowEnd").asText()).isEqualTo("2026-06-11T01:00:00Z");
-        assertThat(root.path("freshness").path("asOf").asText()).isEqualTo("2026-06-11T01:02:00Z");
+        assertThat(latestRoot.path("windowStart").asText()).isEqualTo("2026-06-13T00:00:00Z");
+        assertThat(root.path("windowStart").asText()).isEqualTo("2026-06-13T00:00:00Z");
+        assertThat(root.path("windowEnd").asText()).isEqualTo("2026-06-13T01:00:00Z");
+        assertThat(root.path("freshness").path("asOf").asText()).isEqualTo("2026-06-13T01:02:00Z");
         assertThat(root.path("freshness").path("staleCount").asInt()).isEqualTo(1);
 
         JsonNode items = root.path("items");
@@ -156,8 +156,8 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(targetRoot.path("targetType").asText()).isEqualTo("region");
         assertThat(targetRoot.path("displayName").asText()).isEqualTo("서울 종로구");
         assertThat(targetRoot.path("window").asText()).isEqualTo("60m");
-        assertThat(targetRoot.path("windowStart").asText()).isEqualTo("2026-06-11T00:00:00Z");
-        assertThat(targetRoot.path("windowEnd").asText()).isEqualTo("2026-06-11T01:00:00Z");
+        assertThat(targetRoot.path("windowStart").asText()).isEqualTo("2026-06-13T00:00:00Z");
+        assertThat(targetRoot.path("windowEnd").asText()).isEqualTo("2026-06-13T01:00:00Z");
         assertThat(targetRoot.path("mentionCount").asInt()).isEqualTo(128);
         assertThat(targetRoot.path("previousMentionCount").asInt()).isEqualTo(88);
         assertThat(targetRoot.path("mentionDeltaPct").asDouble()).isEqualTo(45.5);
@@ -169,7 +169,7 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(targetRoot.path("quality").path("coverageStatus").asText()).isEqualTo("partial");
         assertThat(targetRoot.path("quality").path("stale").asBoolean()).isFalse();
         assertThat(targetRoot.path("freshness").path("source").asText()).isEqualTo("real_estate_reaction_snapshots");
-        assertThat(targetRoot.path("freshness").path("asOf").asText()).isEqualTo("2026-06-11T01:02:00Z");
+        assertThat(targetRoot.path("freshness").path("asOf").asText()).isEqualTo("2026-06-13T01:02:00Z");
         assertThat(targetRoot.path("freshness").path("staleCount").asInt()).isZero();
         assertThat(targetRoot.path("issueMix")).hasSize(2);
         assertThat(targetRoot.path("issueMix").get(0).path("issueKey").asText()).isEqualTo("jeonse");

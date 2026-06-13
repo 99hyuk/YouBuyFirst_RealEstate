@@ -4,7 +4,8 @@ create table content_items (
     content_type varchar(40) not null,
     title varchar(200) not null,
     snippet text,
-    url varchar(1000) not null,
+    url text not null,
+    url_hash char(64) not null,
     domain varchar(160),
     published_at datetime(6),
     metric_label varchar(120),
@@ -14,7 +15,7 @@ create table content_items (
     created_at datetime(6) not null,
     updated_at datetime(6) not null,
     primary key (id),
-    constraint uk_content_items_url unique (url)
+    constraint uk_content_items_url_hash unique (url_hash)
 );
 
 create table content_target_links (
