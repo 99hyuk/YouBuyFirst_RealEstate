@@ -65,4 +65,25 @@ describe('real-estate target detail content feed', () => {
     expect(wrapper.text()).toContain('2026-06-12 · 댓글 42');
     expect(wrapper.text()).not.toContain('원문 후보 묶음');
   });
+
+  it('renders the embedded complex map fallback on region targets', async () => {
+    const wrapper = await mountTargetDetail();
+
+    expect(wrapper.find('[data-testid="kakao-complex-map"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="kakao-map-fallback"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('마포래미안푸르지오');
+    expect(wrapper.text()).toContain('단지 위치 레이어');
+    expect(wrapper.text()).toContain('mock fallback');
+    expect(wrapper.text()).toContain('mock 좌표');
+  });
+
+  it('opens a complex target detail with the same map and report frame', async () => {
+    const wrapper = await mountTargetDetail('/realestate/targets/complex-mapo-raemian-prugio');
+
+    expect(wrapper.find('.unsupported-region-state').exists()).toBe(false);
+    expect(wrapper.text()).toContain('마포래미안푸르지오');
+    expect(wrapper.text()).toContain('마래푸');
+    expect(wrapper.text()).toContain('단지 위치 레이어');
+    expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('학군·역세권 언급 증가');
+  });
 });

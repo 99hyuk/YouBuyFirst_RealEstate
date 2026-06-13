@@ -81,6 +81,30 @@ describe('real-estate market fact adapter', () => {
     expect(marketFactStatusLabel({ dataStatus: 'error', stale: false })).toBe('확인 필요');
   });
 
+  it('keeps dashboard row keys unique when multiple facts share the same contract date', () => {
+    const rows = buildMarketFactRows([
+      {
+        factType: 'apt_rent',
+        providerDataset: 'molit_apt_rent',
+        legalDongCode: '11110',
+        observedAt: '2026-06-05',
+        valueJson: { apartmentName: 'Sajik Palace', depositAmountManwon: 45000 }
+      },
+      {
+        factType: 'apt_rent',
+        providerDataset: 'molit_apt_rent',
+        legalDongCode: '11110',
+        observedAt: '2026-06-05',
+        valueJson: { apartmentName: 'Jongno Tower', depositAmountManwon: 51000 }
+      }
+    ]);
+
+    expect(rows.map((row) => row.id)).toEqual([
+      'molit_apt_rent:11110:apt_rent:2026-06-05:1',
+      'molit_apt_rent:11110:apt_rent:2026-06-05:2'
+    ]);
+  });
+
   it('fetches market facts with the target query parameters', async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({ items: [] })));
 

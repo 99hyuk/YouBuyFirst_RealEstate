@@ -61,6 +61,8 @@
 - `GET /api/realestate/map/layers`를 추가해 전국/시군구 지도 화면이 DB snapshot을 우선 조회하고, 실패하거나 없는 구간은 명시적인 fixture fallback으로 내려가도록 했습니다.
 - 전국 17개 시도와 서울 일부 시군구(종로구, 마포구) 지도 snapshot seed를 넣었습니다. 현재 값은 실제 batch 연결 전 기준값이므로 `provider=seed`, `dataStatus=mock`, `stale=true`로 표시합니다.
 - `/realestate/map`과 `/realestate/map/:regionId`는 지도 route에서 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용합니다. 기존 화면용 slug 진입은 호환만 유지합니다.
+- `/realestate/targets/:targetId`에 카카오맵 SDK 내장 지도 prototype을 추가했습니다. `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`는 단지 marker와 선택 패널을 보여주며, 테스트/key missing/SDK 비활성화 상태에서는 도식화 fallback을 표시합니다.
+- 현재 marker 좌표는 front fixture 단계이므로 화면에 `mock 좌표`, `provider`, `asOf`를 노출합니다. 실제 단지 좌표, 주소 정제, 법정동 코드, provider key는 DB/API로 승격해야 합니다.
 
 ## 1차 provider
 
@@ -109,7 +111,7 @@ real_estate_targets
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
 - LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
-- 카카오맵 SDK 내장 지도 컴포넌트와 단지 marker prototype 구현
+- 실제 단지 좌표/주소/법정동 코드 DB 필드와 단지 marker API 연결
 - 실제 market fact와 reaction snapshot을 `map_layer_snapshots`로 집계하는 지도 배치 구현
 
 ## 다음 작업

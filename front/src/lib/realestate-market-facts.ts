@@ -128,15 +128,17 @@ export function buildMarketFactRows(facts: RealEstateMarketFact[]): RealEstateMa
     }];
   }
 
-  return facts.map((fact) => {
+  const baseIds = facts.map(marketFactBaseId);
+  const baseIdCounts = baseIds.reduce((counts, id) => counts.set(id, (counts.get(id) ?? 0) + 1), new Map<string, number>());
+  const seenBaseIds = new Map<string, number>();
+
+  return facts.map((fact, index) => {
+    const baseId = baseIds[index];
+    const occurrenceIndex = seenBaseIds.get(baseId) ?? 0;
+    seenBaseIds.set(baseId, occurrenceIndex + 1);
     const valueJson = fact.valueJson ?? {};
     return {
-      id: [
-        fact.providerDataset ?? 'market-fact',
-        fact.legalDongCode ?? 'unknown',
-        fact.factType ?? 'unknown',
-        fact.observedAt ?? fact.asOf ?? 'unknown'
-      ].join(':'),
+      id: (baseIdCounts.get(baseId) ?? 0) > 1 ? `${baseId}:${occurrenceIndex + 1}` : baseId,
       name: factName(fact),
       value: factValue(fact, valueJson),
       meta: factMeta(fact, valueJson),
@@ -145,6 +147,15 @@ export function buildMarketFactRows(facts: RealEstateMarketFact[]): RealEstateMa
       stale: Boolean(fact.stale)
     };
   });
+}
+
+function marketFactBaseId(fact: RealEstateMarketFact): string {
+  return [
+    fact.providerDataset ?? 'market-fact',
+    fact.legalDongCode ?? 'unknown',
+    fact.factType ?? 'unknown',
+    fact.observedAt ?? fact.asOf ?? 'unknown'
+  ].join(':');
 }
 
 export function marketFactStatusLabel(fact: Pick<RealEstateMarketFact, 'dataStatus' | 'stale'>): string {
