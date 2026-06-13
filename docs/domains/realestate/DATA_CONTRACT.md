@@ -463,7 +463,7 @@ GET /api/realestate/targets/{targetId}/nearby-complexes?limit=
 GET /api/realestate/targets/{targetId}/content?feed=&limit=
 GET /api/realestate/targets/{targetId}/evidence-logs?limit=
 GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=
-GET /api/realestate/market-facts?legalDongCode=&factType=
+GET /api/realestate/market-facts?targetId=&legalDongCode=&factType=
 GET /api/realestate/dashboard/market-summary?legalDongCode=
 GET /api/realestate/map/layers?layerType=sido
 GET /api/realestate/map/layers?layerType=sigungu&parentTargetId=
@@ -503,6 +503,8 @@ POST /internal/community/crawl-sources
 `GET /api/realestate/targets/{targetId}/reaction-graph`는 상세 지도 drill-down과 관련 영향권 패널용 응답입니다. `graph` API의 승인된 edge를 기준으로 연결 대상을 찾고, 각 연결 대상에 `reaction-snapshot` 응답을 붙입니다. `windowStart`가 없으면 root target과 연결 대상 중 최신 window를 사용합니다. 예를 들어 서울 target에서 `direction=out&edgeType=contains`를 조회하면 종로구, 강남구 같은 하위 target edge와 각 구의 언급량, 기대/우려 비율, 쟁점 mix가 함께 내려갑니다.
 
 `GET /api/realestate/targets/{targetId}/market-facts`는 지역/단지 상세 raw fact 입력입니다. 기존 `real_estate_market_facts.targetId` 기준으로 실거래, 전월세, 매물 수, 가격지수, 공급/정책 후보 fact를 내려주며 `factType`과 `limit`으로 좁힐 수 있습니다. 응답은 `GET /api/realestate/market-facts`와 같은 `items[]` shape를 씁니다.
+
+`GET /api/realestate/market-facts`는 운영/검증용 범용 market fact 목록입니다. `targetId`, `legalDongCode`, `factType`, `limit`으로 좁힐 수 있으며, 특정 지역/단지 상세 화면은 가능한 한 `GET /api/realestate/targets/{targetId}/market-facts`를 우선 사용합니다.
 
 `GET /api/realestate/targets/{targetId}/content`는 승인된 content-target link 기준으로 해당 지역/단지에 연결된 뉴스, 리포트, 영상, 링크를 반환합니다. `feed=all|news|report|video|link|column`으로 좁힐 수 있습니다.
 

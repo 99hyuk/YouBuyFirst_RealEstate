@@ -76,9 +76,10 @@ public class RealEstateMarketFactService {
     }
 
     @Transactional(readOnly = true)
-    public List<RealEstateMarketFactResponse> list(String legalDongCode, String factType, int limit) {
+    public List<RealEstateMarketFactResponse> list(String targetId, String legalDongCode, String factType, int limit) {
         int boundedLimit = Math.max(1, Math.min(limit, 500));
         return repository.search(
+                trimToNull(targetId),
                 trimToNull(legalDongCode),
                 trimToNull(factType) == null ? null : normalizeLower(factType),
                 PageRequest.of(0, boundedLimit)
@@ -98,6 +99,7 @@ public class RealEstateMarketFactService {
     @Transactional(readOnly = true)
     public RealEstateMarketSummaryResponse summarizeForDashboard(String legalDongCode) {
         List<RealEstateMarketFact> facts = repository.search(
+                null,
                 trimToNull(legalDongCode),
                 null,
                 PageRequest.of(0, 500)

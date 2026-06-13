@@ -252,4 +252,68 @@ class RealEstateMarketFactIntegrationTest {
         assertThat(fact.path("valueJson").path("listingCount").asInt()).isEqualTo(132);
         assertThat(fact.path("dataStatus").asText()).isEqualTo("partial");
     }
+
+    @Test
+    void filtersGenericMarketFactsByTargetIdWhenProvided() throws Exception {
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetType", "region"),
+                                Map.entry("targetId", "region-seoul-mapo"),
+                                Map.entry("factType", "apt_trade"),
+                                Map.entry("provider", "molit"),
+                                Map.entry("providerDataset", "molit_apt_trade"),
+                                Map.entry("providerObjectId", "molit_apt_trade:11440:202606:target-filter"),
+                                Map.entry("legalDongCode", "11440"),
+                                Map.entry("observedAt", "2026-06-12"),
+                                Map.entry("asOf", "2026-06-01"),
+                                Map.entry("ingestedAt", "2026-06-12T01:10:00Z"),
+                                Map.entry("dataStatus", "ok"),
+                                Map.entry("stale", false),
+                                Map.entry("valueJson", Map.of(
+                                        "apartmentName", "Mapo Palace",
+                                        "dealAmountManwon", 91000
+                                ))
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetType", "region"),
+                                Map.entry("targetId", "region-seoul-jongno"),
+                                Map.entry("factType", "apt_trade"),
+                                Map.entry("provider", "molit"),
+                                Map.entry("providerDataset", "molit_apt_trade"),
+                                Map.entry("providerObjectId", "molit_apt_trade:11110:202606:target-filter-other"),
+                                Map.entry("legalDongCode", "11110"),
+                                Map.entry("observedAt", "2026-06-12"),
+                                Map.entry("asOf", "2026-06-01"),
+                                Map.entry("ingestedAt", "2026-06-12T01:10:00Z"),
+                                Map.entry("dataStatus", "ok"),
+                                Map.entry("stale", false),
+                                Map.entry("valueJson", Map.of(
+                                        "apartmentName", "Jongno Palace",
+                                        "dealAmountManwon", 83000
+                                ))
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/market-facts",
+                request,
+                String.class
+        );
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/market-facts?targetId=region-seoul-mapo&factType=apt_trade&limit=5",
+                String.class
+        );
+
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode items = objectMapper.readTree(response.getBody()).path("items");
+        assertThat(items).hasSize(1);
+        JsonNode fact = items.get(0);
+        assertThat(fact.path("targetId").asText()).isEqualTo("region-seoul-mapo");
+        assertThat(fact.path("legalDongCode").asText()).isEqualTo("11440");
+        assertThat(fact.path("valueJson").path("apartmentName").asText()).isEqualTo("Mapo Palace");
+    }
 }
