@@ -37,7 +37,7 @@
 | --- | --- | --- |
 | `rankingGroups[].id` | layers/ui/backend | `regions`, `complexes` 같은 ranking 그룹 |
 | `rankingGroups[].rows[].rank` | indicator/community | 현재 순위 |
-| `rankingGroups[].rows[].targetId` | realestate/backend | 내부 target id 또는 화면 slug. 예: `SEOUL-MAPO` |
+| `rankingGroups[].rows[].targetId` | realestate/backend | `real_estate_targets.id`와 같은 내부 target id. 예: `region-seoul-mapo` |
 | `rankingGroups[].rows[].name` | realestate/backend | 지역/단지 표시명 |
 | `rankingGroups[].rows[].market` | realestate/backend | 시도, 시군구, 생활권, 단지군 |
 | `rankingGroups[].rows[].mentions` | indicator/community | 기간 내 언급량 |
@@ -69,4 +69,5 @@
 - 2026-06-12: 레거시 반응 route를 제거하고 `/realestate/reactions` 표준 화면만 active route로 유지.
 - 2026-06-01: ranking table과 중복되던 커뮤니티별 반응 비율 표와 반응/공식지표 비교 그래프를 제거.
 - 2026-06-11: 지역/단지 랭킹 테이블을 `GET /api/realestate/reactions/rankings` 우선 표시와 fixture fallback 구조로 연결.
+- 2026-06-13: 화면 fixture와 상세 route의 `targetId`를 backend target registry 형식으로 통일하고 화면용 대문자 ID를 제거.
 - 2026-06-12: 랭킹 행과 상세 링크의 식별자를 부동산 `targetId` 기준으로 정리.

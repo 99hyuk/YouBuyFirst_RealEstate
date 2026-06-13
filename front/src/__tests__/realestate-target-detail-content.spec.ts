@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import RegionDetailPage from '../pages/RegionDetailPage.vue';
 
-const mountTargetDetail = async (path = '/realestate/targets/SEOUL-MAPO') => {
+const mountTargetDetail = async (path = '/realestate/targets/region-seoul-mapo') => {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [

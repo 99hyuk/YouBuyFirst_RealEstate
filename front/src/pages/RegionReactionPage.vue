@@ -76,21 +76,21 @@ const isSectionVisible = (section: Exclude<RegionReactionView, 'overview'>) =>
   activeRegionReactionView.value === 'overview' || activeRegionReactionView.value === section;
 
 const regionRows: RegionRankingRow[] = [
-  { rank: 1, name: '마포구 아파트', targetId: 'SEOUL-MAPO', market: '서울', price: '14.5억', change: '+0.55%', mentions: '128건', mentionDelta: '+42%', positive: 49, negative: 33, event: '전세·공덕·학군', freshness: '실거래 지연', tone: 'up' },
-  { rank: 2, name: '동탄역권', targetId: 'DONGTAN-STATION', market: '경기', price: '9.8억', change: '+0.31%', mentions: '74건', mentionDelta: '+19%', positive: 44, negative: 39, event: 'GTX·입주', freshness: '공공데이터 stale', tone: 'up' },
-  { rank: 3, name: '성수동 생활권', targetId: 'SEONGSU-DONG', market: '서울', price: '18.2억', change: '+0.66%', mentions: '41건', mentionDelta: '+86%', positive: 56, negative: 25, event: '상권·개발', freshness: 'mock', tone: 'up' },
-  { rank: 4, name: '잠실동 단지군', targetId: 'JAMSIL-DONG', market: '서울', price: '22.5억', change: '-0.22%', mentions: '43건', mentionDelta: '+54%', positive: 47, negative: 29, event: '토허제·재건축', freshness: '정책 이슈', tone: 'down' },
-  { rank: 5, name: '분당·판교', targetId: 'BUNDANG-PANGYO', market: '경기', price: '17.6억', change: '+0.51%', mentions: '66건', mentionDelta: '+30%', positive: 58, negative: 24, event: '일자리·학군', freshness: 'mock', tone: 'up' },
-  { rank: 6, name: '송도국제도시', targetId: 'SONGDO', market: '인천', price: '8.4억', change: '-0.18%', mentions: '38건', mentionDelta: '+21%', positive: 42, negative: 36, event: '공급·국제학교', freshness: 'stale', tone: 'down' }
+  { rank: 1, name: '마포구 아파트', targetId: 'region-seoul-mapo', market: '서울', price: '14.5억', change: '+0.55%', mentions: '128건', mentionDelta: '+42%', positive: 49, negative: 33, event: '전세·공덕·학군', freshness: '실거래 지연', tone: 'up' },
+  { rank: 2, name: '동탄역권', targetId: 'living-area-gyeonggi-dongtan-station', market: '경기', price: '9.8억', change: '+0.31%', mentions: '74건', mentionDelta: '+19%', positive: 44, negative: 39, event: 'GTX·입주', freshness: '공공데이터 stale', tone: 'up' },
+  { rank: 3, name: '성수동 생활권', targetId: 'living-area-seoul-seongsu', market: '서울', price: '18.2억', change: '+0.66%', mentions: '41건', mentionDelta: '+86%', positive: 56, negative: 25, event: '상권·개발', freshness: 'mock', tone: 'up' },
+  { rank: 4, name: '잠실동 단지군', targetId: 'living-area-seoul-jamsil', market: '서울', price: '22.5억', change: '-0.22%', mentions: '43건', mentionDelta: '+54%', positive: 47, negative: 29, event: '토허제·재건축', freshness: '정책 이슈', tone: 'down' },
+  { rank: 5, name: '분당·판교', targetId: 'living-area-gyeonggi-bundang-pangyo', market: '경기', price: '17.6억', change: '+0.51%', mentions: '66건', mentionDelta: '+30%', positive: 58, negative: 24, event: '일자리·학군', freshness: 'mock', tone: 'up' },
+  { rank: 6, name: '송도국제도시', targetId: 'living-area-incheon-songdo', market: '인천', price: '8.4억', change: '-0.18%', mentions: '38건', mentionDelta: '+21%', positive: 42, negative: 36, event: '공급·국제학교', freshness: 'stale', tone: 'down' }
 ];
 
 const complexRows: RegionRankingRow[] = [
-  { rank: 1, name: '래미안 원베일리', targetId: 'RAEMIAN-ONEBAILEY', market: '반포', price: '41.0억', change: '+0.28%', mentions: '58건', mentionDelta: '+36%', positive: 52, negative: 27, event: '신고가·전세', freshness: 'mock', tone: 'up' },
-  { rank: 2, name: '헬리오시티', targetId: 'HELIO-CITY', market: '송파', price: '20.7억', change: '-0.08%', mentions: '49건', mentionDelta: '+24%', positive: 41, negative: 38, event: '전세 매물', freshness: 'mock', tone: 'down' },
-  { rank: 3, name: '마포래미안푸르지오', targetId: 'MAPO-RAEMIAN-PRUGIO', market: '마포', price: '15.3억', change: '+0.21%', mentions: '44건', mentionDelta: '+28%', positive: 48, negative: 31, event: '학군·역세권', freshness: '실거래 지연', tone: 'up' },
-  { rank: 4, name: '판교푸르지오그랑블', targetId: 'PANGYO-PRUGIO', market: '판교', price: '22.4억', change: '+0.34%', mentions: '37건', mentionDelta: '+18%', positive: 61, negative: 20, event: '일자리·학군', freshness: 'mock', tone: 'up' },
-  { rank: 5, name: '송도더샵센트럴', targetId: 'SONGDO-THE-SHARP', market: '송도', price: '8.9억', change: '-0.16%', mentions: '32건', mentionDelta: '+17%', positive: 39, negative: 40, event: '공급 부담', freshness: 'stale', tone: 'down' },
-  { rank: 6, name: '동탄역 롯데캐슬', targetId: 'DONGTAN-LOTTE', market: '동탄', price: '12.2억', change: '+0.19%', mentions: '35건', mentionDelta: '+22%', positive: 46, negative: 35, event: 'GTX·입주', freshness: 'mock', tone: 'up' }
+  { rank: 1, name: '래미안 원베일리', targetId: 'complex-raemian-onebailey', market: '반포', price: '41.0억', change: '+0.28%', mentions: '58건', mentionDelta: '+36%', positive: 52, negative: 27, event: '신고가·전세', freshness: 'mock', tone: 'up' },
+  { rank: 2, name: '헬리오시티', targetId: 'complex-helio-city', market: '송파', price: '20.7억', change: '-0.08%', mentions: '49건', mentionDelta: '+24%', positive: 41, negative: 38, event: '전세 매물', freshness: 'mock', tone: 'down' },
+  { rank: 3, name: '마포래미안푸르지오', targetId: 'complex-mapo-raemian-prugio', market: '마포', price: '15.3억', change: '+0.21%', mentions: '44건', mentionDelta: '+28%', positive: 48, negative: 31, event: '학군·역세권', freshness: '실거래 지연', tone: 'up' },
+  { rank: 4, name: '판교푸르지오그랑블', targetId: 'complex-pangyo-prugio-grandble', market: '판교', price: '22.4억', change: '+0.34%', mentions: '37건', mentionDelta: '+18%', positive: 61, negative: 20, event: '일자리·학군', freshness: 'mock', tone: 'up' },
+  { rank: 5, name: '송도더샵센트럴', targetId: 'complex-songdo-the-sharp-central', market: '송도', price: '8.9억', change: '-0.16%', mentions: '32건', mentionDelta: '+17%', positive: 39, negative: 40, event: '공급 부담', freshness: 'stale', tone: 'down' },
+  { rank: 6, name: '동탄역 롯데캐슬', targetId: 'complex-dongtan-lotte-castle', market: '동탄', price: '12.2억', change: '+0.19%', mentions: '35건', mentionDelta: '+22%', positive: 46, negative: 35, event: 'GTX·입주', freshness: 'mock', tone: 'up' }
 ];
 
 const rankingLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
@@ -142,7 +142,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '언급 급증',
     target: '성수동 생활권',
-    targetId: 'SEONGSU-DONG',
+    targetId: 'living-area-seoul-seongsu',
     metric: '+86%',
     tone: 'positive',
     summary: '상권, 개발, 임대료 키워드가 영상과 블로그에서 동시에 늘었습니다.',
@@ -153,7 +153,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '기대 우세',
     target: '분당·판교',
-    targetId: 'BUNDANG-PANGYO',
+    targetId: 'living-area-gyeonggi-bundang-pangyo',
     metric: '기대 58',
     tone: 'positive',
     summary: '일자리와 재건축 기대 키워드가 짧은 시간에 올라왔습니다.',
@@ -164,7 +164,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '우려 증가',
     target: '송도국제도시',
-    targetId: 'SONGDO',
+    targetId: 'living-area-incheon-songdo',
     metric: '우려 36',
     tone: 'negative',
     summary: '공급 부담, 미분양, 전세 매물 키워드가 반복됩니다.',
@@ -175,7 +175,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '정책 민감',
     target: '잠실동 단지군',
-    targetId: 'JAMSIL-DONG',
+    targetId: 'living-area-seoul-jamsil',
     metric: '+54%',
     tone: 'negative',
     summary: '토허제, 재건축, 대출 규제 키워드가 동시에 올라와 관찰이 필요합니다.',
@@ -190,7 +190,7 @@ const agentLogs: AgentLog[] = [
     time: '10:12',
     strategy: '지표 동행 관찰',
     target: '마포구 아파트',
-    targetId: 'SEOUL-MAPO',
+    targetId: 'region-seoul-mapo',
     state: '알림 후보',
     input: '언급 +42% · 기대 49 · 전세가율 상승',
     reason: '전세 체감과 가격지표가 같은 방향',
@@ -200,7 +200,7 @@ const agentLogs: AgentLog[] = [
     time: '10:04',
     strategy: '커뮤니티 선행 관찰',
     target: '송도국제도시',
-    targetId: 'SONGDO',
+    targetId: 'living-area-incheon-songdo',
     state: '관찰만',
     input: '우려 36 · 공급 키워드 · 실거래 stale',
     reason: '공급 부담 반응은 강하지만 가격 지표가 늦음',
@@ -210,7 +210,7 @@ const agentLogs: AgentLog[] = [
     time: '09:51',
     strategy: '지표 동행 관찰',
     target: '성수동 생활권',
-    targetId: 'SEONGSU-DONG',
+    targetId: 'living-area-seoul-seongsu',
     state: '관찰 유지',
     input: '언급 +86% · 상권 키워드 · 출처 4곳',
     reason: '블로그와 영상 제목이 동시에 증가',
@@ -220,7 +220,7 @@ const agentLogs: AgentLog[] = [
     time: '09:37',
     strategy: '커뮤니티 선행 관찰',
     target: '동탄역권',
-    targetId: 'DONGTAN-STATION',
+    targetId: 'living-area-gyeonggi-dongtan-station',
     state: '확인 필요',
     input: 'GTX 관심 +24% · 입주 우려 · 전세수급 상승',
     reason: '기대와 우려가 상쇄되어 공공데이터 대조 필요',

@@ -12,7 +12,6 @@ type DetailTone = 'up' | 'down' | 'flat';
 
 type RealEstateTarget = {
   targetId: string;
-  apiTargetId: string;
   name: string;
   region: string;
   headline: string;
@@ -42,8 +41,7 @@ const route = useRoute();
 
 const targets: RealEstateTarget[] = [
   {
-    targetId: 'SEOUL-MAPO',
-    apiTargetId: 'region-seoul-mapo',
+    targetId: 'region-seoul-mapo',
     name: '마포구 아파트',
     region: '서울',
     headline: '전세 매물 체감과 학군 키워드가 같이 움직입니다',
@@ -79,8 +77,7 @@ const targets: RealEstateTarget[] = [
     ]
   },
   {
-    targetId: 'DONGTAN-STATION',
-    apiTargetId: 'region-gyeonggi-dongtan-station',
+    targetId: 'living-area-gyeonggi-dongtan-station',
     name: '동탄역권',
     region: '경기',
     headline: 'GTX 기대와 입주 물량 우려가 동시에 붙었습니다',
@@ -117,8 +114,8 @@ const targets: RealEstateTarget[] = [
   }
 ];
 
-const routeTargetId = computed(() => String(route.params.targetId ?? '').toUpperCase());
-const target = computed(() => targets.find((item) => item.targetId.toUpperCase() === routeTargetId.value));
+const routeTargetId = computed(() => String(route.params.targetId ?? '').trim());
+const target = computed(() => targets.find((item) => item.targetId === routeTargetId.value));
 const confidenceValue = computed(() => (target.value ? Number.parseInt(target.value.confidence, 10) : 0));
 const evidenceLinks = ref<EvidenceLink[]>([]);
 const evidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
@@ -148,7 +145,7 @@ const refreshTargetContent = async () => {
 
   evidenceLoadState.value = 'loading';
   try {
-    const contentItems = await fetchRealEstateTargetContent(target.value.apiTargetId, {
+    const contentItems = await fetchRealEstateTargetContent(target.value.targetId, {
       feed: 'all',
       limit: 6
     });
@@ -165,7 +162,7 @@ onMounted(() => {
   void refreshTargetContent();
 });
 
-watch(() => target.value?.apiTargetId, () => {
+watch(() => target.value?.targetId, () => {
   void refreshTargetContent();
 });
 </script>

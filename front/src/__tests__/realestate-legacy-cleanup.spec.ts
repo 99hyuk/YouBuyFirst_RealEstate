@@ -86,4 +86,39 @@ describe('real-estate legacy cleanup', () => {
     expect(priceChartSource).not.toContain(legacyObservationFunction);
     expect(priceChartSource).not.toContain(legacyFinancialSeries);
   });
+
+  it('keeps route target ids aligned to the backend-style target registry', () => {
+    const routeTargetSources = [
+      'App.vue',
+      'pages/DashboardPage.vue',
+      'pages/RegionReactionPage.vue',
+      'pages/RegionDetailPage.vue',
+      'fixtures/dashboard-summary.json',
+      'fixtures/reaction-ranking.json',
+      'fixtures/realestate-price-chart.ts',
+      '__tests__/shell.spec.ts',
+      '__tests__/realestate-target-detail-content.spec.ts'
+    ].map((file) => readFileSync(resolve(sourceRoot, file), 'utf8')).join('\n');
+
+    const oldScreenIds = [
+      'SEOUL-MAPO',
+      'DONGTAN-STATION',
+      'SEONGSU-DONG',
+      'JAMSIL-DONG',
+      'BUNDANG-PANGYO',
+      'SONGDO-THE-SHARP',
+      'RAEMIAN-ONEBAILEY',
+      'HELIO-CITY',
+      'MAPO-RAEMIAN-PRUGIO',
+      'PANGYO-PRUGIO',
+      'DONGTAN-LOTTE'
+    ];
+
+    for (const oldId of oldScreenIds) {
+      expect(routeTargetSources).not.toContain(oldId);
+    }
+    expect(routeTargetSources).toContain('region-seoul-mapo');
+    expect(routeTargetSources).toContain('living-area-gyeonggi-dongtan-station');
+    expect(routeTargetSources).toContain('complex-mapo-raemian-prugio');
+  });
 });

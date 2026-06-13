@@ -89,7 +89,7 @@
 - `GET /api/realestate/targets/{targetId}/market-facts?factType=&limit=` 응답을 실거래, 전세, 매물, 가격지수의 raw fact 상세/검증 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답을 해당 지역/단지와 연결된 뉴스, 리포트, 영상, 링크 카드 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=` 응답을 정책, 공급, 교통, 뉴스/컬럼 맥락 이벤트, `market_fact`, `reaction`, `content` 시간축 입력으로 사용합니다. 이벤트는 가격 변화의 직접 원인처럼 쓰지 않고 함께 관찰된 맥락 또는 관측 사실로 표시합니다.
-- 프론트 상세 화면은 화면용 `targetId`(`SEOUL-MAPO` 등)와 백엔드 content API용 `apiTargetId`를 분리합니다. API 응답이 있으면 근거 링크 후보를 승인된 content row로 교체하고, 없거나 실패하면 기존 mock evidence를 `원문 확인 필요` 상태로 유지합니다.
+- 프론트 상세 화면은 route의 `targetId`를 그대로 backend API에 넘깁니다. 예시는 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`처럼 `real_estate_targets.id`와 같은 값입니다. API 응답이 있으면 근거 링크 후보를 승인된 content row로 교체하고, 없거나 실패하면 기존 mock evidence를 `원문 확인 필요` 상태로 유지합니다.
 - content row는 원문 전문을 복제하지 않고 제목, 출처, URL, 발행일/metric label만 근거 링크 카드에 표시합니다.
 - `eventType=market_fact` 항목은 `sourceRefType=market_fact`, `sourceRefId=real_estate_market_facts.id`를 가지며, 제목은 `매매 실거래`, `전월세 실거래`, `매물 수`, `가격지수`처럼 사용자용 라벨로 표시합니다.
 - `eventType=reaction` 항목은 `sourceRefType=reaction_snapshot`, `sourceRefId=real_estate_reaction_snapshots.id`를 가지며, 제목은 `커뮤니티 기대 우세`, `커뮤니티 우려 우세`처럼 dominant reaction 중심으로 표시합니다.
