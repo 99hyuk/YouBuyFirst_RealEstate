@@ -7,11 +7,13 @@ import {
   fetchRealEstateTargetContent,
   type NewsroomFeedItem
 } from '../lib/realestate-content';
+import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
 
 type DetailTone = 'up' | 'down' | 'flat';
 
 type RealEstateTarget = {
   targetId: string;
+  targetType: 'region' | 'living_area' | 'complex';
   name: string;
   region: string;
   headline: string;
@@ -27,6 +29,10 @@ type RealEstateTarget = {
   reactions: { source: string; mentions: number; positive: number; negative: number; note: string }[];
   timeline: { time: string; title: string; detail: string }[];
   evidence: EvidenceLink[];
+  mapCenter?: { lat: number; lng: number };
+  mapLevel?: number;
+  preferredMapTargetId?: string;
+  mapMarkers?: ComplexMapMarker[];
 };
 
 type EvidenceLink = {
@@ -39,9 +45,112 @@ type EvidenceLink = {
 
 const route = useRoute();
 
+const mapoComplexMarkers: ComplexMapMarker[] = [
+  {
+    targetId: 'complex-mapo-raemian-prugio',
+    name: '마포래미안푸르지오',
+    address: '서울 마포구 아현동 일대',
+    region: '서울 마포',
+    lat: 37.5536,
+    lng: 126.9564,
+    tone: 'up',
+    price: '15.3억',
+    change: '+0.21%',
+    reaction: '학군·역세권 언급 증가',
+    provider: 'front fixture',
+    asOf: '2026-06-13',
+    dataStatus: 'mock 좌표',
+    note: '실제 단지 좌표 DB 연결 전, 상세 지도 UX 검증용 marker입니다.'
+  },
+  {
+    targetId: 'complex-gongdeok-xi',
+    name: '공덕자이',
+    address: '서울 마포구 공덕동 일대',
+    region: '서울 마포',
+    lat: 37.5452,
+    lng: 126.9508,
+    tone: 'flat',
+    price: '14.8억',
+    change: '+0.03%',
+    reaction: '전세 매물 확인 필요',
+    provider: 'front fixture',
+    asOf: '2026-06-13',
+    dataStatus: 'mock 좌표',
+    note: '단지 provider key와 실거래 API 매핑 전 후보 marker입니다.'
+  },
+  {
+    targetId: 'complex-ahyeon-raemian',
+    name: '아현래미안',
+    address: '서울 마포구 아현동 일대',
+    region: '서울 마포',
+    lat: 37.5571,
+    lng: 126.9518,
+    tone: 'down',
+    price: '13.9억',
+    change: '-0.06%',
+    reaction: '가격 부담·전세 우려 혼재',
+    provider: 'front fixture',
+    asOf: '2026-06-13',
+    dataStatus: 'mock 좌표',
+    note: '반응/시장 fact 연결 전 주변 비교용 marker입니다.'
+  }
+];
+
+const dongtanComplexMarkers: ComplexMapMarker[] = [
+  {
+    targetId: 'complex-dongtan-lotte-castle',
+    name: '동탄역 롯데캐슬',
+    address: '경기 화성시 동탄역권 일대',
+    region: '경기 동탄',
+    lat: 37.1991,
+    lng: 127.0986,
+    tone: 'up',
+    price: '12.2억',
+    change: '+0.19%',
+    reaction: 'GTX·역세권 언급 증가',
+    provider: 'front fixture',
+    asOf: '2026-06-13',
+    dataStatus: 'mock 좌표',
+    note: '카카오 지도 내장과 리포트 패널 상호작용 검증용 marker입니다.'
+  },
+  {
+    targetId: 'complex-dongtan-station-prugio',
+    name: '동탄역 푸르지오',
+    address: '경기 화성시 오산동 일대',
+    region: '경기 동탄',
+    lat: 37.2021,
+    lng: 127.0943,
+    tone: 'flat',
+    price: '10.6억',
+    change: '+0.02%',
+    reaction: '교통 기대와 입주 우려 혼조',
+    provider: 'front fixture',
+    asOf: '2026-06-13',
+    dataStatus: 'mock 좌표',
+    note: '실제 단지 좌표와 provider key 연결 전 후보 marker입니다.'
+  },
+  {
+    targetId: 'complex-dongtan-ubora',
+    name: '동탄역 반도유보라',
+    address: '경기 화성시 동탄역권 일대',
+    region: '경기 동탄',
+    lat: 37.1955,
+    lng: 127.1021,
+    tone: 'down',
+    price: '9.7억',
+    change: '-0.08%',
+    reaction: '입주 물량·전세 매물 우려',
+    provider: 'front fixture',
+    asOf: '2026-06-13',
+    dataStatus: 'mock 좌표',
+    note: '공급/전세 지표와 같이 대조할 후보 marker입니다.'
+  }
+];
+
 const targets: RealEstateTarget[] = [
   {
     targetId: 'region-seoul-mapo',
+    targetType: 'region',
     name: '마포구 아파트',
     region: '서울',
     headline: '전세 매물 체감과 학군 키워드가 같이 움직입니다',
@@ -74,10 +183,15 @@ const targets: RealEstateTarget[] = [
       { label: '실거래 공개 시스템', source: '국토교통부', url: 'https://rt.molit.go.kr/' },
       { label: '가격동향 통계', source: '한국부동산원', url: 'https://www.reb.or.kr/' },
       { label: '원문 후보 묶음', source: '네이버 카페', url: 'https://section.cafe.naver.com/' }
-    ]
+    ],
+    mapCenter: { lat: 37.5536, lng: 126.9564 },
+    mapLevel: 5,
+    preferredMapTargetId: 'complex-mapo-raemian-prugio',
+    mapMarkers: mapoComplexMarkers
   },
   {
     targetId: 'living-area-gyeonggi-dongtan-station',
+    targetType: 'living_area',
     name: '동탄역권',
     region: '경기',
     headline: 'GTX 기대와 입주 물량 우려가 동시에 붙었습니다',
@@ -110,12 +224,58 @@ const targets: RealEstateTarget[] = [
       { label: '교통 정책 자료', source: '국토교통부', url: 'https://www.molit.go.kr/' },
       { label: '전월세 신고 데이터', source: '공공데이터포털', url: 'https://www.data.go.kr/' },
       { label: '지역 커뮤니티 원문', source: '다음 카페', url: 'https://top.cafe.daum.net/' }
-    ]
+    ],
+    mapCenter: { lat: 37.1991, lng: 127.0986 },
+    mapLevel: 5,
+    preferredMapTargetId: 'complex-dongtan-lotte-castle',
+    mapMarkers: dongtanComplexMarkers
+  },
+  {
+    targetId: 'complex-mapo-raemian-prugio',
+    targetType: 'complex',
+    name: '마포래미안푸르지오',
+    region: '서울 마포',
+    headline: '학군·역세권 언급은 늘었지만 전세 체감은 분리 확인이 필요합니다',
+    summary: '단지명과 마래푸 별칭이 같이 언급되는 구간입니다. 좌표와 가격은 아직 fixture 기준이므로 실제 provider 연결 전까지 mock 상태를 유지합니다.',
+    indexChange: '+0.21%',
+    tradeVolume: '18건',
+    jeonseRatio: '66.1%',
+    supplySignal: '주변 입주 부담 낮음',
+    confidence: '78%',
+    tone: 'up',
+    keywords: ['마래푸', '학군', '공덕', '전세'],
+    metrics: [
+      { label: '실거래 흐름', value: '+0.21%', note: 'mock 단지 흐름', tone: 'up' },
+      { label: '전세가율', value: '66.1%', note: '전세 체감 대조 필요', tone: 'up' },
+      { label: '언급량', value: '44건', note: '단지군 TOP 3', tone: 'up' },
+      { label: '좌표 상태', value: 'mock', note: 'SDK prototype marker', tone: 'flat' }
+    ],
+    reactions: [
+      { source: '네이버 카페', mentions: 26, positive: 48, negative: 31, note: '마래푸 별칭과 학군 언급 반복' },
+      { source: '지역 블로그', mentions: 11, positive: 52, negative: 22, note: '공덕·아현 생활권 후기' },
+      { source: '유튜브 댓글', mentions: 7, positive: 39, negative: 36, note: '가격 부담과 전세 논쟁' }
+    ],
+    timeline: [
+      { time: '09:32', title: '단지 별칭 감지', detail: '마래푸·마포래미안푸르지오 alias가 같은 target 후보로 묶임' },
+      { time: '09:50', title: '학군 키워드 반복', detail: '지역 블로그와 카페에서 학군·역세권 키워드가 동시 등장' },
+      { time: '10:04', title: '전세 체감 확인 필요', detail: '전세 매물 감소 표현은 원문과 실거래 공개 지연을 분리해 봄' },
+      { time: '10:16', title: '지도 marker prototype', detail: '카카오맵 SDK 연결 전 mock 좌표 상태를 화면에 표시' }
+    ],
+    evidence: [
+      { label: '단지 실거래 공개 시스템', source: '국토교통부', url: 'https://rt.molit.go.kr/' },
+      { label: '단지 가격동향 확인 후보', source: '한국부동산원', url: 'https://www.reb.or.kr/' },
+      { label: '마래푸 원문 후보', source: '네이버 카페', url: 'https://section.cafe.naver.com/' }
+    ],
+    mapCenter: { lat: 37.5536, lng: 126.9564 },
+    mapLevel: 4,
+    preferredMapTargetId: 'complex-mapo-raemian-prugio',
+    mapMarkers: mapoComplexMarkers
   }
 ];
 
 const routeTargetId = computed(() => String(route.params.targetId ?? '').trim());
 const target = computed(() => targets.find((item) => item.targetId === routeTargetId.value));
+const selectedMapMarkerId = ref('');
 const confidenceValue = computed(() => (target.value ? Number.parseInt(target.value.confidence, 10) : 0));
 const evidenceLinks = ref<EvidenceLink[]>([]);
 const evidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
@@ -127,6 +287,12 @@ const evidenceStatusLabel = computed(() => {
   if (evidenceLoadState.value === 'loading') return 'content API 확인 중';
   return '원문 확인 필요';
 });
+const activeMapTargetId = computed(() => (
+  selectedMapMarkerId.value ||
+  target.value?.preferredMapTargetId ||
+  target.value?.mapMarkers?.[0]?.targetId ||
+  ''
+));
 
 const contentToEvidenceLink = (item: NewsroomFeedItem): EvidenceLink => ({
   label: item.title,
@@ -158,11 +324,16 @@ const refreshTargetContent = async () => {
   }
 };
 
+const selectMapMarker = (marker: ComplexMapMarker) => {
+  selectedMapMarkerId.value = marker.targetId;
+};
+
 onMounted(() => {
   void refreshTargetContent();
 });
 
 watch(() => target.value?.targetId, () => {
+  selectedMapMarkerId.value = '';
   void refreshTargetContent();
 });
 </script>
@@ -231,6 +402,15 @@ watch(() => target.value?.targetId, () => {
         <em>{{ metric.note }}</em>
       </article>
     </section>
+
+    <KakaoComplexMap
+      v-if="target.mapMarkers?.length"
+      :markers="target.mapMarkers"
+      :selected-target-id="activeMapTargetId"
+      :center="target.mapCenter"
+      :level="target.mapLevel"
+      @select="selectMapMarker"
+    />
 
     <section class="region-layout-grid">
       <article class="panel content-feed-card surface-data-card reaction-trend-panel region-reaction-card">

@@ -171,11 +171,20 @@ describe('front dashboard shell', () => {
     expect(target.text()).toContain('실거래가 흐름');
     expect(target.text()).toContain('전세가율');
     expect(target.text()).toContain('공급 신호');
+    expect(target.text()).toContain('단지 위치 레이어');
+    expect(target.text()).toContain('mock 좌표');
     expect(target.text()).toContain('시간대별 변화');
     expect(target.text()).toContain('커뮤니티 반응 추이');
     expect(target.text()).toContain('신호 신뢰도');
     expect(target.findAll('.vertical-timeline article')).toHaveLength(4);
     expect(target.findAll('.evidence-list a').length).toBeGreaterThanOrEqual(3);
+
+    const complexTarget = await mountAt('/realestate/targets/complex-mapo-raemian-prugio');
+    expect(complexTarget.find('.unsupported-region-state').exists()).toBe(false);
+    expect(complexTarget.text()).toContain('마포래미안푸르지오');
+    expect(complexTarget.text()).toContain('마래푸');
+    expect(complexTarget.text()).toContain('단지 위치 레이어');
+    expect(complexTarget.find('[data-testid="complex-map-inspector"]').text()).toContain('마포래미안푸르지오');
 
     const otherTarget = await mountAt('/realestate/targets/living-area-gyeonggi-dongtan-station');
     expect(otherTarget.text()).toContain('동탄역권');

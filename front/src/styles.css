@@ -4284,6 +4284,219 @@ a {
   color: var(--market-down);
 }
 
+.complex-map-panel {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  padding: 0 16px 16px;
+}
+
+.complex-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.38fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.complex-map-shell {
+  position: relative;
+  min-height: 420px;
+  overflow: hidden;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(24, 33, 48, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 33, 48, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, #f7fafc, #eef4fb);
+  background-size: 34px 34px, 34px 34px, auto;
+}
+
+.kakao-map-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.complex-map-shell.is-fallback .kakao-map-canvas {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.complex-map-fallback {
+  position: absolute;
+  inset: 0;
+  min-height: 100%;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.18)),
+    linear-gradient(115deg, rgba(240, 138, 43, 0.08), transparent 45%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.04), rgba(47, 111, 237, 0.08));
+}
+
+.complex-map-fallback::after {
+  position: absolute;
+  inset: 20px;
+  border: 1px dashed rgba(101, 116, 139, 0.24);
+  border-radius: 8px;
+  content: "";
+  pointer-events: none;
+}
+
+.complex-map-pin {
+  position: absolute;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 28px rgba(28, 43, 63, 0.12);
+  color: #17212b;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.complex-map-pin::before {
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 999px;
+  background: #94a3b8;
+  content: "";
+}
+
+.complex-map-pin span {
+  overflow: hidden;
+  max-width: 132px;
+  font-size: 11px;
+  font-weight: 840;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.complex-map-pin.up::before {
+  background: var(--market-up);
+}
+
+.complex-map-pin.down::before {
+  background: var(--market-down);
+}
+
+.complex-map-pin.flat::before {
+  background: #94a3b8;
+}
+
+.complex-map-pin:hover,
+.complex-map-pin:focus-visible,
+.complex-map-pin.active {
+  border-color: rgba(240, 138, 43, 0.58);
+  box-shadow: 0 18px 34px rgba(240, 138, 43, 0.18);
+  outline: none;
+  transform: translate(-50%, -50%) scale(1.03);
+}
+
+.complex-map-inspector {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.complex-map-inspector > span {
+  color: #8a96a6;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.complex-map-inspector strong {
+  color: #17212b;
+  font-size: 20px;
+  font-weight: 920;
+  line-height: 1.15;
+}
+
+.complex-map-inspector p {
+  margin: 0;
+  color: #657285;
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+
+.complex-map-inspector dl {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.complex-map-inspector dl div {
+  display: grid;
+  grid-template-columns: minmax(86px, 0.46fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid #e3eaf2;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.complex-map-inspector dt,
+.complex-map-inspector dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.complex-map-inspector dt {
+  color: #748197;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.complex-map-inspector dd {
+  overflow: hidden;
+  color: #243247;
+  font-size: 12px;
+  font-weight: 840;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.complex-map-inspector dd.up {
+  color: var(--market-up);
+}
+
+.complex-map-inspector dd.down {
+  color: var(--market-down);
+}
+
+.complex-map-inspector dd.flat {
+  color: #64748b;
+}
+
+.complex-map-inspector em {
+  display: block;
+  margin-top: 2px;
+  color: #8a96a6;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 720;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
 .market-fact-meta-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -10087,6 +10300,19 @@ a {
   .region-hero,
   .region-metric-board {
     grid-template-columns: 1fr;
+  }
+
+  .complex-map-panel {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .complex-map-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .complex-map-shell {
+    min-height: 360px;
   }
 
   .target-board-top,

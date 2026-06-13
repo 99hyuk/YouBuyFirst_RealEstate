@@ -51,8 +51,9 @@
 - 클릭성: 지도는 화면에서 충분히 크게 보이도록 세로 stage를 키우고, 지역별 hit area를 실제 도형보다 넓게 둠
 - heat 표현: 빨강=상승, 파랑=하락, 변화폭이 클수록 더 진하고 밝게 표현해 한눈에 강약을 구분
 - 리포트 밀도: 선택 지역 리포트는 언급량 급증, 커뮤니티 source mix, 핵심 쟁점, metric card, 후속 단지 후보까지 세로형 보고서로 제공
-- 단지 단위: 현재는 후보 단지 목록만 보여주고, 좌표·별칭 매핑 후 단지 클릭 리포트를 후속 구현
+- 단지 단위: `/realestate/targets/:targetId` 상세 화면에 카카오맵 SDK 내장 prototype을 붙이고, SDK 비활성화/key missing/test 환경에서는 도식화 fallback으로 marker와 선택 패널을 보여줌
 - 내장 지도: 카카오맵 SDK key는 `front/.env.local`의 `VITE_KAKAO_JAVASCRIPT_KEY`에서만 읽고, key missing 상태에서는 mock/stale 배지를 표시
+- 단지 marker: `targetId`, 단지명, 주소, 좌표, 가격 흐름, 반응 요약, `provider/asOf/dataStatus`를 함께 표시하며, fixture 좌표는 `mock 좌표`로 드러냄
 - 닫기 동작: 리포트 패널을 닫으면 지도 단독 중앙 상태로 복귀
 
 ## 상태와 빈 화면
@@ -90,6 +91,7 @@
 - `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답을 해당 지역/단지와 연결된 뉴스, 리포트, 영상, 링크 카드 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=` 응답을 정책, 공급, 교통, 뉴스/컬럼 맥락 이벤트, `market_fact`, `reaction`, `content` 시간축 입력으로 사용합니다. 이벤트는 가격 변화의 직접 원인처럼 쓰지 않고 함께 관찰된 맥락 또는 관측 사실로 표시합니다.
 - 프론트 상세 화면은 route의 `targetId`를 그대로 backend API에 넘깁니다. 예시는 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`처럼 `real_estate_targets.id`와 같은 값입니다. API 응답이 있으면 근거 링크 후보를 승인된 content row로 교체하고, 없거나 실패하면 기존 mock evidence를 `원문 확인 필요` 상태로 유지합니다.
+- 단지 위치 레이어 1차 구현은 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`에서 front fixture marker를 사용합니다. 실제 좌표 DB/API 연결 전까지 marker `dataStatus`는 `mock 좌표`로 표시합니다.
 - content row는 원문 전문을 복제하지 않고 제목, 출처, URL, 발행일/metric label만 근거 링크 카드에 표시합니다.
 - `eventType=market_fact` 항목은 `sourceRefType=market_fact`, `sourceRefId=real_estate_market_facts.id`를 가지며, 제목은 `매매 실거래`, `전월세 실거래`, `매물 수`, `가격지수`처럼 사용자용 라벨로 표시합니다.
 - `eventType=reaction` 항목은 `sourceRefType=reaction_snapshot`, `sourceRefId=real_estate_reaction_snapshots.id`를 가지며, 제목은 `커뮤니티 기대 우세`, `커뮤니티 우려 우세`처럼 dominant reaction 중심으로 표시합니다.
@@ -100,7 +102,7 @@
 
 ## 기획자 확인 필요
 
-- 지역과 단지를 같은 상세 화면에서 처리할지, type별 섹션을 다르게 둘지
+- 지역과 단지를 같은 상세 화면에서 처리하되, 단지 상세의 내장 지도/선택 패널이 커질 경우 type별 하위 섹션을 분리할지
 - 유사 과거 상황을 기본 노출할지 하위 panel로 둘지
 - 평가 문구의 톤을 neutral/dry/watch/sharp 중 어디까지 허용할지
 - 지도 경계 데이터의 기준을 행정구역, 법정동, 생활권 중 어디까지 둘지
@@ -108,6 +110,7 @@
 
 ## 변경 로그
 
+- 2026-06-13: 동/단지 상세 카카오맵 SDK 내장 prototype, marker 선택 패널, mock 좌표 fallback 표시 기준 추가.
 - 2026-06-13: 전국~동은 자체 도식화 heatmap, 동/단지 상세부터는 카카오맵 SDK 내장 지도로 보는 하이브리드 기준 추가.
 - 2026-06-12: 지역/단지 상세 근거 링크 후보를 target content API 우선 live/fallback 구조로 연결.
 - 2026-06-01: `/realestate/map` 1차 구현 방향과 지도-리포트 split interaction 추가, 실제 시도 TopoJSON 기반 3D 지도 방향 반영
