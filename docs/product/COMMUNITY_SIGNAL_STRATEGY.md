@@ -63,6 +63,8 @@
 
 벡터DB는 초기 필수 저장소가 아닙니다. 먼저 Python batch에서 임베딩/클러스터링 실험을 하고, 아래 기능이 필요해질 때 Qdrant, pgvector 같은 저장소를 검토합니다.
 
+벡터DB의 역할은 과거 유사 상황 검색입니다. 지역/단지 식별, alias matcher, 실거래가 계산, 관심도 점수 산출의 정본으로 쓰지 않습니다. 예를 들어 현재 어떤 단지에서 `전세 불안 + 재건축 기대 + 매물 감소 + 커뮤니티 언급량 증가`가 동시에 나타났다면, 과거에 비슷한 반응 패턴이 있었던 target/window를 찾고 그 이후 실거래가, 전세가, 매물 흐름을 비교하는 데 사용합니다.
+
 - 현재 window와 비슷한 과거 반응 검색
 - 비슷한 `issueMix`를 가진 다른 지역/단지 검색
 - 같은 정책/교통/전세 이슈가 여러 source로 퍼진 흐름 검색
@@ -84,6 +86,44 @@ RAG가 맡지 않는 일:
 - 실시간 수집 여부 판단
 - 실거래/전세/매물 원천 계산
 - 매수, 매도, 청약, 대출 행동 판단
+
+## 최근 이슈 검색 API
+
+SerpApi 같은 검색 API는 최신 뉴스, 정책, 개발, 교통, 금리, 대출, 청약 이슈 후보를 찾는 보조 채널입니다. 검색 결과 수, 순위, 노출량은 편향이 크므로 지역/단지 관심도 점수나 반응 지표의 원천으로 쓰지 않습니다.
+
+허용 용도:
+
+- 최근 이슈 후보 discovery
+- 근거 링크 보강
+- 뉴스/컬럼/정책 metadata 후보 생성
+- 에이전트 평가 입력의 `recentIssues` 근거 보강
+
+저장 후보:
+
+- 제목
+- 출처
+- 날짜
+- 링크
+- 관련 키워드
+- 검색 provider와 query
+- target 후보와 confidence
+
+현재 구현:
+
+- pipeline 명령: `realestate-recent-issues`, `realestate-recent-issues-push`
+- 검색 provider: `serpapi:google_news`
+- SerpApi 호출 기본값: `engine=google`, `tbm=nws`, `google_domain=google.co.kr`, `gl=kr`, `hl=ko`, `output=json`
+- 저장 경로: `POST /internal/realestate/content-items`
+- 저장 상태: `sourceId=serpapi:google_news`, `linkType=search_candidate`, `reviewState=candidate`, `dataStatus=candidate`
+- query는 `metricLabel`에 `query: {지역/단지명} {쟁점 키워드} 부동산` 형태로 남깁니다.
+- 후보 링크는 승인 전까지 target timeline 정본으로 materialize하지 않습니다.
+
+금지 용도:
+
+- 검색 결과 수를 관심도 점수로 변환
+- 검색 순위를 기대/우려 비율로 해석
+- 검색 API만으로 정책 영향권을 확정
+- 원문 전문 저장 또는 재게시
 
 ## 유사 과거 상황 비교
 
@@ -117,10 +157,10 @@ RealEstateReactionSnapshot
 
 ## 충돌 검토 결과
 
-- 기존 주식 프로젝트의 `개미 심리 지수`, `StockReactionWindow`, `ForwardReturn`, `BacktestRun`은 부동산 프로젝트의 직접 정본이 아닙니다.
-- 부동산에서는 `RealEstateReactionSnapshot`, `RealEstateMarketFact`, `EvidenceLog`, `similar historical window`를 우선합니다.
+- 부동산에서는 `RealEstateReactionSnapshot`, `RealEstateMarketFact`, `EvidenceLog`, `similar historical window`를 정본으로 둡니다.
 - 기존 `sourceMoods` API 개념은 운영/내부 분석에는 유지할 수 있지만, 사용자-facing 필드명으로 그대로 쓰지 않습니다.
 - 벡터DB와 RAG는 실시간 matcher나 가격 계산기가 아닙니다. `collect -> match target -> classify reaction -> aggregate -> issueMix -> similar-window/RAG` 순서를 유지합니다.
+- SerpApi 같은 검색 API는 관심도 지표가 아니라 최근 이슈 후보와 근거 링크를 찾는 보조 채널입니다.
 
 ## 구현 순서
 

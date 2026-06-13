@@ -27,6 +27,18 @@
 
 향후 코드/DB 이름을 정리할 때는 `reactionDirection`을 우선 후보로 둡니다.
 
+1차 룰 기반 쟁점 분류:
+
+- `transport`: GTX, 지하철, 역세권, 교통, 개통, 노선, 철도
+- `jeonse`: 전세, 역전세, 전세난, 보증금
+- `loan_rate`: 대출, 금리, DSR, 이자, 상환
+- `supply`: 미분양, 공급과잉, 입주폭탄, 물량 부담
+- `policy`: 규제, 정책, 토허제, 세금
+- `school`: 학군, 초품아, 학교
+- `redevelopment`: 재건축, 재개발, 정비구역
+
+이 분류는 AI 최종 판단이 아니라 `realestate-reaction-observations`의 baseline입니다. OpenAI provider가 붙더라도 출력은 `reactionDirection`과 `issues` shape를 유지합니다.
+
 ## 피해야 할 표현
 
 - `추천`, `사라`, `팔아라`

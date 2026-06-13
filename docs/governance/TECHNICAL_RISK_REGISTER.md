@@ -1,6 +1,6 @@
 # 기술/제품 리스크 등록부
 
-이 문서는 부동산 전용 프로젝트에서 반복적으로 확인해야 할 기술, 제품, 운영 리스크를 모읍니다. 오래된 주식/모의투자 리스크는 archive나 legacy reference로만 봅니다.
+이 문서는 부동산 전용 프로젝트에서 반복적으로 확인해야 할 기술, 제품, 운영 리스크를 모읍니다. 부동산 모델과 맞지 않는 레거시 런타임 리스크는 이 repo의 active 기준에서 제거된 상태로 봅니다.
 
 ## RISK-001. 부동산 서비스가 행동 지시처럼 보임
 
@@ -74,13 +74,13 @@
 - 방어: 최소 2개 이상의 독립 근거와 dataQuality가 있을 때만 강한 톤을 허용합니다.
 - 확인: `summary`, `evidence`, `caveats`, `asOf`, `dataQuality`가 서로 맞는지 리뷰합니다.
 
-## RISK-010. legacy stock 코드와 부동산 모델 혼합
+## RISK-010. 레거시 코드와 부동산 모델 혼합
 
 - 관련 영역: realestate, ops, backend, pipeline, ui
-- 증상: `stock`, `symbol`, `quote`, `simulation` 모델을 부동산에 그대로 일반화합니다.
+- 증상: 부동산 target, market fact, evidence log 기준과 맞지 않는 식별자, 가격 snapshot, 거래 모델이 다시 들어옵니다.
 - 영향: 도메인 모델이 오염되고 나중에 리팩터링 비용이 커집니다.
-- 방어: region/complex/market fact/evidence log를 별도 모델로 두고, legacy 영역은 참고/비활성으로 분리합니다.
-- 확인: 새 코드와 문서에서 주식 모델명이 active contract로 들어가지 않았는지 검색합니다.
+- 방어: region/complex/market fact/evidence log를 별도 모델로 두고, 부동산과 맞지 않는 레거시는 active runtime에 보존하지 않습니다.
+- 확인: 새 코드와 문서에서 부동산 정본과 맞지 않는 모델명이 active contract로 들어가지 않았는지 검색합니다.
 
 ## RISK-011. 공공데이터 실시간 표기 오해
 
@@ -102,4 +102,4 @@
 
 - 새 리스크가 발견되면 원인, 영향, 방어, 확인 방법을 함께 추가합니다.
 - 실제 장애 복구 기록은 `docs/governance/TROUBLESHOOTING_GUIDE.md`와 PR/Notion 작업 로그에 남깁니다.
-- 오래된 주식 리스크는 이 문서에 계속 누적하지 않고 archive나 legacy reference로 분리합니다.
+- 제거된 레거시 런타임 리스크는 이 문서에 계속 누적하지 않고 git history에서만 확인합니다.

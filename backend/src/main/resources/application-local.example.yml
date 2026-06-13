@@ -1,0 +1,10 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+app:
+  realestate:
+    public-data:
+      # Copy this file to application-local.yml and keep the real key out of git.
+      data-go-service-key: "put-your-data-go-service-key-here"

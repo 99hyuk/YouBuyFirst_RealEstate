@@ -1,2 +1,2 @@
-﻿"""Community crawler adapters."""
+"""Community crawler adapters."""
 

@@ -37,19 +37,34 @@
 
 ## 현재 우선순위
 
-1. 부동산 source registry 후보 30개 내외를 `disabled` 상태로 정리
-2. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
-3. 지역/단지 alias matcher가 필요한 입력 필드 정리
-4. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
-5. pipeline이 backend readiness를 기다리도록 개선
+1. `REAL_ESTATE_SOURCE_CANDIDATES.md`의 30개 내외 seed 후보를 source registry seed로 옮기기
+2. 다음 카페 공개 `bbs_list` 후보 1곳 source-specific 확인
+3. P0 후보의 source별 약관/게시판 단위 최종 정책 승인
+4. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
+5. 지역/단지 alias matcher가 필요한 입력 필드 정리
+6. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
+7. pipeline이 backend readiness를 기다리도록 개선
 
 source policy는 `CrawlTarget`보다 상위 게이트이고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/target을 언제 다시 수집할지 정하는 실행 단위입니다.
 
 추가 커뮤니티 후보는 바로 adapter를 만들지 않습니다. 먼저 `disabled` source 후보로 두고 robots/약관, 공개 목록 접근성, 글 빈도, 조회/댓글 필드, 광고성/홍보성 노이즈, 지역/단지 인식 난이도를 검토한 뒤 `local-research-only` 또는 구현 후보로 올립니다.
 
+현재 pipeline은 source 후보 JSONL을 바로 크롤링하지 않고 먼저 실행 manifest로 검수합니다.
+
+```powershell
+python -m youbuyfirst_pipeline.main realestate-crawl-target-manifest `
+  --realestate-source-candidates-jsonl .\source-candidates.jsonl `
+  --realestate-crawl-target-manifest-output .\crawl-targets.local.json `
+  --crawl-runtime-environment local
+```
+
+- `local` 런타임에서는 `PPOMPPU`, `DCINSIDE`처럼 source policy가 `local-research-only`인 P0 게시판형 후보만 manifest에 들어갈 수 있습니다.
+- `public` 런타임에서는 `local-research-only` 후보가 `skipped`로 남고 외부 요청 대상이 되지 않습니다.
+- `excluded-*`, `disabled`, 로그인 필요, 공개 목록 미확인, adapter 미지원 source는 manifest의 `items`가 아니라 `skipped`에 사유와 함께 남깁니다.
+
 ## 부동산 source inventory
 
-부동산은 주식보다 정보가 흩어져 있으므로 초기부터 source discovery를 별도 작업으로 봅니다. 목표는 adapter 30개를 바로 만드는 것이 아니라, 30개 내외 후보를 registry에 넣고 공개 접근 가능성, 정책 리스크, 신호 품질을 비교하는 것입니다.
+부동산은 일반 금융 커뮤니티보다 정보가 흩어져 있으므로 초기부터 source discovery를 별도 작업으로 봅니다. 목표는 adapter 30개를 바로 만드는 것이 아니라, 30개 내외 후보를 registry에 넣고 공개 접근 가능성, 정책 리스크, 신호 품질을 비교하는 것입니다.
 
 | 그룹 | 후보 수 | 초기 상태 | 확인 기준 |
 | --- | --- | --- | --- |
@@ -130,6 +145,12 @@ watermark는 run이 성공적으로 끝났거나 partial이라도 저장된 새 
 - target이 확인된 글만 `reactionDirection` 분류 입력으로 넘깁니다.
 
 별칭 DB는 크롤링의 필수 입력입니다. 공식 단지명, 줄임말, 커뮤니티식 별칭, 오타, 인근 생활권 표현을 모두 후보로 받을 수 있지만, `approved` 전에는 ranking과 정식 snapshot에 섞지 않습니다.
+
+백엔드 alias registry는 `GET /internal/realestate/aliases?reviewState=approved&ambiguous=false`로 matcher용 정본을 내보낼 수 있습니다. pipeline은 JSONL 입력을 기본으로 유지하되, `--realestate-use-backend-aliases`를 주면 내부 API에서 승인된 비모호 alias를 읽습니다.
+
+현재 pipeline 1차 matcher는 `realestate-target-matches` 명령으로 실행합니다. 입력은 제한 게시글 JSONL과 별칭 JSONL 또는 백엔드 alias export이며, 출력은 `matched`, `targetType`, `targetId`, `matchedText`, `matchSource`, `confidence`, `reviewState`를 가진 중간 결과입니다. 이 단계는 반응 방향을 판단하지 않고, 다음 AI/룰 분류 단계로 넘길 target 후보만 확정합니다.
+
+source별 보강 상태는 `realestate-alias-coverage` 명령으로 확인합니다. 출력은 source별 `matchRate`, `topTargets`, `unmatchedExamples`, `candidateAliases`를 포함하며, 지역 관심도 점수가 아니라 alias DB와 crawler source 품질을 점검하는 운영 리포트로만 사용합니다.
 
 ## 확산 레이어와 제한 댓글
 

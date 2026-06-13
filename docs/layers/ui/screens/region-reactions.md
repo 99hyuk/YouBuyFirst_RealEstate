@@ -5,9 +5,9 @@
 - Parent: root
 - Route 정보: `/realestate/reactions?view=`
 - Child screens:
-  - `region-detail`: `/realestate/targets/:symbol`
+  - `region-detail`: `/realestate/targets/:targetId`
 
-> `/stocks`, `/communities`는 기존 링크 호환을 위한 legacy redirect입니다. 새 구현과 문서는 `/realestate/reactions`를 기준으로 둡니다.
+> `/communities`와 `/agents` 호환 route는 제거되었습니다. 지역 반응과 모의 에이전트 근거 로그는 `/realestate/reactions` 화면을 기준으로 둡니다.
 
 ## 화면 목적
 
@@ -37,7 +37,7 @@
 | --- | --- | --- |
 | `rankingGroups[].id` | layers/ui/backend | `regions`, `complexes` 같은 ranking 그룹 |
 | `rankingGroups[].rows[].rank` | indicator/community | 현재 순위 |
-| `rankingGroups[].rows[].symbol` | realestate/backend | 내부 target id. 예: `SEOUL-MAPO` |
+| `rankingGroups[].rows[].targetId` | realestate/backend | 내부 target id 또는 화면 slug. 예: `SEOUL-MAPO` |
 | `rankingGroups[].rows[].name` | realestate/backend | 지역/단지 표시명 |
 | `rankingGroups[].rows[].market` | realestate/backend | 시도, 시군구, 생활권, 단지군 |
 | `rankingGroups[].rows[].mentions` | indicator/community | 기간 내 언급량 |
@@ -49,6 +49,13 @@
 | `signalTiles` | indicator/community | 지금 뜨는 지역, 우려 증가 지역 등 핵심 타일 |
 | `agentLogs` | agent/backend | 에이전트 판단 근거와 상태 |
 
+현재 구현:
+
+- `GET /api/realestate/reactions/rankings?type=region&windowMinutes=60` 응답을 지역 언급량 랭킹에 우선 표시합니다.
+- `type=complex` 응답도 같은 adapter로 받을 수 있으며, API가 비어 있거나 실패하면 기존 fixture 행을 fallback으로 둡니다.
+- 응답의 `reactionDirectionRatio.expectation/concern`, `issueMix`, `confidence`, `sourceCount`, `stale`을 화면 행의 기대/우려 비율, 쟁점, 신뢰도/지연 문구로 변환합니다.
+- 가격 변화가 확인되지 않은 API 행은 가격 상승률처럼 보정하지 않고 `시장 데이터 대기`, `관찰`로 표시합니다.
+
 ## 기획 확인 필요
 
 - 별칭 DB는 시군구, 생활권, 역세권, 단지명, 커뮤니티 은어를 어느 수준까지 포함할지.
@@ -58,5 +65,8 @@
 ## 변경 로그
 
 - 2026-06-01: 기존 ranking 화면을 지역·단지 반응 ranking 화면으로 전환.
-- 2026-06-01: `/stocks`와 `/communities`를 `/realestate/reactions` 표준 화면으로 합치고 legacy redirect로 전환.
+- 2026-06-13: `/communities`, `/agents` 호환 route와 별도 legacy Screen Brief를 제거하고 `/realestate/reactions`를 단일 정본으로 고정.
+- 2026-06-12: 레거시 반응 route를 제거하고 `/realestate/reactions` 표준 화면만 active route로 유지.
 - 2026-06-01: ranking table과 중복되던 커뮤니티별 반응 비율 표와 반응/공식지표 비교 그래프를 제거.
+- 2026-06-11: 지역/단지 랭킹 테이블을 `GET /api/realestate/reactions/rankings` 우선 표시와 fixture fallback 구조로 연결.
+- 2026-06-12: 랭킹 행과 상세 링크의 식별자를 부동산 `targetId` 기준으로 정리.

@@ -14,20 +14,20 @@
 
 ## 구현 스냅샷
 
-- 이 repo는 이제 주식이 아니라 부동산 서비스만 담당합니다.
+- 이 repo는 이제 부동산 서비스만 담당합니다.
 - root `AGENTS.md`는 부동산 전용 라우터입니다.
 - 제품 방향 정본은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`와 `docs/product/FINAL_PRODUCT_PLAN.md`입니다.
 - 핵심 구현 기준은 `docs/product/real-estate-one-page-plan.html`과 `docs/product/CORE_IMPLEMENTATION_SCOPE.md`입니다.
 - `docs/domains/realestate/`가 새 주 도메인입니다.
-- `stock`, `market`, `simulation`은 기존 주식 프로젝트에서 넘어온 참고/비활성 영역입니다. 첫 정렬 단계에서는 삭제하지 않습니다.
-- front는 아직 복제된 주식 mock 화면을 많이 포함합니다. 새 화면 기준은 realestate dashboard와 target detail Screen Brief로 재정렬해야 합니다.
+- 기존 금융 서비스 전용 구현은 active runtime에서 제거했고, 필요한 맥락은 git history와 결정 로그로만 확인합니다.
+- front는 부동산 화면 기준으로 재정렬했습니다. 남은 화면 변경은 realestate dashboard와 target detail Screen Brief를 기준으로 진행합니다.
 
 ## 최근 결정
 
 - 부동산은 후순위 버티컬이 아니라 이 프로젝트의 주 도메인입니다.
-- 기존 YouBuyFirst의 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 근거 로그 구조는 재사용합니다.
-- 주식의 종목/시세/모의투자 모델을 부동산에 억지로 일반화하지 않습니다.
-- 주식과 기술 흐름은 거의 같지만, 부동산은 대상이 훨씬 쪼개져 있고 지역 단위 상승, 정책, 교통, 공급, 대출, 청약, 학군, 재건축 이벤트에 민감합니다.
+- 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 근거 로그 구조는 부동산 target 기준으로 운영합니다.
+- 화면과 API는 지역/단지, 시장 사실, 반응 지표, 근거 로그 중심으로 정렬합니다.
+- 부동산은 대상이 훨씬 쪼개져 있고 지역 단위 상승, 정책, 교통, 공급, 대출, 청약, 학군, 재건축 이벤트에 민감합니다.
 - 따라서 region/complex/living_area/policy_area target graph와 policy timeline은 1차 구현 범위입니다.
 - 사용자는 요즘 언급 많은 지역/단지, 주요 쟁점, 시장 사실 타임라인, 유사 과거 상황, 에이전트 근거 로그를 봅니다.
 - 특정 매수, 매도, 청약, 대출 행동을 권유하거나 가격 상승을 단정하는 표현은 쓰지 않습니다.
@@ -60,4 +60,4 @@
 - 부동산 source registry 후보 30개 내외 정리
 - 지역/단지 alias seed와 검수 기준 정리
 - `pipeline/src/youbuyfirst_pipeline/realestate/` matcher 초안 설계
-- 기존 stock/market/simulation 문서와 코드를 legacy reference로 표시하고 후속 삭제 후보 목록 작성
+- 기존 금융 서비스 전용 코드와 문서는 active runtime에서 제거하고 부동산 정본 문서만 유지

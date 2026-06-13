@@ -13,30 +13,37 @@
 
 ## 현재 고민 목록
 
-### 2026-06-01. 이 repo는 주식이 아니라 부동산 서비스만 담당한다
+### 2026-06-12. 제품 정체성은 수요자 반응 기반 부동산 시장 해석 서비스다
 
-- 배경: `C:\agents\YouBuyFirst`를 복제해 새 프로젝트를 만들었지만, 복제본의 활성 문서에는 주식, 종목, 시세, 모의투자 중심 표현이 많이 남아 있었습니다.
-- 현재 판단: 부동산은 후순위 버티컬이 아니라 이 repo의 주 도메인입니다. 기존 YouBuyFirst의 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 근거 로그 구조는 재사용하지만, 주식 도메인 안에 부동산을 넣지 않습니다.
-- 설계 기준: root `AGENTS.md`, `docs/current/*`, `docs/product/*`, `docs/layers/ops/*`, `docs/domains/realestate/*`는 부동산 중심으로 정렬합니다. `stock`, `market`, `simulation`은 당장 삭제하지 않고 참고/비활성 영역으로 분류합니다.
-- 남은 확인: code package와 front route까지 부동산 기준으로 옮길 때 기존 stock 코드의 삭제/공통화/참고 보관 범위를 별도 PR로 결정합니다.
+- 배경: 초기 참고 구조는 사람들의 반응을 시장 해석에 연결하는 방식이었습니다. 부동산 프로젝트는 이를 지역/단지 수요자 반응 중심으로 재정의합니다.
+- 현재 판단: 너나사 부동산은 `수요자 반응 기반 부동산 시장 해석 서비스`입니다. 커뮤니티/댓글/뉴스/컬럼에서 남는 관심, 기대, 불안, 의심을 지역/단지 지표로 만들고, 시장 사실, 유사 과거, 최근 이슈를 함께 비교해 근거가 남는 평가를 제공합니다.
+- 설계 기준: 벡터DB는 과거 유사 상황 검색용이며 target 식별이나 가격 계산의 정본이 아닙니다. SerpApi 같은 검색 API는 최근 이슈 후보와 근거 링크 보강용이며 검색 결과 수를 관심도 지표로 쓰지 않습니다. Langfuse는 LLM 호출 관측 도구이고 판단 정본은 DB의 evidence log와 snapshot입니다.
+- 남은 확인: `realestate-eval-v1` 입력/출력 schema, 최근 이슈 후보 저장 모델, 유사 과거 검색 단위, Langfuse trace와 DB evidence log 연결 key를 정합니다.
+
+### 2026-06-01. 이 repo는 부동산 서비스만 담당한다
+
+- 배경: 새 프로젝트의 active 문서와 코드가 부동산 전용 모델로 정리되어야 했습니다.
+- 현재 판단: 부동산은 후순위 버티컬이 아니라 이 repo의 주 도메인입니다. 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 근거 로그 구조는 부동산 target 기준으로만 운영합니다.
+- 설계 기준: root `AGENTS.md`, `docs/current/*`, `docs/product/*`, `docs/layers/ops/*`, `docs/domains/realestate/*`는 부동산 중심으로 정렬합니다. 부동산에 맞지 않는 구현은 active runtime에 보존하지 않고 git history로만 확인합니다.
+- 남은 확인: code package와 front route는 부동산 기준으로 옮기고, 공통 패턴만 유지합니다.
 
 ### 2026-06-01. 부동산 반응 지표를 어떻게 만들지
 
-- 배경: 주식 프로젝트의 `개미 심리 지수`를 그대로 가져오면 부동산에서 행동 지시나 투자 판단처럼 보일 수 있습니다.
+- 배경: 반응 지표를 점수 하나로 표현하면 부동산에서 행동 지시나 투자 판단처럼 보일 수 있습니다.
 - 현재 판단: 부동산 화면의 대표값은 `지역/단지 반응 지표`, `기대/우려`, `쟁점 비율`, `표본 신뢰도`로 둡니다. 점수 하나로 행동을 유도하지 않고, 반응과 시장 사실을 함께 관찰하게 만듭니다.
 - 설계 기준: `RealEstateReactionSnapshot`은 target/window 단위 mention count, expectation score, concern score, issueMix, sourceCount, sourceSkew, confidence를 가집니다.
 - 남은 확인: expectation/concern 산식, 낮은 표본 수 숨김 기준, source skew 경고 기준, 1일/1주/1개월 window를 정합니다.
 
 ### 2026-06-01. 실거래/전세/매물 데이터 freshness를 어떻게 표현할지
 
-- 배경: 주식 quote freshness와 부동산 market fact freshness는 성격이 다릅니다. 실거래와 전세, 매물, 정책 이벤트는 갱신 주기와 지연이 서로 다릅니다.
+- 배경: 부동산 market fact는 원천별 갱신 주기와 공개 지연이 서로 다릅니다.
 - 현재 판단: 국토교통부 아파트 매매/전월세 실거래가 API는 공공데이터포털에서 제공되고 업데이트 주기가 `실시간`으로 표시됩니다. 그래도 제품에서는 매일 확정 공시처럼 말하지 않고, 신고/공개/수집 시각을 분리합니다.
 - 설계 기준: `RealEstateMarketFact`는 factType, observedAt, valueJson, provider, providerDataset, asOf, ingestedAt, sourceUpdatedAt, stale, dataStatus를 가집니다.
 - 남은 확인: API별 실제 응답 필드, 서비스키/트래픽 제한, provider별 지연 기준, UI stale 배지 문구, mock과 실제 데이터 전환 기준을 정합니다.
 
 ### 2026-06-01. 부동산 source는 30개 내외 후보 registry로 먼저 관리한다
 
-- 배경: 부동산 정보는 주식보다 흩어져 있고, 네이버 카페/다음 카페 같은 커뮤니티에도 지역/단지 반응이 많을 가능성이 큽니다.
+- 배경: 부동산 정보는 일반 금융 커뮤니티보다 흩어져 있고, 네이버 카페/다음 카페 같은 커뮤니티에도 지역/단지 반응이 많을 가능성이 큽니다.
 - 현재 판단: adapter를 바로 30개 만드는 것이 아니라 `crawl_sources` registry에 후보를 먼저 쌓고, 공개 접근성/robots/약관/로그인 필요 여부/신호 품질을 검토합니다.
 - 설계 기준: source 상태는 `disabled`, `local-research-only`, `public-demo-only`, `enabled`로 관리합니다. 로그인, CAPTCHA, 프록시, fingerprint 우회가 필요한 source는 구현하지 않습니다.
 - 남은 확인: 30개 내외 후보 목록, source별 게시판 id, 예상 글 빈도, parser 난이도, alias matcher에 필요한 별칭 seed를 정합니다.
@@ -57,14 +64,14 @@
 
 ### 2026-06-01. 에이전트 문구 수위를 어떻게 잡을지
 
-- 배경: 기존 주식 프로젝트에는 종목 상태를 강하게 표현하는 팩트폭격/roast 방향이 있었습니다. 부동산에서는 특정 지역/단지에 대한 단정이 더 민감할 수 있습니다.
+- 배경: 부동산에서는 특정 지역/단지에 대한 단정적 표현이 민감할 수 있습니다.
 - 현재 판단: 부동산 에이전트는 행동 지시나 가격 단정을 하지 않고, `관찰 요약`, `근거`, `caveat`, `데이터 상태`를 남깁니다. 재미있는 톤을 쓰더라도 대상은 사용자가 아니라 데이터의 불일치나 표본 부족이어야 합니다.
 - 설계 기준: `docs/domains/agent/REAL_ESTATE_EVALUATION_COPY.md`에서 사용자용 평가 문구 기준을 관리합니다.
 - 남은 확인: 공개 화면 기본 톤과 데모용 강한 톤을 분리할지, 개인화 화면에서는 어떤 문구를 금지할지 정합니다.
 
 ### 2026-06-01. 너나사 시리즈 UI는 패턴을 공유하고 accent만 바꾼다
 
-- 배경: 사용자는 이 서비스를 기존 주식 서비스와 완전히 별개의 브랜드가 아니라 `너나사 주식`, `너나사 부동산`처럼 이동 가능한 시리즈로 보고 싶어 합니다.
-- 현재 판단: UI shell, nav, 검색, 오른쪽 rail, dashboard grid, card, timeline, table 패턴은 주식과 부동산이 최대한 공유합니다. 부동산은 대표 accent만 blue에서 warm orange 계열로 바꿉니다.
-- 설계 기준: `--brand`는 부동산 active 화면에서 `--series-realestate`를 가리키고, `--series-stock`은 기존 주식 reference의 accent로 남깁니다.
+- 배경: 사용자는 이 서비스를 `너나사 부동산`이라는 시리즈형 제품으로 보고 싶어 합니다.
+- 현재 판단: UI shell, nav, 검색, 오른쪽 rail, dashboard grid, card, timeline, table 패턴은 너나사 시리즈의 일관성을 유지합니다. 부동산은 대표 accent를 warm orange 계열로 둡니다.
+- 설계 기준: `--brand`는 부동산 active 화면에서 `--series-realestate`를 가리킵니다.
 - 남은 확인: 실제 front CSS에서 브랜드 blue와 의미색 blue를 분리한 뒤, token 교체와 screenshot QA를 진행합니다.

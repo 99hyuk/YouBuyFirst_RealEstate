@@ -6,13 +6,10 @@ import com.youbuyfirst.backend.crawl.CrawlTargetStatus;
 import java.time.Instant;
 
 public record CrawlTargetView(
-        Long instrumentId,
         String source,
         String targetId,
         String targetKind,
         CrawlTargetStatus status,
-        String market,
-        String symbol,
         String url,
         String label,
         int priority,
@@ -28,13 +25,10 @@ public record CrawlTargetView(
 ) {
     public static CrawlTargetView from(CrawlTarget target) {
         return new CrawlTargetView(
-                target.getInstrumentId(),
                 target.getSource(),
                 target.getTargetId(),
                 target.getTargetKind(),
                 target.getStatus(),
-                target.getMarket(),
-                target.getSymbol(),
                 target.getUrl(),
                 target.getLabel(),
                 target.getPriority(),

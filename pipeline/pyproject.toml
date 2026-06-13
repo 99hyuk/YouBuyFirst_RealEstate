@@ -1,19 +1,16 @@
 [project]
 name = "youbuyfirst-pipeline"
 version = "0.1.0"
-description = "Python crawler and LLM sentiment pipeline for YouBuyFirst MVP"
+description = "Python crawler and real-estate reaction pipeline for YouBuyFirst"
 requires-python = ">=3.10"
 dependencies = [
     "apscheduler>=3.10",
     "beautifulsoup4>=4.12",
     "httpx>=0.27",
-    "finance-datareader>=0.9.90",
     "openai>=1.50",
     "playwright==1.48.0",
     "pydantic>=2.8",
-    "pykrx>=1.2.8",
     "python-dotenv>=1.0",
-    "yfinance>=0.2.66",
 ]
 
 [project.optional-dependencies]

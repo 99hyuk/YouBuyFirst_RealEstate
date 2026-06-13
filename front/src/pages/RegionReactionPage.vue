@@ -1,6 +1,10 @@
-﻿<script setup lang="ts">
-import { computed } from 'vue';
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import {
+  buildRegionRankingRows,
+  fetchRealEstateReactionRanking
+} from '../lib/realestate-reactions';
 
 type MovementTone = 'up' | 'down';
 type ReactionTone = 'positive' | 'negative' | 'watch' | 'neutral';
@@ -9,7 +13,7 @@ type RegionReactionView = 'overview' | 'ranking' | 'signals' | 'agents';
 type RegionRankingRow = {
   rank: number;
   name: string;
-  symbol: string;
+  targetId: string;
   market: string;
   price: string;
   change: string;
@@ -25,7 +29,7 @@ type RegionRankingRow = {
 type SignalTile = {
   label: string;
   target: string;
-  symbol: string;
+  targetId: string;
   metric: string;
   tone: ReactionTone;
   summary: string;
@@ -38,7 +42,7 @@ type AgentLog = {
   time: string;
   strategy: '지표 동행 관찰' | '커뮤니티 선행 관찰';
   target: string;
-  symbol: string;
+  targetId: string;
   state: string;
   input: string;
   reason: string;
@@ -72,27 +76,51 @@ const isSectionVisible = (section: Exclude<RegionReactionView, 'overview'>) =>
   activeRegionReactionView.value === 'overview' || activeRegionReactionView.value === section;
 
 const regionRows: RegionRankingRow[] = [
-  { rank: 1, name: '마포구 아파트', symbol: 'SEOUL-MAPO', market: '서울', price: '14.5억', change: '+0.55%', mentions: '128건', mentionDelta: '+42%', positive: 49, negative: 33, event: '전세·공덕·학군', freshness: '실거래 지연', tone: 'up' },
-  { rank: 2, name: '동탄역권', symbol: 'DONGTAN-STATION', market: '경기', price: '9.8억', change: '+0.31%', mentions: '74건', mentionDelta: '+19%', positive: 44, negative: 39, event: 'GTX·입주', freshness: '공공데이터 stale', tone: 'up' },
-  { rank: 3, name: '성수동 생활권', symbol: 'SEONGSU-DONG', market: '서울', price: '18.2억', change: '+0.66%', mentions: '41건', mentionDelta: '+86%', positive: 56, negative: 25, event: '상권·개발', freshness: 'mock', tone: 'up' },
-  { rank: 4, name: '잠실동 단지군', symbol: 'JAMSIL-DONG', market: '서울', price: '22.5억', change: '-0.22%', mentions: '43건', mentionDelta: '+54%', positive: 47, negative: 29, event: '토허제·재건축', freshness: '정책 이슈', tone: 'down' },
-  { rank: 5, name: '분당·판교', symbol: 'BUNDANG-PANGYO', market: '경기', price: '17.6억', change: '+0.51%', mentions: '66건', mentionDelta: '+30%', positive: 58, negative: 24, event: '일자리·학군', freshness: 'mock', tone: 'up' },
-  { rank: 6, name: '송도국제도시', symbol: 'SONGDO', market: '인천', price: '8.4억', change: '-0.18%', mentions: '38건', mentionDelta: '+21%', positive: 42, negative: 36, event: '공급·국제학교', freshness: 'stale', tone: 'down' }
+  { rank: 1, name: '마포구 아파트', targetId: 'SEOUL-MAPO', market: '서울', price: '14.5억', change: '+0.55%', mentions: '128건', mentionDelta: '+42%', positive: 49, negative: 33, event: '전세·공덕·학군', freshness: '실거래 지연', tone: 'up' },
+  { rank: 2, name: '동탄역권', targetId: 'DONGTAN-STATION', market: '경기', price: '9.8억', change: '+0.31%', mentions: '74건', mentionDelta: '+19%', positive: 44, negative: 39, event: 'GTX·입주', freshness: '공공데이터 stale', tone: 'up' },
+  { rank: 3, name: '성수동 생활권', targetId: 'SEONGSU-DONG', market: '서울', price: '18.2억', change: '+0.66%', mentions: '41건', mentionDelta: '+86%', positive: 56, negative: 25, event: '상권·개발', freshness: 'mock', tone: 'up' },
+  { rank: 4, name: '잠실동 단지군', targetId: 'JAMSIL-DONG', market: '서울', price: '22.5억', change: '-0.22%', mentions: '43건', mentionDelta: '+54%', positive: 47, negative: 29, event: '토허제·재건축', freshness: '정책 이슈', tone: 'down' },
+  { rank: 5, name: '분당·판교', targetId: 'BUNDANG-PANGYO', market: '경기', price: '17.6억', change: '+0.51%', mentions: '66건', mentionDelta: '+30%', positive: 58, negative: 24, event: '일자리·학군', freshness: 'mock', tone: 'up' },
+  { rank: 6, name: '송도국제도시', targetId: 'SONGDO', market: '인천', price: '8.4억', change: '-0.18%', mentions: '38건', mentionDelta: '+21%', positive: 42, negative: 36, event: '공급·국제학교', freshness: 'stale', tone: 'down' }
 ];
 
 const complexRows: RegionRankingRow[] = [
-  { rank: 1, name: '래미안 원베일리', symbol: 'RAEMIAN-ONEBAILEY', market: '반포', price: '41.0억', change: '+0.28%', mentions: '58건', mentionDelta: '+36%', positive: 52, negative: 27, event: '신고가·전세', freshness: 'mock', tone: 'up' },
-  { rank: 2, name: '헬리오시티', symbol: 'HELIO-CITY', market: '송파', price: '20.7억', change: '-0.08%', mentions: '49건', mentionDelta: '+24%', positive: 41, negative: 38, event: '전세 매물', freshness: 'mock', tone: 'down' },
-  { rank: 3, name: '마포래미안푸르지오', symbol: 'MAPO-RAEMIAN-PRUGIO', market: '마포', price: '15.3억', change: '+0.21%', mentions: '44건', mentionDelta: '+28%', positive: 48, negative: 31, event: '학군·역세권', freshness: '실거래 지연', tone: 'up' },
-  { rank: 4, name: '판교푸르지오그랑블', symbol: 'PANGYO-PRUGIO', market: '판교', price: '22.4억', change: '+0.34%', mentions: '37건', mentionDelta: '+18%', positive: 61, negative: 20, event: '일자리·학군', freshness: 'mock', tone: 'up' },
-  { rank: 5, name: '송도더샵센트럴', symbol: 'SONGDO-THE-SHARP', market: '송도', price: '8.9억', change: '-0.16%', mentions: '32건', mentionDelta: '+17%', positive: 39, negative: 40, event: '공급 부담', freshness: 'stale', tone: 'down' },
-  { rank: 6, name: '동탄역 롯데캐슬', symbol: 'DONGTAN-LOTTE', market: '동탄', price: '12.2억', change: '+0.19%', mentions: '35건', mentionDelta: '+22%', positive: 46, negative: 35, event: 'GTX·입주', freshness: 'mock', tone: 'up' }
+  { rank: 1, name: '래미안 원베일리', targetId: 'RAEMIAN-ONEBAILEY', market: '반포', price: '41.0억', change: '+0.28%', mentions: '58건', mentionDelta: '+36%', positive: 52, negative: 27, event: '신고가·전세', freshness: 'mock', tone: 'up' },
+  { rank: 2, name: '헬리오시티', targetId: 'HELIO-CITY', market: '송파', price: '20.7억', change: '-0.08%', mentions: '49건', mentionDelta: '+24%', positive: 41, negative: 38, event: '전세 매물', freshness: 'mock', tone: 'down' },
+  { rank: 3, name: '마포래미안푸르지오', targetId: 'MAPO-RAEMIAN-PRUGIO', market: '마포', price: '15.3억', change: '+0.21%', mentions: '44건', mentionDelta: '+28%', positive: 48, negative: 31, event: '학군·역세권', freshness: '실거래 지연', tone: 'up' },
+  { rank: 4, name: '판교푸르지오그랑블', targetId: 'PANGYO-PRUGIO', market: '판교', price: '22.4억', change: '+0.34%', mentions: '37건', mentionDelta: '+18%', positive: 61, negative: 20, event: '일자리·학군', freshness: 'mock', tone: 'up' },
+  { rank: 5, name: '송도더샵센트럴', targetId: 'SONGDO-THE-SHARP', market: '송도', price: '8.9억', change: '-0.16%', mentions: '32건', mentionDelta: '+17%', positive: 39, negative: 40, event: '공급 부담', freshness: 'stale', tone: 'down' },
+  { rank: 6, name: '동탄역 롯데캐슬', targetId: 'DONGTAN-LOTTE', market: '동탄', price: '12.2억', change: '+0.19%', mentions: '35건', mentionDelta: '+22%', positive: 46, negative: 35, event: 'GTX·입주', freshness: 'mock', tone: 'up' }
 ];
 
-const rankingGroups = [
-  { id: 'regions', title: '지역 언급량 TOP 6', caption: '시도·생활권 기준', rows: regionRows },
-  { id: 'complexes', title: '단지군 관심 TOP 6', caption: '아파트·생활권 후보', rows: complexRows }
-];
+const rankingLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const liveRegionRows = ref<RegionRankingRow[]>(regionRows);
+const liveComplexRows = ref<RegionRankingRow[]>(complexRows);
+
+const rankingGroups = computed(() => [
+  { id: 'regions', title: '지역 언급량 TOP 6', caption: '시도·생활권 기준', rows: liveRegionRows.value },
+  { id: 'complexes', title: '단지군 관심 TOP 6', caption: '아파트·생활권 후보', rows: liveComplexRows.value }
+]);
+
+const refreshReactionRankings = async () => {
+  try {
+    const [regionRanking, complexRanking] = await Promise.all([
+      fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 60 }),
+      fetchRealEstateReactionRanking({ type: 'complex', windowMinutes: 60 })
+    ]);
+    liveRegionRows.value = buildRegionRankingRows(regionRanking, regionRows);
+    liveComplexRows.value = buildRegionRankingRows(complexRanking, complexRows);
+    rankingLoadState.value = regionRanking.items.length || complexRanking.items.length ? 'live' : 'fallback';
+  } catch {
+    liveRegionRows.value = regionRows;
+    liveComplexRows.value = complexRows;
+    rankingLoadState.value = 'fallback';
+  }
+};
+
+onMounted(() => {
+  void refreshReactionRankings();
+});
 
 const filters = ['언급 증가', '전세 우려', '실거래 지연', '공급 부담', '정책 민감', 'stale 제외'];
 
@@ -114,7 +142,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '언급 급증',
     target: '성수동 생활권',
-    symbol: 'SEONGSU-DONG',
+    targetId: 'SEONGSU-DONG',
     metric: '+86%',
     tone: 'positive',
     summary: '상권, 개발, 임대료 키워드가 영상과 블로그에서 동시에 늘었습니다.',
@@ -125,7 +153,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '기대 우세',
     target: '분당·판교',
-    symbol: 'BUNDANG-PANGYO',
+    targetId: 'BUNDANG-PANGYO',
     metric: '기대 58',
     tone: 'positive',
     summary: '일자리와 재건축 기대 키워드가 짧은 시간에 올라왔습니다.',
@@ -136,7 +164,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '우려 증가',
     target: '송도국제도시',
-    symbol: 'SONGDO',
+    targetId: 'SONGDO',
     metric: '우려 36',
     tone: 'negative',
     summary: '공급 부담, 미분양, 전세 매물 키워드가 반복됩니다.',
@@ -147,7 +175,7 @@ const signalTiles: SignalTile[] = [
   {
     label: '정책 민감',
     target: '잠실동 단지군',
-    symbol: 'JAMSIL-DONG',
+    targetId: 'JAMSIL-DONG',
     metric: '+54%',
     tone: 'negative',
     summary: '토허제, 재건축, 대출 규제 키워드가 동시에 올라와 관찰이 필요합니다.',
@@ -162,7 +190,7 @@ const agentLogs: AgentLog[] = [
     time: '10:12',
     strategy: '지표 동행 관찰',
     target: '마포구 아파트',
-    symbol: 'SEOUL-MAPO',
+    targetId: 'SEOUL-MAPO',
     state: '알림 후보',
     input: '언급 +42% · 기대 49 · 전세가율 상승',
     reason: '전세 체감과 가격지표가 같은 방향',
@@ -172,7 +200,7 @@ const agentLogs: AgentLog[] = [
     time: '10:04',
     strategy: '커뮤니티 선행 관찰',
     target: '송도국제도시',
-    symbol: 'SONGDO',
+    targetId: 'SONGDO',
     state: '관찰만',
     input: '우려 36 · 공급 키워드 · 실거래 stale',
     reason: '공급 부담 반응은 강하지만 가격 지표가 늦음',
@@ -182,7 +210,7 @@ const agentLogs: AgentLog[] = [
     time: '09:51',
     strategy: '지표 동행 관찰',
     target: '성수동 생활권',
-    symbol: 'SEONGSU-DONG',
+    targetId: 'SEONGSU-DONG',
     state: '관찰 유지',
     input: '언급 +86% · 상권 키워드 · 출처 4곳',
     reason: '블로그와 영상 제목이 동시에 증가',
@@ -192,7 +220,7 @@ const agentLogs: AgentLog[] = [
     time: '09:37',
     strategy: '커뮤니티 선행 관찰',
     target: '동탄역권',
-    symbol: 'DONGTAN-STATION',
+    targetId: 'DONGTAN-STATION',
     state: '확인 필요',
     input: 'GTX 관심 +24% · 입주 우려 · 전세수급 상승',
     reason: '기대와 우려가 상쇄되어 공공데이터 대조 필요',
@@ -207,14 +235,14 @@ const strategyRules = [
 </script>
 
 <template>
-  <section class="surface-page region-reaction-page region-reactions-page region-reactions-board-page human-dashboard-page">
-    <section class="region-reaction-hero human-hero-panel" aria-labelledby="region-reaction-title">
-      <div class="human-hero-copy">
+  <section class="surface-page region-reaction-page region-reactions-page region-reactions-board-page reaction-dashboard-page">
+    <section class="region-reaction-hero reaction-hero-panel" aria-labelledby="region-reaction-title">
+      <div class="reaction-hero-copy">
         <p class="label">region reaction</p>
         <h2 id="region-reaction-title">지역 반응</h2>
         <span>지역·단지 순위, 급증 신호, 모의 에이전트 근거 로그를 한 화면에서 봅니다.</span>
       </div>
-      <nav class="human-view-tabs compact" aria-label="지역 반응 하위 화면">
+      <nav class="reaction-view-tabs compact" aria-label="지역 반응 하위 화면">
         <RouterLink
           v-for="tab in reactionViewTabs"
           :key="tab.view"
@@ -228,7 +256,7 @@ const strategyRules = [
 
     <section
       v-if="activeRegionReactionView !== 'agents'"
-      class="human-signal-board region-signal-overview-board"
+      class="reaction-signal-board region-signal-overview-board"
       aria-label="커뮤니티 언급 급증 지역"
     >
       <div class="section-band-title full">
@@ -241,8 +269,8 @@ const strategyRules = [
       <RouterLink
         v-for="tile in signalTiles"
         :key="tile.label"
-        :class="['human-signal-tile', tile.tone]"
-        :to="`/realestate/targets/${tile.symbol}`"
+        :class="['reaction-signal-tile', tile.tone]"
+        :to="`/realestate/targets/${tile.targetId}`"
       >
         <div class="signal-tile-top">
           <span>{{ tile.label }}</span>
@@ -286,7 +314,7 @@ const strategyRules = [
               <p class="label">{{ group.caption }}</p>
               <h3>{{ group.title }}</h3>
             </div>
-            <span>언급량순 mock</span>
+            <span>{{ rankingLoadState === 'live' ? 'API 반영' : '언급량순 mock' }}</span>
           </div>
 
           <div class="region-ranking-head">
@@ -299,14 +327,14 @@ const strategyRules = [
 
           <RouterLink
             v-for="row in group.rows"
-            :key="row.symbol"
+            :key="row.targetId"
             class="region-ranking-row"
-            :to="`/realestate/targets/${row.symbol}`"
+            :to="`/realestate/targets/${row.targetId}`"
           >
             <b>{{ row.rank }}</b>
             <div>
               <strong>{{ row.name }}</strong>
-              <small>{{ row.symbol }} · {{ row.market }} · {{ row.price }} <em :class="row.tone">{{ row.change }}</em></small>
+              <small>{{ row.targetId }} · {{ row.market }} · {{ row.price }} <em :class="row.tone">{{ row.change }}</em></small>
             </div>
             <div>
               <strong>{{ row.mentions }}</strong>
@@ -353,14 +381,14 @@ const strategyRules = [
 
     <section
       v-if="isSectionVisible('agents')"
-      id="agent-simulation"
-      class="human-agent-section compact-ledger"
-      aria-labelledby="human-agent-title"
+      id="agent-analysis-log"
+      class="reaction-agent-section compact-ledger"
+      aria-labelledby="reaction-agent-title"
     >
       <div class="section-band-title">
         <div>
-          <p class="label">agent simulation</p>
-          <h3 id="human-agent-title">모의 에이전트 판단 기록</h3>
+          <p class="label">agent analysis</p>
+          <h3 id="reaction-agent-title">모의 에이전트 판단 기록</h3>
         </div>
         <span>최근 판단 로그 · 반응 지표 기반 · 부동산 자문 아님</span>
       </div>
@@ -378,7 +406,7 @@ const strategyRules = [
           v-for="log in agentLogs"
           :key="log.key"
           class="agent-log-row"
-          :to="`/realestate/targets/${log.symbol}`"
+          :to="`/realestate/targets/${log.targetId}`"
         >
           <time>{{ log.time }}</time>
           <strong>{{ log.target }}</strong>

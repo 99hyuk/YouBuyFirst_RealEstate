@@ -120,11 +120,16 @@ def parse_datetime(value: str | None) -> datetime:
             return datetime.strptime(normalized, fmt).replace(tzinfo=kst).astimezone(timezone.utc)
         except ValueError:
             pass
-    for fmt in ("%H:%M",):
+    for fmt in ("%H:%M:%S", "%H:%M"):
         try:
             parsed = datetime.strptime(normalized, fmt)
             now = datetime.now(kst)
-            return now.replace(hour=parsed.hour, minute=parsed.minute, second=0, microsecond=0).astimezone(timezone.utc)
+            return now.replace(
+                hour=parsed.hour,
+                minute=parsed.minute,
+                second=parsed.second,
+                microsecond=0,
+            ).astimezone(timezone.utc)
         except ValueError:
             pass
     try:
@@ -145,5 +150,7 @@ def _raise_if_block_page(url: str, html: str) -> None:
     normalized = html.lower()
     if "captcha" in normalized or "verify you are human" in normalized or "human verification" in normalized:
         raise SourceBlockedError(f"{url} returned CAPTCHA or human verification page")
+    if "fmkorea.com" in url and "security check" in normalized[:2000]:
+        raise SourceBlockedError(f"{url} returned known block page")
     if "fmkorea.com" in url and "에펨코리아 보안 시스템" in html[:2000]:
         raise SourceBlockedError(f"{url} returned known block page")

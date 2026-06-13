@@ -17,10 +17,10 @@ const liveTopics = [
 ];
 
 const watchTargets = [
-  { name: '마포구 아파트', symbol: 'SEOUL-MAPO', value: '14.5억', change: '+0.55%', tone: 'up' },
-  { name: '성수동 생활권', symbol: 'SEONGSU-DONG', value: '18.2억', change: '+0.66%', tone: 'up' },
-  { name: '동탄역권', symbol: 'DONGTAN-STATION', value: '9.8억', change: '+0.31%', tone: 'up' },
-  { name: '잠실동 단지군', symbol: 'JAMSIL-DONG', value: '22.5억', change: '-0.22%', tone: 'down' }
+  { name: '마포구 아파트', targetId: 'SEOUL-MAPO', value: '14.5억', change: '+0.55%', tone: 'up' },
+  { name: '성수동 생활권', targetId: 'SEONGSU-DONG', value: '18.2억', change: '+0.66%', tone: 'up' },
+  { name: '동탄역권', targetId: 'DONGTAN-STATION', value: '9.8억', change: '+0.31%', tone: 'up' },
+  { name: '잠실동 단지군', targetId: 'JAMSIL-DONG', value: '22.5억', change: '-0.22%', tone: 'down' }
 ];
 
 const activeRailItem = ref('watch');
@@ -90,7 +90,7 @@ const dismissNewsroomMenu = () => {
           <RouterLink data-testid="nav-map" to="/realestate/map">지도</RouterLink>
           <RouterLink data-testid="nav-region-reactions" to="/realestate/reactions">지역 반응</RouterLink>
           <RouterLink data-testid="nav-indicators" to="/indicators">주요 지표</RouterLink>
-          <RouterLink data-testid="nav-portfolio" to="/portfolio">관심 지역</RouterLink>
+          <RouterLink data-testid="nav-watchlist" to="/realestate/watchlist">관심 지역</RouterLink>
         </nav>
 
         <div class="topbar-status topbar-actions" aria-label="서비스 상태와 계정">
@@ -100,15 +100,15 @@ const dismissNewsroomMenu = () => {
         </div>
       </div>
 
-      <div class="topbar-ticker">
-        <section class="live-ticker" aria-label="상단 실시간 속보">
-          <div class="live-ticker-track">
+      <div class="topbar-live-strip">
+        <section class="live-strip" aria-label="상단 실시간 속보">
+          <div class="live-strip-track">
             <span class="live-dot">속보</span>
-            <span v-for="topic in liveTopics" :key="topic" class="ticker-topic">
+            <span v-for="topic in liveTopics" :key="topic" class="live-topic">
               <strong>LIVE</strong>
               {{ topic }}
             </span>
-            <span class="ticker-edge-test">mock data · 실시간 수집 전 API 계약 후보</span>
+            <span class="live-edge-test">mock data · 실시간 수집 전 API 계약 후보</span>
           </div>
         </section>
       </div>
@@ -176,11 +176,11 @@ const dismissNewsroomMenu = () => {
         </div>
 
         <div v-if="activeRailItem === 'watch'" class="edge-watch-list">
-          <article v-for="target in watchTargets" :key="target.symbol" class="edge-watch-row">
-            <span class="edge-symbol">{{ target.name.slice(0, 1) }}</span>
+          <article v-for="target in watchTargets" :key="target.targetId" class="edge-watch-row">
+            <span class="edge-initial">{{ target.name.slice(0, 1) }}</span>
             <div>
               <strong>{{ target.name }}</strong>
-              <p>{{ target.symbol }}</p>
+              <p>{{ target.targetId }}</p>
             </div>
             <div class="edge-price">
               <strong>{{ target.value }}</strong>

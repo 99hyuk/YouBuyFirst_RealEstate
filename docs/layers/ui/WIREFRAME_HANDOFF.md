@@ -26,16 +26,16 @@ Last update: 2026-06-01 KST
 
 ## 최근 결정
 
-- `stock`, `market`, `simulation` 화면은 active 기준이 아니라 legacy reference입니다.
+- 삭제된 레거시 화면은 active 기준에서 제거되었습니다.
 - 신규 active 화면은 `realestate-dashboard`와 `realestate-target-detail`입니다.
-- 너나사 주식과 너나사 부동산은 같은 시리즈입니다. UI shell, nav, 검색, dashboard grid, rail, card 패턴은 최대한 동일하게 유지하고, 부동산은 대표 accent만 warm orange 계열로 둡니다.
+- 너나사 부동산은 너나사 시리즈의 공통 UI shell, nav, 검색, dashboard grid, rail, card 패턴을 따르고, 대표 accent는 warm orange 계열로 둡니다.
 - 부동산 화면은 dashboard 스타일을 유지하되, 핵심 정보는 지역/단지, 쟁점 비율, market fact timeline, evidence log입니다.
 - 화면 문구는 "관찰", "분석", "반응 지표", "표본 신뢰도", "근거 로그", "데이터 지연"을 기본으로 씁니다.
 
 ## 색상 적용 기준
 
 - `--brand`는 부동산 active 화면에서 warm orange 계열로 둡니다.
-- 기존 blue는 너나사 주식 accent 또는 우려/하락/정보 의미색으로 남길 수 있습니다.
+- blue는 우려/하락/정보 의미색으로만 남깁니다.
 - 의미색을 브랜드색과 섞지 않습니다. warning/error, 기대/우려, market up/down은 기존 의미를 우선합니다.
 - 첫 front 변경은 전체 리디자인이 아니라 token 교체와 주요 brand usage 정리로 제한합니다.
 

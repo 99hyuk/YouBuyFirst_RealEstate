@@ -1,0 +1,346 @@
+﻿# 부동산 데이터 구축 진행 상태
+
+작성일: 2026-06-13
+
+## 이번에 확정한 것
+
+- 공공데이터 1차 provider catalog를 코드와 문서에 고정했습니다.
+- `realestate-public-data-providers` pipeline 명령으로 현재 확정 provider/dataset 목록을 JSON으로 확인할 수 있습니다.
+- `realestate-public-data-providers --realestate-provider-output sql`로 같은 catalog를 DB seed INSERT 형태로 출력할 수 있습니다. migration seed와 pipeline catalog가 어긋났는지 검수할 때 사용합니다.
+- pipeline CLI stdout을 UTF-8로 고정해 Windows PowerShell 파이프/파일 출력에서도 provider catalog 한글이 깨지지 않도록 했습니다.
+- 대량 백필을 바로 정규화 테이블에 넣지 않고 raw landing, staging, promoted fact 단계로 나누는 DB 구조를 추가했습니다.
+- 단지 target과 provider별 외부키를 연결할 수 있도록 `real_estate_complexes`, `real_estate_complex_provider_keys` 테이블을 추가했습니다.
+- 기존 `V21__real_estate_targets_and_region_registry.sql`의 깨진 한글 seed를 정상 한글로 복구했습니다.
+- backend에 raw import run/item/staging 저장 API를 추가했습니다.
+- pipeline에 MOLIT 실거래/전월세 결과를 raw/staging API로 전송하는 `realestate-market-facts-raw-push` 명령을 추가했습니다.
+- backend에 staging record를 `real_estate_market_facts`로 승격하는 `POST /internal/realestate/public-data/promote-staging` API를 추가했습니다.
+- pipeline에 승격 API를 호출하는 `realestate-market-facts-promote-staging` 명령을 추가했습니다.
+- `realestate-market-facts-raw-push`가 단일 법정동/월뿐 아니라 법정동 목록과 기간 범위 백필을 실행할 수 있게 했고, `--realestate-promote-after-raw-push`로 저장 직후 승격까지 이어갈 수 있습니다.
+- MOLIT 실거래/전월세 API 수집은 `pageNo`/`numOfRows` 기반 페이지 반복 수집을 지원합니다. 기본은 페이지당 100건, 최대 1000페이지이며, `--realestate-public-data-page-size`, `--realestate-public-data-max-pages`로 조절합니다.
+- 공공데이터 API 결과가 0건이어도 import run을 저장하도록 했습니다. 이로써 실제로 거래가 없던 월과 수집 실패를 구분할 수 있습니다.
+- `realestate-market-facts-raw-push`가 실행 후 `taskCount`, `publishedRuns`, `publishedItems`, `emptyRuns`, `promotedRuns`, run별 `rawItems`를 JSON manifest로 출력하도록 했습니다.
+- `realestate-public-data-preflight` 명령을 추가했습니다. 실제 공공데이터 API를 호출하기 전에 백필 run 수, 완료 run 제외 결과, 서비스키 준비 여부, page/max page, 승격 옵션을 secret 값 없이 JSON으로 점검합니다.
+- `realestate-market-facts-backfill-plan --realestate-backfill-plan-output <path>`로 백필 계획을 JSON manifest 파일로 저장하고, `--realestate-backfill-plan-json <path>`로 preflight/raw-push에서 같은 계획을 다시 사용할 수 있습니다.
+- `realestate-regions-inspect`로 법정동코드 CSV를 백엔드에 넣기 전에 지역 계층 수, 시군구 기준 MOLIT 수집대상 수, 실거래/전월세 백필 run 요약을 확인하고 같은 backfill manifest를 파일로 저장할 수 있습니다.
+- `--realestate-run-limit` 옵션을 추가했습니다. 대량 백필 전에 preflight, plan, raw-push에서 선택 run 수를 제한해 샘플 run만 먼저 검증할 수 있습니다.
+- `realestate-market-facts-raw-push` 대량 실행 확인 가드를 추가했습니다. 선택 run 수가 `--realestate-large-run-threshold`를 넘으면 `--realestate-run-limit` 또는 `--realestate-confirm-large-run` 없이는 실제 provider 생성 전에 중단합니다.
+- `--realestate-skip-completed-runs` 옵션으로 이미 `status=completed`인 import run을 계획/실행에서 제외할 수 있습니다. 완료 여부는 계획된 `runKey` 목록을 backend import-run API에 직접 조회해서 판단합니다. 모든 run이 완료되어 있으면 공공데이터 provider를 만들지 않고 manifest만 출력하므로 API 인증키 없이도 재실행 안전성을 확인할 수 있습니다.
+- 공시가격 대용량 CSV를 실제 적재하기 전에 row 수, 유효/오류 row, batch 수, 첫/마지막 runKey를 확인하는 `realestate-official-apartment-prices-inspect` 명령을 추가했습니다.
+- 한국부동산원 지수, 미분양, 인허가처럼 지역/기간/지표값으로 구성되는 통계 CSV를 위한 `realestate-regional-stat-csv-inspect` / `realestate-regional-stat-csv-raw-push` 공통 adapter를 추가했습니다.
+- backend 통합 테스트에서 `지역 import -> market-data-target 생성 -> raw/staging 적재 -> promote -> target별 market fact 조회` 관통 흐름을 검증했습니다.
+- 관심 지역 화면의 정본 route를 `/realestate/watchlist`로 고정하고, `/communities`, `/agents` 레거시 호환 route도 active route에서 제거했습니다.
+- 지역/단지 상세 route param과 반응 랭킹 링크 식별자를 부동산 대상 `targetId` 기준으로 전환했습니다.
+- `RealEstatePriceChart`/`realestate-price-chart` 테스트·fixture·컴포넌트를 부동산 가격 포인트 기준으로 전환하고, 기존 금융 차트식 막대 표현 대신 가격선과 `trade/rent/supply` 보조 흐름으로 바꿨습니다.
+- 이전 프로젝트 상세 참고 이미지 자산 폴더를 active docs 자산에서 제거하고, 재유입을 막는 frontend cleanup 테스트를 추가했습니다.
+- 미사용 상세 전용 fixture JSON을 active frontend source에서 제거하고, 회귀 방지 테스트를 추가했습니다.
+- 미사용 레거시 fixture와 이전 관심 원장 fixture를 active frontend source에서 제거하고, cleanup 테스트 금지 목록에 추가했습니다.
+- `market fact`/`target-screener`/`community-board`/`news-market` 계열 화면 class와 미사용 `market-fact-snapshots` fixture를 부동산 `market-fact`/`target-ranking`/`target-board`/`news-market` 기준으로 정리했습니다.
+- 대시보드와 지역 반응 fixture의 식별자를 부동산 `targetId` 기준으로 고정하고, 부동산과 맞지 않는 식별자 필드가 다시 들어오지 않도록 회귀 테스트를 추가했습니다.
+- pipeline active CLI에서 부동산에 맞지 않는 시장/차트/자금 흐름 계열 명령을 제거했습니다.
+- pipeline `serve` 경로에서 부동산에 맞지 않는 시세/차트/수급 refresh job 생성 코드를 제거하고, 기본 `run-once`/`serve` crawl target을 부동산 커뮤니티 seed target으로 전환했습니다.
+- backend 기본 context에서 부동산에 맞지 않는 public/internal market controller, entity, repository, seed, migration을 제거했습니다.
+- backend alias 저장과 pipeline matcher가 공백/기호 차이를 제거한 정규화 키로 별칭을 비교하도록 맞췄습니다. 예를 들어 `마래푸`, `마 래-푸`는 같은 alias 키로 판단하고, 근거에는 실제 원문 매칭 문자열을 남깁니다.
+- 커뮤니티 게시글에서 승인 alias 바로 뒤의 괄호형 은어를 찾아 `community_slang` alias 후보로 만들고, `realestate-alias-candidates` / `realestate-alias-candidates-push` 명령으로 출력 또는 백엔드 후보 API에 전송할 수 있게 했습니다. 후보는 `reviewState=candidate` 상태이며 운영자 승인 전에는 matcher 정본, ranking, reaction snapshot 입력에 섞지 않습니다.
+- `realestate-alias-coverage` 명령을 추가했습니다. 제한 게시글 JSONL과 alias 정본을 기준으로 source별 `matchRate`, `topTargets`, `unmatchedExamples`, `candidateAliases`를 뽑아 네이버/다음 카페처럼 출처가 많은 크롤링 운영에서 alias DB가 비어 있는 구간을 확인할 수 있습니다.
+- `realestate-crawl-target-manifest` 명령을 추가했습니다. source 후보 JSONL을 읽어 P0 공개 게시판형 후보만 실행 가능한 crawl target manifest로 만들고, 네이버 카페/로그인 필요/공개 목록 미확인/adapter 미지원 source는 `skipped` 사유로 분리합니다.
+- SerpApi Google News 검색 결과를 최근 이슈 후보 content item으로 변환하는 `realestate-recent-issues` / `realestate-recent-issues-push` 명령을 추가했습니다. 검색 결과 수나 순위는 지표로 쓰지 않고, `content_items`와 `content_target_links`에 `candidate` 근거 링크로만 저장합니다.
+- `realestate-evidence-logs` / `realestate-evidence-logs-push` 명령을 추가했습니다. reaction snapshot, market fact, 최근 이슈 후보, 유사 과거 window 후보를 `POST /internal/realestate/evidence-logs` 요청 shape로 조립하거나 바로 전송합니다.
+- SerpApi/query와 유사 과거 evidence label의 깨진 한글을 정상 한국어로 복구했습니다.
+- 실거래/전월세 백필 계획에 `--realestate-backfill-chunk-size` 옵션을 추가했습니다. 큰 기간/지역 manifest를 chunk별 실행 단위로 나누고, chunk manifest도 다시 `--realestate-backfill-plan-json` 입력으로 읽어 실패한 묶음만 재실행할 수 있습니다.
+- 로컬 secret 예시에 Kakao 지도 SDK 환경변수 이름을 추가했습니다. 실제 key는 root `.env`와 `front/.env.local`에만 두고, repo에는 `.env.example`과 `front/.env.example`의 placeholder만 남깁니다.
+- 화면 정의서에 하이브리드 지도 기준을 반영했습니다. 전국~동 단위는 자체 도식화 heatmap, 동/단지 상세 단계는 사이트 내부에 카카오맵 SDK를 내장하는 방향입니다.
+
+## 1차 provider
+
+| dataset id | 역할 | 상태 |
+| --- | --- | --- |
+| `molit_apt_trade` | 아파트 매매 실거래가 | 백필 대상 |
+| `molit_apt_rent` | 아파트 전월세 실거래가 | 백필 대상 |
+| `molit_official_apartment_price_csv` | 공동주택 호별 공시가격 대용량 CSV | 백필 대상 |
+| `reb_real_estate_statistics` | 한국부동산원 가격지수/거래현황 | 백필 대상 |
+| `molit_unsold_housing_stat` | 미분양/준공 후 미분양 | 백필 대상 |
+| `molit_housing_permit_stat` | 주택 인허가 실적 | 백필 대상 |
+| `molit_buildinghub_housing_approval` | 주택건설사업계획승인/공급 이벤트 후보 | 보조/검증 대상 |
+
+## DB 구조
+
+새 migration:
+
+- `V27__real_estate_public_data_catalog_and_raw_ingestion.sql`
+- `V28__real_estate_complex_registry.sql`
+
+흐름:
+
+```text
+공공데이터 API/CSV
+-> real_estate_public_data_import_runs
+-> real_estate_public_data_raw_items
+-> real_estate_market_fact_staging
+-> real_estate_market_facts
+```
+
+단지 매핑:
+
+```text
+real_estate_targets
+-> real_estate_complexes
+-> real_estate_complex_provider_keys
+```
+
+## 아직 안 한 것
+
+- 실제 공공데이터 대용량 CSV 다운로드/백필 실행
+- 실제 MOLIT 실거래/전월세 API를 개인 인증키로 호출한 운영 백필 실행
+- 공시가격 CSV 실제 원본 다운로드 후 대량 백필 실행
+- 한국부동산원 통계, 미분양, 인허가 실제 원본 파일의 컬럼명/다운로드 경로 검증과 정규화 매핑
+- 네이버/다음 카페를 포함한 실제 공개 source별 adapter 활성화
+- alias 후보 운영자 검수 화면
+- SerpApi 후보 링크 운영 검수와 승인 workflow
+- LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
+- 카카오맵 SDK 내장 지도 컴포넌트와 단지 marker prototype 구현
+
+## 다음 작업
+
+1. `realestate-public-data-preflight --realestate-run-limit 1`로 서비스키, 대상 run, 완료 run skip, page 설정을 먼저 확인한 뒤 MOLIT 실거래/전월세 API 샘플 백필을 실행해 raw/staging 저장과 market fact 승격을 확인합니다.
+2. 공시가격 CSV inspect 명령으로 row 수, 오류 샘플, batch 수를 먼저 확인하고, streaming parser와 batch raw-push 명령으로 샘플 파일 백필을 검증합니다.
+3. 한국부동산원 통계, 미분양, 인허가 실제 원본 파일을 내려받아 regional stat CSV adapter에 맞는 컬럼 매핑을 검증합니다.
+4. 레거시 제거 이후 남은 작업은 실제 공공데이터 백필, 공개 source adapter 활성화, alias 후보 운영자 검수, SerpApi 후보 링크 승인 workflow, LLM provider/guardrail 기반 평가 고도화입니다.
+
+## 현재 실행 가능한 명령
+
+Provider catalog 확인:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-public-data-providers
+```
+
+DB seed INSERT 검수용 출력:
+
+```powershell
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-public-data-providers --realestate-provider-output sql
+```
+
+MOLIT 실거래/전월세 백필 계획 생성:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-backfill-plan --realestate-lawd-codes 11110 26000 --realestate-start-ym 202401 --realestate-end-ym 202406 --realestate-datasets trade rent
+```
+
+이 명령은 실제 API 호출을 하지 않고, 월/법정동/데이터셋 단위의 재시도 가능한 작업 목록만 만듭니다.
+
+법정동 CSV에서 지역 target과 시군구별 백필 계획을 먼저 검수:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-regions-inspect --legal-dong-code-csv C:\data\molit_legal_dong_codes.csv --realestate-start-ym 202605 --realestate-end-ym 202606 --realestate-datasets trade rent --realestate-backfill-plan-output C:\data\ybf-realestate\molit-region-plan-202605-202606.json
+```
+
+이 명령은 `sido`, `sigungu`, `eupmyeondong` 지역 수와 `sigungu` 기준 `molit_apt_trade`, `molit_apt_rent` 수집대상 수를 보여줍니다. 저장된 manifest는 바로 `realestate-public-data-preflight --realestate-backfill-plan-json ...`와 `realestate-market-facts-raw-push --realestate-backfill-plan-json ...`에 재사용합니다.
+
+백필 계획을 파일로 고정:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-backfill-plan --realestate-use-backend-targets --realestate-start-ym 202605 --realestate-end-ym 202606 --realestate-skip-completed-runs --realestate-backfill-plan-output C:\data\ybf-realestate\molit-plan-202605-202606.json
+```
+
+백필 계획을 chunk 단위로 고정:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-backfill-plan --realestate-use-backend-targets --realestate-start-ym 202401 --realestate-end-ym 202606 --realestate-skip-completed-runs --realestate-backfill-chunk-size 100 --realestate-backfill-plan-output C:\data\ybf-realestate\molit-plan-202401-202606-chunks.json
+```
+
+저장된 계획으로 preflight:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-public-data-preflight --realestate-backfill-plan-json C:\data\ybf-realestate\molit-plan-202605-202606.json --realestate-run-limit 1
+```
+
+저장된 계획으로 raw-push:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:DATA_GO_SERVICE_KEY="..."
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-raw-push --realestate-backfill-plan-json C:\data\ybf-realestate\molit-plan-202605-202606.json --realestate-run-limit 1 --realestate-promote-after-raw-push --realestate-validation-status valid --realestate-promote-limit 1000
+```
+
+manifest 입력도 `--realestate-large-run-threshold` 확인 가드를 그대로 탑니다. 따라서 전체 run 실행 전에는 `--realestate-run-limit`으로 샘플을 검증하고, 전체 실행 시에만 `--realestate-confirm-large-run`을 명시합니다.
+
+완료된 import run을 제외한 백필 계획 생성:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-backfill-plan --realestate-use-backend-targets --realestate-start-ym 202605 --realestate-end-ym 202606 --realestate-skip-completed-runs
+```
+
+이 명령은 backend의 `GET /internal/realestate/public-data/import-runs?runKey=...&status=completed` 결과를 보고 이미 완료된 `runKey`를 제외합니다. pipeline은 계획된 runKey를 100개 단위로 나눠 조회하므로 dataset별 최근 500개 목록 한도에 기대지 않습니다.
+
+실제 API 호출 전 preflight 점검:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-public-data-preflight --realestate-use-backend-targets --realestate-start-ym 202605 --realestate-end-ym 202606 --realestate-skip-completed-runs --realestate-run-limit 1 --realestate-promote-after-raw-push --realestate-public-data-page-size 100 --realestate-public-data-max-pages 1000
+```
+
+이 명령은 공공데이터 API를 호출하지 않습니다. `DATA_GO_SERVICE_KEY` 값은 출력하지 않고 `configured`, `missing`, `not_required` 상태만 보여줍니다. `remainingRuns`가 0이면 실제 호출할 run이 없으므로 서비스키가 없어도 `ready=true`가 될 수 있습니다. `runLimit`이 있으면 `omittedByRunLimit`로 이번 샘플에서 일부러 제외한 run 수를 확인합니다. `largeRunRequiresConfirmation=true`이면 raw-push 전체 실행 전에 limit을 낮추거나 `--realestate-confirm-large-run`을 명시해야 합니다.
+
+MOLIT 실거래/전월세를 raw/staging API로 전송:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:DATA_GO_SERVICE_KEY="..."
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-raw-push --realestate-lawd-code 11110 --realestate-deal-ym 202606 --realestate-datasets trade rent --realestate-public-data-page-size 100 --realestate-public-data-max-pages 1000
+```
+
+이 명령은 `POST /internal/realestate/public-data/raw-ingestions`로 import run, raw item, staging item을 저장합니다. 실행 후 출력되는 JSON manifest에서 `publishedRuns`, `publishedItems`, `emptyRuns`, run별 `rawItems`를 확인합니다. 한 페이지가 꽉 차면 다음 페이지를 조회하고, 마지막 페이지가 `pageSize`보다 적으면 멈춥니다.
+
+여러 법정동과 기간 범위를 한 번에 raw/staging API로 전송하고, 저장 직후 market fact로 승격:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:DATA_GO_SERVICE_KEY="..."
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-raw-push --realestate-lawd-codes 11110 11680 --realestate-start-ym 202605 --realestate-end-ym 202606 --realestate-datasets trade rent --realestate-public-data-page-size 100 --realestate-public-data-max-pages 1000 --realestate-skip-completed-runs --realestate-promote-after-raw-push --realestate-validation-status valid --realestate-promote-limit 1000
+```
+
+이 명령은 월/법정동/데이터셋 단위로 import run을 나누므로 실패한 단위만 다시 실행하기 쉽습니다. 조회 결과가 0건이어도 `items=[]`인 import run을 남기고, 실행 manifest의 `emptyRuns`로 집계됩니다.
+
+백엔드에 등록된 지역 수집 대상(`real_estate_market_data_targets`)을 기준으로 백필 계획 확인:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-backfill-plan --realestate-use-backend-targets --realestate-start-ym 202605 --realestate-end-ym 202606
+```
+
+지역 import가 만든 `molit_apt_trade`, `molit_apt_rent` 대상만 골라 중복을 제거한 뒤 `월/법정동/데이터셋` 단위의 import run 계획을 출력합니다.
+
+백엔드에 등록된 지역 수집 대상을 기준으로 실거래/전월세 raw/staging 적재:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:DATA_GO_SERVICE_KEY="..."
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-raw-push --realestate-use-backend-targets --realestate-start-ym 202605 --realestate-end-ym 202606 --realestate-public-data-page-size 100 --realestate-public-data-max-pages 1000 --realestate-skip-completed-runs --realestate-run-limit 1 --realestate-promote-after-raw-push --realestate-validation-status valid --realestate-promote-limit 1000
+```
+
+이 명령은 사람이 `--realestate-lawd-codes`를 다시 복사하지 않고 `GET /internal/realestate/market-data-targets?enabled=true` 결과를 기준으로 실제 백필을 수행합니다. 운영 첫 실행은 `--realestate-run-limit 1`로 1개 run만 검증하고, raw/staging/promote 결과가 정상인 것을 확인한 뒤 limit을 늘립니다.
+
+대량 범위를 의도적으로 실행할 때:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:DATA_GO_SERVICE_KEY="..."
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-raw-push --realestate-use-backend-targets --realestate-start-ym 202401 --realestate-end-ym 202606 --realestate-public-data-page-size 100 --realestate-public-data-max-pages 1000 --realestate-skip-completed-runs --realestate-confirm-large-run --realestate-promote-after-raw-push --realestate-validation-status valid --realestate-promote-limit 1000
+```
+
+이 명령은 샘플 검증이 끝난 뒤에만 사용합니다. 선택 run 수가 기본 threshold 50개를 넘으면 `--realestate-confirm-large-run` 없이는 provider 생성 전에 중단됩니다.
+
+저장된 staging record를 정규화 market fact로 승격:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-market-facts-promote-staging --realestate-provider-dataset molit_apt_trade --realestate-run-key molit_apt_trade:11110:202606 --realestate-validation-status valid --realestate-promote-limit 1000
+```
+
+이 명령은 `POST /internal/realestate/public-data/promote-staging`를 호출하고, 검증 상태가 `valid`인 staging record를 `real_estate_market_facts`로 upsert합니다.
+
+MOLIT 공동주택 호별 공시가격 대용량 CSV를 적재 전 점검:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-official-apartment-prices-inspect --realestate-official-apartment-price-csv C:\data\molit_official_apartment_price_2025.csv --realestate-official-apartment-price-base-date 2025-01-01 --realestate-official-apartment-price-batch-size 1000
+```
+
+이 명령은 DB에 쓰지 않고 `totalRows`, `validRows`, `invalidRows`, `batchCount`, 첫/마지막 `runKey`, 일부 `providerObjectId`, 오류 샘플을 출력합니다. 대량 적재 전 이 결과로 배치 수와 오류율을 먼저 확인합니다.
+
+MOLIT 공동주택 호별 공시가격 대용량 CSV를 raw/staging API로 전송:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-official-apartment-prices-raw-push --realestate-official-apartment-price-csv C:\data\molit_official_apartment_price_2025.csv --realestate-official-apartment-price-base-date 2025-01-01 --realestate-official-apartment-price-batch-size 1000 --realestate-promote-after-raw-push --realestate-validation-status valid --realestate-promote-limit 1000
+```
+
+이 명령은 공공데이터포털의 1,500만 건 이상 CSV를 한 번에 메모리에 올리지 않고 streaming으로 읽어서 `molit_official_apartment_price_csv:YYYYMMDD:000001` 같은 import run 단위로 나눠 저장합니다. `sourceLabel`에는 입력 CSV 경로가 남고, 각 row는 `factType=official_apartment_price`, `targetType=complex_unit`, `providerDataset=molit_official_apartment_price_csv`로 staging 됩니다.
+
+지역 통계 CSV를 적재 전 점검:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-regional-stat-csv-inspect --realestate-stat-csv C:\data\molit_unsold_202604.csv --realestate-provider molit_stat --realestate-provider-dataset molit_unsold_housing_stat --realestate-fact-type unsold_housing --realestate-stat-batch-size 1000
+```
+
+지역 통계 CSV를 raw/staging API로 전송:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-regional-stat-csv-raw-push --realestate-stat-csv C:\data\molit_unsold_202604.csv --realestate-provider molit_stat --realestate-provider-dataset molit_unsold_housing_stat --realestate-fact-type unsold_housing --realestate-stat-batch-size 1000 --realestate-promote-after-raw-push
+```
+
+이 명령은 `기준월`, `지역코드`, `지역명`, `항목`, `값`, `단위` 중심의 정규화 CSV를 읽어 `targetType=region` market fact staging record로 저장합니다. 미분양은 `providerDataset=molit_unsold_housing_stat`, 인허가는 `molit_housing_permit_stat`, 한국부동산원 지수는 `reb_real_estate_statistics`처럼 dataset만 바꿔 같은 경로를 사용할 수 있습니다.
+
+Backend 확인 API:
+
+```text
+GET /internal/realestate/public-data/import-runs?providerDataset=molit_apt_trade
+POST /internal/realestate/public-data/raw-ingestions
+POST /internal/realestate/public-data/promote-staging
+```
+
+커뮤니티 게시글에서 alias 후보 추출:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-alias-candidates --realestate-aliases-jsonl C:\data\realestate_aliases.jsonl --community-posts-jsonl C:\data\community_posts.jsonl
+```
+
+source별 alias coverage 확인:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-alias-coverage --realestate-use-backend-aliases --community-posts-jsonl C:\data\community_posts.jsonl
+```
+
+alias 후보를 backend 후보 API로 전송:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-alias-candidates-push --realestate-use-backend-aliases --community-posts-jsonl C:\data\community_posts.jsonl
+```
+
+두 명령은 승인된 alias 주변에서 발견된 괄호형 은어를 `reviewState=candidate`로만 다룹니다. 운영자 승인 전까지 이 후보는 정식 matcher export, ranking, reaction snapshot 입력에 섞이지 않습니다.
+
+SerpApi 최근 이슈 후보 생성:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:SERPAPI_API_KEY="..."
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-recent-issues --realestate-search-targets-jsonl C:\data\realestate_search_targets.jsonl --realestate-issue-keywords 교통 정책 개발 금리 --realestate-search-as-of 2026-06-12T01:30:00Z --serpapi-result-limit 5
+```
+
+SerpApi 최근 이슈 후보를 backend content API로 전송:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:SERPAPI_API_KEY="..."
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-recent-issues-push --realestate-search-targets-jsonl C:\data\realestate_search_targets.jsonl --realestate-issue-keywords 교통 정책 개발 금리
+```
+
+`realestate-recent-issues-push`는 `POST /internal/realestate/content-items`로 `sourceId=serpapi:google_news`, `linkType=search_candidate`, `reviewState=candidate`, `dataStatus=candidate` payload를 전송합니다. 이 후보는 승인 전까지 timeline 정본에 노출되지 않습니다.
+
+EvidenceLog payload 생성:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-evidence-logs --reaction-snapshots-jsonl C:\data\reaction_snapshots.jsonl --evidence-target-id region-daejeon --evidence-window-start 2026-06-11T00:00:00Z --evidence-evaluated-at 2026-06-12T02:00:00Z --evidence-market-facts-jsonl C:\data\market_facts.jsonl --evidence-content-items-jsonl C:\data\recent_issues.jsonl --evidence-similar-windows-jsonl C:\data\similar_windows.jsonl
+```
+
+EvidenceLog를 backend로 전송:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-evidence-logs-push --reaction-snapshots-jsonl C:\data\reaction_snapshots.jsonl --evidence-target-id region-daejeon --evidence-window-start 2026-06-11T00:00:00Z
+```
+
+`realestate-evidence-logs(-push)`는 `market_fact`, `similar_window`, `search_candidate` 입력이 없으면 해당 근거 부족 caveat을 남깁니다. 현재 summary/tone은 룰 기반 baseline이며, LLM provider를 붙여도 EvidenceLog 저장 shape는 유지합니다.

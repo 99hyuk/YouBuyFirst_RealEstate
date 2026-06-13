@@ -35,29 +35,29 @@ def test_fetcher_keeps_optional_browser_channel_for_local_rendering():
 @pytest.mark.anyio
 @respx.mock
 async def test_fetcher_treats_fmkorea_security_page_as_blocked_without_browser_fallback():
-    respx.get("https://www.fmkorea.com/stock").mock(
+    respx.get("https://www.fmkorea.com/realestate").mock(
         return_value=httpx.Response(
             430,
-            text="<html><title>에펨코리아 보안 시스템</title><body>보안 시스템</body></html>",
+            text="<html><title>security check</title><body>security check</body></html>",
         )
     )
 
     with pytest.raises(SourceBlockedError, match="430"):
-        await BrowserCapableFetcher(user_agent="test").fetch_html("https://www.fmkorea.com/stock")
+        await BrowserCapableFetcher(user_agent="test").fetch_html("https://www.fmkorea.com/realestate")
 
 
 @pytest.mark.anyio
 @respx.mock
 async def test_fetcher_treats_fmkorea_security_html_as_blocked_without_browser_fallback():
-    respx.get("https://www.fmkorea.com/stock").mock(
+    respx.get("https://www.fmkorea.com/realestate").mock(
         return_value=httpx.Response(
             200,
-            text="<html><title>에펨코리아 보안 시스템</title><body>보안 시스템</body></html>",
+            text="<html><title>security check</title><body>security check</body></html>",
         )
     )
 
     with pytest.raises(SourceBlockedError, match="block page"):
-        await BrowserCapableFetcher(user_agent="test").fetch_html("https://www.fmkorea.com/stock")
+        await BrowserCapableFetcher(user_agent="test").fetch_html("https://www.fmkorea.com/realestate")
 
 
 @pytest.mark.anyio
@@ -74,10 +74,10 @@ async def test_fetcher_can_fetch_browser_html_directly(monkeypatch):
 
     monkeypatch.setattr(fetcher, "_fetch_browser", fake_browser_result)
 
-    result = await fetcher.fetch_browser_html("https://www.fmkorea.com/stock")
+    result = await fetcher.fetch_browser_html("https://www.fmkorea.com/realestate")
 
     assert result.html == "<html><body>browser rendered</body></html>"
-    assert browser_urls == ["https://www.fmkorea.com/stock"]
+    assert browser_urls == ["https://www.fmkorea.com/realestate"]
 
 
 @pytest.mark.anyio

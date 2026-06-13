@@ -8,8 +8,7 @@
 | --- | --- | --- |
 | `crawl` | `community` | 커뮤니티 수집, source policy, 원문 제한 저장 |
 | `data` | `realestate`, `indicator`, 필요 시 `community` | 지역/단지 식별과 지표화를 나눠 봅니다. |
-| `market` | `realestate` 또는 legacy `market` | 부동산 market fact는 realestate가 소유합니다. |
-| `trade` | legacy `simulation` | 부동산 1차 범위에서는 거래/원장을 활성 작업으로 보지 않습니다. |
+| `market` | `realestate` | 부동산 market fact는 realestate가 소유합니다. |
 | `agent` | `agent` | 지역/단지 평가와 근거 로그 |
 | `front` | `ui` | 화면, 디자인 시스템, fixture/API 후보 |
 | `ops` | `ops` | 문서 구조, PR/라벨/Notion, 브랜치/worktree |

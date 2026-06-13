@@ -4,9 +4,9 @@
 
 너나사 부동산은 지역과 단지에 대한 실제 사람들의 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 같은 시장 사실 데이터를 함께 보여주는 관찰형 분석 서비스입니다. 완제품 기준은 `docs/product/FINAL_PRODUCT_PLAN.md`이고, 핵심 구현 범위는 `docs/product/CORE_IMPLEMENTATION_SCOPE.md`와 `docs/product/real-estate-one-page-plan.html`입니다. 부동산 전환의 핵심 원칙은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`입니다.
 
-이 프로젝트는 기존 주식 프로젝트의 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 에이전트 근거 로그 구조를 재사용하지만, 주식 도메인 안에 부동산을 추가하지 않습니다. 부동산이 이 repo의 주 도메인입니다.
+이 프로젝트는 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 에이전트 근거 로그 구조를 부동산 target 기준으로 구현합니다. 부동산이 이 repo의 주 도메인입니다.
 
-주식과 구현 흐름은 비슷하지만 부동산은 대상이 지역, 단지, 생활권, 정책 영향권으로 훨씬 잘게 나뉘고 지역 단위 상승과 정책 이벤트에 민감합니다. 그래서 target graph, 별칭 DB, policy timeline, source registry를 1차 구현 범위에 포함합니다.
+부동산은 대상이 지역, 단지, 생활권, 정책 영향권으로 잘게 나뉘고 지역 단위 상승과 정책 이벤트에 민감합니다. 그래서 target graph, 별칭 DB, policy timeline, source registry를 1차 구현 범위에 포함합니다.
 
 ## 현재 구현 기반
 
@@ -14,7 +14,7 @@
 - Python pipeline은 공개 수집, Playwright fallback, LLM 분석, provider adapter를 담당합니다.
 - MySQL은 커뮤니티 글, 지역/단지 mention, reaction snapshot, market fact, evidence log를 저장하는 방향으로 정리합니다.
 - Vue 3 + Vite + TypeScript front는 mock 화면과 API 후보를 먼저 세우고, backend/pipeline 계약을 역으로 도출합니다.
-- 기존 stock/market/simulation 구현은 당장 삭제하지 않고 참고/비활성 영역으로 분리합니다.
+- 기존 금융 서비스 전용 구현은 active runtime에서 제거하고, 부동산 구현에 필요한 공통 패턴만 남깁니다.
 
 ## 완제품 사용 루프
 

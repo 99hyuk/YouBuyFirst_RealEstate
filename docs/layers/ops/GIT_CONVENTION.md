@@ -99,9 +99,9 @@ codex/<work-area>-<task>
 
 작업 영역:
 
-- PR 제목 prefix와 `track:*` 라벨 값은 `realestate`, `community`, `indicator`, `agent`, `ui`, `ops` 중 하나를 우선 씁니다. `stock`, `market`, `simulation`은 legacy reference 정리 작업에만 제한적으로 씁니다.
+- PR 제목 prefix와 `track:*` 라벨 값은 `realestate`, `community`, `indicator`, `agent`, `ui`, `ops` 중 하나를 우선 씁니다.
 - GitHub 라벨 family 이름은 기존 형식인 `track:*`를 유지합니다. 바뀌는 것은 `track:` 뒤 분류값입니다.
-- 과거 `crawl`, `data`, `trade`, `front` 값은 닫힌 PR이나 과거 Notion 카드 해석용 alias입니다.
+- 과거 `crawl`, `data`, `front` 값은 닫힌 PR이나 과거 Notion 카드 해석용 alias입니다.
 
 작업 타입:
 

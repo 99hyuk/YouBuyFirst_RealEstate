@@ -1,11 +1,18 @@
-﻿<script setup lang="ts">
-import { computed } from 'vue';
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
+
+import {
+  buildNewsroomFeedItems,
+  fetchRealEstateTargetContent,
+  type NewsroomFeedItem
+} from '../lib/realestate-content';
 
 type DetailTone = 'up' | 'down' | 'flat';
 
 type RealEstateTarget = {
-  symbol: string;
+  targetId: string;
+  apiTargetId: string;
   name: string;
   region: string;
   headline: string;
@@ -20,14 +27,23 @@ type RealEstateTarget = {
   metrics: { label: string; value: string; note: string; tone: DetailTone }[];
   reactions: { source: string; mentions: number; positive: number; negative: number; note: string }[];
   timeline: { time: string; title: string; detail: string }[];
-  evidence: { label: string; source: string; url: string }[];
+  evidence: EvidenceLink[];
+};
+
+type EvidenceLink = {
+  label: string;
+  source: string;
+  url: string;
+  meta?: string;
+  statusLabel?: string;
 };
 
 const route = useRoute();
 
 const targets: RealEstateTarget[] = [
   {
-    symbol: 'SEOUL-MAPO',
+    targetId: 'SEOUL-MAPO',
+    apiTargetId: 'region-seoul-mapo',
     name: '마포구 아파트',
     region: '서울',
     headline: '전세 매물 체감과 학군 키워드가 같이 움직입니다',
@@ -63,7 +79,8 @@ const targets: RealEstateTarget[] = [
     ]
   },
   {
-    symbol: 'DONGTAN-STATION',
+    targetId: 'DONGTAN-STATION',
+    apiTargetId: 'region-gyeonggi-dongtan-station',
     name: '동탄역권',
     region: '경기',
     headline: 'GTX 기대와 입주 물량 우려가 동시에 붙었습니다',
@@ -100,9 +117,57 @@ const targets: RealEstateTarget[] = [
   }
 ];
 
-const routeSymbol = computed(() => String(route.params.symbol ?? '').toUpperCase());
-const target = computed(() => targets.find((item) => item.symbol.toUpperCase() === routeSymbol.value));
+const routeTargetId = computed(() => String(route.params.targetId ?? '').toUpperCase());
+const target = computed(() => targets.find((item) => item.targetId.toUpperCase() === routeTargetId.value));
 const confidenceValue = computed(() => (target.value ? Number.parseInt(target.value.confidence, 10) : 0));
+const evidenceLinks = ref<EvidenceLink[]>([]);
+const evidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const targetEvidence = computed(() => (
+  evidenceLoadState.value === 'live' ? evidenceLinks.value : target.value?.evidence ?? []
+));
+const evidenceStatusLabel = computed(() => {
+  if (evidenceLoadState.value === 'live') return 'content API 반영';
+  if (evidenceLoadState.value === 'loading') return 'content API 확인 중';
+  return '원문 확인 필요';
+});
+
+const contentToEvidenceLink = (item: NewsroomFeedItem): EvidenceLink => ({
+  label: item.title,
+  source: item.source,
+  url: item.url,
+  meta: item.meta,
+  statusLabel: item.statusLabel
+});
+
+const refreshTargetContent = async () => {
+  if (!target.value) {
+    evidenceLinks.value = [];
+    evidenceLoadState.value = 'fallback';
+    return;
+  }
+
+  evidenceLoadState.value = 'loading';
+  try {
+    const contentItems = await fetchRealEstateTargetContent(target.value.apiTargetId, {
+      feed: 'all',
+      limit: 6
+    });
+    const mappedLinks = buildNewsroomFeedItems(contentItems).map(contentToEvidenceLink);
+    evidenceLinks.value = mappedLinks;
+    evidenceLoadState.value = mappedLinks.length ? 'live' : 'fallback';
+  } catch {
+    evidenceLinks.value = [];
+    evidenceLoadState.value = 'fallback';
+  }
+};
+
+onMounted(() => {
+  void refreshTargetContent();
+});
+
+watch(() => target.value?.apiTargetId, () => {
+  void refreshTargetContent();
+});
 </script>
 
 <template>
@@ -111,7 +176,7 @@ const confidenceValue = computed(() => (target.value ? Number.parseInt(target.va
       <div class="region-brief-topline">
         <div>
           <strong>{{ target.name }}</strong>
-          <span>{{ target.symbol }} · {{ target.region }}</span>
+          <span>{{ target.targetId }} · {{ target.region }}</span>
         </div>
         <RouterLink class="region-report-close region-report-close" to="/realestate/reactions" aria-label="지역 반응 목록으로 돌아가기">×</RouterLink>
       </div>
@@ -134,7 +199,7 @@ const confidenceValue = computed(() => (target.value ? Number.parseInt(target.va
       <div class="region-identity">
         <RouterLink class="detail-link region-back-link region-back-link" to="/realestate/reactions">← 지역 반응 목록으로</RouterLink>
         <p class="eyebrow">지역 상세 리포트</p>
-        <h2>{{ target.name }} <span>{{ target.symbol }} · {{ target.region }}</span></h2>
+        <h2>{{ target.name }} <span>{{ target.targetId }} · {{ target.region }}</span></h2>
         <p>실거래, 전세, 공급, 커뮤니티 반응을 분리해서 보는 관찰형 지역 리포트입니다.</p>
       </div>
 
@@ -183,7 +248,7 @@ const confidenceValue = computed(() => (target.value ? Number.parseInt(target.va
           <article v-for="reaction in target.reactions" :key="reaction.source">
             <strong>{{ reaction.source }}</strong>
             <span>{{ reaction.mentions }}건</span>
-            <i class="sentiment-track">
+            <i class="reaction-track">
               <mark :style="{ width: `${reaction.positive}%` }"></mark>
               <mark class="down" :style="{ width: `${reaction.negative}%` }"></mark>
             </i>
@@ -231,12 +296,13 @@ const confidenceValue = computed(() => (target.value ? Number.parseInt(target.va
           <p class="label">evidence</p>
           <h3>근거 링크 후보</h3>
         </div>
-        <span>원문 확인 필요</span>
+        <span>{{ evidenceStatusLabel }}</span>
       </div>
       <div class="evidence-list">
-        <a v-for="item in target.evidence" :key="item.label" :href="item.url" target="_blank" rel="noreferrer noopener">
+        <a v-for="item in targetEvidence" :key="item.label" :href="item.url" target="_blank" rel="noreferrer noopener">
           <strong>{{ item.label }}</strong>
           <span>{{ item.source }}</span>
+          <em v-if="item.meta">{{ item.meta }}</em>
         </a>
       </div>
     </section>
@@ -247,7 +313,7 @@ const confidenceValue = computed(() => (target.value ? Number.parseInt(target.va
       <div class="region-brief-topline">
         <div>
           <strong>지원 준비 중인 지역</strong>
-          <span>{{ routeSymbol || 'UNKNOWN' }}</span>
+          <span>{{ routeTargetId || 'UNKNOWN' }}</span>
         </div>
         <RouterLink class="region-report-close region-report-close" to="/realestate/reactions" aria-label="지역 반응 목록으로 돌아가기">×</RouterLink>
       </div>
@@ -263,8 +329,8 @@ const confidenceValue = computed(() => (target.value ? Number.parseInt(target.va
       <div class="region-identity">
         <RouterLink class="detail-link region-back-link region-back-link" to="/realestate/reactions">← 지역 반응 목록으로</RouterLink>
         <p class="eyebrow">unsupported target</p>
-        <h2>{{ routeSymbol || 'UNKNOWN' }} <span>상세 데이터 미연결</span></h2>
-        <p>해당 심볼의 상세 지표, 커뮤니티 반응, 근거 링크가 준비되면 이 페이지에서 실제 리포트로 전환됩니다.</p>
+        <h2>{{ routeTargetId || 'UNKNOWN' }} <span>상세 데이터 미연결</span></h2>
+        <p>해당 대상의 상세 지표, 커뮤니티 반응, 근거 링크가 준비되면 이 페이지에서 실제 리포트로 전환됩니다.</p>
       </div>
 
       <div class="region-metric-board">
@@ -274,8 +340,8 @@ const confidenceValue = computed(() => (target.value ? Number.parseInt(target.va
           <em>잘못된 fallback 차단</em>
         </article>
         <article>
-          <span>요청 심볼</span>
-          <strong>{{ routeSymbol || 'UNKNOWN' }}</strong>
+          <span>요청 대상 ID</span>
+          <strong>{{ routeTargetId || 'UNKNOWN' }}</strong>
           <em>지역/단지 alias 확인 필요</em>
         </article>
         <article>

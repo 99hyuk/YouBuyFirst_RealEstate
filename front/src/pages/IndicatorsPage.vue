@@ -66,7 +66,7 @@ const marketGroups: MarketGroup[] = [
     ]
   },
   {
-    id: 'sentiment-demand',
+    id: 'demand-mood',
     label: 'demand mood',
     title: '수요 및 심리',
     headline: '수급지수와 소비심리가 가격보다 먼저 방향을 암시합니다',
@@ -110,7 +110,7 @@ const detailRows: Record<string, { label: string; value: string; note: string; t
     { label: '인허가·착공·준공', value: '-11.4%', note: '착공 감소는 2~3년 뒤 입주 부족 후보입니다.', tone: 'down' },
     { label: '전세가율', value: '62.4%', note: '높을수록 실수요 기반과 매매 전환 압력을 같이 봅니다.', tone: 'up' }
   ],
-  'sentiment-demand': [
+  'demand-mood': [
     { label: '매매수급지수', value: '104.2', note: '100보다 높으면 수요가 공급보다 많다는 뜻입니다.', tone: 'up' },
     { label: '전세수급지수', value: '107.8', note: '전세 매물 부족 체감과 함께 확인합니다.', tone: 'up' },
     { label: '소비심리지수', value: '112.5', note: '중개업소와 가구 설문 기반의 선행 심리 지표입니다.', tone: 'up' },

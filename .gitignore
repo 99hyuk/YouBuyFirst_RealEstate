@@ -7,6 +7,10 @@ __pycache__/
 .pytest_cache/
 .venv/
 .env
+.env.local
+.env.*.local
+front/.env.local
+front/.env.*.local
 .superpowers/
 .worktrees/
 node_modules/
@@ -15,17 +19,14 @@ front/dist/
 *.pyc
 *.log
 
+# Local secrets/config
+backend/src/main/resources/application-local.yml
+
 # Local Netlify folder
 .netlify
 
 # Local QA/artifact output
 artifacts/
+output/
 .playwright-mcp/
-/human-indicator-*.png
-/human-indicator-snapshot.md
 /indicators-domestic-snapshot.md
-/simplystock-*.png
-/simplystock-*.json
-/stock-*.png
-/stock-detail-*.png
-/stock-005930-investor-flow-after-title-fix

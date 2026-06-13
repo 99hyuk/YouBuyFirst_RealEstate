@@ -26,14 +26,9 @@ server:
   port: ${SERVER_PORT:8080}
 
 app:
-  instrument:
-    master-seed:
-      enabled: ${INSTRUMENT_MASTER_SEED_ENABLED:true}
-      path: ${INSTRUMENT_MASTER_SEED_PATH:classpath:data/instrument-master-seed.tsv}
   retention:
     post-days: ${POST_RETENTION_DAYS:30}
     cleanup-cron: ${POST_RETENTION_CLEANUP_CRON:0 15 3 * * *}
-  market:
-    quote-stale-minutes: ${QUOTE_STALE_MINUTES:30}
-    chart-candle-stale-minutes: ${CHART_CANDLE_STALE_MINUTES:30}
-    investor-flow-stale-minutes: ${INVESTOR_FLOW_STALE_MINUTES:5760}
+  realestate:
+    public-data:
+      data-go-service-key: ${DATA_GO_SERVICE_KEY:}

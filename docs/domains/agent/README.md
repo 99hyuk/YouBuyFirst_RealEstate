@@ -4,6 +4,8 @@
 
 부동산 에이전트는 지역/단지 반응 지표와 시장 사실 데이터를 읽어 사용자용 평가, 유사 과거 비교 설명, 근거 로그를 만듭니다. 행동 지시가 아니라 관찰 가능한 데이터의 요약과 caveat를 남기는 계층입니다.
 
+제품 정체성은 `수요자 반응 기반 부동산 시장 해석 서비스`입니다. 에이전트는 사람들의 관심, 기대, 불안, 의심을 지표화한 결과를 시장 사실과 과거 유사 상황 위에서 해석합니다.
+
 ## 담당 범위
 
 - 지역/단지 평가 summary
@@ -20,6 +22,7 @@
 - `RealEstateMarketFact`
 - 정책/개발/교통 event timeline
 - 뉴스/컬럼 metadata
+- SerpApi/search API로 발견한 최근 이슈 후보
 - source coverage와 stale 상태
 - 유사 과거 window 후보
 
@@ -31,8 +34,12 @@
 | `targetId` | 지역/단지 식별자 |
 | `evaluatedAt` | 평가 시각 |
 | `evaluationVersion` | 평가 규칙 버전 |
+| `promptVersion` | 평가 prompt 버전 |
+| `model` | 호출한 모델 |
 | `summary` | 사용자용 짧은 평가 |
 | `evidenceJson` | 근거 데이터 묶음 |
+| `similarWindowsJson` | 유사 과거 window와 이후 시장 흐름 |
+| `recentIssuesJson` | 검색 API나 content registry에서 발견한 최근 이슈 후보 |
 | `caveatsJson` | 표본 부족, source skew, stale 등 주의점 |
 | `skipReason` | 평가를 만들지 않은 이유 |
 
@@ -40,9 +47,11 @@
 
 1. evidence log contract 설계
 2. 지역/단지 평가 입력 field 정의
-3. 유사 과거 상황 설명 방식 정리
-4. 행동 지시처럼 보이는 문구 금지 기준 정리
-5. evaluationVersion과 skipReason 관리 기준 정리
+3. 유사 과거 상황 설명 방식과 벡터DB 도입 기준 정리
+4. SerpApi/search API 기반 최근 이슈 후보 저장 범위 정리
+5. 행동 지시처럼 보이는 문구 금지 기준 정리
+6. evaluationVersion, promptVersion, skipReason 관리 기준 정리
+7. Langfuse 같은 관측 도구와 DB 정본 로그의 경계 정리
 
 ## 문구 기준
 
@@ -57,6 +66,7 @@
 - 표본 신뢰도
 - 유사 과거 상황
 - 이후 시장 흐름
+- 최근 이슈 후보
 - 근거 로그
 - 확인 필요
 - 데이터 지연
@@ -91,3 +101,5 @@
 - 내부 추론 전문 저장 또는 노출
 - source별 성향 우열을 공개 결론으로 만들기
 - 원문 전문 재게시
+- 검색 결과 수를 관심도 점수로 사용하기
+- Langfuse trace를 판단 정본으로 사용하기

@@ -19,6 +19,7 @@
 | 문서 | 역할 |
 | --- | --- |
 | `COLLECTION.md` | 수집 소스와 수집 정책 |
+| `REAL_ESTATE_SOURCE_CANDIDATES.md` | 부동산 커뮤니티/source 1차 후보와 30개 registry 확장 슬롯 |
 | `REACTION_GUIDE.md` | 커뮤니티 반응 용어와 표시 기준 |
 
 ## 다른 도메인과의 접점

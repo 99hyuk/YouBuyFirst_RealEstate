@@ -4,7 +4,7 @@
   "headline": "사람들이 먼저 말하는 지역과 단지를 읽습니다",
   "description": "커뮤니티 반응이 커진 지역, 단지, 정책 키워드를 mock 데이터로 훑어보고 공공데이터와 크롤링 계약 전에 필요한 기획 질문을 남깁니다.",
   "notice": "매수 자문이 아니라 지역과 단지 반응을 관찰하는 참고 화면입니다.",
-  "retailSentimentIndex": {
+  "speculationHeatIndex": {
     "label": "부동산 투기 과열 지표",
     "value": 73,
     "unit": "점",
@@ -325,7 +325,7 @@
   ],
   "risingStars": [
     {
-      "symbol": "SEOUL-MAPO",
+      "targetId": "SEOUL-MAPO",
       "name": "마포구 아파트",
       "market": "서울",
       "previousMentionCount": 34,
@@ -351,7 +351,7 @@
       "dataStatus": "mock"
     },
     {
-      "symbol": "SEONGSU-DONG",
+      "targetId": "SEONGSU-DONG",
       "name": "성수동 생활권",
       "market": "서울",
       "previousMentionCount": 41,
@@ -365,7 +365,7 @@
       "dataStatus": "mock"
     },
     {
-      "symbol": "DONGTAN-STATION",
+      "targetId": "DONGTAN-STATION",
       "name": "동탄역권",
       "market": "경기",
       "previousMentionCount": 47,

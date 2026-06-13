@@ -10,7 +10,7 @@
 2. 바꾸려는 화면의 `docs/layers/ui/screens/<screen>.md`
 3. 디자인 판단이 필요하면 `docs/layers/ui/DESIGN_SYSTEM.md`
 
-`screens/` 안의 문서는 화면별 최신 기획과 API 후보입니다. 단순 화면은 `screens/<screen>.md` 하나로 둡니다. 기존 stock 화면 문서는 legacy reference로만 봅니다.
+`screens/` 안의 문서는 화면별 최신 기획과 API 후보입니다. 단순 화면은 `screens/<screen>.md` 하나로 둡니다. 삭제된 레거시 화면 문서는 새 작업의 정본으로 보지 않습니다.
 
 제품 전체 기획은 시작 루틴이 아닙니다. 화면 목적이나 우선순위가 흔들릴 때만 `docs/product/FINAL_PRODUCT_PLAN.md`의 관련 섹션을 검색해서 봅니다.
 
@@ -31,7 +31,7 @@
 
 1. 검색창, 상단 메뉴, 오른쪽 rail의 위치를 안정적으로 유지합니다.
 2. 한 화면에 많은 정보를 넣되, 숫자와 상태가 먼저 읽히게 합니다.
-3. 너나사 시리즈 UI 패턴은 주식과 부동산이 공유하고, 부동산 active 화면은 대표 accent만 warm orange 계열로 둡니다.
+3. 너나사 시리즈 UI 패턴을 따르고, 부동산 active 화면은 대표 accent를 warm orange 계열로 둡니다.
 4. 사각 카드 반복을 줄이고, 헤더 색/간격/선/배경 톤으로 영역을 구분합니다.
 5. 긴 설명문은 도형, 막대, 선 그래프, 칩, 표, timeline 같은 UI 구조로 치환합니다.
 6. 첫 화면은 소개 페이지가 아니라 실제 부동산 대시보드입니다.

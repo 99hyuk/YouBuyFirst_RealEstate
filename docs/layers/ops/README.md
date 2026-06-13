@@ -61,5 +61,5 @@ PR 규칙의 정본은 `GIT_CONVENTION.md`입니다. 이 README에는 원칙만 
 - crawler parser 구현
 - 반응 지표 산식 구현
 - market fact provider 내부 구현
-- legacy stock/simulation 삭제 판단
+- 제거된 레거시 런타임 재유입 방지
 - 사용자 대시보드 UI 구현

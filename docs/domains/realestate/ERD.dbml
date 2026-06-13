@@ -1,0 +1,634 @@
+// 너나사 부동산 논리 ERD
+// dbdiagram.io DBML, MySQL 기준
+
+Project youbuyfirst_realestate {
+  database_type: 'MySQL'
+  Note: '지역/단지 target 중심의 부동산 반응 분석 서비스 ERD. 다대다는 모두 연결 테이블로 풀고, region/complex profile은 target에 대한 식별관계(PK=FK)로 둔다.'
+}
+
+enum target_type {
+  region
+  complex
+  living_area
+  policy_area
+}
+
+enum review_state {
+  candidate
+  approved
+  rejected
+  merged
+  ambiguous
+}
+
+enum data_status {
+  ok
+  empty
+  stale
+  partial
+  mock
+  error
+  unknown
+}
+
+enum reaction_direction {
+  expectation
+  concern
+  neutral
+  information
+}
+
+enum overall_reaction {
+  expectation_dominant
+  concern_dominant
+  mixed
+  wait_and_see
+}
+
+enum source_type {
+  public_api
+  public_board
+  cafe
+  news
+  blog
+  video
+  column
+  official_notice
+}
+
+enum access_mode {
+  public_http
+  rendered_public
+  login_required
+  blocked
+}
+
+enum source_status {
+  disabled
+  local_research_only
+  public_demo_only
+  enabled
+}
+
+enum layer_type {
+  price_change
+  trade_volume
+  jeonse_pressure
+  listing_count
+  mention_heat
+  policy_event
+}
+
+enum period_key {
+  week
+  month
+  half_year
+  year
+}
+
+Table app_users {
+  id char(36) [pk]
+  email varchar [unique]
+  display_name varchar
+  auth_provider varchar
+  created_at datetime [not null]
+  last_seen_at datetime
+}
+
+Table real_estate_targets {
+  id char(36) [pk]
+  target_type target_type [not null]
+  display_name varchar [not null]
+  slug varchar [not null, unique]
+  normalized_name varchar [not null]
+  review_state review_state [not null, default: 'candidate']
+  data_status data_status [not null, default: 'unknown']
+  created_at datetime [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    (target_type, normalized_name)
+    (target_type, review_state)
+  }
+}
+
+// 식별관계: region profile은 target 없이는 존재하지 않는다.
+Table real_estate_regions {
+  target_id char(36) [pk, ref: > real_estate_targets.id]
+  region_level varchar [not null] // sido, sigungu, eupmyeondong, living_area
+  parent_region_id char(36) [ref: > real_estate_regions.target_id]
+  legal_dong_code varchar
+  region_code varchar
+  geometry_id varchar
+  source varchar
+
+  indexes {
+    legal_dong_code
+    region_code
+    parent_region_id
+  }
+}
+
+// 식별관계: complex profile은 target 없이는 존재하지 않는다.
+Table real_estate_complexes {
+  target_id char(36) [pk, ref: > real_estate_targets.id]
+  region_target_id char(36) [not null, ref: > real_estate_regions.target_id]
+  address varchar
+  legal_dong_code varchar
+  built_year int
+  household_count int
+  latitude decimal(12,4)
+  longitude decimal(12,4)
+  provider_keys json
+
+  indexes {
+    region_target_id
+    legal_dong_code
+    (latitude, longitude)
+  }
+}
+
+// target 간 다대다/self 관계: 포함, 생활권, 정책 영향권, 교통권 등을 표현한다.
+Table real_estate_target_edges {
+  from_target_id char(36) [not null, ref: > real_estate_targets.id]
+  to_target_id char(36) [not null, ref: > real_estate_targets.id]
+  edge_type varchar [not null] // contains, nearby, same_living_area, policy_impacts, school_district, transport_area
+  confidence decimal(12,4) [not null]
+  source varchar
+  review_state review_state [not null, default: 'candidate']
+
+  indexes {
+    (from_target_id, to_target_id, edge_type) [pk]
+    to_target_id
+  }
+}
+
+Table real_estate_aliases {
+  id char(36) [pk]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  alias varchar [not null]
+  normalized_alias varchar [not null]
+  alias_type varchar [not null] // official, short_name, nickname, typo, nearby_area, community_slang
+  source varchar
+  evidence_url varchar
+  confidence decimal(12,4) [not null]
+  review_state review_state [not null, default: 'candidate']
+  created_by varchar [not null] // system, operator, import
+
+  indexes {
+    (target_id, normalized_alias) [unique]
+    normalized_alias
+    review_state
+  }
+}
+
+Table map_boundary_assets {
+  id char(36) [pk]
+  asset_type varchar [not null] // sido_topology, sigungu_topology, dong_topology
+  source_label varchar [not null]
+  base_year varchar
+  asset_url varchar [not null]
+  imported_at datetime [not null]
+}
+
+Table map_features {
+  id char(36) [pk]
+  boundary_asset_id char(36) [not null, ref: > map_boundary_assets.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  geometry_id varchar [not null]
+  region_code varchar
+  parent_region_code varchar
+
+  indexes {
+    (boundary_asset_id, geometry_id) [unique]
+    target_id
+    region_code
+  }
+}
+
+Table map_layer_snapshots {
+  id char(36) [pk]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  layer_type layer_type [not null]
+  period_key period_key [not null]
+  change_pct decimal(12,4)
+  sample_count int
+  confidence decimal(12,4)
+  as_of datetime [not null]
+  data_status data_status [not null, default: 'unknown']
+
+  indexes {
+    (target_id, layer_type, period_key, as_of) [unique]
+    (layer_type, period_key, as_of)
+  }
+}
+
+Table crawl_sources {
+  id varchar [pk]
+  display_name varchar [not null]
+  source_type source_type [not null]
+  root_url varchar [not null]
+  access_mode access_mode [not null]
+  status source_status [not null, default: 'disabled']
+  robots_status varchar [not null, default: 'unknown']
+  terms_status varchar [not null, default: 'unknown']
+  target_scope varchar
+  expected_volume varchar
+  parser_status varchar [not null, default: 'none']
+  rate_limit_policy varchar
+  last_reviewed_at datetime
+}
+
+Table source_boards {
+  id char(36) [pk]
+  source_id varchar [not null, ref: > crawl_sources.id]
+  board_key varchar [not null]
+  board_name varchar
+  board_url varchar
+  status source_status [not null, default: 'disabled']
+  last_crawled_at datetime
+
+  indexes {
+    (source_id, board_key) [unique]
+  }
+}
+
+Table community_posts {
+  id char(36) [pk]
+  source_id varchar [not null, ref: > crawl_sources.id]
+  board_id char(36) [ref: > source_boards.id]
+  external_id varchar
+  url varchar [not null]
+  title varchar [not null]
+  content_snippet text
+  published_at datetime
+  time_confidence varchar [not null, default: 'unknown']
+  author_hash varchar
+  view_count int
+  recommend_count int
+  comment_count int
+  content_hash varchar [not null]
+  ingested_at datetime [not null]
+
+  indexes {
+    (source_id, external_id) [unique]
+    content_hash
+    published_at
+  }
+}
+
+Table content_items {
+  id char(36) [pk]
+  source_id varchar [ref: > crawl_sources.id]
+  content_type varchar [not null] // news, report, video, blog, community_link
+  title varchar [not null]
+  snippet text
+  url varchar [not null]
+  domain varchar
+  published_at datetime
+  metric_label varchar
+  status_label varchar
+  ingested_at datetime [not null]
+
+  indexes {
+    url [unique]
+    (content_type, published_at)
+  }
+}
+
+// 뉴스/영상/블로그/링크와 target의 다대다 연결.
+Table content_target_links {
+  content_item_id char(36) [not null, ref: > content_items.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  link_type varchar [not null] // mention, policy_context, source_evidence
+  confidence decimal(12,4) [not null]
+
+  indexes {
+    (content_item_id, target_id, link_type) [pk]
+    target_id
+  }
+}
+
+Table real_estate_mentions {
+  id char(36) [pk]
+  post_id char(36) [not null, ref: > community_posts.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  matched_alias_id char(36) [ref: > real_estate_aliases.id]
+  matched_text varchar [not null]
+  match_source varchar [not null] // title, snippet, comment_snippet
+  confidence decimal(12,4) [not null]
+  review_state varchar [not null, default: 'auto'] // auto, needs-review, approved, rejected
+
+  indexes {
+    post_id
+    target_id
+    matched_alias_id
+  }
+}
+
+Table issue_taxonomy {
+  id varchar [pk] // transport, school, jeonse, redevelopment, subscription, loan, supply, policy
+  label varchar [not null]
+  group_name varchar
+  description text
+  active tinyint(1) [not null, default: 1]
+}
+
+Table reaction_analyses {
+  id char(36) [pk]
+  mention_id char(36) [not null, ref: > real_estate_mentions.id]
+  reaction_direction reaction_direction [not null]
+  issue_id varchar [ref: > issue_taxonomy.id]
+  confidence decimal(12,4) [not null]
+  evidence_snippet text
+  model_version varchar
+  analyzed_at datetime [not null]
+
+  indexes {
+    mention_id
+    issue_id
+    reaction_direction
+  }
+}
+
+Table reaction_snapshots {
+  id char(36) [pk]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  window_start datetime [not null]
+  window_end datetime [not null]
+  mention_count int [not null]
+  expectation_score decimal(12,4) [not null]
+  concern_score decimal(12,4) [not null]
+  neutral_count int [not null]
+  overall_reaction overall_reaction [not null]
+  source_count int [not null]
+  source_skew decimal(12,4)
+  confidence decimal(12,4) [not null]
+  coverage_status varchar [not null]
+  as_of datetime [not null]
+
+  indexes {
+    (target_id, window_start, window_end) [unique]
+    (window_end, overall_reaction)
+  }
+}
+
+Table reaction_snapshot_issues {
+  snapshot_id char(36) [not null, ref: > reaction_snapshots.id]
+  issue_id varchar [not null, ref: > issue_taxonomy.id]
+  share_pct decimal(12,4) [not null]
+  direction reaction_direction [not null]
+  summary text
+  confidence decimal(12,4) [not null]
+
+  indexes {
+    (snapshot_id, issue_id, direction) [pk]
+  }
+}
+
+Table reaction_ranking_snapshots {
+  id char(36) [pk]
+  ranking_type varchar [not null] // regions, complexes, signals
+  window_key varchar [not null] // 1h, 1d, 1w
+  window_start datetime [not null]
+  window_end datetime [not null]
+  as_of datetime [not null]
+  data_status data_status [not null]
+
+  indexes {
+    (ranking_type, window_key, as_of) [unique]
+  }
+}
+
+Table reaction_ranking_rows {
+  id char(36) [pk]
+  ranking_snapshot_id char(36) [not null, ref: > reaction_ranking_snapshots.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  rank_no int [not null]
+  mention_count int [not null]
+  mention_delta_pct decimal(12,4)
+  heat_score decimal(12,4)
+  headline_issue varchar
+  freshness_label varchar
+
+  indexes {
+    (ranking_snapshot_id, rank_no) [unique]
+    (ranking_snapshot_id, target_id) [unique]
+    target_id
+  }
+}
+
+Table real_estate_market_facts {
+  id char(36) [pk]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  fact_type varchar [not null] // apt_trade, apt_rent, listing_count, price_index, supply_event, transport_event
+  provider varchar [not null]
+  provider_dataset varchar
+  provider_object_id varchar
+  observed_at datetime
+  as_of datetime [not null]
+  source_updated_at datetime
+  ingested_at datetime [not null]
+  value_json json [not null]
+  data_status data_status [not null]
+  stale tinyint(1) [not null, default: 0]
+
+  indexes {
+    (target_id, fact_type, as_of)
+    (provider, provider_dataset, provider_object_id)
+  }
+}
+
+Table market_indicator_defs {
+  id char(36) [pk]
+  category varchar [not null] // price_transaction, supply_demand, demand_mood, macro_finance
+  indicator_key varchar [not null, unique]
+  display_name varchar [not null]
+  unit varchar
+  provider varchar
+  provider_dataset varchar
+  default_period varchar
+}
+
+Table market_indicator_values {
+  id char(36) [pk]
+  indicator_id char(36) [not null, ref: > market_indicator_defs.id]
+  target_id char(36) [ref: > real_estate_targets.id] // null이면 전국/거시 지표
+  period_start datetime [not null]
+  period_end datetime [not null]
+  value_num decimal(12,4)
+  value_text varchar
+  change_pct decimal(12,4)
+  as_of datetime [not null]
+  data_status data_status [not null]
+
+  indexes {
+    (indicator_id, target_id, period_start, period_end) [unique]
+    (indicator_id, as_of)
+  }
+}
+
+Table market_data_schedules {
+  id char(36) [pk]
+  indicator_id char(36) [ref: > market_indicator_defs.id]
+  schedule_label varchar
+  title varchar [not null]
+  expected_at datetime
+  watch_note varchar
+  status varchar
+}
+
+Table policy_events {
+  id char(36) [pk]
+  event_type varchar [not null] // policy, transport, supply, loan, subscription, education, redevelopment
+  title varchar [not null]
+  summary text
+  source_url varchar
+  published_at datetime
+  effective_from datetime
+  effective_to datetime
+  target_scope varchar
+  data_status data_status [not null]
+}
+
+// 정책/교통/공급 이벤트와 target의 다대다 연결.
+Table policy_event_targets {
+  policy_event_id char(36) [not null, ref: > policy_events.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  impact_type varchar [not null]
+  confidence decimal(12,4) [not null]
+  review_state review_state [not null, default: 'candidate']
+
+  indexes {
+    (policy_event_id, target_id, impact_type) [pk]
+    target_id
+  }
+}
+
+// 상세 화면용 시간축 캐시. source_ref_type/source_ref_id는 polymorphic reference라 DB FK로 강제하지 않는다.
+Table timeline_events {
+  id char(36) [pk]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  event_type varchar [not null] // reaction, market_fact, policy, content
+  source_ref_type varchar [not null]
+  source_ref_id char(36) [not null]
+  title varchar [not null]
+  summary text
+  occurred_at datetime
+  as_of datetime
+  data_status data_status [not null]
+
+  indexes {
+    (target_id, occurred_at)
+    (source_ref_type, source_ref_id)
+  }
+}
+
+// 반응 snapshot 간 유사 과거 매칭. 자기 자신과의 다대다 연결 테이블이다.
+Table similar_window_matches {
+  source_snapshot_id char(36) [not null, ref: > reaction_snapshots.id]
+  matched_snapshot_id char(36) [not null, ref: > reaction_snapshots.id]
+  similarity_score decimal(12,4) [not null]
+  match_reason text
+  after_market_summary json
+  caveat text
+
+  indexes {
+    (source_snapshot_id, matched_snapshot_id) [pk]
+    matched_snapshot_id
+  }
+}
+
+Table evidence_logs {
+  id char(36) [pk]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  snapshot_id char(36) [ref: > reaction_snapshots.id]
+  evaluation_version varchar [not null]
+  tone varchar [not null] // neutral, dry, sharp, watch
+  summary text [not null]
+  subtitle text
+  caveats_json json
+  data_quality varchar [not null]
+  evaluated_at datetime [not null]
+  as_of datetime [not null]
+
+  indexes {
+    (target_id, evaluated_at)
+    snapshot_id
+  }
+}
+
+// evidence item은 여러 근거 테이블을 가리키는 논리 참조라 ref_type/ref_id로 둔다.
+Table evidence_log_items {
+  id char(36) [pk]
+  evidence_log_id char(36) [not null, ref: > evidence_logs.id]
+  evidence_type varchar [not null] // reaction, market_fact, policy_event, content, similar_window
+  ref_type varchar [not null]
+  ref_id char(36) [not null]
+  label varchar [not null]
+  value_text varchar
+  severity varchar
+
+  indexes {
+    evidence_log_id
+    (ref_type, ref_id)
+  }
+}
+
+// 사용자와 target의 다대다 연결.
+Table user_watch_targets {
+  user_id char(36) [not null, ref: > app_users.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  watch_label varchar
+  status varchar [not null, default: 'watching']
+  created_at datetime [not null]
+
+  indexes {
+    (user_id, target_id) [pk]
+    target_id
+  }
+}
+
+Table alert_rules {
+  id char(36) [pk]
+  user_id char(36) [not null, ref: > app_users.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  rule_type varchar [not null] // mention_spike, jeonse_ratio, unsold_change, policy_keyword
+  threshold_json json [not null]
+  enabled tinyint(1) [not null, default: 1]
+  created_at datetime [not null]
+
+  indexes {
+    (user_id, target_id, rule_type)
+  }
+}
+
+Table alert_events {
+  id char(36) [pk]
+  alert_rule_id char(36) [not null, ref: > alert_rules.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  event_title varchar [not null]
+  event_summary text
+  triggered_at datetime [not null]
+  status varchar [not null] // unread, read, dismissed
+
+  indexes {
+    alert_rule_id
+    (target_id, triggered_at)
+  }
+}
+
+Table observation_logs {
+  id char(36) [pk]
+  user_id char(36) [not null, ref: > app_users.id]
+  target_id char(36) [not null, ref: > real_estate_targets.id]
+  log_type varchar [not null]
+  summary text [not null]
+  source_ref_id char(36)
+  created_at datetime [not null]
+
+  indexes {
+    (user_id, created_at)
+    (target_id, created_at)
+  }
+}

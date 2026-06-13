@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const frontRoot = fileURLToPath(new URL('.', import.meta.url));
-const stockDetailCopyAssets = 'C:/agents/YouBuyFirst/docs/assets/stock-detail-copy';
 
 export default defineConfig({
   plugins: [vue()],
@@ -15,7 +14,7 @@ export default defineConfig({
       }
     },
     fs: {
-      allow: [frontRoot, stockDetailCopyAssets]
+      allow: [frontRoot]
     }
   },
   test: {

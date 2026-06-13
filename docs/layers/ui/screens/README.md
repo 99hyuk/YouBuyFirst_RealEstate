@@ -8,7 +8,7 @@
 
 - 문서는 사용자가 실제로 이동하는 화면 단위로 씁니다.
 - route가 있는 페이지는 Screen Brief를 둡니다.
-- 과거 금융 서비스 route가 남아 있는 경우에도 현재 표준 route를 먼저 기록하고, 기존 route는 legacy redirect로만 둡니다.
+- 과거 금융 서비스 route는 현재 화면 목록에 남기지 않고, 부동산 표준 route만 기록합니다.
 - drawer, modal, detail panel처럼 공유 가능한 상세 UI는 필요할 때 별도 brief로 분리합니다.
 - 화면 변경이 있으면 PR에서 해당 Screen Brief도 함께 갱신합니다.
 
@@ -21,10 +21,8 @@
 | `newsroom` | `/newsroom?feed=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그·커뮤니티 링크 |
 | `indicators` | `/indicators`, `/indicators/:category` | `indicators.md` | active | 가격·거래량, 공급·수급, 수요·심리, 거시·금융 지표 |
 | `region-reactions` | `/realestate/reactions?view=` | `region-reactions.md` | active | 지역·단지 순위, 커뮤니티 반응, 근거 로그를 합친 표준 화면 |
-| `region-detail` | `/realestate/targets/:symbol` | `region-detail/README.md` | active | 지역/단지 상세 리포트. `/stocks/:symbol`은 legacy redirect |
-| `legacy-communities` | `/communities?view=` | `human-indicator.md` | legacy-redirect | 기존 반응 지표 URL. `/realestate/reactions?view=`로 이동 |
-| `agents` | `/agents` | `agents.md` | active-redirect | 근거 로그 관점. 현재는 `/realestate/reactions?view=agents`로 연결 |
-| `portfolio` | `/portfolio` | `portfolio.md` | active | 관심 지역, 알림, alias/source DB 연결 |
+| `region-detail` | `/realestate/targets/:targetId` | `region-detail/README.md` | active | 지역/단지 상세 리포트 |
+| `watchlist` | `/realestate/watchlist` | `watchlist.md` | active | 관심 지역, 알림, alias/source DB 연결 |
 
 ## Screen Brief 템플릿
 

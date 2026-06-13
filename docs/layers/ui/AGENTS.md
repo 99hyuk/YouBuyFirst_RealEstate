@@ -21,7 +21,7 @@ ui layer는 화면 구조, route, Screen Brief, 디자인 시스템, fixture/API
 - UI는 도메인 contract를 임의 확정하지 않습니다. 화면 후보 필드는 Screen Brief에 남기고, 확정 contract는 해당 도메인 문서로 승격합니다.
 - 새 화면/child detail이 생기면 별도 지시가 없어도 해당 Screen Brief를 갱신합니다.
 - Screen Brief는 최신 기준만 유지합니다. 긴 피드백 전문, 폐기 시안, 긴 변경 이력은 누적하지 않습니다.
-- 기존 stock 화면 문서는 legacy reference이며 새 작업의 정본으로 삼지 않습니다.
+- 삭제된 레거시 화면 문서는 새 작업의 정본으로 삼지 않습니다.
 
 ## 검증
 

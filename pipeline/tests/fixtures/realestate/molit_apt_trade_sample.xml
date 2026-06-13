@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+  <header>
+    <resultCode>00</resultCode>
+    <resultMsg>NORMAL SERVICE.</resultMsg>
+  </header>
+  <body>
+    <items>
+      <item>
+        <sggCd>11110</sggCd>
+        <umdNm>Sajik-dong</umdNm>
+        <aptNm>Sajik Palace</aptNm>
+        <jibun>1-1</jibun>
+        <dealYear>2026</dealYear>
+        <dealMonth>6</dealMonth>
+        <dealDay>3</dealDay>
+        <dealAmount>82,500</dealAmount>
+        <excluUseAr>84.97</excluUseAr>
+        <floor>12</floor>
+        <buildYear>2015</buildYear>
+        <dealingGbn>brokered</dealingGbn>
+      </item>
+    </items>
+    <numOfRows>10</numOfRows>
+    <pageNo>1</pageNo>
+    <totalCount>1</totalCount>
+  </body>
+</response>

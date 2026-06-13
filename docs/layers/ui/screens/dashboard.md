@@ -4,7 +4,7 @@
 
 - Parent: root
 - Route 정보: `/dashboard`
-- Child screens: `/realestate/map`, `/realestate/reactions`, `/realestate/targets/:symbol`, `/indicators/:category`, `/newsroom`
+- Child screens: `/realestate/map`, `/realestate/reactions`, `/realestate/targets/:targetId`, `/indicators/:category`, `/newsroom`
 
 ## 화면 목적
 
@@ -41,11 +41,11 @@
 | --- | --- | --- |
 | `reactionRanking` | indicator/community | 지역·단지별 언급량과 반응 방향 |
 | `marketIndicators` | market/realestate | 핵심 부동산 지표 카드 |
-| `retailSentimentIndex` | indicator/community | 부동산 투기 과열 지표 gauge |
+| `speculationHeatIndex` | indicator/community | 부동산 투기 과열 지표 gauge |
 | `regionalReturnSeries` | market/realestate | 핵심 지역별 상승률 chart |
 | `liveNews`, `analystReports` | content/backend | 뉴스와 정책·통계 리포트 |
 | `externalContent` | content/backend | 영상, 블로그, 커뮤니티 링크 |
-| `quoteSnapshots` | market/realestate | 실거래·지표 snapshot과 stale 상태 |
+| `marketFactSnapshots` | market/realestate | 실거래·지표 snapshot과 stale 상태 |
 
 ## 기획 확인 필요
 

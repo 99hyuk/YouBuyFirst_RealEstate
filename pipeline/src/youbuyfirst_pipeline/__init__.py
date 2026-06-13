@@ -1,2 +1,1 @@
-﻿"""Community crawler and LLM sentiment pipeline for YouBuyFirst."""
-
+"""Community crawler and real-estate reaction pipeline for YouBuyFirst."""
