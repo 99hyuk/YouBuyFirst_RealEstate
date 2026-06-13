@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class RealEstateMarketFactIntegrationTest {
+    private static final String IDEMPOTENT_LAWD_CODE = "11991";
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -35,8 +36,8 @@ class RealEstateMarketFactIntegrationTest {
                         Map.entry("factType", "apt_trade"),
                         Map.entry("provider", "molit"),
                         Map.entry("providerDataset", "molit_apt_trade"),
-                        Map.entry("providerObjectId", "molit_apt_trade:11110:202606:sample"),
-                        Map.entry("legalDongCode", "11110"),
+                        Map.entry("providerObjectId", "molit_apt_trade:11991:202606:sample"),
+                        Map.entry("legalDongCode", IDEMPOTENT_LAWD_CODE),
                         Map.entry("observedAt", "2026-06-03"),
                         Map.entry("asOf", "2026-06-01"),
                         Map.entry("ingestedAt", "2026-06-11T00:05:00Z"),
@@ -59,8 +60,8 @@ class RealEstateMarketFactIntegrationTest {
                         Map.entry("factType", "apt_trade"),
                         Map.entry("provider", "molit"),
                         Map.entry("providerDataset", "molit_apt_trade"),
-                        Map.entry("providerObjectId", "molit_apt_trade:11110:202606:sample"),
-                        Map.entry("legalDongCode", "11110"),
+                        Map.entry("providerObjectId", "molit_apt_trade:11991:202606:sample"),
+                        Map.entry("legalDongCode", IDEMPOTENT_LAWD_CODE),
                         Map.entry("observedAt", "2026-06-03"),
                         Map.entry("asOf", "2026-06-01"),
                         Map.entry("ingestedAt", "2026-06-11T00:10:00Z"),
@@ -91,7 +92,7 @@ class RealEstateMarketFactIntegrationTest {
         assertThat(duplicate.getBody()).contains("\"acceptedFacts\":1");
 
         ResponseEntity<String> response = restTemplate.getForEntity(
-                "/api/realestate/market-facts?legalDongCode=11110&factType=apt_trade",
+                "/api/realestate/market-facts?legalDongCode=" + IDEMPOTENT_LAWD_CODE + "&factType=apt_trade",
                 String.class
         );
 
@@ -104,8 +105,8 @@ class RealEstateMarketFactIntegrationTest {
         assertThat(fact.path("factType").asText()).isEqualTo("apt_trade");
         assertThat(fact.path("provider").asText()).isEqualTo("molit");
         assertThat(fact.path("providerDataset").asText()).isEqualTo("molit_apt_trade");
-        assertThat(fact.path("providerObjectId").asText()).isEqualTo("molit_apt_trade:11110:202606:sample");
-        assertThat(fact.path("legalDongCode").asText()).isEqualTo("11110");
+        assertThat(fact.path("providerObjectId").asText()).isEqualTo("molit_apt_trade:11991:202606:sample");
+        assertThat(fact.path("legalDongCode").asText()).isEqualTo(IDEMPOTENT_LAWD_CODE);
         assertThat(fact.path("observedAt").asText()).isEqualTo("2026-06-03");
         assertThat(fact.path("asOf").asText()).isEqualTo("2026-06-01");
         assertThat(fact.path("ingestedAt").asText()).isEqualTo("2026-06-11T00:10:00Z");

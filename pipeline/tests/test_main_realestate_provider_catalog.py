@@ -1,9 +1,13 @@
 import asyncio
 import json
+from pathlib import Path
 import subprocess
 import sys
 
 from youbuyfirst_pipeline import main as pipeline_main
+
+
+PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_realestate_public_data_providers_command_prints_catalog(monkeypatch, capsys):
@@ -61,7 +65,7 @@ def test_realestate_public_data_providers_subprocess_outputs_utf8_sql():
             "--realestate-provider-output",
             "sql",
         ],
-        cwd="pipeline",
+        cwd=PIPELINE_ROOT,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,

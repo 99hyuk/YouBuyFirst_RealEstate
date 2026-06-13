@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 class RealEstatePublicDataRawIngestionIntegrationTest {
+    private static final String PROMOTION_LAWD_CODE = "11992";
+    private static final String PROMOTION_RUN_KEY = "molit_apt_rent:11992:202606";
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -184,13 +186,13 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
     void promotesValidatedStagingFactsIntoMarketFactsAndUpdatesRunProgress() throws Exception {
         Map<String, Object> request = Map.of(
                 "run", Map.ofEntries(
-                        Map.entry("runKey", "molit_apt_rent:11110:202606"),
+                        Map.entry("runKey", PROMOTION_RUN_KEY),
                         Map.entry("providerDataset", "molit_apt_rent"),
                         Map.entry("runType", "backfill"),
                         Map.entry("requestedFrom", "2026-06-01"),
                         Map.entry("requestedTo", "2026-06-30"),
                         Map.entry("requestParams", Map.of(
-                                "LAWD_CD", "11110",
+                                "LAWD_CD", PROMOTION_LAWD_CODE,
                                 "DEAL_YMD", "202606"
                         )),
                         Map.entry("status", "succeeded"),
@@ -199,8 +201,8 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
                 ),
                 "items", List.of(Map.ofEntries(
                         Map.entry("providerDataset", "molit_apt_rent"),
-                        Map.entry("providerObjectId", "molit_apt_rent:11110:202606:raw-1"),
-                        Map.entry("legalDongCode", "11110"),
+                        Map.entry("providerObjectId", "molit_apt_rent:11992:202606:raw-1"),
+                        Map.entry("legalDongCode", PROMOTION_LAWD_CODE),
                         Map.entry("targetId", "region-seoul-jongno"),
                         Map.entry("observedAt", "2026-06-04"),
                         Map.entry("asOf", "2026-06-01"),
@@ -216,7 +218,7 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
                         Map.entry("staging", Map.ofEntries(
                                 Map.entry("targetType", "region"),
                                 Map.entry("targetId", "region-seoul-jongno"),
-                                Map.entry("legalDongCode", "11110"),
+                                Map.entry("legalDongCode", PROMOTION_LAWD_CODE),
                                 Map.entry("factType", "apt_rent"),
                                 Map.entry("observedAt", "2026-06-04"),
                                 Map.entry("asOf", "2026-06-01"),
@@ -239,7 +241,7 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
 
         Map<String, Object> promoteRequest = Map.of(
                 "providerDataset", "molit_apt_rent",
-                "runKey", "molit_apt_rent:11110:202606",
+                "runKey", PROMOTION_RUN_KEY,
                 "validationStatus", "valid",
                 "limit", 10
         );
@@ -254,7 +256,7 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
         assertThat(promotedBody.path("promotedFacts").asInt()).isEqualTo(1);
 
         ResponseEntity<String> marketFacts = restTemplate.getForEntity(
-                "/api/realestate/market-facts?legalDongCode=11110&factType=apt_rent",
+                "/api/realestate/market-facts?legalDongCode=" + PROMOTION_LAWD_CODE + "&factType=apt_rent",
                 String.class
         );
         assertThat(marketFacts.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -263,7 +265,7 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
         assertThat(facts.get(0).path("provider").asText()).isEqualTo("molit");
         assertThat(facts.get(0).path("providerDataset").asText()).isEqualTo("molit_apt_rent");
         assertThat(facts.get(0).path("providerObjectId").asText())
-                .isEqualTo("molit_apt_rent:11110:202606:raw-1");
+                .isEqualTo("molit_apt_rent:11992:202606:raw-1");
         assertThat(facts.get(0).path("valueJson").path("depositManwon").asInt()).isEqualTo(45000);
         assertThat(facts.get(0).path("dataStatus").asText()).isEqualTo("ok");
         assertThat(facts.get(0).path("stale").asBoolean()).isFalse();
@@ -273,8 +275,9 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
                 String.class
         );
         JsonNode runs = objectMapper.readTree(listed.getBody()).path("items");
-        assertThat(runs).hasSize(1);
-        assertThat(runs.get(0).path("rowsPromoted").asLong()).isEqualTo(1);
+        JsonNode importRun = findRunByKey(runs, PROMOTION_RUN_KEY);
+        assertThat(importRun).isNotNull();
+        assertThat(importRun.path("rowsPromoted").asLong()).isEqualTo(1);
     }
 
     @Test

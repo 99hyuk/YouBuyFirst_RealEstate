@@ -4,6 +4,8 @@ from youbuyfirst_pipeline.realestate_provider_catalog import (
     public_data_catalog_payload,
 )
 
+REPO_ROOT = __import__("pathlib").Path(__file__).resolve().parents[2]
+
 
 def test_public_data_catalog_confirms_first_wave_sources():
     dataset_ids = {dataset.dataset_id for dataset in PUBLIC_DATA_DATASETS}
@@ -69,10 +71,9 @@ def test_enabled_backfill_dataset_ids_excludes_reference_only_sources():
 
 def test_backend_public_data_dataset_seed_matches_catalog_without_broken_korean():
     migration = (
-        __import__("pathlib")
-        .Path("backend/src/main/resources/db/migration/V27__real_estate_public_data_catalog_and_raw_ingestion.sql")
-        .read_text(encoding="utf-8")
-    )
+        REPO_ROOT
+        / "backend/src/main/resources/db/migration/V27__real_estate_public_data_catalog_and_raw_ingestion.sql"
+    ).read_text(encoding="utf-8")
 
     for dataset in PUBLIC_DATA_DATASETS:
         assert f"'{dataset.dataset_id}'" in migration
