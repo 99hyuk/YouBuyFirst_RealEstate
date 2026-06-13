@@ -211,8 +211,8 @@ public class RealEstateMarketFactService {
         return switch (fact.getFactType()) {
             case "apt_trade" -> formatManwonAsEok(valueJson.path("dealAmountManwon"));
             case "apt_rent" -> "보증금 %s / 월세 %s만원".formatted(
-                    formatManwonAsEok(valueJson.path("depositManwon")),
-                    valueJson.path("monthlyRentManwon").asText("확인 필요")
+                    formatManwonAsEok(firstNode(valueJson, "depositAmountManwon", "depositManwon")),
+                    firstNode(valueJson, "monthlyRentAmountManwon", "monthlyRentManwon").asText("확인 필요")
             );
             default -> "확인 필요";
         };
@@ -247,6 +247,14 @@ public class RealEstateMarketFactService {
         }
         double eok = manwonNode.asDouble() / 10000.0;
         return String.format(Locale.KOREA, "%.2f억원", eok);
+    }
+
+    private JsonNode firstNode(JsonNode valueJson, String firstFieldName, String fallbackFieldName) {
+        JsonNode firstNode = valueJson.path(firstFieldName);
+        if (!firstNode.isMissingNode() && !firstNode.isNull()) {
+            return firstNode;
+        }
+        return valueJson.path(fallbackFieldName);
     }
 
     private static String normalizeLower(String value) {

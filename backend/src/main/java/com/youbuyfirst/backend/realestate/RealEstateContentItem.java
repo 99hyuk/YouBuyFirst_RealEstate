@@ -6,12 +6,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.HexFormat;
 
 @Entity
 @Table(
         name = "content_items",
-        uniqueConstraints = @UniqueConstraint(name = "uk_content_items_url", columnNames = "url")
+        uniqueConstraints = @UniqueConstraint(name = "uk_content_items_url_hash", columnNames = "url_hash")
 )
 public class RealEstateContentItem {
 
@@ -31,8 +35,11 @@ public class RealEstateContentItem {
     @Column(columnDefinition = "text")
     private String snippet;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, columnDefinition = "text")
     private String url;
+
+    @Column(name = "url_hash", nullable = false, length = 64)
+    private String urlHash;
 
     @Column(length = 160)
     private String domain;
@@ -85,6 +92,7 @@ public class RealEstateContentItem {
         this.title = title;
         this.snippet = snippet;
         this.url = url;
+        this.urlHash = sha256(url);
         this.domain = domain;
         this.publishedAt = publishedAt;
         this.metricLabel = metricLabel;
@@ -118,6 +126,10 @@ public class RealEstateContentItem {
         return url;
     }
 
+    public String getUrlHash() {
+        return urlHash;
+    }
+
     public String getDomain() {
         return domain;
     }
@@ -140,5 +152,14 @@ public class RealEstateContentItem {
 
     public String getDataStatus() {
         return dataStatus;
+    }
+
+    private static String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return HexFormat.of().formatHex(digest.digest(value.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException exc) {
+            throw new IllegalStateException("SHA-256 algorithm is not available", exc);
+        }
     }
 }

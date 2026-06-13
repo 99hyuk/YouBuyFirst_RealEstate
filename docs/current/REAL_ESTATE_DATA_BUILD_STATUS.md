@@ -49,6 +49,11 @@
 - 실거래/전월세 백필 계획에 `--realestate-backfill-chunk-size` 옵션을 추가했습니다. 큰 기간/지역 manifest를 chunk별 실행 단위로 나누고, chunk manifest도 다시 `--realestate-backfill-plan-json` 입력으로 읽어 실패한 묶음만 재실행할 수 있습니다.
 - 로컬 secret 예시에 Kakao 지도 SDK 환경변수 이름을 추가했습니다. 실제 key는 root `.env`와 `front/.env.local`에만 두고, repo에는 `.env.example`과 `front/.env.example`의 placeholder만 남깁니다.
 - 화면 정의서에 하이브리드 지도 기준을 반영했습니다. 전국~동 단위는 자체 도식화 heatmap, 동/단지 상세 단계는 사이트 내부에 카카오맵 SDK를 내장하는 방향입니다.
+- Docker MySQL 기준으로 migration을 끝까지 적용하고, `molit_apt_trade`, `molit_apt_rent` 실제 API 샘플을 raw -> staging -> promoted fact까지 검증했습니다.
+- 샘플 기준은 종로구 `legalDongCode=11110`, `dealYm=202501`입니다. raw item은 매매 26건, 전월세 184건이며, promoted market fact는 매매 25건, 전월세 168건입니다.
+- `GET /api/realestate/dashboard/market-summary?legalDongCode=11110`에서 매매/전월세 요약이 `provider`, `asOf`, `stale`, `dataStatus`와 함께 조회되는 것을 확인했습니다.
+- MySQL에서 `content_items.url` 직접 unique index가 길이 제한에 걸리지 않도록 `url_hash` unique 기준으로 보정했습니다.
+- 공공데이터 raw-push 실행 중 HTTP client가 query string을 INFO 로그로 출력하지 않도록 `httpx`/`httpcore` 로그 레벨을 낮췄습니다. 서비스키 값은 repo와 문서에 남기지 않습니다.
 
 ## 1차 provider
 
@@ -90,7 +95,7 @@ real_estate_targets
 ## 아직 안 한 것
 
 - 실제 공공데이터 대용량 CSV 다운로드/백필 실행
-- 실제 MOLIT 실거래/전월세 API를 개인 인증키로 호출한 운영 백필 실행
+- 실제 MOLIT 실거래/전월세 API의 전체 지역/기간 운영 백필 실행
 - 공시가격 CSV 실제 원본 다운로드 후 대량 백필 실행
 - 한국부동산원 통계, 미분양, 인허가 실제 원본 파일의 컬럼명/다운로드 경로 검증과 정규화 매핑
 - 네이버/다음 카페를 포함한 실제 공개 source별 adapter 활성화
@@ -101,10 +106,10 @@ real_estate_targets
 
 ## 다음 작업
 
-1. `realestate-public-data-preflight --realestate-run-limit 1`로 서비스키, 대상 run, 완료 run skip, page 설정을 먼저 확인한 뒤 MOLIT 실거래/전월세 API 샘플 백필을 실행해 raw/staging 저장과 market fact 승격을 확인합니다.
-2. 공시가격 CSV inspect 명령으로 row 수, 오류 샘플, batch 수를 먼저 확인하고, streaming parser와 batch raw-push 명령으로 샘플 파일 백필을 검증합니다.
-3. 한국부동산원 통계, 미분양, 인허가 실제 원본 파일을 내려받아 regional stat CSV adapter에 맞는 컬럼 매핑을 검증합니다.
-4. 레거시 제거 이후 남은 작업은 실제 공공데이터 백필, 공개 source adapter 활성화, alias 후보 운영자 검수, SerpApi 후보 링크 승인 workflow, LLM provider/guardrail 기반 평가 고도화입니다.
+1. 공시가격 CSV inspect 명령으로 row 수, 오류 샘플, batch 수를 먼저 확인하고, streaming parser와 batch raw-push 명령으로 샘플 파일 백필을 검증합니다.
+2. 한국부동산원 통계, 미분양, 인허가 실제 원본 파일을 내려받아 regional stat CSV adapter에 맞는 컬럼 매핑을 검증합니다.
+3. 종로구 샘플과 같은 방식으로 실거래/전월세 백필 범위를 `run-limit`이 있는 소규모 묶음에서 시군구/기간 단위로 확장합니다.
+4. 레거시 제거 이후 남은 작업은 실제 공공데이터 전체 백필, 공개 source adapter 활성화, alias 후보 운영자 검수, SerpApi 후보 링크 승인 workflow, LLM provider/guardrail 기반 평가 고도화입니다.
 
 ## 현재 실행 가능한 명령
 
