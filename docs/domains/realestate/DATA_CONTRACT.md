@@ -460,6 +460,8 @@ GET /api/realestate/targets/{targetId}/evidence-logs?limit=
 GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=
 GET /api/realestate/market-facts?legalDongCode=&factType=
 GET /api/realestate/dashboard/market-summary?legalDongCode=
+GET /api/realestate/map/layers?layerType=sido
+GET /api/realestate/map/layers?layerType=sigungu&parentTargetId=
 GET /api/realestate/newsroom?feed=&page=&pageSize=
 GET /api/realestate/reactions/rankings?type=region&windowStart=&windowMinutes=
 GET /api/realestate/reactions/rankings?type=complex&windowMinutes=
@@ -484,6 +486,8 @@ POST /internal/community/crawl-sources
 ```
 
 `GET /api/realestate/dashboard/market-summary`는 원천 `real_estate_market_facts`를 대시보드 카드용으로 얇게 요약합니다. 현재는 최신 `apt_trade`, 최신 `apt_rent`를 우선 노출하며, 변동률이 확인되지 않은 값은 `changePct=null`로 둡니다.
+
+`GET /api/realestate/map/layers`는 자체 도식화 지도 heat layer 입력입니다. `layerType=sido`는 전국 시도, `layerType=sigungu&parentTargetId=region-seoul`은 특정 시도 하위 시군구를 반환합니다. 응답은 `targets[].targetId`를 정본 식별자로 쓰고, 각 기간 값에 `provider`, `asOf`, `dataStatus`, `stale`, `changePct`, `sampleCount`, `confidence`를 포함합니다. 실제 데이터 집계 전 seed 값은 `dataStatus=mock`, `stale=true`로 표시합니다.
 
 `GET /api/realestate/reactions/rankings`는 `real_estate_reaction_snapshots`를 지역/단지 랭킹 화면용으로 반환합니다. `windowStart`가 없으면 해당 target type의 최신 window를 반환하고, 없으면 빈 `items`와 `coverageStatus=empty`를 반환합니다.
 
