@@ -65,6 +65,10 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
     build_recent_issue_content_items,
     load_recent_issue_search_targets,
 )
+from youbuyfirst_pipeline.realestate_daily_scheduler import (
+    RealEstateDailyRefreshJob,
+    RealEstateRecentIssuesRefreshJob,
+)
 from youbuyfirst_pipeline.realestate_evidence import (
     DEFAULT_EVALUATION_VERSION,
     DEFAULT_PROMPT_VERSION,
@@ -361,6 +365,21 @@ async def async_main() -> None:
         "--realestate-reaction-snapshots-refresh-interval-minutes",
         type=int,
         default=int(os.getenv("REALESTATE_REACTION_SNAPSHOT_REFRESH_INTERVAL_MINUTES", "30")),
+    )
+    parser.add_argument(
+        "--enable-realestate-daily-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_DAILY_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-daily-refresh-interval-minutes",
+        type=int,
+        default=int(os.getenv("REALESTATE_DAILY_REFRESH_INTERVAL_MINUTES", "1440")),
+    )
+    parser.add_argument(
+        "--enable-realestate-recent-issues-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_RECENT_ISSUES_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
     )
     parser.add_argument("--legal-dong-code-csv", default=os.getenv("REALESTATE_LEGAL_DONG_CODE_CSV"))
     parser.add_argument(
@@ -1016,6 +1035,7 @@ async def async_main() -> None:
     else:
         realestate_market_facts_refresh_job = None
         realestate_reaction_snapshot_refresh_job = None
+        realestate_daily_refresh_job = None
         market_client = _spring_client()
         if args.enable_realestate_market_facts_refresh:
             if not args.realestate_deal_ym:
@@ -1037,6 +1057,37 @@ async def async_main() -> None:
                 target_edges_jsonl=args.realestate_target_edges_jsonl,
                 stale_after_minutes=args.reaction_stale_after_minutes,
             )
+        if args.enable_realestate_recent_issues_refresh and not args.enable_realestate_daily_refresh:
+            raise SystemExit("--enable-realestate-recent-issues-refresh requires --enable-realestate-daily-refresh")
+        if args.enable_realestate_daily_refresh:
+            daily_steps = []
+            if realestate_market_facts_refresh_job is not None:
+                daily_steps.append(("market_facts", realestate_market_facts_refresh_job))
+                realestate_market_facts_refresh_job = None
+            if realestate_reaction_snapshot_refresh_job is not None:
+                daily_steps.append(("reaction_snapshots", realestate_reaction_snapshot_refresh_job))
+                realestate_reaction_snapshot_refresh_job = None
+            if args.enable_realestate_recent_issues_refresh:
+                if not args.realestate_search_targets_jsonl:
+                    raise SystemExit("--realestate-search-targets-jsonl is required when real-estate recent issues refresh is enabled")
+                daily_steps.append(
+                    (
+                        "recent_issues",
+                        RealEstateRecentIssuesRefreshJob(
+                            client=market_client,
+                            search_client=_serpapi_recent_issue_client(),
+                            search_targets_jsonl=args.realestate_search_targets_jsonl,
+                            issue_keywords=args.realestate_issue_keywords,
+                            result_limit=args.serpapi_result_limit,
+                        ),
+                    )
+                )
+            if not daily_steps:
+                raise SystemExit(
+                    "--enable-realestate-daily-refresh requires at least one real-estate refresh step "
+                    "(market facts, reaction snapshots, or recent issues)"
+                )
+            realestate_daily_refresh_job = RealEstateDailyRefreshJob(daily_steps)
         await serve(
             pipeline,
             interval_minutes=args.interval_minutes,
@@ -1044,6 +1095,8 @@ async def async_main() -> None:
             realestate_market_facts_interval_minutes=args.realestate_market_facts_refresh_interval_minutes,
             realestate_reaction_snapshot_refresh_job=realestate_reaction_snapshot_refresh_job,
             realestate_reaction_snapshot_interval_minutes=args.realestate_reaction_snapshots_refresh_interval_minutes,
+            realestate_daily_refresh_job=realestate_daily_refresh_job,
+            realestate_daily_refresh_interval_minutes=args.realestate_daily_refresh_interval_minutes,
         )
 
 
