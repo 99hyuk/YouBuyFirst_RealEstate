@@ -163,7 +163,7 @@ describe('front dashboard shell', () => {
     expect(reactions.text()).not.toContain('커뮤니티 반응과 공식 지표 비교 그래프');
     expect(reactions.findAll('.region-ranking-row').length).toBe(12);
 
-    const target = await mountAt('/realestate/targets/SEOUL-MAPO');
+    const target = await mountAt('/realestate/targets/region-seoul-mapo');
     expect(target.text()).toContain('지역 반응 목록으로');
     expect(target.text()).toContain('마포구 아파트');
     expect(target.text()).toContain('전세 매물 체감과 학군 키워드');
@@ -177,15 +177,15 @@ describe('front dashboard shell', () => {
     expect(target.findAll('.vertical-timeline article')).toHaveLength(4);
     expect(target.findAll('.evidence-list a').length).toBeGreaterThanOrEqual(3);
 
-    const otherTarget = await mountAt('/realestate/targets/DONGTAN-STATION');
+    const otherTarget = await mountAt('/realestate/targets/living-area-gyeonggi-dongtan-station');
     expect(otherTarget.text()).toContain('동탄역권');
-    expect(otherTarget.text()).toContain('DONGTAN-STATION');
+    expect(otherTarget.text()).toContain('living-area-gyeonggi-dongtan-station');
     expect(otherTarget.text()).toContain('GTX 기대와 입주 물량 우려');
     expect(otherTarget.text()).toContain('전세수급지수');
 
-    const unsupportedTarget = await mountAt('/realestate/targets/SEONGSU-DONG');
+    const unsupportedTarget = await mountAt('/realestate/targets/living-area-seoul-seongsu');
     expect(unsupportedTarget.find('.unsupported-region-state').exists()).toBe(true);
-    expect(unsupportedTarget.text()).toContain('SEONGSU-DONG');
+    expect(unsupportedTarget.text()).toContain('living-area-seoul-seongsu');
     expect(unsupportedTarget.find('.region-reaction-card').exists()).toBe(false);
 
     const newsroomAll = await mountAt('/newsroom');

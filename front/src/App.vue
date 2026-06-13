@@ -17,10 +17,10 @@ const liveTopics = [
 ];
 
 const watchTargets = [
-  { name: '마포구 아파트', targetId: 'SEOUL-MAPO', value: '14.5억', change: '+0.55%', tone: 'up' },
-  { name: '성수동 생활권', targetId: 'SEONGSU-DONG', value: '18.2억', change: '+0.66%', tone: 'up' },
-  { name: '동탄역권', targetId: 'DONGTAN-STATION', value: '9.8억', change: '+0.31%', tone: 'up' },
-  { name: '잠실동 단지군', targetId: 'JAMSIL-DONG', value: '22.5억', change: '-0.22%', tone: 'down' }
+  { name: '마포구 아파트', targetId: 'region-seoul-mapo', value: '14.5억', change: '+0.55%', tone: 'up' },
+  { name: '성수동 생활권', targetId: 'living-area-seoul-seongsu', value: '18.2억', change: '+0.66%', tone: 'up' },
+  { name: '동탄역권', targetId: 'living-area-gyeonggi-dongtan-station', value: '9.8억', change: '+0.31%', tone: 'up' },
+  { name: '잠실동 단지군', targetId: 'living-area-seoul-jamsil', value: '22.5억', change: '-0.22%', tone: 'down' }
 ];
 
 const activeRailItem = ref('watch');

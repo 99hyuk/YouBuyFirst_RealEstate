@@ -33,7 +33,7 @@
 - `real_estate_aliases`: 커뮤니티 크롤링용 별칭, 줄임말, 카페식 명칭
 - `real_estate_target_edges`: 생활권, 단지군, 인접 지역, 정책 영향권 같은 대상 간 관계
 
-화면 라우트의 `targetId`는 현재 프론트 fixture와 backend target 식별자를 잇는 화면용 식별자다. 정식 API에서는 `real_estate_targets.id` 또는 안정적인 `slug`로 매핑한다.
+화면 라우트의 `targetId`는 `real_estate_targets.id`를 그대로 사용합니다. 화면 fixture도 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`처럼 backend target registry와 같은 kebab-case 식별자를 씁니다. 별도 화면용 대문자 ID와 API용 ID를 나누지 않습니다.
 
 ### 3.2 지도 데이터
 
@@ -496,11 +496,11 @@ Route: `/realestate/targets/:targetId`
 
 ### 11.4 API 후보
 
-- `GET /api/realestate/targets/:slug`
-- `GET /api/realestate/targets/:slug/report?window=1h&period=month`
-- `GET /api/realestate/targets/:slug/timeline`
-- `GET /api/realestate/targets/:slug/evidence`
-- `GET /api/realestate/targets/:slug/similar-windows`
+- `GET /api/realestate/targets/:targetId`
+- `GET /api/realestate/targets/:targetId/report?window=1h&period=month`
+- `GET /api/realestate/targets/:targetId/timeline`
+- `GET /api/realestate/targets/:targetId/evidence`
+- `GET /api/realestate/targets/:targetId/similar-windows`
 
 ## 12. 공통 컴포넌트 정의
 
@@ -567,7 +567,7 @@ ERD 후보:
 
 ## 14. 구현 체크리스트
 
-- [ ] 화면 route의 `targetId`를 DB의 `target_id` 또는 안정 slug로 매핑하는 규칙 확정
+- [x] 화면 route의 `targetId`를 DB의 `target_id`와 같은 값으로 고정
 - [ ] 대시보드 summary API fixture shape 확정
 - [ ] 지도 전국/시군구 API shape 확정
 - [ ] 동/단지 상세 카카오맵 SDK 내장 지도 prototype 확정

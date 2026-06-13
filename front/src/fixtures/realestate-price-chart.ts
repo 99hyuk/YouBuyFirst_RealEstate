@@ -1,4 +1,4 @@
-﻿export type RealEstatePricePoint = {
+export type RealEstatePricePoint = {
   time: string;
   open: number;
   high: number;
@@ -111,7 +111,7 @@ const buildPricePoints = ({
 
 export const realEstatePriceChartFixtures: RealEstatePriceChartFixture[] = [
   buildPricePoints({
-    targetId: 'SEOUL-MAPO',
+    targetId: 'region-seoul-mapo',
     providerTargetId: 'region-seoul-mapo',
     startDate: '2024-05-24',
     startPrice: 13.8,
@@ -127,8 +127,8 @@ export const realEstatePriceChartFixtures: RealEstatePriceChartFixture[] = [
     chartSource: 'molit_apt_trade mock · 실시간 갱신 없음 · market fact API 연결 후보'
   }),
   buildPricePoints({
-    targetId: 'DONGTAN-STATION',
-    providerTargetId: 'region-gyeonggi-dongtan-station',
+    targetId: 'living-area-gyeonggi-dongtan-station',
+    providerTargetId: 'living-area-gyeonggi-dongtan-station',
     startDate: '2024-05-24',
     startPrice: 9.2,
     targetClose: 9.8,

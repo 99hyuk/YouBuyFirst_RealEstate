@@ -425,7 +425,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                     {{ period }}
                   </button>
                 </div>
-                <RouterLink class="detail-link" to="/realestate/targets/SEOUL-MAPO">자세히 보기 →</RouterLink>
+                <RouterLink class="detail-link" to="/realestate/targets/region-seoul-mapo">자세히 보기 →</RouterLink>
               </div>
             </div>
 
@@ -877,7 +877,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
             <div class="drawer-section-title">
               <p class="label">early signal</p>
               <h3 id="drawer-rising-title">라이징 스타</h3>
-              <RouterLink class="detail-link" to="/realestate/targets/SEOUL-MAPO">자세히 보기 →</RouterLink>
+              <RouterLink class="detail-link" to="/realestate/targets/region-seoul-mapo">자세히 보기 →</RouterLink>
             </div>
             <div class="drawer-rising-list">
               <article v-for="item in dashboardSummary.risingStars" :key="item.targetId">

@@ -54,6 +54,9 @@
 - `GET /api/realestate/dashboard/market-summary?legalDongCode=11110`에서 매매/전월세 요약이 `provider`, `asOf`, `stale`, `dataStatus`와 함께 조회되는 것을 확인했습니다.
 - MySQL에서 `content_items.url` 직접 unique index가 길이 제한에 걸리지 않도록 `url_hash` unique 기준으로 보정했습니다.
 - 공공데이터 raw-push 실행 중 HTTP client가 query string을 INFO 로그로 출력하지 않도록 `httpx`/`httpcore` 로그 레벨을 낮췄습니다. 서비스키 값은 repo와 문서에 남기지 않습니다.
+- 지도/반응/상세 화면에서 쓰는 대표 fixture `targetId`를 화면 전용 대문자 임시 ID가 아니라 `real_estate_targets.id` 형식으로 통일했습니다. 예: `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`.
+- 프론트 상세 화면의 화면용 ID와 API용 ID 분리를 제거하고, route `targetId`를 그대로 content/timeline/evidence 계열 API에 넘기는 기준으로 정리했습니다.
+- 대표 화면 target을 backend registry seed에 추가했습니다. 마포구는 `real_estate_regions`와 MOLIT `market_data_targets`까지 연결했고, 생활권/단지 후보는 `mock` 또는 `candidate` 상태로 target 정본만 먼저 확보했습니다.
 
 ## 1차 provider
 

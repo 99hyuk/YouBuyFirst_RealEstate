@@ -325,7 +325,7 @@
   ],
   "risingStars": [
     {
-      "targetId": "SEOUL-MAPO",
+      "targetId": "region-seoul-mapo",
       "name": "마포구 아파트",
       "market": "서울",
       "previousMentionCount": 34,
@@ -351,7 +351,7 @@
       "dataStatus": "mock"
     },
     {
-      "targetId": "SEONGSU-DONG",
+      "targetId": "living-area-seoul-seongsu",
       "name": "성수동 생활권",
       "market": "서울",
       "previousMentionCount": 41,
@@ -365,7 +365,7 @@
       "dataStatus": "mock"
     },
     {
-      "targetId": "DONGTAN-STATION",
+      "targetId": "living-area-gyeonggi-dongtan-station",
       "name": "동탄역권",
       "market": "경기",
       "previousMentionCount": 47,

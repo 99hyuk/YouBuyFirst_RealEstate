@@ -3,7 +3,7 @@
   "windowLabel": "최근 1시간",
   "items": [
     {
-      "targetId": "SEOUL-MAPO",
+      "targetId": "region-seoul-mapo",
       "name": "마포구 아파트",
       "market": "서울",
       "mentionCount": 128,
@@ -35,7 +35,7 @@
       "dataStatus": "mock"
     },
     {
-      "targetId": "DONGTAN-STATION",
+      "targetId": "living-area-gyeonggi-dongtan-station",
       "name": "동탄역권",
       "market": "경기",
       "mentionCount": 74,
@@ -66,7 +66,7 @@
       "dataStatus": "mock"
     },
     {
-      "targetId": "SEONGSU-DONG",
+      "targetId": "living-area-seoul-seongsu",
       "name": "성수동 생활권",
       "market": "서울",
       "mentionCount": 41,
@@ -98,7 +98,7 @@
       "dataStatus": "mock"
     },
     {
-      "targetId": "JAMSIL-DONG",
+      "targetId": "living-area-seoul-jamsil",
       "name": "잠실동 단지군",
       "market": "서울",
       "mentionCount": 43,
@@ -130,7 +130,7 @@
       "dataStatus": "mock"
     },
     {
-      "targetId": "BUNDANG-PANGYO",
+      "targetId": "living-area-gyeonggi-bundang-pangyo",
       "name": "분당·판교",
       "market": "경기",
       "mentionCount": 66,
@@ -162,7 +162,7 @@
       "dataStatus": "mock"
     },
     {
-      "targetId": "SONGDO",
+      "targetId": "living-area-incheon-songdo",
       "name": "송도국제도시",
       "market": "인천",
       "mentionCount": 38,

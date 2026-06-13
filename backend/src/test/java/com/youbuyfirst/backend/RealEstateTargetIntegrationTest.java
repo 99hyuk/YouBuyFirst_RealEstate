@@ -2,6 +2,7 @@ package com.youbuyfirst.backend;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.youbuyfirst.backend.realestate.RealEstateTargetRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +25,9 @@ class RealEstateTargetIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private RealEstateTargetRepository targetRepository;
 
     @Test
     void searchesSeededRegionsAndExposesPublicDataCollectionTargets() throws Exception {
@@ -104,6 +108,49 @@ class RealEstateTargetIntegrationTest {
         JsonNode fact = objectMapper.readTree(list.getBody()).path("items").get(0);
         assertThat(fact.path("targetType").asText()).isEqualTo("region");
         assertThat(fact.path("targetId").asText()).isEqualTo("region-seoul-jongno");
+    }
+
+    @Test
+    void seedsCanonicalFrontendRouteTargetsInTheTargetRegistry() throws Exception {
+        assertThat(targetRepository.findById("region-seoul-mapo"))
+                .hasValueSatisfying(target -> {
+                    assertThat(target.getTargetType()).isEqualTo("region");
+                    assertThat(target.getSlug()).isEqualTo("seoul-mapo");
+                    assertThat(target.getDataStatus()).isEqualTo("ok");
+                });
+        assertThat(targetRepository.findById("living-area-gyeonggi-dongtan-station"))
+                .hasValueSatisfying(target -> {
+                    assertThat(target.getTargetType()).isEqualTo("living_area");
+                    assertThat(target.getDataStatus()).isEqualTo("mock");
+                });
+        assertThat(targetRepository.findById("complex-mapo-raemian-prugio"))
+                .hasValueSatisfying(target -> {
+                    assertThat(target.getTargetType()).isEqualTo("complex");
+                    assertThat(target.getReviewState()).isEqualTo("candidate");
+                });
+
+        ResponseEntity<String> search = restTemplate.getForEntity(
+                "/api/realestate/targets/search?q={query}",
+                String.class,
+                "마포"
+        );
+        ResponseEntity<String> dataTargets = restTemplate.getForEntity(
+                "/internal/realestate/market-data-targets?enabled=true&limit=20",
+                String.class
+        );
+
+        assertThat(search.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode targetItems = objectMapper.readTree(search.getBody()).path("items");
+        assertThat(targetItems)
+                .extracting(item -> item.path("targetId").asText())
+                .contains("region-seoul-mapo");
+
+        assertThat(dataTargets.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode dataTargetItems = objectMapper.readTree(dataTargets.getBody()).path("items");
+        assertThat(dataTargetItems)
+                .filteredOn(item -> "region-seoul-mapo".equals(item.path("targetId").asText()))
+                .extracting(item -> item.path("providerDataset").asText())
+                .containsExactlyInAnyOrder("molit_apt_trade", "molit_apt_rent");
     }
 
     @Test
