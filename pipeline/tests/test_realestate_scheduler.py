@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from youbuyfirst_pipeline.realestate_daily_scheduler import RealEstateDailyRefreshJob
 from youbuyfirst_pipeline.realestate_scheduler import RealEstateMarketFactsRefreshJob
 from youbuyfirst_pipeline.scheduler import configure_scheduler
 
@@ -56,6 +57,11 @@ class _RealEstateClient:
 class _Pipeline:
     async def run_once(self) -> list[str]:
         return []
+
+
+class _DailyStep:
+    def run_once(self) -> dict:
+        return {"status": "OK"}
 
 
 def test_real_estate_market_facts_refresh_job_collects_backend_targets_and_pushes_facts():
@@ -127,3 +133,20 @@ def test_configure_scheduler_registers_real_estate_market_facts_refresh_job():
     jobs = {job.id: job for job in scheduler.get_jobs()}
     assert jobs["community-crawl"].trigger.interval.total_seconds() == 30 * 60
     assert jobs["realestate-market-facts-refresh"].trigger.interval.total_seconds() == 360 * 60
+
+
+def test_configure_scheduler_registers_real_estate_daily_refresh_job():
+    scheduler = AsyncIOScheduler(timezone="UTC")
+    daily_job = RealEstateDailyRefreshJob([("market_facts", _DailyStep())])
+
+    configure_scheduler(
+        scheduler,
+        pipeline=_Pipeline(),
+        crawl_interval_minutes=30,
+        realestate_daily_refresh_job=daily_job,
+        realestate_daily_refresh_interval_minutes=1440,
+    )
+
+    jobs = {job.id: job for job in scheduler.get_jobs()}
+    assert jobs["community-crawl"].trigger.interval.total_seconds() == 30 * 60
+    assert jobs["realestate-daily-refresh"].trigger.interval.total_seconds() == 1440 * 60

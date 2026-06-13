@@ -196,6 +196,7 @@
 - [x] issueMix, source skew, sample confidence 1차 pipeline 집계 구현
 - [x] `realestate-reaction-snapshots-from-posts(-push)` end-to-end 명령 구현
 - [x] `serve --enable-realestate-reaction-snapshots-refresh` 주기 refresh job 구현
+- [x] `serve --enable-realestate-daily-refresh`로 market fact, reaction snapshot, 최근 이슈 refresh를 하루 단위 step으로 묶는 scheduler job 구현
 - [ ] 1일/1주/1개월 window 집계 후보 정리
 
 ### agent
@@ -209,6 +210,7 @@
 - [x] 룰 기반 EvidenceLog 생성/전송 command 구현 (`realestate-evidence-logs`, `realestate-evidence-logs-push`)
 - [x] 유사 과거 상황 설명 방식 정리
 - [x] 최근 이슈 후보 검색 provider/query/keyword 저장 기준 정리
+- [ ] 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성 job 구현
 - [ ] 행동 지시처럼 보이는 평가 문구 금지 기준 정리
 - [x] evaluationVersion과 skipReason 관리 기준 정리
 

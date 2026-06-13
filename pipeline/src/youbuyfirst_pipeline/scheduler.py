@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from youbuyfirst_pipeline.pipeline import CommunityPipeline
+from youbuyfirst_pipeline.realestate_daily_scheduler import RealEstateDailyRefreshJob
 from youbuyfirst_pipeline.realestate_reaction_scheduler import RealEstateReactionSnapshotRefreshJob
 from youbuyfirst_pipeline.realestate_scheduler import RealEstateMarketFactsRefreshJob
 
@@ -21,6 +22,8 @@ def configure_scheduler(
         realestate_market_facts_interval_minutes: int = 360,
         realestate_reaction_snapshot_refresh_job: RealEstateReactionSnapshotRefreshJob | None = None,
         realestate_reaction_snapshot_interval_minutes: int = 30,
+        realestate_daily_refresh_job: RealEstateDailyRefreshJob | None = None,
+        realestate_daily_refresh_interval_minutes: int = 1440,
 ) -> None:
     scheduler.add_job(
         pipeline.run_once,
@@ -54,6 +57,17 @@ def configure_scheduler(
             max_instances=1,
             coalesce=True,
         )
+    if realestate_daily_refresh_job is not None:
+        scheduler.add_job(
+            realestate_daily_refresh_job.run_once,
+            "interval",
+            id="realestate-daily-refresh",
+            minutes=realestate_daily_refresh_interval_minutes,
+            next_run_time=datetime.now(timezone.utc),
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
 
 
 async def serve(
@@ -63,6 +77,8 @@ async def serve(
         realestate_market_facts_interval_minutes: int = 360,
         realestate_reaction_snapshot_refresh_job: RealEstateReactionSnapshotRefreshJob | None = None,
         realestate_reaction_snapshot_interval_minutes: int = 30,
+        realestate_daily_refresh_job: RealEstateDailyRefreshJob | None = None,
+        realestate_daily_refresh_interval_minutes: int = 1440,
 ) -> None:
     scheduler = AsyncIOScheduler(timezone="UTC")
     configure_scheduler(
@@ -73,14 +89,18 @@ async def serve(
         realestate_market_facts_interval_minutes=realestate_market_facts_interval_minutes,
         realestate_reaction_snapshot_refresh_job=realestate_reaction_snapshot_refresh_job,
         realestate_reaction_snapshot_interval_minutes=realestate_reaction_snapshot_interval_minutes,
+        realestate_daily_refresh_job=realestate_daily_refresh_job,
+        realestate_daily_refresh_interval_minutes=realestate_daily_refresh_interval_minutes,
     )
     scheduler.start()
     logger.info(
-        "pipeline scheduler started; crawl_interval_minutes=%s realestate_market_facts_enabled=%s realestate_market_facts_interval_minutes=%s realestate_reaction_snapshot_enabled=%s realestate_reaction_snapshot_interval_minutes=%s",
+        "pipeline scheduler started; crawl_interval_minutes=%s realestate_market_facts_enabled=%s realestate_market_facts_interval_minutes=%s realestate_reaction_snapshot_enabled=%s realestate_reaction_snapshot_interval_minutes=%s realestate_daily_refresh_enabled=%s realestate_daily_refresh_interval_minutes=%s",
         interval_minutes,
         realestate_market_facts_refresh_job is not None,
         realestate_market_facts_interval_minutes,
         realestate_reaction_snapshot_refresh_job is not None,
         realestate_reaction_snapshot_interval_minutes,
+        realestate_daily_refresh_job is not None,
+        realestate_daily_refresh_interval_minutes,
     )
     await asyncio.Event().wait()
