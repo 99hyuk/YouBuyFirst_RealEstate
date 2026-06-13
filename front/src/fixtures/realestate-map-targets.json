@@ -6,6 +6,7 @@
   "targets": [
     {
       "id": "seoul",
+      "targetId": "region-seoul",
       "name": "서울",
       "regionCode": "11",
       "geometryId": "sido-11",
@@ -28,6 +29,7 @@
     },
     {
       "id": "incheon",
+      "targetId": "region-incheon",
       "name": "인천",
       "regionCode": "23",
       "geometryId": "sido-23",
@@ -50,6 +52,7 @@
     },
     {
       "id": "gyeonggi",
+      "targetId": "region-gyeonggi",
       "name": "경기",
       "regionCode": "31",
       "geometryId": "sido-31",
@@ -72,6 +75,7 @@
     },
     {
       "id": "gangwon",
+      "targetId": "region-gangwon",
       "name": "강원",
       "regionCode": "32",
       "geometryId": "sido-32",
@@ -94,6 +98,7 @@
     },
     {
       "id": "chungnam",
+      "targetId": "region-chungnam",
       "name": "충남",
       "regionCode": "34",
       "geometryId": "sido-34",
@@ -116,6 +121,7 @@
     },
     {
       "id": "sejong",
+      "targetId": "region-sejong",
       "name": "세종",
       "regionCode": "29",
       "geometryId": "sido-29",
@@ -138,6 +144,7 @@
     },
     {
       "id": "daejeon",
+      "targetId": "region-daejeon",
       "name": "대전",
       "regionCode": "25",
       "geometryId": "sido-25",
@@ -160,6 +167,7 @@
     },
     {
       "id": "chungbuk",
+      "targetId": "region-chungbuk",
       "name": "충북",
       "regionCode": "33",
       "geometryId": "sido-33",
@@ -182,6 +190,7 @@
     },
     {
       "id": "gyeongbuk",
+      "targetId": "region-gyeongbuk",
       "name": "경북",
       "regionCode": "37",
       "geometryId": "sido-37",
@@ -204,6 +213,7 @@
     },
     {
       "id": "daegu",
+      "targetId": "region-daegu",
       "name": "대구",
       "regionCode": "22",
       "geometryId": "sido-22",
@@ -226,6 +236,7 @@
     },
     {
       "id": "jeonbuk",
+      "targetId": "region-jeonbuk",
       "name": "전북",
       "regionCode": "35",
       "geometryId": "sido-35",
@@ -248,6 +259,7 @@
     },
     {
       "id": "gwangju",
+      "targetId": "region-gwangju",
       "name": "광주",
       "regionCode": "24",
       "geometryId": "sido-24",
@@ -270,6 +282,7 @@
     },
     {
       "id": "jeonnam",
+      "targetId": "region-jeonnam",
       "name": "전남",
       "regionCode": "36",
       "geometryId": "sido-36",
@@ -292,6 +305,7 @@
     },
     {
       "id": "gyeongnam",
+      "targetId": "region-gyeongnam",
       "name": "경남",
       "regionCode": "38",
       "geometryId": "sido-38",
@@ -314,6 +328,7 @@
     },
     {
       "id": "ulsan",
+      "targetId": "region-ulsan",
       "name": "울산",
       "regionCode": "26",
       "geometryId": "sido-26",
@@ -336,6 +351,7 @@
     },
     {
       "id": "busan",
+      "targetId": "region-busan",
       "name": "부산",
       "regionCode": "21",
       "geometryId": "sido-21",
@@ -358,6 +374,7 @@
     },
     {
       "id": "jeju",
+      "targetId": "region-jeju",
       "name": "제주",
       "regionCode": "39",
       "geometryId": "sido-39",

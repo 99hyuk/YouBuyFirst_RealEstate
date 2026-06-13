@@ -57,6 +57,10 @@
 - 지도/반응/상세 화면에서 쓰는 대표 fixture `targetId`를 화면 전용 대문자 임시 ID가 아니라 `real_estate_targets.id` 형식으로 통일했습니다. 예: `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`.
 - 프론트 상세 화면의 화면용 ID와 API용 ID 분리를 제거하고, route `targetId`를 그대로 content/timeline/evidence 계열 API에 넘기는 기준으로 정리했습니다.
 - 대표 화면 target을 backend registry seed에 추가했습니다. 마포구는 `real_estate_regions`와 MOLIT `market_data_targets`까지 연결했고, 생활권/단지 후보는 `mock` 또는 `candidate` 상태로 target 정본만 먼저 확보했습니다.
+- 지도 레이어용 `map_boundary_assets`, `map_features`, `map_layer_snapshots` 테이블을 추가했습니다.
+- `GET /api/realestate/map/layers`를 추가해 전국/시군구 지도 화면이 DB snapshot을 우선 조회하고, 실패하거나 없는 구간은 명시적인 fixture fallback으로 내려가도록 했습니다.
+- 전국 17개 시도와 서울 일부 시군구(종로구, 마포구) 지도 snapshot seed를 넣었습니다. 현재 값은 실제 batch 연결 전 기준값이므로 `provider=seed`, `dataStatus=mock`, `stale=true`로 표시합니다.
+- `/realestate/map`과 `/realestate/map/:regionId`는 지도 route에서 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용합니다. 기존 화면용 slug 진입은 호환만 유지합니다.
 
 ## 1차 provider
 
@@ -106,6 +110,7 @@ real_estate_targets
 - SerpApi 후보 링크 운영 검수와 승인 workflow
 - LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
 - 카카오맵 SDK 내장 지도 컴포넌트와 단지 marker prototype 구현
+- 실제 market fact와 reaction snapshot을 `map_layer_snapshots`로 집계하는 지도 배치 구현
 
 ## 다음 작업
 

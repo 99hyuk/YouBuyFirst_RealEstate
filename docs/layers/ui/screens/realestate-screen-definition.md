@@ -193,6 +193,14 @@ ERD 매핑:
 - `map_layer_snapshots`: 기간별 상승/하락, 표본 수, confidence
 - `real_estate_targets`, `real_estate_regions`: 지역 정본
 
+API:
+
+- `GET /api/realestate/map/layers?layerType=sido`
+- 응답 root: `layerType`, `asOf`, `sourceLabel`, `mapDataSource`, `dataStatus`, `stale`, `periods[]`, `targets[]`
+- `targets[].targetId`는 `real_estate_targets.id`와 같은 값이다. 지도 route는 `seoul` 같은 화면용 slug보다 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용한다.
+- `targets[].periods.week|month|halfYear`는 `changePct`, `sampleCount`, `confidence`, `provider`, `asOf`, `dataStatus`, `stale`을 가진다.
+- API가 비어 있거나 실패하면 fixture fallback을 사용하되, 화면에는 `mock fallback` 상태를 표시한다.
+
 ### 6.2 지역 상세 지도 `/realestate/map/:regionId`
 
 시도 내부의 시군구 흐름을 보여주고, 특정 하위 지역 클릭 시 오른쪽 리포트를 연다.
@@ -228,6 +236,14 @@ ERD 매핑:
 - `real_estate_market_facts`: 실거래/전세/매물 fact
 - `timeline_events`, `policy_event_targets`: 정책/교통 이슈
 - `real_estate_complexes`: 다음 단계 단지 좌표 연결 후보
+
+API:
+
+- `GET /api/realestate/map/layers?layerType=sigungu&parentTargetId={targetId}`
+- `parentTargetId`는 시도 target id를 사용한다. 예: `region-seoul`
+- 응답 shape는 전국 지도와 같고, `targets[]`는 해당 시도 하위 시군구 target이다.
+- 1차 구현은 DB snapshot이 있는 하위 지역만 실제 API 값으로 덮어쓴다. 예: `parentTargetId=region-seoul`은 종로구/마포구 seed snapshot을 내려준다.
+- 하위 snapshot이 없으면 기존 도식화 topology fallback을 유지하고, 하단 상태에 `하위 레이어 fallback`을 표시한다.
 
 ### 6.3 동/단지 내장 지도
 
@@ -569,7 +585,7 @@ ERD 후보:
 
 - [x] 화면 route의 `targetId`를 DB의 `target_id`와 같은 값으로 고정
 - [ ] 대시보드 summary API fixture shape 확정
-- [ ] 지도 전국/시군구 API shape 확정
+- [x] 지도 전국/시군구 API shape 확정
 - [ ] 동/단지 상세 카카오맵 SDK 내장 지도 prototype 확정
 - [ ] `mock`, `stale`, `unknown`, `low_sample` 상태 표시 공통화
 - [ ] 상승 빨강, 하락 파랑 색상 토큰 공통화

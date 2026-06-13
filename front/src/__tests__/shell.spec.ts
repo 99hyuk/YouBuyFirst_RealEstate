@@ -12,7 +12,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const mapTargetsFixture = JSON.parse(
   readFileSync(resolve(testDir, '../fixtures/realestate-map-targets.json'), 'utf8')
 ) as {
-  targets: { id: string; name: string; regionCode: string }[];
+  targets: { id: string; targetId: string; name: string; regionCode: string }[];
 };
 const municipalityTopology = JSON.parse(
   readFileSync(resolve(testDir, '../fixtures/skorea-municipalities-2018-topo-simple.json'), 'utf8')
@@ -249,7 +249,7 @@ describe('front dashboard shell', () => {
     await wrapper.get('[data-testid="map-target-daejeon"]').trigger('click');
     await flushPromises();
 
-    expect(wrapper.vm.$route.path).toBe('/realestate/map/daejeon');
+    expect(wrapper.vm.$route.path).toBe('/realestate/map/region-daejeon');
     expect(wrapper.text()).toContain('대전 상세 흐름 지도');
     expect(wrapper.text()).toContain('전국 지도로 돌아가기');
     expect(wrapper.findAll('[data-testid^="subregion-shape-"]')).toHaveLength(5);
@@ -277,7 +277,7 @@ describe('front dashboard shell', () => {
 
     for (const target of mapTargetsFixture.targets) {
       const expectedCount = municipalityCountByRegionCode.get(target.regionCode);
-      const wrapper = await mountAt(`/realestate/map/${target.id}`);
+      const wrapper = await mountAt(`/realestate/map/${target.targetId}`);
       await flushPromises();
 
       if (!expectedCount) {

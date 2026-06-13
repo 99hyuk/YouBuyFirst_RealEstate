@@ -17,7 +17,7 @@
 | Screen ID | Route 정보 | Brief | 상태 | 비고 |
 | --- | --- | --- | --- | --- |
 | `dashboard` | `/dashboard` | `dashboard.md` | active | 메인 대시보드, 지역 반응, 주요 부동산 지표, 뉴스/리포트 |
-| `realestate-map` | `/realestate/map`, `/realestate/map/:regionId` | `realestate-target-detail.md` | active | 전국 heat map, 시군구 drill-down, 지역 선택 리포트, 향후 단지 drill-down |
+| `realestate-map` | `/realestate/map`, `/realestate/map/:regionId` | `realestate-screen-definition.md` | active | 전국 heat map, 시군구 drill-down, 지역 선택 리포트, 향후 단지 drill-down |
 | `newsroom` | `/newsroom?feed=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그·커뮤니티 링크 |
 | `indicators` | `/indicators`, `/indicators/:category` | `indicators.md` | active | 가격·거래량, 공급·수급, 수요·심리, 거시·금융 지표 |
 | `region-reactions` | `/realestate/reactions?view=` | `region-reactions.md` | active | 지역·단지 순위, 커뮤니티 반응, 근거 로그를 합친 표준 화면 |

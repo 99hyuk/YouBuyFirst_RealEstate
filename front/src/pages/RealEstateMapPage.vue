@@ -3,14 +3,20 @@ import { geoCentroid, geoContains, geoMercator, geoPath } from 'd3-geo';
 import type { Feature, FeatureCollection, Geometry, Position } from 'geojson';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
-import { computed, ref, shallowRef, watch } from 'vue';
+import { computed, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import mapFixture from '../fixtures/realestate-map-targets.json';
 import municipalityTopologyUrl from '../fixtures/skorea-municipalities-2018-topo-simple.json?url';
 import koreaProvincesTopo from '../fixtures/skorea-provinces-2018-topo-simple.json';
+import {
+  fetchRealEstateMapLayer,
+  type PeriodKey,
+  type RealEstateMapLayerPeriod,
+  type RealEstateMapLayerResponse,
+  type RealEstateMapLayerTarget
+} from '../lib/realestate-map';
 
-type PeriodKey = 'week' | 'month' | 'halfYear';
 type ReportKey =
   | 'priceFlow'
   | 'tradeStrength'
@@ -18,7 +24,16 @@ type ReportKey =
   | 'supplySignal'
   | 'policyEvent'
   | 'communityReaction';
-type MapTarget = (typeof mapFixture.targets)[number];
+type FixtureMapTarget = (typeof mapFixture.targets)[number];
+type MapTarget = FixtureMapTarget & {
+  asOf?: string | null;
+  dataStatus?: string | null;
+  layerPeriods?: Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>;
+  provider?: string | null;
+  sourceLabel?: string | null;
+  stale?: boolean;
+  targetId: string;
+};
 type ProvinceProperties = {
   base_year: string;
   code: string;
@@ -86,7 +101,24 @@ const reportSettled = ref(true);
 let reportOpeningTimer: number | undefined;
 let reportSettledTimer: number | undefined;
 
-const targets = mapFixture.targets;
+const targets = reactive<MapTarget[]>(
+  mapFixture.targets.map((target) => ({
+    ...target,
+    dataStatus: 'mock',
+    stale: true,
+    targetId: target.targetId
+  }))
+);
+const mapLayerLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const subregionLayerLoadState = ref<'idle' | 'loading' | 'live' | 'fallback'>('idle');
+const subregionLayerByCode = shallowRef<Map<string, RealEstateMapLayerTarget>>(new Map());
+const mapLayerMeta = reactive({
+  asOf: mapFixture.asOf as string | null,
+  dataStatus: 'mock' as string | null,
+  mapDataSource: mapFixture.mapDataSource as string | null,
+  sourceLabel: mapFixture.sourceLabel as string | null,
+  stale: true
+});
 const nationalMapSize = { width: 430, height: 630 };
 const detailMapSize = { width: 560, height: 560 };
 const currentMapSize = computed(() => (selectedRegion.value ? detailMapSize : nationalMapSize));
@@ -188,7 +220,14 @@ const municipalityFeatureCollection = shallowRef<FeatureCollection<Geometry, Mun
 const municipalityLoadState = ref<'idle' | 'loading' | 'loaded' | 'error'>('idle');
 let municipalityLoadPromise: Promise<void> | null = null;
 const targetByRegionCode = new Map(targets.map((target) => [target.regionCode, target]));
-const targetById = new Map(targets.map((target) => [target.id, target]));
+const targetByRouteId = computed(() => {
+  const entries = new Map<string, MapTarget>();
+  for (const target of targets) {
+    entries.set(target.id.toLowerCase(), target);
+    entries.set(target.targetId.toLowerCase(), target);
+  }
+  return entries;
+});
 const nationalProjection = geoMercator().fitSize([nationalMapSize.width, nationalMapSize.height], provinceDisplayCollection);
 const nationalPathGenerator = geoPath(nationalProjection);
 const countryPath = nationalPathGenerator(countryOutlineFeatureCollection) ?? '';
@@ -220,7 +259,7 @@ const labelNudgeByRegionId: Record<string, { x: number; y: number }> = {
 };
 
 const routeRegionId = computed(() => String(route.params.regionId ?? '').toLowerCase());
-const selectedRegion = computed(() => targetById.get(routeRegionId.value) ?? null);
+const selectedRegion = computed(() => targetByRouteId.value.get(routeRegionId.value) ?? null);
 const layoutMode = computed(() => (selectedReport.value ? 'split' : 'centered'));
 const pageTitle = computed(() => (selectedRegion.value ? `${selectedRegion.value.name} 상세 흐름 지도` : '전국 지역 흐름 지도'));
 const pageDescription = computed(() =>
@@ -322,6 +361,11 @@ const strongestSubregion = computed(() =>
 );
 
 const periodChange = (target: MapTarget) => target.periodChanges[activePeriod.value];
+const targetPeriodMeta = (target: MapTarget, period: PeriodKey = activePeriod.value) => target.layerPeriods?.[period] ?? null;
+const targetSampleCount = (target: MapTarget) => targetPeriodMeta(target)?.sampleCount ?? target.sampleCount;
+const targetConfidence = (target: MapTarget) => targetPeriodMeta(target)?.confidence ?? target.confidence;
+const subregionLayerPeriod = (feature: SubregionFeature, period: PeriodKey = activePeriod.value) =>
+  subregionLayerByCode.value.get(feature.code)?.periods?.[period] ?? null;
 const formatChange = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
 const changeTone = (value: number) => {
   if (value > 0.04) return 'up';
@@ -337,6 +381,9 @@ const heatColor = (value: number) => {
 const numberSeed = (value: string) =>
   value.split('').reduce((sum, char, index) => sum + Number.parseInt(char, 10) * (index + 1), 0);
 const subregionPeriodChange = (feature: SubregionFeature, period: PeriodKey = activePeriod.value) => {
+  const livePeriod = subregionLayerPeriod(feature, period);
+  if (livePeriod) return livePeriod.changePct;
+
   const spreadByPeriod: Record<PeriodKey, number> = {
     week: 0.09,
     month: 0.28,
@@ -347,14 +394,18 @@ const subregionPeriodChange = (feature: SubregionFeature, period: PeriodKey = ac
   return Number((feature.parent.periodChanges[period] + seedOffset * spreadByPeriod[period]).toFixed(2));
 };
 const subregionSampleCount = (feature: SubregionFeature) => {
+  const livePeriod = subregionLayerPeriod(feature);
+  if (livePeriod) return livePeriod.sampleCount;
+
   const divisor = Math.max(1, subregionFeatures.value.length);
-  const base = feature.parent.sampleCount / divisor;
+  const base = targetSampleCount(feature.parent) / divisor;
   const multiplier = 0.82 + (numberSeed(feature.code) % 7) * 0.07;
 
   return Math.max(9, Math.round(base * multiplier));
 };
 const subregionConfidence = (feature: SubregionFeature) =>
-  Math.max(38, Math.min(92, feature.parent.confidence - 8 + (numberSeed(feature.code) % 19)));
+  subregionLayerPeriod(feature)?.confidence
+  ?? Math.max(38, Math.min(92, targetConfidence(feature.parent) - 8 + (numberSeed(feature.code) % 19)));
 const labelButtonStyle = (feature: MapFeature) => ({
   left: `${((feature.label.x + (labelNudgeByRegionId[feature.target.id]?.x ?? 0)) / nationalMapSize.width) * 100}%`,
   top: `${((feature.label.y + (labelNudgeByRegionId[feature.target.id]?.y ?? 0)) / nationalMapSize.height) * 100}%`
@@ -362,6 +413,90 @@ const labelButtonStyle = (feature: MapFeature) => ({
 const subregionButtonStyle = (feature: SubregionFeature) => ({
   left: `${(feature.label.x / detailMapSize.width) * 100}%`,
   top: `${(feature.label.y / detailMapSize.height) * 100}%`
+});
+const firstPeriod = (periods: Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>) =>
+  periods.month ?? periods.week ?? periods.halfYear ?? Object.values(periods)[0] ?? null;
+const applyTargetLayer = (target: MapTarget, layerTarget: RealEstateMapLayerTarget) => {
+  target.targetId = layerTarget.targetId;
+  target.geometryId = layerTarget.geometryId ?? target.geometryId;
+  target.layerPeriods = layerTarget.periods;
+
+  for (const period of periodOptions) {
+    const periodValue = layerTarget.periods[period.id];
+    if (periodValue) {
+      target.periodChanges[period.id] = periodValue.changePct;
+    }
+  }
+
+  const representative = firstPeriod(layerTarget.periods);
+  if (representative) {
+    target.sampleCount = representative.sampleCount;
+    target.confidence = representative.confidence;
+    target.asOf = representative.asOf;
+    target.provider = representative.provider;
+    target.sourceLabel = representative.sourceLabel;
+    target.dataStatus = representative.dataStatus;
+    target.stale = Boolean(representative.stale);
+  }
+};
+const applyNationalMapLayer = (layer: RealEstateMapLayerResponse) => {
+  if (!layer.targets.length) {
+    mapLayerLoadState.value = 'fallback';
+    return;
+  }
+
+  mapLayerMeta.asOf = layer.asOf ?? mapFixture.asOf;
+  mapLayerMeta.dataStatus = layer.dataStatus ?? 'unknown';
+  mapLayerMeta.mapDataSource = layer.mapDataSource ?? mapFixture.mapDataSource;
+  mapLayerMeta.sourceLabel = layer.sourceLabel ?? mapFixture.sourceLabel;
+  mapLayerMeta.stale = Boolean(layer.stale);
+
+  for (const layerTarget of layer.targets) {
+    const target = targetByRegionCode.get(layerTarget.regionCode);
+    if (target) {
+      applyTargetLayer(target, layerTarget);
+    }
+  }
+
+  mapLayerLoadState.value = 'live';
+};
+const refreshNationalMapLayer = async () => {
+  mapLayerLoadState.value = 'loading';
+  try {
+    applyNationalMapLayer(await fetchRealEstateMapLayer({ layerType: 'sido' }));
+  } catch {
+    mapLayerLoadState.value = 'fallback';
+  }
+};
+const refreshSubregionMapLayer = async (region: MapTarget | null) => {
+  if (!region) {
+    subregionLayerByCode.value = new Map();
+    subregionLayerLoadState.value = 'idle';
+    return;
+  }
+
+  subregionLayerLoadState.value = 'loading';
+  try {
+    const layer = await fetchRealEstateMapLayer({ layerType: 'sigungu', parentTargetId: region.targetId });
+    subregionLayerByCode.value = new Map(layer.targets.map((target) => [target.regionCode, target]));
+    subregionLayerLoadState.value = layer.targets.length ? 'live' : 'fallback';
+  } catch {
+    subregionLayerByCode.value = new Map();
+    subregionLayerLoadState.value = 'fallback';
+  }
+};
+const mapLayerStatusText = computed(() => {
+  if (mapLayerLoadState.value === 'loading') return `loading · ${mapFixture.asOf}`;
+  if (mapLayerLoadState.value === 'fallback') return `mock fallback · ${mapFixture.asOf}`;
+  const freshness = mapLayerMeta.stale ? 'stale' : 'fresh';
+  return `${mapLayerMeta.dataStatus ?? 'unknown'} · ${freshness} · ${mapLayerMeta.asOf ?? 'asOf unknown'}`;
+});
+const mapDataSourceLabel = computed(() => mapLayerMeta.mapDataSource ?? mapFixture.mapDataSource);
+const subregionLayerStatusText = computed(() => {
+  if (!selectedRegion.value) return '전국';
+  if (subregionLayerLoadState.value === 'live') return 'DB snapshot';
+  if (subregionLayerLoadState.value === 'loading') return '하위 레이어 로딩';
+  return '하위 레이어 fallback';
 });
 
 const issueCopy: Record<string, IssueCard> = {
@@ -431,6 +566,10 @@ const selectedReport = computed(() => {
   const change = subregionPeriodChange(feature);
   const sampleCount = subregionSampleCount(feature);
   const confidence = subregionConfidence(feature);
+  const livePeriod = subregionLayerPeriod(feature);
+  const layerStatus = livePeriod
+    ? `${livePeriod.provider ?? 'provider unknown'} · ${livePeriod.dataStatus ?? 'unknown'} · ${livePeriod.stale ? 'stale' : 'fresh'}`
+    : 'mock fallback';
   const mentionCount = Math.max(12, Math.round(sampleCount * (1.18 + Math.abs(change) * 0.72)));
   const previousMentionCount = Math.max(7, Math.round(mentionCount / (1.16 + Math.abs(change) * 0.28)));
   const mentionDeltaPct = Math.max(6, Math.round(((mentionCount - previousMentionCount) / previousMentionCount) * 100));
@@ -460,7 +599,7 @@ const selectedReport = computed(() => {
       { label: '유튜브 댓글', value: `${15 + (numberSeed(feature.code) % 6)}%` },
       { label: '뉴스·정책', value: `${12 + (numberSeed(feature.code) % 5)}%` }
     ],
-    summary: `${feature.name}은 ${target.name} 안에서 ${primaryIssue}와 ${secondaryIssue} 이슈가 함께 묶여 관찰되는 하위 지역입니다. 현재 수치는 mock heat layer라 실제 계약·매물 데이터 연결 전까지는 방향성과 표본 신뢰도를 함께 봅니다.`,
+    summary: `${feature.name}은 ${target.name} 안에서 ${primaryIssue}와 ${secondaryIssue} 이슈가 함께 묶여 관찰되는 하위 지역입니다. 현재 지도 레이어는 ${layerStatus} 상태라 방향성과 표본 신뢰도를 함께 봅니다.`,
     title: change >= 0 ? '언급량 급증' : '우려 언급량 급증',
     bullets: [
       `${feature.name} 관련 언급은 ${previousMentionCount}건에서 ${mentionCount}건으로 늘었습니다.`,
@@ -485,8 +624,8 @@ const reportPanelStyle = computed(() =>
     : undefined
 );
 
-const navigateToRegion = (targetId: string) => {
-  void router.push(`/realestate/map/${targetId}`);
+const navigateToRegion = (target: MapTarget) => {
+  void router.push(`/realestate/map/${target.targetId}`);
 };
 const selectSubregion = (code: string) => {
   selectedSubregionCode.value = code;
@@ -537,9 +676,13 @@ watch(
     if (region) {
       void loadMunicipalityTopology();
     }
+    void refreshSubregionMapLayer(region);
   },
   { immediate: true }
 );
+onMounted(() => {
+  void refreshNationalMapLayer();
+});
 </script>
 
 <template>
@@ -549,12 +692,12 @@ watch(
   >
     <header class="map-page-header">
       <div>
-        <p class="eyebrow">regional heat layer · {{ mapFixture.mapDataSource }}</p>
+        <p class="eyebrow">regional heat layer · {{ mapDataSourceLabel }}</p>
         <h2 id="realestate-map-title">{{ pageTitle }}</h2>
         <p>{{ pageDescription }}</p>
       </div>
       <div class="map-header-actions">
-        <span class="status-pill warning">mock · {{ mapFixture.asOf }}</span>
+        <span class="status-pill warning" data-testid="map-layer-status">{{ mapLayerStatusText }}</span>
         <div class="period-tabs" aria-label="지도 기간 선택">
           <button
             v-for="period in periodOptions"
@@ -637,7 +780,7 @@ watch(
                   :style="{ fill: heatColor(periodChange(feature.target)) }"
                   :transform="feature.pathTransform"
                   :aria-label="`${feature.target.name} ${formatChange(periodChange(feature.target))}`"
-                  @click="navigateToRegion(feature.target.id)"
+                  @click="navigateToRegion(feature.target)"
                 />
               </g>
               <g class="region-labels" aria-hidden="true">
@@ -713,7 +856,7 @@ watch(
                 :style="labelButtonStyle(feature)"
                 :data-testid="`map-target-${feature.target.id}`"
                 :aria-label="`${feature.target.name} ${formatChange(periodChange(feature.target))}`"
-                @click="navigateToRegion(feature.target.id)"
+                @click="navigateToRegion(feature.target)"
               >
                 <span>{{ feature.target.name }}</span>
               </button>
@@ -757,7 +900,7 @@ watch(
           <article>
             <span>{{ selectedRegion ? '하위 지역' : '지역 단위' }}</span>
             <strong>{{ selectedRegion ? `${subregionFeatures.length}개 구·시·군` : '17개 시도' }}</strong>
-            <em>{{ selectedRegion ? '실제 시군구 경계' : 'GeoJSON 교체 가능' }}</em>
+            <em>{{ selectedRegion ? subregionLayerStatusText : 'DB layer API 우선' }}</em>
           </article>
           <article>
             <span>다음 단계</span>
