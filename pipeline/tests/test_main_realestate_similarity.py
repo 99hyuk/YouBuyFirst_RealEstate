@@ -6,18 +6,9 @@ from youbuyfirst_pipeline import main as pipeline_main
 
 
 class _FakeVectorStoreClient:
-    def __init__(self) -> None:
+    def __init__(self, results=None) -> None:
         self.search_requests = []
-
-    def search(self, *, vector, top_n: int, exclude_input_id: str | None = None):
-        self.search_requests.append(
-            {
-                "vector": vector,
-                "top_n": top_n,
-                "exclude_input_id": exclude_input_id,
-            }
-        )
-        return [
+        self.results = results or [
             {
                 "id": "matched-window",
                 "score": 0.91,
@@ -30,6 +21,16 @@ class _FakeVectorStoreClient:
                 },
             }
         ]
+
+    def search(self, *, vector, top_n: int, exclude_input_id: str | None = None):
+        self.search_requests.append(
+            {
+                "vector": vector,
+                "top_n": top_n,
+                "exclude_input_id": exclude_input_id,
+            }
+        )
+        return self.results[:top_n]
 
 
 def test_realestate_similar_windows_command_prints_matches_with_evidence_item(monkeypatch, tmp_path, capsys):
@@ -140,15 +141,91 @@ def test_realestate_similar_windows_command_can_use_qdrant_engine(monkeypatch, t
     asyncio.run(pipeline_main.async_main())
 
     payload = json.loads(capsys.readouterr().out)
-    assert fake_client.search_requests == [
-        {
-            "vector": [0.1, 0.2, 0.3],
-            "top_n": 1,
-            "exclude_input_id": "reaction-window:region-daejeon:2026-06-11T00:00:00Z:2026-06-11T01:00:00Z",
-        }
-    ]
+    assert fake_client.search_requests[0]["vector"] == [0.1, 0.2, 0.3]
+    assert fake_client.search_requests[0]["top_n"] > 1
+    assert (
+        fake_client.search_requests[0]["exclude_input_id"]
+        == "reaction-window:region-daejeon:2026-06-11T00:00:00Z:2026-06-11T01:00:00Z"
+    )
     assert payload["engine"] == "qdrant"
+    assert len(payload["items"]) == 1
     assert payload["items"][0]["sourceTargetId"] == "region-daejeon"
     assert payload["items"][0]["matchedTargetId"] == "region-gwangju"
     assert payload["items"][0]["afterMarketSummary"]["items"][0]["deltaPct"] == 6.0
     assert payload["items"][0]["evidenceItem"]["valueText"] == "유사도 91.0% · 매매 +6.0%"
+
+
+def test_realestate_similar_windows_qdrant_engine_over_fetches_before_filtering(monkeypatch, tmp_path, capsys):
+    embeddings_path = tmp_path / "embeddings.json"
+    embeddings_path.write_text(
+        json.dumps(
+            {
+                "items": [
+                    {
+                        "inputId": "reaction-window:region-daejeon:2026-06-11T00:00:00Z:2026-06-11T01:00:00Z",
+                        "targetType": "region",
+                        "targetId": "region-daejeon",
+                        "refType": "reaction_snapshot",
+                        "refId": "snapshot-source-window",
+                        "provider": "gms:gemini",
+                        "modelName": "gemini-embedding-2",
+                        "text": "대전 교통 기대와 공급 우려",
+                        "embedding": [0.1, 0.2, 0.3],
+                        "dimensions": 3,
+                        "dataStatus": "generated",
+                    }
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    fake_client = _FakeVectorStoreClient(
+        results=[
+            {
+                "id": "future-window",
+                "score": 0.99,
+                "payload": {
+                    "targetId": "region-busan",
+                    "refId": "snapshot-future-window",
+                    "windowStart": "2026-06-12T00:00:00Z",
+                    "windowEnd": "2026-06-12T01:00:00Z",
+                    "text": "미래 window",
+                },
+            },
+            {
+                "id": "past-window",
+                "score": 0.91,
+                "payload": {
+                    "targetId": "region-gwangju",
+                    "refId": "snapshot-past-window",
+                    "windowStart": "2026-03-01T00:00:00Z",
+                    "windowEnd": "2026-03-01T01:00:00Z",
+                    "text": "과거 window",
+                },
+            },
+        ]
+    )
+    monkeypatch.setattr(pipeline_main, "_qdrant_vector_store_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-similar-windows",
+            "--similar-engine",
+            "qdrant",
+            "--embeddings-jsonl",
+            str(embeddings_path),
+            "--vector-source-input-id",
+            "reaction-window:region-daejeon:2026-06-11T00:00:00Z:2026-06-11T01:00:00Z",
+            "--similar-top-n",
+            "1",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert fake_client.search_requests[0]["top_n"] > 1
+    assert [item["matchedTargetId"] for item in payload["items"]] == ["region-gwangju"]

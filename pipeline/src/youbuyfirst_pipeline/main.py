@@ -817,6 +817,8 @@ async def async_main() -> None:
 
     if args.command == "realestate-similar-windows":
         if args.similar_engine == "qdrant":
+            if args.similar_top_n <= 0:
+                raise SystemExit("--similar-top-n must be positive")
             if not args.embeddings_jsonl:
                 raise SystemExit("--embeddings-jsonl is required")
             if not args.vector_source_input_id:
@@ -831,19 +833,20 @@ async def async_main() -> None:
             vector_client = _qdrant_vector_store_client()
             search_results = vector_client.search(
                 vector=source_input["embedding"],
-                top_n=args.similar_top_n,
+                top_n=_qdrant_similar_fetch_limit(args.similar_top_n),
                 exclude_input_id=source_input["inputId"],
             )
+            items = qdrant_search_results_to_similar_windows(
+                source_input=source_input,
+                search_results=search_results,
+                market_facts=market_facts,
+                horizon_days=args.similar_horizon_days,
+            )[: args.similar_top_n]
             print(
                 json.dumps(
                     {
                         "engine": "qdrant",
-                        "items": qdrant_search_results_to_similar_windows(
-                            source_input=source_input,
-                            search_results=search_results,
-                            market_facts=market_facts,
-                            horizon_days=args.similar_horizon_days,
-                        ),
+                        "items": items,
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -1898,6 +1901,10 @@ def _qdrant_vector_store_client() -> QdrantRealEstateVectorStoreClient:
         collection_name=os.getenv("REALESTATE_VECTOR_COLLECTION", DEFAULT_QDRANT_COLLECTION),
         timeout_seconds=float(os.getenv("QDRANT_TIMEOUT_SECONDS", "30")),
     )
+
+
+def _qdrant_similar_fetch_limit(top_n: int) -> int:
+    return max(top_n * 5, top_n + 20)
 
 
 def _parse_cli_datetime(value: str) -> datetime:
