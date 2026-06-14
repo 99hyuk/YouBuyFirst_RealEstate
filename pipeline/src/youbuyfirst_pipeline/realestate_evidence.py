@@ -21,6 +21,7 @@ def build_real_estate_evidence_logs(
     window_start: str | datetime,
     evaluated_at: str | datetime,
     market_facts: Iterable[dict[str, Any]] | None = None,
+    timeline_events: Iterable[dict[str, Any]] | None = None,
     similar_windows: Iterable[dict[str, Any]] | None = None,
     content_items: Iterable[dict[str, Any]] | None = None,
     evaluation_version: str = DEFAULT_EVALUATION_VERSION,
@@ -45,6 +46,7 @@ def build_real_estate_evidence_logs(
     evidence_items = [
         _reaction_evidence_item(snapshot, tone),
         *_market_fact_evidence_items(target_id, market_facts or []),
+        *_timeline_event_evidence_items(target_id, timeline_events or []),
         *_similar_window_evidence_items(target_id, similar_windows or []),
         *_search_candidate_evidence_items(target_id, content_items or []),
     ]
@@ -83,6 +85,10 @@ def load_real_estate_evidence_reaction_snapshots(path: str | Path) -> list[dict[
 
 def load_real_estate_evidence_market_facts(path: str | Path) -> list[dict[str, Any]]:
     return _load_json_records(path, "market fact")
+
+
+def load_real_estate_evidence_timeline_events(path: str | Path) -> list[dict[str, Any]]:
+    return _load_json_records(path, "timeline event")
 
 
 def load_real_estate_evidence_similar_windows(path: str | Path) -> list[dict[str, Any]]:
@@ -165,6 +171,41 @@ def _market_fact_evidence_items(target_id: str, facts: Iterable[dict[str, Any]])
             }
         )
     return items
+
+
+def _timeline_event_evidence_items(target_id: str, events: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    items = []
+    for event in events:
+        if _text(event.get("targetId") or event.get("target_id")) != target_id:
+            continue
+        event_id = _text(event.get("id") or event.get("timelineEventId") or event.get("timeline_event_id"))
+        event_type = _text(event.get("eventType") or event.get("event_type") or "event")
+        title = _text(event.get("title") or event.get("summary") or "타임라인 이벤트")
+        ref_id = event_id or _stable_id("timeline-event", target_id, event_type, title)
+        items.append(
+            {
+                "evidenceItemId": _stable_id("timeline-event", target_id, ref_id),
+                "evidenceType": "timeline_event",
+                "refType": "timeline_event",
+                "refId": _truncate_id(ref_id),
+                "label": f"타임라인: {_timeline_event_type_label(event_type)}",
+                "valueText": title[:500],
+                "severity": "info",
+            }
+        )
+    return items
+
+
+def _timeline_event_type_label(event_type: str) -> str:
+    return {
+        "policy": "정책",
+        "supply": "공급",
+        "transport": "교통",
+        "market_fact": "시장 사실",
+        "reaction": "반응",
+        "news": "뉴스",
+        "content": "콘텐츠",
+    }.get(event_type, event_type or "이벤트")
 
 
 def _similar_window_evidence_items(target_id: str, windows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -279,6 +320,8 @@ def _caveats(snapshot: dict[str, Any], evidence_items: list[dict[str, Any]]) -> 
     present_types = {item["evidenceType"] for item in evidence_items}
     if "market_fact" not in present_types:
         caveats.append("market_fact_missing")
+    if "timeline_event" not in present_types:
+        caveats.append("timeline_event_missing")
     if "similar_window" not in present_types:
         caveats.append("similar_window_missing")
     if "search_candidate" not in present_types:

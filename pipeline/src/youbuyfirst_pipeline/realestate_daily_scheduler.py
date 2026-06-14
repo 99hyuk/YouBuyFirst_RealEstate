@@ -60,6 +60,7 @@ class RealEstateEvidenceLogRefreshResult:
     target_count: int
     log_count: int
     market_fact_count: int
+    timeline_event_count: int
     content_item_count: int
 
 
@@ -123,6 +124,7 @@ class RealEstateEvidenceLogRefreshJob:
         window_minutes: int = 60,
         ranking_limit: int = 20,
         market_fact_limit: int = 20,
+        timeline_limit: int = 20,
         content_limit: int = 20,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
@@ -131,6 +133,7 @@ class RealEstateEvidenceLogRefreshJob:
         self.window_minutes = window_minutes
         self.ranking_limit = ranking_limit
         self.market_fact_limit = market_fact_limit
+        self.timeline_limit = timeline_limit
         self.content_limit = content_limit
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
@@ -147,11 +150,13 @@ class RealEstateEvidenceLogRefreshJob:
                 target_count=0,
                 log_count=0,
                 market_fact_count=0,
+                timeline_event_count=0,
                 content_item_count=0,
             )
 
         logs: list[dict[str, Any]] = []
         market_fact_count = 0
+        timeline_event_count = 0
         content_item_count = 0
         for row in rows:
             target_id = str(row.get("targetId") or row.get("target_id") or "").strip()
@@ -160,6 +165,10 @@ class RealEstateEvidenceLogRefreshJob:
             market_facts = self.client.list_real_estate_target_market_facts(
                 target_id,
                 limit=self.market_fact_limit,
+            )
+            timeline_events = self.client.list_real_estate_target_timeline_events(
+                target_id,
+                limit=self.timeline_limit,
             )
             content_items = _content_items_for_evidence(
                 target_id,
@@ -170,6 +179,7 @@ class RealEstateEvidenceLogRefreshJob:
                 ),
             )
             market_fact_count += len(market_facts)
+            timeline_event_count += len(timeline_events)
             content_item_count += len(content_items)
             logs.extend(
                 build_real_estate_evidence_logs(
@@ -178,6 +188,7 @@ class RealEstateEvidenceLogRefreshJob:
                     window_start=ranking["windowStart"],
                     evaluated_at=self.clock(),
                     market_facts=market_facts,
+                    timeline_events=timeline_events,
                     content_items=content_items,
                 )
             )
@@ -190,6 +201,7 @@ class RealEstateEvidenceLogRefreshJob:
             target_count=len(rows),
             log_count=len(logs),
             market_fact_count=market_fact_count,
+            timeline_event_count=timeline_event_count,
             content_item_count=content_item_count,
         )
 

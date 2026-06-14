@@ -53,6 +53,20 @@ def test_build_real_estate_evidence_log_combines_reaction_market_issue_and_simil
                 ],
             }
         ],
+        timeline_events=[
+            {
+                "id": "policy-event-supply-daejeon-region-daejeon-primary",
+                "targetId": "region-daejeon",
+                "eventType": "supply",
+                "sourceRefType": "policy_event",
+                "sourceRefId": "policy-event-supply-daejeon",
+                "title": "대전 도심 공급계획 발표",
+                "summary": "도심 공급 후보지와 교통 개선 일정이 함께 언급됩니다.",
+                "occurredAt": "2026-06-09T00:00:00Z",
+                "asOf": "2026-06-09T00:00:00Z",
+                "dataStatus": "approved",
+            }
+        ],
         evaluation_version="realestate-eval-v1",
         prompt_version="rule-evidence-v1",
     )
@@ -72,10 +86,19 @@ def test_build_real_estate_evidence_log_combines_reaction_market_issue_and_simil
     assert "partial" in log["caveats"]
 
     evidence_types = [item["evidenceType"] for item in log["evidenceItems"]]
-    assert evidence_types == ["reaction", "market_fact", "similar_window", "search_candidate"]
+    assert evidence_types == ["reaction", "market_fact", "timeline_event", "similar_window", "search_candidate"]
     assert log["evidenceItems"][0]["valueText"] == "언급 4건 · 기대 50.0% / 우려 25.0%"
     assert log["evidenceItems"][1]["valueText"] == "매매 73,000만원"
-    assert log["evidenceItems"][3]["valueText"] == "대전 광역교통 이슈 후보"
+    assert log["evidenceItems"][2] == {
+        "evidenceItemId": "timeline-event-region-daejeon-policy-event-supply-daejeon-region-daejeon-primary",
+        "evidenceType": "timeline_event",
+        "refType": "timeline_event",
+        "refId": "policy-event-supply-daejeon-region-daejeon-primary",
+        "label": "타임라인: 공급",
+        "valueText": "대전 도심 공급계획 발표",
+        "severity": "info",
+    }
+    assert log["evidenceItems"][4]["valueText"] == "대전 광역교통 이슈 후보"
 
     unsafe_words = ["사라", "팔아라", "청약 넣어라", "지금 들어가라", "수익 보장"]
     assert not any(word in f"{log['summary']} {log['subtitle']}" for word in unsafe_words)
@@ -94,6 +117,7 @@ def test_build_real_estate_evidence_log_marks_missing_supporting_sources():
         "source_skewed",
         "stale",
         "market_fact_missing",
+        "timeline_event_missing",
         "similar_window_missing",
         "search_candidate_missing",
     ]

@@ -178,6 +178,8 @@ def test_serve_command_can_group_evidence_log_refresh_into_daily_refresh(monkeyp
             "3",
             "--realestate-evidence-market-fact-limit",
             "7",
+            "--realestate-evidence-timeline-limit",
+            "6",
             "--realestate-evidence-content-limit",
             "5",
         ],
@@ -193,6 +195,7 @@ def test_serve_command_can_group_evidence_log_refresh_into_daily_refresh(monkeyp
     assert evidence_step.window_minutes == 1440
     assert evidence_step.ranking_limit == 3
     assert evidence_step.market_fact_limit == 7
+    assert evidence_step.timeline_limit == 6
     assert evidence_step.content_limit == 5
 
 
