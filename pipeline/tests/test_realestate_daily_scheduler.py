@@ -90,6 +90,7 @@ class _EvidenceSpringClient:
         self.ranking_calls = []
         self.market_fact_calls = []
         self.content_calls = []
+        self.timeline_calls = []
         self.published_logs = []
 
     def get_real_estate_reaction_ranking(self, *, target_type: str, window_minutes: int, limit: int):
@@ -123,6 +124,23 @@ class _EvidenceSpringClient:
                 "targetId": target_id,
                 "linkType": "search_candidate",
                 "reviewState": "candidate",
+            }
+        ]
+
+    def list_real_estate_target_timeline_events(self, target_id: str, *, limit: int):
+        self.timeline_calls.append({"target_id": target_id, "limit": limit})
+        return [
+            {
+                "id": "policy-event-supply-daejeon-region-daejeon-primary",
+                "targetId": target_id,
+                "eventType": "supply",
+                "sourceRefType": "policy_event",
+                "sourceRefId": "policy-event-supply-daejeon",
+                "title": "대전 도심 공급계획 발표",
+                "summary": "도심 공급 후보지와 교통 개선 일정이 함께 언급됩니다.",
+                "occurredAt": "2026-06-09T00:00:00Z",
+                "asOf": "2026-06-09T00:00:00Z",
+                "dataStatus": "approved",
             }
         ]
 
@@ -218,6 +236,7 @@ def test_evidence_log_refresh_job_builds_logs_from_latest_backend_snapshots():
         ranking_limit=5,
         market_fact_limit=10,
         content_limit=10,
+        timeline_limit=10,
         clock=lambda: datetime(2026, 6, 14, 2, 0, tzinfo=timezone.utc),
     )
 
@@ -227,6 +246,7 @@ def test_evidence_log_refresh_job_builds_logs_from_latest_backend_snapshots():
     assert result.target_count == 1
     assert result.log_count == 1
     assert result.market_fact_count == 1
+    assert result.timeline_event_count == 1
     assert result.content_item_count == 1
     assert spring_client.ranking_calls == [
         {
@@ -239,10 +259,12 @@ def test_evidence_log_refresh_job_builds_logs_from_latest_backend_snapshots():
     assert published_log["targetId"] == "region-daejeon"
     assert published_log["evaluatedAt"] == "2026-06-14T02:00:00Z"
     assert "market_fact_missing" not in published_log["caveats"]
+    assert "timeline_event_missing" not in published_log["caveats"]
     assert "search_candidate_missing" not in published_log["caveats"]
     assert {item["evidenceType"] for item in published_log["evidenceItems"]} == {
         "reaction",
         "market_fact",
+        "timeline_event",
         "search_candidate",
     }
 

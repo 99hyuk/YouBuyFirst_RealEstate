@@ -262,6 +262,25 @@ class SpringIngestionClient:
         items = data.get("items", []) if isinstance(data, dict) else []
         return [item for item in items if isinstance(item, dict)]
 
+    def list_real_estate_target_timeline_events(
+        self,
+        target_id: str,
+        *,
+        limit: int = 20,
+    ) -> list[dict]:
+        params = {
+            "limit": str(limit),
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(
+                f"{self.base_url}/api/realestate/targets/{target_id}/timeline",
+                params=params,
+            )
+            response.raise_for_status()
+            data = response.json()
+        items = data.get("items", []) if isinstance(data, dict) else []
+        return [item for item in items if isinstance(item, dict)]
+
     def publish_real_estate_alias_candidates(self, candidates: Iterable[object]) -> None:
         items = [
             candidate.to_request_dict() if hasattr(candidate, "to_request_dict") else candidate

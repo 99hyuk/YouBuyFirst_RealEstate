@@ -35,6 +35,8 @@ def test_realestate_evidence_logs_command_prints_evaluation_payload(monkeypatch,
             str(paths["similar"]),
             "--evidence-content-items-jsonl",
             str(paths["content"]),
+            "--evidence-timeline-events-jsonl",
+            str(paths["timeline"]),
         ],
     )
 
@@ -45,6 +47,7 @@ def test_realestate_evidence_logs_command_prints_evaluation_payload(monkeypatch,
     assert [item["evidenceType"] for item in payload["logs"][0]["evidenceItems"]] == [
         "reaction",
         "market_fact",
+        "timeline_event",
         "similar_window",
         "search_candidate",
     ]
@@ -76,8 +79,9 @@ def test_realestate_evidence_logs_push_command_publishes_evaluation_payload(monk
     assert fake_client.evidence_batches[0][0]["evidenceLogId"] == (
         "evidence-region-daejeon-20260611000000-20260612020000-realestate-eval-v1"
     )
-    assert fake_client.evidence_batches[0][0]["caveats"][-3:] == [
+    assert fake_client.evidence_batches[0][0]["caveats"][-4:] == [
         "market_fact_missing",
+        "timeline_event_missing",
         "similar_window_missing",
         "search_candidate_missing",
     ]
@@ -156,9 +160,29 @@ def _write_input_files(tmp_path):
         ),
         encoding="utf-8",
     )
+    timeline = tmp_path / "timeline.jsonl"
+    timeline.write_text(
+        json.dumps(
+            {
+                "id": "policy-event-supply-daejeon-region-daejeon-primary",
+                "targetId": "region-daejeon",
+                "eventType": "supply",
+                "sourceRefType": "policy_event",
+                "sourceRefId": "policy-event-supply-daejeon",
+                "title": "대전 도심 공급계획 발표",
+                "summary": "도심 공급 후보지와 교통 개선 일정이 함께 언급됩니다.",
+                "occurredAt": "2026-06-09T00:00:00Z",
+                "asOf": "2026-06-09T00:00:00Z",
+                "dataStatus": "approved",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
     return {
         "snapshots": snapshots,
         "facts": facts,
         "similar": similar,
         "content": content,
+        "timeline": timeline,
     }

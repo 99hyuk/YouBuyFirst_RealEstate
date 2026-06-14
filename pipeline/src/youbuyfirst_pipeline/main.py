@@ -79,6 +79,7 @@ from youbuyfirst_pipeline.realestate_evidence import (
     load_real_estate_evidence_market_facts,
     load_real_estate_evidence_reaction_snapshots,
     load_real_estate_evidence_similar_windows,
+    load_real_estate_evidence_timeline_events,
 )
 from youbuyfirst_pipeline.realestate_embeddings import (
     DEFAULT_GMS_GEMINI_BASE_URL,
@@ -426,6 +427,11 @@ async def async_main() -> None:
         default=int(os.getenv("REALESTATE_EVIDENCE_MARKET_FACT_LIMIT", "20")),
     )
     parser.add_argument(
+        "--realestate-evidence-timeline-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_EVIDENCE_TIMELINE_LIMIT", "20")),
+    )
+    parser.add_argument(
         "--realestate-evidence-content-limit",
         type=int,
         default=int(os.getenv("REALESTATE_EVIDENCE_CONTENT_LIMIT", "20")),
@@ -556,6 +562,10 @@ async def async_main() -> None:
     parser.add_argument(
         "--evidence-market-facts-jsonl",
         default=os.getenv("REALESTATE_EVIDENCE_MARKET_FACTS_JSONL"),
+    )
+    parser.add_argument(
+        "--evidence-timeline-events-jsonl",
+        default=os.getenv("REALESTATE_EVIDENCE_TIMELINE_EVENTS_JSONL"),
     )
     parser.add_argument(
         "--evidence-similar-windows-jsonl",
@@ -819,6 +829,11 @@ async def async_main() -> None:
             market_facts=(
                 load_real_estate_evidence_market_facts(args.evidence_market_facts_jsonl)
                 if args.evidence_market_facts_jsonl
+                else []
+            ),
+            timeline_events=(
+                load_real_estate_evidence_timeline_events(args.evidence_timeline_events_jsonl)
+                if args.evidence_timeline_events_jsonl
                 else []
             ),
             similar_windows=(
@@ -1193,6 +1208,7 @@ async def async_main() -> None:
                             window_minutes=args.reaction_window_minutes,
                             ranking_limit=args.realestate_evidence_ranking_limit,
                             market_fact_limit=args.realestate_evidence_market_fact_limit,
+                            timeline_limit=args.realestate_evidence_timeline_limit,
                             content_limit=args.realestate_evidence_content_limit,
                         ),
                     )

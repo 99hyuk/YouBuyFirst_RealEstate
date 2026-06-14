@@ -44,7 +44,7 @@
 - `realestate-alias-coverage` 명령을 추가했습니다. 제한 게시글 JSONL과 alias 정본을 기준으로 source별 `matchRate`, `topTargets`, `unmatchedExamples`, `candidateAliases`를 뽑아 네이버/다음 카페처럼 출처가 많은 크롤링 운영에서 alias DB가 비어 있는 구간을 확인할 수 있습니다.
 - `realestate-crawl-target-manifest` 명령을 추가했습니다. source 후보 JSONL을 읽어 P0 공개 게시판형 후보만 실행 가능한 crawl target manifest로 만들고, 네이버 카페/로그인 필요/공개 목록 미확인/adapter 미지원 source는 `skipped` 사유로 분리합니다.
 - SerpApi Google News 검색 결과를 최근 이슈 후보 content item으로 변환하는 `realestate-recent-issues` / `realestate-recent-issues-push` 명령을 추가했습니다. 검색 결과 수나 순위는 지표로 쓰지 않고, `content_items`와 `content_target_links`에 `candidate` 근거 링크로만 저장합니다.
-- `realestate-evidence-logs` / `realestate-evidence-logs-push` 명령을 추가했습니다. reaction snapshot, market fact, 최근 이슈 후보, 유사 과거 window 후보를 `POST /internal/realestate/evidence-logs` 요청 shape로 조립하거나 바로 전송합니다.
+- `realestate-evidence-logs` / `realestate-evidence-logs-push` 명령을 추가했습니다. reaction snapshot, market fact, timeline event, 최근 이슈 후보, 유사 과거 window 후보를 `POST /internal/realestate/evidence-logs` 요청 shape로 조립하거나 바로 전송합니다.
 - SerpApi/query와 유사 과거 evidence label의 깨진 한글을 정상 한국어로 복구했습니다.
 - 실거래/전월세 백필 계획에 `--realestate-backfill-chunk-size` 옵션을 추가했습니다. 큰 기간/지역 manifest를 chunk별 실행 단위로 나누고, chunk manifest도 다시 `--realestate-backfill-plan-json` 입력으로 읽어 실패한 묶음만 재실행할 수 있습니다.
 - 로컬 secret 예시에 Kakao 지도 SDK 환경변수 이름을 추가했습니다. 실제 key는 root `.env`와 `front/.env.local`에만 두고, repo에는 `.env.example`과 `front/.env.example`의 placeholder만 남깁니다.
@@ -114,7 +114,7 @@ real_estate_targets
 - 네이버/다음 카페를 포함한 실제 공개 source별 adapter 활성화
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
-- LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
+- LLM provider 기반 평가 생성, forbidden copy guardrail
 - GMS `gemini-embedding-2` 임베딩 결과를 벡터 저장소에 적재하고 `realestate-similar-windows` 내부 검색 엔진으로 연결
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
 
@@ -362,7 +362,7 @@ EvidenceLog payload 생성:
 
 ```powershell
 cd C:\agents\YouBuyFirst_RealEstate\pipeline
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-evidence-logs --reaction-snapshots-jsonl C:\data\reaction_snapshots.jsonl --evidence-target-id region-daejeon --evidence-window-start 2026-06-11T00:00:00Z --evidence-evaluated-at 2026-06-12T02:00:00Z --evidence-market-facts-jsonl C:\data\market_facts.jsonl --evidence-content-items-jsonl C:\data\recent_issues.jsonl --evidence-similar-windows-jsonl C:\data\similar_windows.jsonl
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-evidence-logs --reaction-snapshots-jsonl C:\data\reaction_snapshots.jsonl --evidence-target-id region-daejeon --evidence-window-start 2026-06-11T00:00:00Z --evidence-evaluated-at 2026-06-12T02:00:00Z --evidence-market-facts-jsonl C:\data\market_facts.jsonl --evidence-timeline-events-jsonl C:\data\timeline_events.jsonl --evidence-content-items-jsonl C:\data\recent_issues.jsonl --evidence-similar-windows-jsonl C:\data\similar_windows.jsonl
 ```
 
 EvidenceLog를 backend로 전송:
@@ -372,16 +372,16 @@ cd C:\agents\YouBuyFirst_RealEstate\pipeline
 C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-evidence-logs-push --reaction-snapshots-jsonl C:\data\reaction_snapshots.jsonl --evidence-target-id region-daejeon --evidence-window-start 2026-06-11T00:00:00Z
 ```
 
-`realestate-evidence-logs(-push)`는 `market_fact`, `similar_window`, `search_candidate` 입력이 없으면 해당 근거 부족 caveat을 남깁니다. 현재 summary/tone은 룰 기반 baseline이며, LLM provider를 붙여도 EvidenceLog 저장 shape는 유지합니다.
+`realestate-evidence-logs(-push)`는 `market_fact`, `timeline_event`, `similar_window`, `search_candidate` 입력이 없으면 해당 근거 부족 caveat을 남깁니다. 현재 summary/tone은 룰 기반 baseline이며, LLM provider를 붙여도 EvidenceLog 저장 shape는 유지합니다.
 
 최신 backend snapshot 기반 EvidenceLog 일일 refresh:
 
 ```powershell
 cd C:\agents\YouBuyFirst_RealEstate\pipeline
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh --reaction-window-minutes 1440 --realestate-evidence-ranking-limit 20 --realestate-evidence-market-fact-limit 20 --realestate-evidence-content-limit 20
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh --reaction-window-minutes 1440 --realestate-evidence-ranking-limit 20 --realestate-evidence-market-fact-limit 20 --realestate-evidence-timeline-limit 20 --realestate-evidence-content-limit 20
 ```
 
-이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.
+이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/timeline`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/timeline/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.
 
 지도 레이어 snapshot 일일 refresh:
 

@@ -154,9 +154,9 @@
 - [x] EvidenceLog contract 설계
 - [x] EvidenceLog 저장/조회 DB/API 구현 (`POST /internal/realestate/evidence-logs`, `GET /api/realestate/targets/{targetId}/evidence-logs`)
 - [x] 평가 입력: reaction snapshot, market fact, 유사 과거 상황
-- [ ] 평가 입력: timeline event
+- [x] 평가 입력: timeline event
 - [x] 평가 입력: SerpApi/search API 기반 최근 이슈 후보
-- [x] `realestate-evidence-logs(-push)`로 reaction snapshot, market fact, 최근 이슈 후보, 유사 과거 후보를 EvidenceLog payload로 조립/전송
+- [x] `realestate-evidence-logs(-push)`로 reaction snapshot, market fact, timeline event, 최근 이슈 후보, 유사 과거 후보를 EvidenceLog payload로 조립/전송
 - [ ] 사용자용 summary/caveat 문구 기준 정리
 - [x] Langfuse trace와 DB evidence log 정본의 경계 정리
 - [ ] 내부 추론 전문 비노출 기준 정리

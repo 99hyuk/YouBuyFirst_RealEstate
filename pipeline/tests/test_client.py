@@ -164,6 +164,25 @@ class _FakeHttpxClient:
                     ]
                 }
             )
+        if url.endswith("/api/realestate/targets/region-daejeon/timeline"):
+            return _Response(
+                {
+                    "items": [
+                        {
+                            "id": "policy-event-supply-daejeon-region-daejeon-primary",
+                            "targetId": "region-daejeon",
+                            "eventType": "supply",
+                            "sourceRefType": "policy_event",
+                            "sourceRefId": "policy-event-supply-daejeon",
+                            "title": "대전 도심 공급계획 발표",
+                            "summary": "도심 공급 후보지와 교통 개선 일정이 함께 언급됩니다.",
+                            "occurredAt": "2026-06-09T00:00:00Z",
+                            "asOf": "2026-06-09T00:00:00Z",
+                            "dataStatus": "approved",
+                        }
+                    ]
+                }
+            )
         return _Response(
             {
                 "items": [
@@ -742,6 +761,23 @@ def test_spring_client_publishes_real_estate_evidence_logs(monkeypatch):
         {
             "url": "http://backend:8080/internal/realestate/evidence-logs",
             "json": {"logs": [log]},
+            "timeout": 45,
+        }
+    ]
+
+
+def test_spring_client_lists_real_estate_target_timeline_events(monkeypatch):
+    _FakeHttpxClient.gets = []
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    items = client.list_real_estate_target_timeline_events("region-daejeon", limit=3)
+
+    assert items[0]["eventType"] == "supply"
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/api/realestate/targets/region-daejeon/timeline",
+            "params": {"limit": "3"},
             "timeout": 45,
         }
     ]

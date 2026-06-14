@@ -177,15 +177,16 @@ Python pipeline은 대량 임베딩 batch와 벡터 저장소 적재를 맡고, 
 
 ### EvidenceLog 생성 command
 
-현재 pipeline은 `realestate-evidence-logs`와 `realestate-evidence-logs-push` 명령으로 반응 snapshot, market fact, SerpApi/search 후보 content item, 유사 과거 window 후보를 하나의 EvidenceLog payload로 조립합니다.
+현재 pipeline은 `realestate-evidence-logs`와 `realestate-evidence-logs-push` 명령으로 반응 snapshot, market fact, timeline event, SerpApi/search 후보 content item, 유사 과거 window 후보를 하나의 EvidenceLog payload로 조립합니다.
 
 - `realestate-evidence-logs`는 JSON으로 `logs[]`를 출력합니다.
 - `realestate-evidence-logs-push`는 같은 payload를 `POST /internal/realestate/evidence-logs`로 전송합니다.
+- `--evidence-timeline-events-jsonl`은 `GET /api/realestate/targets/{targetId}/timeline` 응답 shape의 JSON/JSONL을 받아 `evidenceType=timeline_event`, `refType=timeline_event` 항목으로 연결합니다.
 - 현재 summary/tone은 룰 기반 baseline입니다. LLM provider를 붙이더라도 `evidenceLogId`, `evidenceItems[]`, `caveats`, `dataQuality`, `evaluationVersion`, `promptVersion`, `modelName` shape는 유지합니다.
-- 입력 근거가 부족하면 `market_fact_missing`, `similar_window_missing`, `search_candidate_missing` caveat을 남깁니다.
+- 입력 근거가 부족하면 `market_fact_missing`, `timeline_event_missing`, `similar_window_missing`, `search_candidate_missing` caveat을 남깁니다.
 - 문구는 "관찰됩니다", "함께 나타납니다"처럼 관찰형으로 제한하고 행동 지시 표현은 쓰지 않습니다.
 
-일일 자동 refresh에서는 `serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh`를 사용합니다. 이 step은 backend의 최신 `GET /api/realestate/reactions/rankings` 결과를 기준으로 target을 고르고, 각 target의 `market-facts`와 `content` API를 읽어 룰 기반 EvidenceLog를 생성한 뒤 `POST /internal/realestate/evidence-logs`로 저장합니다. 최신 ranking이 비어 있으면 `EMPTY`로 끝나며, 기존 EvidenceLog를 덮어쓰지 않고 `evaluatedAt` 기준의 새 평가 로그를 남깁니다.
+일일 자동 refresh에서는 `serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh`를 사용합니다. 이 step은 backend의 최신 `GET /api/realestate/reactions/rankings` 결과를 기준으로 target을 고르고, 각 target의 `market-facts`, `timeline`, `content` API를 읽어 룰 기반 EvidenceLog를 생성한 뒤 `POST /internal/realestate/evidence-logs`로 저장합니다. 최신 ranking이 비어 있으면 `EMPTY`로 끝나며, 기존 EvidenceLog를 덮어쓰지 않고 `evaluatedAt` 기준의 새 평가 로그를 남깁니다.
 
 ### Langfuse
 
@@ -252,7 +253,8 @@ POST /api/admin/realestate/mention-reviews/{mentionId}
 6. Python pipeline에서 생성한 평가 결과를 `POST /internal/realestate/evidence-logs`로 전송하는 명령을 만든다. 완료: `realestate-evidence-logs(-push)`.
 7. forbidden copy guardrail 테스트를 만든다.
 8. `realestate-similar-windows` 결과를 EvidenceLog 생성 command에 자동 병합한다. 완료: `--evidence-similar-windows-jsonl`.
-9. LangGraph는 위 함수 체인이 복잡해진 뒤 `RealEstateEvaluationGraph`로 전환한다.
+9. 상세 timeline event를 EvidenceLog 생성 command와 daily refresh에 자동 병합한다. 완료: `--evidence-timeline-events-jsonl`, `GET /api/realestate/targets/{targetId}/timeline`.
+10. LangGraph는 위 함수 체인이 복잡해진 뒤 `RealEstateEvaluationGraph`로 전환한다.
 
 ## 보류 사항
 
