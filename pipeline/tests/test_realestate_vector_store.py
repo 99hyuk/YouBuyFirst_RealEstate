@@ -144,6 +144,59 @@ def test_qdrant_search_results_are_converted_to_evidence_compatible_similar_wind
     ]
 
 
+def test_qdrant_search_results_join_after_market_fact_summary():
+    source_input_id = "reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z"
+    items = qdrant_search_results_to_similar_windows(
+        source_input=_embedding_item(source_input_id, [0.1, 0.2, 0.3]),
+        search_results=[
+            {
+                "id": "matched-window",
+                "score": 0.94,
+                "payload": {
+                    "targetId": "region-gwangju",
+                    "refId": "snapshot-matched-window",
+                    "windowStart": "2026-03-01T00:00:00Z",
+                    "windowEnd": "2026-03-01T01:00:00Z",
+                    "text": "광주 전세 우려와 교통 기대",
+                },
+            }
+        ],
+        market_facts=[
+            {
+                "targetId": "region-gwangju",
+                "factType": "apt_trade",
+                "observedAt": "2026-03-10",
+                "valueJson": {"dealAmountManwon": 50000},
+            },
+            {
+                "targetId": "region-gwangju",
+                "factType": "apt_trade",
+                "observedAt": "2026-04-20",
+                "valueJson": {"dealAmountManwon": 53000},
+            },
+        ],
+        horizon_days=90,
+    )
+
+    assert items[0]["afterMarketSummary"] == {
+        "horizonDays": 90,
+        "items": [
+            {
+                "factType": "apt_trade",
+                "metric": "dealAmountManwon",
+                "firstObservedAt": "2026-03-10",
+                "lastObservedAt": "2026-04-20",
+                "firstValue": 50000.0,
+                "lastValue": 53000.0,
+                "deltaPct": 6.0,
+                "sampleCount": 2,
+            }
+        ],
+    }
+    assert items[0]["caveat"] is None
+    assert items[0]["evidenceItem"]["valueText"] == "유사도 94.0% · 매매 +6.0%"
+
+
 def _embedding_item(input_id: str, embedding: list[float]):
     return {
         "inputId": input_id,

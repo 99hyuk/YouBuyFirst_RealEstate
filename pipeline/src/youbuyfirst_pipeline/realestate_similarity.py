@@ -147,6 +147,29 @@ def find_real_estate_similar_windows(
     ]
 
 
+def summarize_after_market_facts(
+    *,
+    target_id: str,
+    window_end: str | datetime,
+    market_facts: Iterable[dict[str, Any]],
+    horizon_days: int,
+) -> dict[str, Any]:
+    if horizon_days <= 0:
+        raise ValueError("horizon_days must be positive")
+    return _after_market_summary(
+        {
+            "targetId": target_id,
+            "windowEnd": _iso(parse_reaction_datetime(window_end)),
+        },
+        [_normalize_market_fact(fact) for fact in market_facts],
+        horizon_days=horizon_days,
+    )
+
+
+def primary_market_flow_label(summary: dict[str, Any]) -> str | None:
+    return _primary_market_flow_label(summary)
+
+
 def _score_snapshot_pair(source: dict[str, Any], candidate: dict[str, Any]) -> tuple[float, str, list[str]]:
     reaction_similarity = 1.0 - min(
         (

@@ -9,6 +9,11 @@ from typing import Any
 
 import httpx
 
+from youbuyfirst_pipeline.realestate_similarity import (
+    primary_market_flow_label,
+    summarize_after_market_facts,
+)
+
 
 DEFAULT_QDRANT_COLLECTION = "realestate_reaction_windows"
 DEFAULT_QDRANT_DISTANCE = "Cosine"
@@ -124,6 +129,8 @@ def qdrant_search_results_to_similar_windows(
     *,
     source_input: dict[str, Any],
     search_results: list[dict[str, Any]],
+    market_facts: list[dict[str, Any]] | None = None,
+    horizon_days: int | None = None,
 ) -> list[dict[str, Any]]:
     source_target_id = str(source_input.get("targetId") or "").strip()
     source_window_start = _window_start(source_input) or "unknown"
@@ -138,8 +145,21 @@ def qdrant_search_results_to_similar_windows(
         matched_window_start = _window_start(payload) or "unknown"
         matched_window_end = _window_end(payload) or "unknown"
         text = str(payload.get("text") or "").strip()
+        after_market_summary = {"horizonDays": None, "items": []}
+        caveat = "market_fact_not_joined"
+        if market_facts is not None:
+            after_market_summary = summarize_after_market_facts(
+                target_id=matched_target_id,
+                window_end=matched_window_end,
+                market_facts=market_facts,
+                horizon_days=horizon_days or 90,
+            )
+            caveat = None if after_market_summary["items"] else "market_fact_missing"
         value_text = f"유사도 {score * 100:.1f}%"
-        if text:
+        market_flow = primary_market_flow_label(after_market_summary)
+        if market_flow:
+            value_text = f"{value_text} · {market_flow}"
+        elif text:
             value_text = f"{value_text} · {text[:80]}"
         items.append(
             {
@@ -151,8 +171,8 @@ def qdrant_search_results_to_similar_windows(
                 "similarityScore": score,
                 "matchReason": "qdrant:cosine",
                 "issueOverlap": [],
-                "afterMarketSummary": {"horizonDays": None, "items": []},
-                "caveat": "market_fact_not_joined",
+                "afterMarketSummary": after_market_summary,
+                "caveat": caveat,
                 "evidenceItem": {
                     "evidenceItemId": _stable_id("similar-window", source_target_id, matched_target_id, ref_id),
                     "evidenceType": "similar_window",
