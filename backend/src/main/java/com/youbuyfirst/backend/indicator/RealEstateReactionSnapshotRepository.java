@@ -69,4 +69,17 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
             @Param("windowStart") Instant windowStart,
             @Param("windowEnd") Instant windowEnd
     );
+
+    @Query("""
+            select snapshot
+            from RealEstateReactionSnapshot snapshot
+            where snapshot.target.id = :targetId
+              and snapshot.asOf <= :asOf
+            order by snapshot.asOf desc, snapshot.windowEnd desc
+            """)
+    List<RealEstateReactionSnapshot> findLatestForMapLayer(
+            @Param("targetId") String targetId,
+            @Param("asOf") Instant asOf,
+            Pageable pageable
+    );
 }

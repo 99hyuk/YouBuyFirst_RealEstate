@@ -60,6 +60,8 @@
 - 지도 레이어용 `map_boundary_assets`, `map_features`, `map_layer_snapshots` 테이블을 추가했습니다.
 - `GET /api/realestate/map/layers`를 추가해 전국/시군구 지도 화면이 DB snapshot을 우선 조회하고, 실패하거나 없는 구간은 명시적인 fixture fallback으로 내려가도록 했습니다.
 - 전국 17개 시도와 서울 일부 시군구(종로구, 마포구) 지도 snapshot seed를 넣었습니다. 현재 값은 실제 batch 연결 전 기준값이므로 `provider=seed`, `dataStatus=mock`, `stale=true`로 표시합니다.
+- `POST /internal/realestate/map/layer-snapshots/refresh`를 추가했습니다. 실제 `apt_trade` market fact와 최신 reaction snapshot을 묶어 기간별 상승/하락, 표본 수, 신뢰도를 `map_layer_snapshots`에 저장합니다.
+- `serve --enable-realestate-daily-refresh --enable-realestate-map-layer-refresh`로 지도 레이어 snapshot 갱신을 일일 refresh step에 포함할 수 있게 했습니다.
 - `/realestate/map`과 `/realestate/map/:regionId`는 지도 route에서 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용합니다. 기존 화면용 slug 진입은 호환만 유지합니다.
 - `/realestate/targets/:targetId`에 카카오맵 SDK 내장 지도 prototype을 추가했습니다. `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`는 단지 marker와 선택 패널을 보여주며, 테스트/key missing/SDK 비활성화 상태에서는 도식화 fallback을 표시합니다.
 - `real_estate_complexes`에 단지 marker용 좌표, 좌표 provider/asOf/status, marker summary/status 필드를 추가하고 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 연결했습니다. 상세 화면은 이 API를 우선 사용하고 실패하거나 빈 응답이면 기존 fixture로 fallback합니다.
@@ -115,7 +117,6 @@ real_estate_targets
 - LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
 - GMS `gemini-embedding-2` 임베딩 결과를 벡터 저장소에 적재하고 `realestate-similar-windows` 내부 검색 엔진으로 연결
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
-- 실제 market fact와 reaction snapshot을 `map_layer_snapshots`로 집계하는 지도 배치 구현
 
 ## 다음 작업
 
@@ -381,3 +382,12 @@ C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\pyt
 ```
 
 이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.
+
+지도 레이어 snapshot 일일 refresh:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods week month halfYear
+```
+
+이 step은 backend의 `POST /internal/realestate/map/layer-snapshots/refresh`를 호출합니다. backend는 `map_features`에 연결된 target별 `apt_trade` market fact를 기간 안에서 첫 관측일/마지막 관측일 평균으로 비교하고, 최신 reaction snapshot의 confidence를 함께 넣어 `map_layer_snapshots`를 생성합니다. 거래 표본이 부족한 target/기간은 새 snapshot을 만들지 않으므로 기존 seed/mock fallback이 명시적으로 남습니다.

@@ -183,6 +183,27 @@ class SpringIngestionClient:
             response = client.post(f"{self.base_url}/internal/realestate/evidence-logs", json=payload)
             response.raise_for_status()
 
+    def refresh_real_estate_map_layer_snapshots(
+        self,
+        *,
+        layer_type: str,
+        periods: Iterable[str],
+        as_of: str,
+    ) -> dict:
+        payload = {
+            "layerType": layer_type,
+            "periods": list(periods),
+            "asOf": as_of,
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(
+                f"{self.base_url}/internal/realestate/map/layer-snapshots/refresh",
+                json=payload,
+            )
+            response.raise_for_status()
+            data = response.json()
+        return data if isinstance(data, dict) else {}
+
     def get_real_estate_reaction_ranking(
         self,
         *,

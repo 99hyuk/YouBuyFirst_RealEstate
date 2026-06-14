@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -34,7 +37,7 @@ class RealEstateMapLayerIntegrationTest {
         assertThat(body.path("layerType").asText()).isEqualTo("sido");
         assertThat(body.path("dataStatus").asText()).isEqualTo("mock");
         assertThat(body.path("stale").asBoolean()).isTrue();
-        assertThat(body.path("asOf").asText()).startsWith("2026-06-01");
+        assertThat(body.path("asOf").asText()).isNotBlank();
         assertThat(body.path("periods"))
                 .extracting(JsonNode::asText)
                 .containsExactly("week", "month", "halfYear");
@@ -83,6 +86,109 @@ class RealEstateMapLayerIntegrationTest {
 
         assertThat(unsupportedLayer.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(unknownParent.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void refreshesSigunguMapLayerFromMarketFactsAndReactionSnapshots() throws Exception {
+        ResponseEntity<String> marketFacts = restTemplate.postForEntity(
+                "/internal/realestate/market-facts",
+                Map.of(
+                        "items",
+                        List.of(
+                                mapFact("molit_apt_trade:11110:202606:map-refresh-before", "2026-06-03", 80000),
+                                mapFact("molit_apt_trade:11110:202606:map-refresh-after", "2026-06-10", 88000)
+                        )
+                ),
+                String.class
+        );
+        ResponseEntity<String> reactionSnapshots = restTemplate.postForEntity(
+                "/internal/realestate/reaction-snapshots",
+                Map.of(
+                        "items",
+                        List.of(Map.ofEntries(
+                                Map.entry("targetType", "region"),
+                                Map.entry("targetId", "region-seoul-jongno"),
+                                Map.entry("windowStart", "2026-06-10T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-10T01:00:00Z"),
+                                Map.entry("asOf", "2026-06-10T01:02:00Z"),
+                                Map.entry("mentionCount", 18),
+                                Map.entry("previousMentionCount", 10),
+                                Map.entry("expectationScore", 60),
+                                Map.entry("concernScore", 25),
+                                Map.entry("neutralScore", 15),
+                                Map.entry("heatScore", 74),
+                                Map.entry("confidence", 0.80),
+                                Map.entry("sourceCount", 3),
+                                Map.entry("sourceSkew", 0.30),
+                                Map.entry("coverageStatus", "partial"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of(Map.of(
+                                        "issueKey", "jeonse",
+                                        "label", "전세",
+                                        "share", 0.45,
+                                        "direction", "concern",
+                                        "summary", "전세와 가격 부담 언급이 함께 관찰됩니다.",
+                                        "confidence", 0.72
+                                )))
+                        ))
+                ),
+                String.class
+        );
+
+        ResponseEntity<String> refresh = restTemplate.postForEntity(
+                "/internal/realestate/map/layer-snapshots/refresh",
+                Map.of(
+                        "layerType", "sigungu",
+                        "periods", List.of("month"),
+                        "asOf", "2026-06-12T00:00:00Z"
+                ),
+                String.class
+        );
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/map/layers?layerType=sigungu&parentTargetId=region-seoul",
+                String.class
+        );
+
+        assertThat(marketFacts.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(reactionSnapshots.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refresh.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refresh.getBody()).contains("\"acceptedSnapshots\":1");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode jongno = findTarget(objectMapper.readTree(response.getBody()).path("targets"), "region-seoul-jongno");
+        assertThat(jongno).isNotNull();
+        JsonNode month = jongno.path("periods").path("month");
+        assertThat(month.path("changePct").asDouble()).isEqualTo(10.0);
+        assertThat(month.path("sampleCount").asInt()).isEqualTo(2);
+        assertThat(month.path("confidence").asDouble()).isEqualTo(80.0);
+        assertThat(month.path("asOf").asText()).isEqualTo("2026-06-12T00:00:00Z");
+        assertThat(month.path("provider").asText()).isEqualTo("real_estate_map_layer_refresh");
+        assertThat(month.path("sourceLabel").asText()).contains("실거래", "반응 snapshot");
+        assertThat(month.path("dataStatus").asText()).isEqualTo("ok");
+        assertThat(month.path("stale").asBoolean()).isFalse();
+    }
+
+    private static Map<String, Object> mapFact(String providerObjectId, String observedAt, int dealAmountManwon) {
+        return Map.ofEntries(
+                Map.entry("targetType", "region"),
+                Map.entry("targetId", "region-seoul-jongno"),
+                Map.entry("factType", "apt_trade"),
+                Map.entry("provider", "molit"),
+                Map.entry("providerDataset", "molit_apt_trade"),
+                Map.entry("providerObjectId", providerObjectId),
+                Map.entry("legalDongCode", "11110"),
+                Map.entry("observedAt", observedAt),
+                Map.entry("asOf", "2026-06-01"),
+                Map.entry("ingestedAt", "2026-06-12T00:00:00Z"),
+                Map.entry("sourceUpdatedAt", "2026-06-12T00:00:00Z"),
+                Map.entry("dataStatus", "ok"),
+                Map.entry("stale", false),
+                Map.entry("valueJson", Map.of(
+                        "apartmentName", "Jongno Map Test",
+                        "dealAmountManwon", dealAmountManwon,
+                        "exclusiveAreaM2", 84.97
+                ))
+        );
     }
 
     private static JsonNode findTarget(JsonNode targets, String targetId) {

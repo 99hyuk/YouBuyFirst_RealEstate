@@ -68,6 +68,7 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
 from youbuyfirst_pipeline.realestate_daily_scheduler import (
     RealEstateDailyRefreshJob,
     RealEstateEvidenceLogRefreshJob,
+    RealEstateMapLayerRefreshJob,
     RealEstateRecentIssuesRefreshJob,
 )
 from youbuyfirst_pipeline.realestate_evidence import (
@@ -394,6 +395,21 @@ async def async_main() -> None:
         "--enable-realestate-evidence-logs-refresh",
         action="store_true",
         default=os.getenv("REALESTATE_EVIDENCE_LOG_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--enable-realestate-map-layer-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_MAP_LAYER_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-map-layer-types",
+        nargs="+",
+        default=_configured_csv_values(os.getenv("REALESTATE_MAP_LAYER_TYPES"), ["sido", "sigungu"]),
+    )
+    parser.add_argument(
+        "--realestate-map-layer-periods",
+        nargs="+",
+        default=_configured_csv_values(os.getenv("REALESTATE_MAP_LAYER_PERIODS"), ["week", "month", "halfYear"]),
     )
     parser.add_argument(
         "--realestate-evidence-target-type",
@@ -1131,6 +1147,8 @@ async def async_main() -> None:
             raise SystemExit("--enable-realestate-recent-issues-refresh requires --enable-realestate-daily-refresh")
         if args.enable_realestate_evidence_logs_refresh and not args.enable_realestate_daily_refresh:
             raise SystemExit("--enable-realestate-evidence-logs-refresh requires --enable-realestate-daily-refresh")
+        if args.enable_realestate_map_layer_refresh and not args.enable_realestate_daily_refresh:
+            raise SystemExit("--enable-realestate-map-layer-refresh requires --enable-realestate-daily-refresh")
         if args.enable_realestate_daily_refresh:
             daily_steps = []
             if realestate_market_facts_refresh_job is not None:
@@ -1154,6 +1172,17 @@ async def async_main() -> None:
                         ),
                     )
                 )
+            if args.enable_realestate_map_layer_refresh:
+                daily_steps.append(
+                    (
+                        "map_layers",
+                        RealEstateMapLayerRefreshJob(
+                            client=market_client,
+                            layer_types=args.realestate_map_layer_types,
+                            periods=args.realestate_map_layer_periods,
+                        ),
+                    )
+                )
             if args.enable_realestate_evidence_logs_refresh:
                 daily_steps.append(
                     (
@@ -1171,7 +1200,7 @@ async def async_main() -> None:
             if not daily_steps:
                 raise SystemExit(
                     "--enable-realestate-daily-refresh requires at least one real-estate refresh step "
-                    "(market facts, reaction snapshots, recent issues, or evidence logs)"
+                    "(market facts, reaction snapshots, recent issues, map layers, or evidence logs)"
                 )
             realestate_daily_refresh_job = RealEstateDailyRefreshJob(daily_steps)
         await serve(
@@ -1212,6 +1241,12 @@ def _configured_issue_keywords(value: str | None) -> list[str] | None:
     if not value:
         return None
     return [keyword.strip() for keyword in value.split(",") if keyword.strip()]
+
+
+def _configured_csv_values(value: str | None, default: list[str]) -> list[str]:
+    if not value:
+        return default
+    return [item.strip() for item in value.split(",") if item.strip()]
 
 
 def _realestate_raw_push_tasks(args, spring_client=None) -> list:

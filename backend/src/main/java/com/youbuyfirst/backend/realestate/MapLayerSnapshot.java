@@ -62,6 +62,40 @@ public class MapLayerSnapshot {
     protected MapLayerSnapshot() {
     }
 
+    public MapLayerSnapshot(String id) {
+        this.id = id;
+    }
+
+    public void update(
+            String targetId,
+            String layerType,
+            String periodKey,
+            BigDecimal changePct,
+            int sampleCount,
+            BigDecimal confidence,
+            Instant asOf,
+            String provider,
+            String sourceLabel,
+            String dataStatus,
+            boolean stale,
+            Instant now
+    ) {
+        this.targetId = targetId;
+        this.layerType = layerType;
+        this.periodKey = periodKey;
+        this.changePct = changePct;
+        this.sampleCount = sampleCount;
+        this.confidence = confidence;
+        this.asOf = asOf;
+        this.provider = provider;
+        this.sourceLabel = sourceLabel;
+        this.dataStatus = dataStatus;
+        this.stale = stale;
+        if (this.createdAt == null) {
+            this.createdAt = now;
+        }
+    }
+
     public String getId() {
         return id;
     }

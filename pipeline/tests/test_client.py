@@ -29,6 +29,16 @@ class _FakeHttpxClient:
         self.posts.append({"url": url, "json": json, "timeout": self.timeout})
         if url.endswith("/internal/realestate/public-data/promote-staging"):
             return _Response({"promotedFacts": 1})
+        if url.endswith("/internal/realestate/map/layer-snapshots/refresh"):
+            return _Response(
+                {
+                    "layerType": json["layerType"],
+                    "periods": json["periods"],
+                    "asOf": json["asOf"],
+                    "acceptedSnapshots": 2,
+                    "skippedTargets": 1,
+                }
+            )
         return _Response()
 
     def get(self, url: str, params: dict | None = None) -> _Response:
@@ -732,6 +742,31 @@ def test_spring_client_publishes_real_estate_evidence_logs(monkeypatch):
         {
             "url": "http://backend:8080/internal/realestate/evidence-logs",
             "json": {"logs": [log]},
+            "timeout": 45,
+        }
+    ]
+
+
+def test_spring_client_refreshes_real_estate_map_layer_snapshots(monkeypatch):
+    _FakeHttpxClient.posts = []
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    result = client.refresh_real_estate_map_layer_snapshots(
+        layer_type="sigungu",
+        periods=("month", "halfYear"),
+        as_of="2026-06-21T00:00:00Z",
+    )
+
+    assert result["acceptedSnapshots"] == 2
+    assert _FakeHttpxClient.posts == [
+        {
+            "url": "http://backend:8080/internal/realestate/map/layer-snapshots/refresh",
+            "json": {
+                "layerType": "sigungu",
+                "periods": ["month", "halfYear"],
+                "asOf": "2026-06-21T00:00:00Z",
+            },
             "timeout": 45,
         }
     ]

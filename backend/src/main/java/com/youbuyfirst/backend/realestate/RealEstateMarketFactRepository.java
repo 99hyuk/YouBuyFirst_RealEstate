@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,5 +43,20 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
             @Param("targetId") String targetId,
             @Param("factType") String factType,
             Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.targetId = :targetId
+              and fact.factType = :factType
+              and fact.observedAt between :startDate and :endDate
+            order by fact.observedAt asc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findMapLayerFacts(
+            @Param("targetId") String targetId,
+            @Param("factType") String factType,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
     );
 }
