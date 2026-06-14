@@ -190,7 +190,7 @@ Python pipeline은 대량 임베딩 batch와 벡터 저장소 적재를 맡고, 
 - 입력 근거가 부족하면 `market_fact_missing`, `timeline_event_missing`, `similar_window_missing`, `search_candidate_missing` caveat을 남깁니다.
 - 문구는 "관찰됩니다", "함께 나타납니다"처럼 관찰형으로 제한하고 행동 지시 표현은 쓰지 않습니다.
 
-일일 자동 refresh에서는 `serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh`를 사용합니다. 이 step은 backend의 최신 `GET /api/realestate/reactions/rankings` 결과를 기준으로 target을 고르고, 각 target의 `market-facts`, `timeline`, `content` API를 읽어 EvidenceLog를 생성한 뒤 `POST /internal/realestate/evidence-logs`로 저장합니다. `--evidence-use-gms-llm`을 함께 켜면 같은 step 안에서 GMS LLM summary 보강과 forbidden copy guardrail을 적용합니다. 최신 ranking이 비어 있으면 `EMPTY`로 끝나며, 기존 EvidenceLog를 덮어쓰지 않고 `evaluatedAt` 기준의 새 평가 로그를 남깁니다.
+일일 자동 refresh에서는 `serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh`를 사용합니다. 이 step은 backend의 최신 `GET /api/realestate/reactions/rankings` 결과를 기준으로 target을 고르고, 각 target의 `market-facts`, `timeline`, `content` API를 읽어 EvidenceLog를 생성한 뒤 `POST /internal/realestate/evidence-logs`로 저장합니다. `--evidence-similar-windows-jsonl`을 함께 주면 미리 생성한 batch/Qdrant 유사 과거 후보 중 현재 target/window와 맞는 항목을 `similar_window` 근거로 병합합니다. `--evidence-use-gms-llm`을 함께 켜면 같은 step 안에서 GMS LLM summary 보강과 forbidden copy guardrail을 적용합니다. 최신 ranking이 비어 있으면 `EMPTY`로 끝나며, 기존 EvidenceLog를 덮어쓰지 않고 `evaluatedAt` 기준의 새 평가 로그를 남깁니다.
 
 ### Langfuse
 

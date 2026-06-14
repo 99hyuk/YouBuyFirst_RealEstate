@@ -269,6 +269,65 @@ def test_evidence_log_refresh_job_builds_logs_from_latest_backend_snapshots():
     }
 
 
+def test_evidence_log_refresh_job_can_attach_similar_window_candidates():
+    spring_client = _EvidenceSpringClient()
+    similar_calls = []
+
+    def similar_windows_provider(target_id: str, ranking_row: dict, ranking: dict):
+        similar_calls.append(
+            {
+                "target_id": target_id,
+                "window_start": ranking["windowStart"],
+                "row_target_id": ranking_row["targetId"],
+            }
+        )
+        return [
+            {
+                "sourceTargetId": target_id,
+                "matchedTargetId": "region-gwangju",
+                "matchedWindowStart": "2026-03-01T00:00:00Z",
+                "matchedWindowEnd": "2026-03-01T01:00:00Z",
+                "similarityScore": 0.91,
+                "evidenceItem": {
+                    "evidenceItemId": "similar-region-daejeon-region-gwangju",
+                    "evidenceType": "similar_window",
+                    "refType": "similar_window",
+                    "refId": "snapshot-gwangju-20260301000000",
+                    "label": "유사 과거 window",
+                    "valueText": "유사도 91.0% · 매매 +6.0%",
+                    "severity": "info",
+                },
+            }
+        ]
+
+    job = RealEstateEvidenceLogRefreshJob(
+        client=spring_client,
+        similar_windows_provider=similar_windows_provider,
+        clock=lambda: datetime(2026, 6, 14, 2, 0, tzinfo=timezone.utc),
+    )
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert result.similar_window_count == 1
+    assert similar_calls == [
+        {
+            "target_id": "region-daejeon",
+            "window_start": "2026-06-14T00:00:00Z",
+            "row_target_id": "region-daejeon",
+        }
+    ]
+    published_log = spring_client.published_logs[0][0]
+    assert "similar_window_missing" not in published_log["caveats"]
+    assert {item["evidenceType"] for item in published_log["evidenceItems"]} == {
+        "reaction",
+        "market_fact",
+        "timeline_event",
+        "similar_window",
+        "search_candidate",
+    }
+
+
 def test_evidence_log_refresh_job_can_apply_llm_evaluator_before_publish():
     spring_client = _EvidenceSpringClient()
     llm_calls = []

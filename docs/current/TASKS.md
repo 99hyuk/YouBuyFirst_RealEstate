@@ -216,6 +216,7 @@
 - [x] GMS `gpt-5-mini` EvidenceLog summary 보강 client와 `--evidence-use-gms-llm` 옵션 구현
 - [x] 최근 이슈 후보 검색 provider/query/keyword 저장 기준 정리
 - [x] 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성 job 구현
+- [x] 일일 EvidenceLog refresh에 사전 생성된 유사 과거 window JSONL 병합
 - [x] 임베딩 결과를 Qdrant에 적재하고 유사 window 검색 결과를 EvidenceLog `similar_window` 입력 shape로 출력
 - [x] Qdrant 검색 결과에 이후 market fact 흐름을 자동 join하고 EvidenceLog `similar_window` 입력 shape에 반영
 - [x] Qdrant 검색을 `realestate-similar-windows --similar-engine qdrant` 내부 검색 엔진 선택지로 통합

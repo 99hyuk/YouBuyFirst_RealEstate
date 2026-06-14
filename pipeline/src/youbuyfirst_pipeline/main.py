@@ -1384,6 +1384,7 @@ async def async_main() -> None:
                             prompt_version=args.evidence_llm_prompt_version,
                         )
 
+                similar_windows_provider = _similar_windows_provider_from_args(args)
                 daily_steps.append(
                     (
                         "evidence_logs",
@@ -1396,6 +1397,7 @@ async def async_main() -> None:
                             timeline_limit=args.realestate_evidence_timeline_limit,
                             content_limit=args.realestate_evidence_content_limit,
                             llm_evaluator=evidence_llm_evaluator,
+                            similar_windows_provider=similar_windows_provider,
                         ),
                     )
                 )
@@ -1449,6 +1451,35 @@ def _configured_csv_values(value: str | None, default: list[str]) -> list[str]:
     if not value:
         return default
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def _similar_windows_provider_from_args(args):
+    if not args.evidence_similar_windows_jsonl:
+        return None
+    similar_windows = load_real_estate_evidence_similar_windows(args.evidence_similar_windows_jsonl)
+
+    def provider(target_id: str, _ranking_row: dict[str, object], ranking: dict[str, object]) -> list[dict[str, object]]:
+        window_start = str(ranking.get("windowStart") or ranking.get("window_start") or "").strip()
+        return [
+            item
+            for item in similar_windows
+            if _similar_window_matches_daily_evidence_target(item, target_id=target_id, window_start=window_start)
+        ]
+
+    return provider
+
+
+def _similar_window_matches_daily_evidence_target(
+    item: dict[str, object],
+    *,
+    target_id: str,
+    window_start: str,
+) -> bool:
+    source_target_id = str(item.get("sourceTargetId") or item.get("source_target_id") or "").strip()
+    if source_target_id and source_target_id != target_id:
+        return False
+    source_window_start = str(item.get("sourceWindowStart") or item.get("source_window_start") or "").strip()
+    return not source_window_start or not window_start or source_window_start == window_start
 
 
 def _realestate_raw_push_tasks(args, spring_client=None) -> list:

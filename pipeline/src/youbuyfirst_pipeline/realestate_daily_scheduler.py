@@ -62,6 +62,7 @@ class RealEstateEvidenceLogRefreshResult:
     market_fact_count: int
     timeline_event_count: int
     content_item_count: int
+    similar_window_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -127,6 +128,7 @@ class RealEstateEvidenceLogRefreshJob:
         timeline_limit: int = 20,
         content_limit: int = 20,
         llm_evaluator: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+        similar_windows_provider: Callable[[str, dict[str, Any], dict[str, Any]], Sequence[dict[str, Any]]] | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.client = client
@@ -137,6 +139,7 @@ class RealEstateEvidenceLogRefreshJob:
         self.timeline_limit = timeline_limit
         self.content_limit = content_limit
         self.llm_evaluator = llm_evaluator
+        self.similar_windows_provider = similar_windows_provider
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     def run_once(self) -> RealEstateEvidenceLogRefreshResult:
@@ -154,12 +157,14 @@ class RealEstateEvidenceLogRefreshJob:
                 market_fact_count=0,
                 timeline_event_count=0,
                 content_item_count=0,
+                similar_window_count=0,
             )
 
         logs: list[dict[str, Any]] = []
         market_fact_count = 0
         timeline_event_count = 0
         content_item_count = 0
+        similar_window_count = 0
         for row in rows:
             target_id = str(row.get("targetId") or row.get("target_id") or "").strip()
             if not target_id:
@@ -183,6 +188,13 @@ class RealEstateEvidenceLogRefreshJob:
             market_fact_count += len(market_facts)
             timeline_event_count += len(timeline_events)
             content_item_count += len(content_items)
+            similar_windows = _similar_windows_for_evidence(
+                self.similar_windows_provider,
+                target_id=target_id,
+                ranking_row=row,
+                ranking=ranking,
+            )
+            similar_window_count += len(similar_windows)
             built_logs = build_real_estate_evidence_logs(
                 [_snapshot_from_ranking_row(row, ranking)],
                 target_id=target_id,
@@ -190,6 +202,7 @@ class RealEstateEvidenceLogRefreshJob:
                 evaluated_at=self.clock(),
                 market_facts=market_facts,
                 timeline_events=timeline_events,
+                similar_windows=similar_windows,
                 content_items=content_items,
             )
             if self.llm_evaluator is not None:
@@ -206,6 +219,7 @@ class RealEstateEvidenceLogRefreshJob:
             market_fact_count=market_fact_count,
             timeline_event_count=timeline_event_count,
             content_item_count=content_item_count,
+            similar_window_count=similar_window_count,
         )
 
 
@@ -317,6 +331,18 @@ def _content_items_for_evidence(target_id: str, items: list[dict[str, Any]]) -> 
         ]
         normalized_items.append(copy)
     return normalized_items
+
+
+def _similar_windows_for_evidence(
+    provider: Callable[[str, dict[str, Any], dict[str, Any]], Sequence[dict[str, Any]]] | None,
+    *,
+    target_id: str,
+    ranking_row: dict[str, Any],
+    ranking: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if provider is None:
+        return []
+    return [item for item in provider(target_id, ranking_row, ranking) if isinstance(item, dict)]
 
 
 def _ratio_percent(ratio: dict[str, Any], key: str) -> float:

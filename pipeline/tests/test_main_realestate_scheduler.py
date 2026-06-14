@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 
 from youbuyfirst_pipeline import main as pipeline_main
@@ -238,6 +239,74 @@ def test_serve_command_can_enable_gms_llm_for_daily_evidence_refresh(monkeypatch
     daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
     evidence_step = daily_job.steps[0][1]
     assert evidence_step.llm_evaluator is not None
+
+
+def test_serve_command_can_attach_similar_windows_jsonl_to_daily_evidence_refresh(monkeypatch, tmp_path):
+    captured = {}
+    spring_client = _FakeSpringClient()
+    similar_windows_path = tmp_path / "similar-windows.json"
+    similar_windows_path.write_text(
+        json.dumps(
+            {
+                "items": [
+                    {
+                        "sourceTargetId": "region-daejeon",
+                        "sourceWindowStart": "2026-06-14T00:00:00Z",
+                        "matchedTargetId": "region-gwangju",
+                        "similarityScore": 0.91,
+                        "evidenceItem": {
+                            "evidenceItemId": "similar-region-daejeon-region-gwangju",
+                            "evidenceType": "similar_window",
+                            "refType": "similar_window",
+                            "refId": "snapshot-gwangju-20260301000000",
+                            "label": "유사 과거 window",
+                            "valueText": "유사도 91.0% · 매매 +6.0%",
+                            "severity": "info",
+                        },
+                    },
+                    {
+                        "sourceTargetId": "region-busan",
+                        "sourceWindowStart": "2026-06-14T00:00:00Z",
+                        "matchedTargetId": "region-jeju",
+                        "similarityScore": 0.73,
+                    },
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    async def fake_serve(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: _FakePipeline())
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-evidence-logs-refresh",
+            "--evidence-similar-windows-jsonl",
+            str(similar_windows_path),
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    evidence_step = daily_job.steps[0][1]
+    similar_windows = evidence_step.similar_windows_provider(
+        "region-daejeon",
+        {"targetId": "region-daejeon"},
+        {"windowStart": "2026-06-14T00:00:00Z"},
+    )
+    assert [item["matchedTargetId"] for item in similar_windows] == ["region-gwangju"]
 
 
 def test_serve_command_can_group_map_layer_refresh_into_daily_refresh(monkeypatch):
