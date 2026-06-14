@@ -163,17 +163,17 @@ evidence 부족 -> skip_with_reason
 
 벡터DB는 현재 window와 과거 window의 유사도를 찾는 분석 레이어입니다. target 식별, market fact 계산, 관심도 점수 산출의 정본이 아닙니다.
 
-현재 MVP는 VectorDB 도입 전 단계로 `realestate-similar-windows` batch 명령을 사용합니다. 이 명령은 reaction snapshot payload를 읽어 현재 window와 과거 window를 비교하고, 반응 방향 비율, 언급 증가 패턴, heat score, issue overlap 기준으로 `similarityScore`를 계산합니다.
+현재 MVP는 두 경로를 함께 둡니다. 기본 baseline은 `realestate-similar-windows` batch 명령이며, reaction snapshot payload를 읽어 현재 window와 과거 window를 비교하고 반응 방향 비율, 언급 증가 패턴, heat score, issue overlap 기준으로 `similarityScore`를 계산합니다. 의미 기반 검색은 Qdrant adapter를 통해 `realestate-embeddings` 출력 벡터를 저장하고 검색합니다.
 
 임베딩 모델은 GMS의 `gemini-embedding-2`를 기본 후보로 둡니다. 호출 경로는 `https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent`이며, 키는 Gemini 방식처럼 `x-goog-api-key: ${GMS_KEY}` 헤더로 전달합니다. 이 임베딩은 target 식별이나 가격 계산에 쓰지 않고, 과거 유사 반응 window, 뉴스/컬럼 후보, 쟁점 요약의 의미 기반 검색과 클러스터링에만 사용합니다.
 
 Python pipeline은 대량 임베딩 batch와 벡터 저장소 적재를 맡고, Spring Boot는 저장된 유사 과거 검색 결과와 EvidenceLog 조회/저장을 맡습니다. 화면 요청 중 즉시 임베딩을 생성하지 않고, batch 결과의 `provider`, `modelName`, `asOf`, `stale` 상태를 함께 남깁니다.
 
-현재 pipeline에는 `realestate-embeddings` 명령이 있습니다. `--reaction-snapshots-jsonl`로 reaction snapshot JSONL을 입력하면 각 window를 임베딩용 텍스트로 요약하고, `GMS_KEY`, `GMS_GEMINI_BASE_URL`, `GMS_GEMINI_EMBEDDING_MODEL` 환경변수를 사용해 GMS Gemini embedding API를 호출합니다. 출력 payload는 `inputId`, `targetId`, `refType=reaction_snapshot`, `provider=gms:gemini`, `modelName`, `text`, `embedding`, `dimensions`, `dataStatus=generated`를 포함합니다.
+현재 pipeline에는 `realestate-embeddings` 명령이 있습니다. `--reaction-snapshots-jsonl`로 reaction snapshot JSONL을 입력하면 각 window를 임베딩용 텍스트로 요약하고, `GMS_KEY`, `GMS_GEMINI_BASE_URL`, `GMS_GEMINI_EMBEDDING_MODEL` 환경변수를 사용해 GMS Gemini embedding API를 호출합니다. 출력 payload는 `inputId`, `targetId`, `refType=reaction_snapshot`, `provider=gms:gemini`, `modelName`, `text`, `embedding`, `dimensions`, `dataStatus=generated`를 포함합니다. `realestate-vector-upsert`는 이 payload를 Qdrant collection에 저장하고, `realestate-vector-search`는 특정 `inputId`의 vector로 유사 window를 검색해 EvidenceLog에 바로 넣을 수 있는 `similar_window` item shape를 출력합니다.
 
 `--similar-market-facts-jsonl`을 함께 주면 matched window 이후 지정 horizon 안의 market fact 흐름을 `afterMarketSummary`로 붙입니다. 예를 들어 과거 window 이후 `apt_trade.dealAmountManwon`의 첫 값과 마지막 값을 비교해 `deltaPct`를 기록합니다. 이 값은 "이후 실제 시장 사실 흐름"을 보강하는 근거 후보이며, 가격 상승/하락의 원인 단정이나 행동 지시로 쓰지 않습니다.
 
-출력된 후보는 `evidenceItems[]`에 `evidenceType=similar_window`, `refType=similar_window`로 연결할 수 있습니다. VectorDB를 도입하면 이 batch 결과의 출력 shape를 유지하고 내부 검색 엔진만 바꾸는 것을 우선합니다.
+출력된 후보는 `evidenceItems[]`에 `evidenceType=similar_window`, `refType=similar_window`로 연결할 수 있습니다. Qdrant 검색 결과도 이 shape를 유지하므로 `realestate-evidence-logs --evidence-similar-windows-jsonl <vector-search-output>` 경로로 같은 EvidenceLog 생성 흐름을 재사용합니다.
 
 ### EvidenceLog 생성 command
 
