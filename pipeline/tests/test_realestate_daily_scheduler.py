@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from youbuyfirst_pipeline.realestate_daily_scheduler import (
     RealEstateDailyRefreshJob,
+    RealEstateEvidenceLogRefreshJob,
     RealEstateRecentIssuesRefreshJob,
 )
 from youbuyfirst_pipeline.realestate_recent_issues import SerpApiRecentIssueResult
@@ -42,6 +43,90 @@ class _RecentIssueSpringClient:
 
     def publish_real_estate_content_items(self, items) -> None:
         self.content_batches.append([item.to_content_item_dict() for item in items])
+
+
+class _EvidenceSpringClient:
+    def __init__(self, ranking: dict | None = None) -> None:
+        self.ranking = ranking or {
+            "window": "60m",
+            "windowStart": "2026-06-14T00:00:00Z",
+            "windowEnd": "2026-06-14T01:00:00Z",
+            "freshness": {
+                "source": "real_estate_reaction_snapshots",
+                "asOf": "2026-06-14T01:02:00Z",
+                "coverageStatus": "partial",
+            },
+            "items": [
+                {
+                    "targetId": "region-daejeon",
+                    "targetType": "region",
+                    "displayName": "대전",
+                    "mentionCount": 24,
+                    "reactionDirectionRatio": {
+                        "expectation": 0.58,
+                        "concern": 0.27,
+                        "neutral": 0.15,
+                    },
+                    "heatScore": 81,
+                    "confidence": 0.74,
+                    "sourceCount": 2,
+                    "sourceSkew": 0.41,
+                    "coverageStatus": "partial",
+                    "stale": False,
+                    "issueMix": [
+                        {
+                            "issueKey": "transport",
+                            "label": "교통",
+                            "share": 0.45,
+                            "direction": "expectation",
+                            "summary": "광역 교통 기대가 반복됩니다.",
+                            "confidence": 0.7,
+                        }
+                    ],
+                }
+            ],
+        }
+        self.ranking_calls = []
+        self.market_fact_calls = []
+        self.content_calls = []
+        self.published_logs = []
+
+    def get_real_estate_reaction_ranking(self, *, target_type: str, window_minutes: int, limit: int):
+        self.ranking_calls.append(
+            {
+                "target_type": target_type,
+                "window_minutes": window_minutes,
+                "limit": limit,
+            }
+        )
+        return self.ranking
+
+    def list_real_estate_target_market_facts(self, target_id: str, *, limit: int):
+        self.market_fact_calls.append({"target_id": target_id, "limit": limit})
+        return [
+            {
+                "targetId": target_id,
+                "factType": "apt_trade",
+                "providerObjectId": "molit_apt_trade:30110:202606:1",
+                "observedAt": "2026-06-03",
+                "valueJson": {"dealAmountManwon": 42000},
+            }
+        ]
+
+    def list_real_estate_target_content_items(self, target_id: str, *, feed: str, limit: int):
+        self.content_calls.append({"target_id": target_id, "feed": feed, "limit": limit})
+        return [
+            {
+                "contentId": "serpapi-region-daejeon-transport",
+                "title": "대전 교통 이슈 후보",
+                "targetId": target_id,
+                "linkType": "search_candidate",
+                "reviewState": "candidate",
+            }
+        ]
+
+    def publish_real_estate_evidence_logs(self, logs) -> None:
+        self.published_logs.append(list(logs))
 
 
 def test_daily_refresh_job_runs_steps_in_order_and_summarizes_ok_status():
@@ -106,3 +191,65 @@ def test_recent_issues_refresh_job_publishes_candidate_content(tmp_path):
     assert search_client.queries == [("대전 교통 부동산", 2)]
     assert spring_client.content_batches[0][0]["dataStatus"] == "candidate"
     assert spring_client.content_batches[0][0]["targets"][0]["targetId"] == "region-daejeon"
+
+
+def test_evidence_log_refresh_job_builds_logs_from_latest_backend_snapshots():
+    spring_client = _EvidenceSpringClient()
+    job = RealEstateEvidenceLogRefreshJob(
+        client=spring_client,
+        target_type="region",
+        window_minutes=60,
+        ranking_limit=5,
+        market_fact_limit=10,
+        content_limit=10,
+        clock=lambda: datetime(2026, 6, 14, 2, 0, tzinfo=timezone.utc),
+    )
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert result.target_count == 1
+    assert result.log_count == 1
+    assert result.market_fact_count == 1
+    assert result.content_item_count == 1
+    assert spring_client.ranking_calls == [
+        {
+            "target_type": "region",
+            "window_minutes": 60,
+            "limit": 5,
+        }
+    ]
+    published_log = spring_client.published_logs[0][0]
+    assert published_log["targetId"] == "region-daejeon"
+    assert published_log["evaluatedAt"] == "2026-06-14T02:00:00Z"
+    assert "market_fact_missing" not in published_log["caveats"]
+    assert "search_candidate_missing" not in published_log["caveats"]
+    assert {item["evidenceType"] for item in published_log["evidenceItems"]} == {
+        "reaction",
+        "market_fact",
+        "search_candidate",
+    }
+
+
+def test_evidence_log_refresh_job_skips_publish_when_latest_ranking_is_empty():
+    spring_client = _EvidenceSpringClient(
+        ranking={
+            "window": "60m",
+            "windowStart": "2026-06-14T00:00:00Z",
+            "windowEnd": "2026-06-14T01:00:00Z",
+            "freshness": {
+                "source": "real_estate_reaction_snapshots",
+                "asOf": "2026-06-14T01:02:00Z",
+                "coverageStatus": "empty",
+            },
+            "items": [],
+        }
+    )
+    job = RealEstateEvidenceLogRefreshJob(client=spring_client)
+
+    result = job.run_once()
+
+    assert result.status == "EMPTY"
+    assert result.target_count == 0
+    assert result.log_count == 0
+    assert spring_client.published_logs == []

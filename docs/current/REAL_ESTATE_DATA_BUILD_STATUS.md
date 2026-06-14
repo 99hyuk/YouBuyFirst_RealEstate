@@ -63,7 +63,7 @@
 - `/realestate/map`과 `/realestate/map/:regionId`는 지도 route에서 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용합니다. 기존 화면용 slug 진입은 호환만 유지합니다.
 - `/realestate/targets/:targetId`에 카카오맵 SDK 내장 지도 prototype을 추가했습니다. `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`는 단지 marker와 선택 패널을 보여주며, 테스트/key missing/SDK 비활성화 상태에서는 도식화 fallback을 표시합니다.
 - `real_estate_complexes`에 단지 marker용 좌표, 좌표 provider/asOf/status, marker summary/status 필드를 추가하고 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 연결했습니다. 상세 화면은 이 API를 우선 사용하고 실패하거나 빈 응답이면 기존 fixture로 fallback합니다.
-- `serve --enable-realestate-daily-refresh` scheduler job을 추가했습니다. 현재는 market fact refresh, reaction snapshot refresh, SerpApi 최근 이슈 후보 refresh를 하루 단위 step으로 묶을 수 있으며, 각 step은 `OK`, `*_ERROR`, `PARTIAL` 상태를 남깁니다. EvidenceLog는 아직 최신 DB snapshot을 target별로 읽는 자동 job이 아니라 기존 `realestate-evidence-logs(-push)` 명령 기반입니다.
+- `serve --enable-realestate-daily-refresh` scheduler job을 추가했습니다. 현재는 market fact refresh, reaction snapshot refresh, SerpApi 최근 이슈 후보 refresh, EvidenceLog refresh를 하루 단위 step으로 묶을 수 있으며, 각 step은 `OK`, `EMPTY`, `*_ERROR`, `PARTIAL` 상태를 남깁니다. EvidenceLog refresh는 최신 backend reaction ranking을 읽고 target별 market fact/content 후보를 붙여 `POST /internal/realestate/evidence-logs`로 전송합니다.
 - 현재 seed marker 좌표는 DB/API로 내려오지만 검증 좌표가 아니므로 `provider=front_fixture`, `dataStatus=mock`, `stale=true`로 노출합니다. 실제 단지 좌표, 법정동 코드, provider key 검증은 계속 남아 있습니다.
 
 ## 1차 provider
@@ -112,7 +112,7 @@ real_estate_targets
 - 네이버/다음 카페를 포함한 실제 공개 source별 adapter 활성화
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
-- 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성, LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
+- LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
 - GMS `gemini-embedding-2` 임베딩 결과를 벡터 저장소에 적재하고 `realestate-similar-windows` 내부 검색 엔진으로 연결
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
 - 실제 market fact와 reaction snapshot을 `map_layer_snapshots`로 집계하는 지도 배치 구현
@@ -372,3 +372,12 @@ C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\pyt
 ```
 
 `realestate-evidence-logs(-push)`는 `market_fact`, `similar_window`, `search_candidate` 입력이 없으면 해당 근거 부족 caveat을 남깁니다. 현재 summary/tone은 룰 기반 baseline이며, LLM provider를 붙여도 EvidenceLog 저장 shape는 유지합니다.
+
+최신 backend snapshot 기반 EvidenceLog 일일 refresh:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh --reaction-window-minutes 1440 --realestate-evidence-ranking-limit 20 --realestate-evidence-market-fact-limit 20 --realestate-evidence-content-limit 20
+```
+
+이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.

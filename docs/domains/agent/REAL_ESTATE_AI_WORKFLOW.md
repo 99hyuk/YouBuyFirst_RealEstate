@@ -185,6 +185,8 @@ Python pipeline은 대량 임베딩 batch와 벡터 저장소 적재를 맡고, 
 - 입력 근거가 부족하면 `market_fact_missing`, `similar_window_missing`, `search_candidate_missing` caveat을 남깁니다.
 - 문구는 "관찰됩니다", "함께 나타납니다"처럼 관찰형으로 제한하고 행동 지시 표현은 쓰지 않습니다.
 
+일일 자동 refresh에서는 `serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh`를 사용합니다. 이 step은 backend의 최신 `GET /api/realestate/reactions/rankings` 결과를 기준으로 target을 고르고, 각 target의 `market-facts`와 `content` API를 읽어 룰 기반 EvidenceLog를 생성한 뒤 `POST /internal/realestate/evidence-logs`로 저장합니다. 최신 ranking이 비어 있으면 `EMPTY`로 끝나며, 기존 EvidenceLog를 덮어쓰지 않고 `evaluatedAt` 기준의 새 평가 로그를 남깁니다.
+
 ### Langfuse
 
 Langfuse는 판단 로직 자체가 아닙니다. 실제 판단의 정본은 우리 DB에 저장되는 `evidence_logs`, `reaction_snapshots`, `timeline_events`, 유사 과거 검색 결과입니다. Langfuse는 LLM 호출을 관측하고 검증하는 도구로만 사용합니다.

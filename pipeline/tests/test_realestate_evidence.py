@@ -59,7 +59,7 @@ def test_build_real_estate_evidence_log_combines_reaction_market_issue_and_simil
 
     assert len(logs) == 1
     log = logs[0]
-    assert log["evidenceLogId"] == "evidence-region-daejeon-20260611000000-realestate-eval-v1"
+    assert log["evidenceLogId"] == "evidence-region-daejeon-20260611000000-20260612020000-realestate-eval-v1"
     assert log["targetId"] == "region-daejeon"
     assert log["tone"] == "watch"
     assert log["summary"] == "관심과 기대 반응이 빠르게 관찰됩니다."

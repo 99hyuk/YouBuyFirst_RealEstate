@@ -12,6 +12,7 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
     build_recent_issue_content_items,
     load_recent_issue_search_targets,
 )
+from youbuyfirst_pipeline.realestate_evidence import build_real_estate_evidence_logs
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,95 @@ class RealEstateRecentIssuesRefreshResult:
     status: str
     target_count: int
     item_count: int
+
+
+@dataclass(frozen=True)
+class RealEstateEvidenceLogRefreshResult:
+    status: str
+    target_count: int
+    log_count: int
+    market_fact_count: int
+    content_item_count: int
+
+
+class RealEstateEvidenceLogRefreshJob:
+    def __init__(
+        self,
+        *,
+        client: SpringIngestionClient,
+        target_type: str = "region",
+        window_minutes: int = 60,
+        ranking_limit: int = 20,
+        market_fact_limit: int = 20,
+        content_limit: int = 20,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        self.client = client
+        self.target_type = target_type
+        self.window_minutes = window_minutes
+        self.ranking_limit = ranking_limit
+        self.market_fact_limit = market_fact_limit
+        self.content_limit = content_limit
+        self.clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def run_once(self) -> RealEstateEvidenceLogRefreshResult:
+        ranking = self.client.get_real_estate_reaction_ranking(
+            target_type=self.target_type,
+            window_minutes=self.window_minutes,
+            limit=self.ranking_limit,
+        )
+        rows = [row for row in ranking.get("items", []) if isinstance(row, dict)]
+        if not rows:
+            return RealEstateEvidenceLogRefreshResult(
+                status="EMPTY",
+                target_count=0,
+                log_count=0,
+                market_fact_count=0,
+                content_item_count=0,
+            )
+
+        logs: list[dict[str, Any]] = []
+        market_fact_count = 0
+        content_item_count = 0
+        for row in rows:
+            target_id = str(row.get("targetId") or row.get("target_id") or "").strip()
+            if not target_id:
+                continue
+            market_facts = self.client.list_real_estate_target_market_facts(
+                target_id,
+                limit=self.market_fact_limit,
+            )
+            content_items = _content_items_for_evidence(
+                target_id,
+                self.client.list_real_estate_target_content_items(
+                    target_id,
+                    feed="all",
+                    limit=self.content_limit,
+                ),
+            )
+            market_fact_count += len(market_facts)
+            content_item_count += len(content_items)
+            logs.extend(
+                build_real_estate_evidence_logs(
+                    [_snapshot_from_ranking_row(row, ranking)],
+                    target_id=target_id,
+                    window_start=ranking["windowStart"],
+                    evaluated_at=self.clock(),
+                    market_facts=market_facts,
+                    content_items=content_items,
+                )
+            )
+
+        if logs:
+            self.client.publish_real_estate_evidence_logs(logs)
+
+        return RealEstateEvidenceLogRefreshResult(
+            status="OK" if logs else "EMPTY",
+            target_count=len(rows),
+            log_count=len(logs),
+            market_fact_count=market_fact_count,
+            content_item_count=content_item_count,
+        )
 
 
 class RealEstateRecentIssuesRefreshJob:
@@ -117,6 +207,55 @@ class RealEstateRecentIssuesRefreshJob:
             result.item_count,
         )
         return result
+
+
+def _snapshot_from_ranking_row(row: dict[str, Any], ranking: dict[str, Any]) -> dict[str, Any]:
+    ratio = row.get("reactionDirectionRatio") or row.get("reaction_direction_ratio") or {}
+    freshness = ranking.get("freshness") or {}
+    return {
+        "snapshotId": row.get("snapshotId") or row.get("snapshot_id"),
+        "targetType": row.get("targetType") or row.get("target_type") or "region",
+        "targetId": row.get("targetId") or row.get("target_id"),
+        "windowStart": ranking.get("windowStart") or ranking.get("window_start"),
+        "windowEnd": ranking.get("windowEnd") or ranking.get("window_end"),
+        "asOf": freshness.get("asOf") or freshness.get("as_of") or ranking.get("windowEnd") or ranking.get("window_end"),
+        "mentionCount": row.get("mentionCount") or row.get("mention_count") or 0,
+        "previousMentionCount": row.get("previousMentionCount") or row.get("previous_mention_count") or 0,
+        "expectationScore": _ratio_percent(ratio, "expectation"),
+        "concernScore": _ratio_percent(ratio, "concern"),
+        "neutralScore": _ratio_percent(ratio, "neutral"),
+        "heatScore": row.get("heatScore") or row.get("heat_score") or 0,
+        "confidence": row.get("confidence"),
+        "sourceCount": row.get("sourceCount") or row.get("source_count") or 0,
+        "sourceSkew": row.get("sourceSkew") or row.get("source_skew") or 0,
+        "coverageStatus": row.get("coverageStatus") or row.get("coverage_status") or freshness.get("coverageStatus") or "unknown",
+        "stale": bool(row.get("stale")),
+        "issues": row.get("issueMix") or row.get("issues") or [],
+    }
+
+
+def _content_items_for_evidence(target_id: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    normalized_items = []
+    for item in items:
+        if item.get("targets"):
+            normalized_items.append(item)
+            continue
+        copy = dict(item)
+        copy["targets"] = [
+            {
+                "targetId": item.get("targetId") or target_id,
+                "linkType": item.get("linkType") or "search_candidate",
+                "confidence": item.get("confidence"),
+                "reviewState": item.get("reviewState") or "candidate",
+            }
+        ]
+        normalized_items.append(copy)
+    return normalized_items
+
+
+def _ratio_percent(ratio: dict[str, Any], key: str) -> float:
+    value = ratio.get(key) if isinstance(ratio, dict) else 0
+    return float(value or 0) * 100
 
 
 class RealEstateDailyRefreshJob:

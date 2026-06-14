@@ -74,7 +74,7 @@ def test_realestate_evidence_logs_push_command_publishes_evaluation_payload(monk
     asyncio.run(pipeline_main.async_main())
 
     assert fake_client.evidence_batches[0][0]["evidenceLogId"] == (
-        "evidence-region-daejeon-20260611000000-realestate-eval-v1"
+        "evidence-region-daejeon-20260611000000-20260612020000-realestate-eval-v1"
     )
     assert fake_client.evidence_batches[0][0]["caveats"][-3:] == [
         "market_fact_missing",

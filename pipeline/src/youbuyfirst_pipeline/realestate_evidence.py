@@ -41,6 +41,7 @@ def build_real_estate_evidence_logs(
         raise ValueError(f"reaction snapshot not found: {target_id} {source_window}")
 
     tone = _tone(snapshot)
+    evaluated_at_iso = _iso(parse_reaction_datetime(evaluated_at))
     evidence_items = [
         _reaction_evidence_item(snapshot, tone),
         *_market_fact_evidence_items(target_id, market_facts or []),
@@ -54,6 +55,7 @@ def build_real_estate_evidence_logs(
                 "evidence",
                 target_id,
                 _compact_timestamp(snapshot["windowStart"]),
+                _compact_timestamp(evaluated_at_iso),
                 evaluation_version,
             ),
             "targetId": target_id,
@@ -67,7 +69,7 @@ def build_real_estate_evidence_logs(
             "caveats": _caveats(snapshot, evidence_items),
             "dataQuality": _data_quality(snapshot),
             "confidence": snapshot.get("confidence"),
-            "evaluatedAt": _iso(parse_reaction_datetime(evaluated_at)),
+            "evaluatedAt": evaluated_at_iso,
             "asOf": snapshot["asOf"],
             "skipReason": None,
             "evidenceItems": evidence_items,
