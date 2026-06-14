@@ -88,6 +88,13 @@ from youbuyfirst_pipeline.realestate_embeddings import (
     build_real_estate_embedding_inputs,
     load_real_estate_embedding_inputs,
 )
+from youbuyfirst_pipeline.realestate_llm_evaluation import (
+    DEFAULT_GMS_EVIDENCE_PROMPT_VERSION,
+    DEFAULT_GMS_OPENAI_BASE_URL,
+    DEFAULT_GMS_OPENAI_CHAT_MODEL,
+    GmsOpenAIChatEvaluationClient,
+    apply_real_estate_llm_evaluation,
+)
 from youbuyfirst_pipeline.realestate_reactions import (
     build_real_estate_reaction_snapshots,
     load_real_estate_reaction_observations,
@@ -587,6 +594,24 @@ async def async_main() -> None:
         "--evidence-model-name",
         default=os.getenv("REALESTATE_EVIDENCE_MODEL_NAME"),
     )
+    parser.add_argument(
+        "--evidence-use-gms-llm",
+        action="store_true",
+        default=os.getenv("REALESTATE_EVIDENCE_USE_GMS_LLM", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--evidence-llm-model",
+        default=os.getenv("GMS_OPENAI_CHAT_MODEL", DEFAULT_GMS_OPENAI_CHAT_MODEL),
+    )
+    parser.add_argument(
+        "--evidence-llm-prompt-version",
+        default=os.getenv("REALESTATE_EVIDENCE_LLM_PROMPT_VERSION", DEFAULT_GMS_EVIDENCE_PROMPT_VERSION),
+    )
+    parser.add_argument(
+        "--evidence-llm-timeout-seconds",
+        type=float,
+        default=float(os.getenv("GMS_TIMEOUT_SECONDS", "30")),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -850,6 +875,20 @@ async def async_main() -> None:
             prompt_version=args.evidence_prompt_version,
             model_name=args.evidence_model_name,
         )
+        if args.evidence_use_gms_llm:
+            evaluation_client = _gms_openai_evaluation_client(
+                model_name=args.evidence_llm_model,
+                timeout_seconds=args.evidence_llm_timeout_seconds,
+            )
+            logs = [
+                apply_real_estate_llm_evaluation(
+                    log,
+                    evaluation_client.evaluate(log),
+                    model_name=args.evidence_llm_model,
+                    prompt_version=args.evidence_llm_prompt_version,
+                )
+                for log in logs
+            ]
         if args.command == "realestate-evidence-logs":
             print(json.dumps({"logs": logs}, ensure_ascii=False, indent=2))
             return
@@ -1199,6 +1238,21 @@ async def async_main() -> None:
                     )
                 )
             if args.enable_realestate_evidence_logs_refresh:
+                evidence_llm_evaluator = None
+                if args.evidence_use_gms_llm:
+                    evidence_llm_client = _gms_openai_evaluation_client(
+                        model_name=args.evidence_llm_model,
+                        timeout_seconds=args.evidence_llm_timeout_seconds,
+                    )
+
+                    def evidence_llm_evaluator(log):
+                        return apply_real_estate_llm_evaluation(
+                            log,
+                            evidence_llm_client.evaluate(log),
+                            model_name=args.evidence_llm_model,
+                            prompt_version=args.evidence_llm_prompt_version,
+                        )
+
                 daily_steps.append(
                     (
                         "evidence_logs",
@@ -1210,6 +1264,7 @@ async def async_main() -> None:
                             market_fact_limit=args.realestate_evidence_market_fact_limit,
                             timeline_limit=args.realestate_evidence_timeline_limit,
                             content_limit=args.realestate_evidence_content_limit,
+                            llm_evaluator=evidence_llm_evaluator,
                         ),
                     )
                 )
@@ -1691,6 +1746,22 @@ def _gms_gemini_embedding_client(
     return GmsGeminiEmbeddingClient(
         api_key,
         base_url=os.getenv("GMS_GEMINI_BASE_URL", DEFAULT_GMS_GEMINI_BASE_URL),
+        model_name=model_name,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+def _gms_openai_evaluation_client(
+    *,
+    model_name: str = DEFAULT_GMS_OPENAI_CHAT_MODEL,
+    timeout_seconds: float = 30.0,
+) -> GmsOpenAIChatEvaluationClient:
+    api_key = os.getenv("GMS_KEY")
+    if not api_key:
+        raise SystemExit("GMS_KEY is required")
+    return GmsOpenAIChatEvaluationClient(
+        api_key,
+        base_url=os.getenv("GMS_OPENAI_BASE_URL", DEFAULT_GMS_OPENAI_BASE_URL),
         model_name=model_name,
         timeout_seconds=timeout_seconds,
     )

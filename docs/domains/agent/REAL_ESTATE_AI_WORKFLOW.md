@@ -183,10 +183,12 @@ Python pipeline은 대량 임베딩 batch와 벡터 저장소 적재를 맡고, 
 - `realestate-evidence-logs-push`는 같은 payload를 `POST /internal/realestate/evidence-logs`로 전송합니다.
 - `--evidence-timeline-events-jsonl`은 `GET /api/realestate/targets/{targetId}/timeline` 응답 shape의 JSON/JSONL을 받아 `evidenceType=timeline_event`, `refType=timeline_event` 항목으로 연결합니다.
 - 현재 summary/tone은 룰 기반 baseline입니다. LLM provider를 붙이더라도 `evidenceLogId`, `evidenceItems[]`, `caveats`, `dataQuality`, `evaluationVersion`, `promptVersion`, `modelName` shape는 유지합니다.
+- `--evidence-use-gms-llm`을 켜면 GMS OpenAI-compatible chat endpoint를 호출해 baseline EvidenceLog의 `summary`, `subtitle`, `tone`만 보강합니다. 기본 모델은 `gpt-5-mini`이며, `GMS_KEY`, `GMS_OPENAI_BASE_URL`, `GMS_OPENAI_CHAT_MODEL` 환경변수 또는 CLI 옵션으로 조정합니다.
+- LLM 결과에 `사라`, `팔아라`, `청약 넣어라`, `지금 들어가라`, `오른다`, `수익 보장`, `확정 호재`, `대출 받아라`, `매수 기회`, `매도 신호` 같은 금지 표현이 있으면 해당 문구를 저장하지 않고 룰 기반 문구를 유지합니다. 이때 `skipReason=forbidden_copy_detected`와 caveat을 남깁니다.
 - 입력 근거가 부족하면 `market_fact_missing`, `timeline_event_missing`, `similar_window_missing`, `search_candidate_missing` caveat을 남깁니다.
 - 문구는 "관찰됩니다", "함께 나타납니다"처럼 관찰형으로 제한하고 행동 지시 표현은 쓰지 않습니다.
 
-일일 자동 refresh에서는 `serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh`를 사용합니다. 이 step은 backend의 최신 `GET /api/realestate/reactions/rankings` 결과를 기준으로 target을 고르고, 각 target의 `market-facts`, `timeline`, `content` API를 읽어 룰 기반 EvidenceLog를 생성한 뒤 `POST /internal/realestate/evidence-logs`로 저장합니다. 최신 ranking이 비어 있으면 `EMPTY`로 끝나며, 기존 EvidenceLog를 덮어쓰지 않고 `evaluatedAt` 기준의 새 평가 로그를 남깁니다.
+일일 자동 refresh에서는 `serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh`를 사용합니다. 이 step은 backend의 최신 `GET /api/realestate/reactions/rankings` 결과를 기준으로 target을 고르고, 각 target의 `market-facts`, `timeline`, `content` API를 읽어 EvidenceLog를 생성한 뒤 `POST /internal/realestate/evidence-logs`로 저장합니다. `--evidence-use-gms-llm`을 함께 켜면 같은 step 안에서 GMS LLM summary 보강과 forbidden copy guardrail을 적용합니다. 최신 ranking이 비어 있으면 `EMPTY`로 끝나며, 기존 EvidenceLog를 덮어쓰지 않고 `evaluatedAt` 기준의 새 평가 로그를 남깁니다.
 
 ### Langfuse
 

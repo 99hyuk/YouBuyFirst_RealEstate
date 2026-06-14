@@ -87,6 +87,54 @@ def test_realestate_evidence_logs_push_command_publishes_evaluation_payload(monk
     ]
 
 
+def test_realestate_evidence_logs_command_can_apply_gms_llm_summary(monkeypatch, tmp_path, capsys):
+    paths = _write_input_files(tmp_path)
+
+    class _FakeLlmClient:
+        def __init__(self) -> None:
+            self.logs = []
+
+        def evaluate(self, log):
+            self.logs.append(log)
+            return {
+                "tone": "watch",
+                "summary": "관심이 빠르게 증가했고 교통 쟁점이 함께 확인됩니다.",
+                "subtitle": "시장 사실과 최근 이슈 후보를 같이 확인해야 합니다.",
+            }
+
+    fake_llm = _FakeLlmClient()
+    monkeypatch.setattr(pipeline_main, "_gms_openai_evaluation_client", lambda **_kwargs: fake_llm)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-evidence-logs",
+            "--reaction-snapshots-jsonl",
+            str(paths["snapshots"]),
+            "--evidence-target-id",
+            "region-daejeon",
+            "--evidence-window-start",
+            "2026-06-11T00:00:00Z",
+            "--evidence-evaluated-at",
+            "2026-06-12T02:00:00Z",
+            "--evidence-use-gms-llm",
+            "--evidence-llm-model",
+            "gpt-5-mini",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    log = payload["logs"][0]
+    assert len(fake_llm.logs) == 1
+    assert log["summary"] == "관심이 빠르게 증가했고 교통 쟁점이 함께 확인됩니다."
+    assert log["subtitle"] == "시장 사실과 최근 이슈 후보를 같이 확인해야 합니다."
+    assert log["modelName"] == "gpt-5-mini"
+    assert log["promptVersion"] == "gms-evidence-v1"
+
+
 def _write_input_files(tmp_path):
     snapshots = tmp_path / "snapshots.jsonl"
     snapshots.write_text(

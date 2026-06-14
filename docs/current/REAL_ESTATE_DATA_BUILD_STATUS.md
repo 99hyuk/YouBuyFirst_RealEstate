@@ -69,6 +69,7 @@
 - `real_estate_complexes`에 단지 marker용 좌표, 좌표 provider/asOf/status, marker summary/status 필드를 추가하고 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 연결했습니다. 상세 화면은 이 API를 우선 사용하고 실패하거나 빈 응답이면 기존 fixture로 fallback합니다.
 - `serve --enable-realestate-daily-refresh` scheduler job을 추가했습니다. 현재는 market fact refresh, reaction snapshot refresh, SerpApi 최근 이슈 후보 refresh, EvidenceLog refresh를 하루 단위 step으로 묶을 수 있으며, 각 step은 `OK`, `EMPTY`, `*_ERROR`, `PARTIAL` 상태를 남깁니다. EvidenceLog refresh는 최신 backend reaction ranking을 읽고 target별 market fact/content 후보를 붙여 `POST /internal/realestate/evidence-logs`로 전송합니다.
 - 현재 seed marker 좌표는 DB/API로 내려오지만 검증 좌표가 아니므로 `provider=front_fixture`, `dataStatus=mock`, `stale=true`로 노출합니다. 실제 단지 좌표, 법정동 코드, provider key 검증은 계속 남아 있습니다.
+- GMS OpenAI-compatible chat endpoint를 쓰는 EvidenceLog summary 보강 client를 추가했습니다. `realestate-evidence-logs(-push) --evidence-use-gms-llm`을 켜면 기존 룰 기반 EvidenceLog를 만든 뒤 LLM이 `summary`, `subtitle`, `tone`만 보강합니다. 금지 문구가 포함되면 LLM 문구를 폐기하고 `skipReason=forbidden_copy_detected`와 caveat을 남깁니다.
 
 ## 1차 provider
 
@@ -116,7 +117,7 @@ real_estate_targets
 - 네이버/다음 카페를 포함한 실제 공개 source별 adapter 활성화
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
-- LLM provider 기반 평가 생성, forbidden copy guardrail
+- LLM provider 기반 평가의 재시도/품질평가/Langfuse 관측 고도화
 - GMS `gemini-embedding-2` 임베딩 결과를 벡터 저장소에 적재하고 `realestate-similar-windows` 내부 검색 엔진으로 연결
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
 
@@ -138,6 +139,16 @@ C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\pyt
 ```
 
 이 명령은 reaction snapshot window를 임베딩용 텍스트로 요약하고 `gemini-embedding-2` 벡터를 출력합니다. 출력은 아직 DB/VectorDB에 자동 적재하지 않으며, 다음 단계에서 pgvector 또는 Qdrant 같은 저장소와 연결합니다.
+
+GMS LLM EvidenceLog summary 보강:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:GMS_KEY="로컬 GMS 키"
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-evidence-logs --reaction-snapshots-jsonl C:\data\ybf-realestate\reaction-snapshots.jsonl --evidence-target-id region-seoul-mapo --evidence-window-start 2026-06-14T00:00:00Z --evidence-use-gms-llm --evidence-llm-model gpt-5-mini
+```
+
+이 명령은 먼저 룰 기반 EvidenceLog를 만들고, GMS OpenAI-compatible chat endpoint로 `summary`, `subtitle`, `tone`만 보강합니다. `사라`, `청약 넣어라`, `오른다`, `수익 보장`처럼 행동 지시나 단정처럼 보이는 문구가 나오면 LLM 결과를 폐기하고 `forbidden_copy_detected` caveat을 남깁니다.
 
 Provider catalog 확인:
 
@@ -374,7 +385,7 @@ cd C:\agents\YouBuyFirst_RealEstate\pipeline
 C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-evidence-logs-push --reaction-snapshots-jsonl C:\data\reaction_snapshots.jsonl --evidence-target-id region-daejeon --evidence-window-start 2026-06-11T00:00:00Z
 ```
 
-`realestate-evidence-logs(-push)`는 `market_fact`, `timeline_event`, `similar_window`, `search_candidate` 입력이 없으면 해당 근거 부족 caveat을 남깁니다. 현재 summary/tone은 룰 기반 baseline이며, LLM provider를 붙여도 EvidenceLog 저장 shape는 유지합니다.
+`realestate-evidence-logs(-push)`는 `market_fact`, `timeline_event`, `similar_window`, `search_candidate` 입력이 없으면 해당 근거 부족 caveat을 남깁니다. 기본 summary/tone은 룰 기반 baseline이며, `--evidence-use-gms-llm`을 켜도 EvidenceLog 저장 shape는 유지합니다.
 
 최신 backend snapshot 기반 EvidenceLog 일일 refresh:
 
@@ -384,6 +395,8 @@ C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\pyt
 ```
 
 이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/timeline`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/timeline/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.
+
+GMS LLM으로 일일 EvidenceLog summary를 보강하려면 같은 명령에 `--evidence-use-gms-llm --evidence-llm-model gpt-5-mini`를 붙입니다. 이 경우에도 먼저 룰 기반 EvidenceLog를 만들고, LLM 결과는 `summary`, `subtitle`, `tone`만 보강합니다. forbidden copy guardrail에 걸리면 룰 기반 문구를 유지하고 `skipReason=forbidden_copy_detected`를 남깁니다.
 
 지도 레이어 snapshot 일일 refresh:
 

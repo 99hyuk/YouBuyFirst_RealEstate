@@ -199,6 +199,47 @@ def test_serve_command_can_group_evidence_log_refresh_into_daily_refresh(monkeyp
     assert evidence_step.content_limit == 5
 
 
+def test_serve_command_can_enable_gms_llm_for_daily_evidence_refresh(monkeypatch):
+    captured = {}
+    spring_client = _FakeSpringClient()
+
+    class _FakeLlmClient:
+        def evaluate(self, log):
+            return {
+                "tone": "watch",
+                "summary": "관심이 빠르게 증가했고 근거 확인이 필요합니다.",
+                "subtitle": "시장 사실과 반응 지표를 함께 봅니다.",
+            }
+
+    async def fake_serve(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: _FakePipeline())
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(pipeline_main, "_gms_openai_evaluation_client", lambda **_kwargs: _FakeLlmClient())
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-evidence-logs-refresh",
+            "--evidence-use-gms-llm",
+            "--evidence-llm-model",
+            "gpt-5-mini",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    evidence_step = daily_job.steps[0][1]
+    assert evidence_step.llm_evaluator is not None
+
+
 def test_serve_command_can_group_map_layer_refresh_into_daily_refresh(monkeypatch):
     captured = {}
     spring_client = _FakeSpringClient()
