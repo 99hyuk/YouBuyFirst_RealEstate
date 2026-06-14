@@ -269,6 +269,34 @@ def test_evidence_log_refresh_job_builds_logs_from_latest_backend_snapshots():
     }
 
 
+def test_evidence_log_refresh_job_can_apply_llm_evaluator_before_publish():
+    spring_client = _EvidenceSpringClient()
+    llm_calls = []
+
+    def llm_evaluator(log):
+        llm_calls.append(log)
+        updated = dict(log)
+        updated["summary"] = "관심이 빠르게 증가했고 교통 쟁점이 함께 확인됩니다."
+        updated["modelName"] = "gpt-5-mini"
+        updated["promptVersion"] = "gms-evidence-v1"
+        return updated
+
+    job = RealEstateEvidenceLogRefreshJob(
+        client=spring_client,
+        clock=lambda: datetime(2026, 6, 14, 2, 0, tzinfo=timezone.utc),
+        llm_evaluator=llm_evaluator,
+    )
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert len(llm_calls) == 1
+    published_log = spring_client.published_logs[0][0]
+    assert published_log["summary"] == "관심이 빠르게 증가했고 교통 쟁점이 함께 확인됩니다."
+    assert published_log["modelName"] == "gpt-5-mini"
+    assert published_log["promptVersion"] == "gms-evidence-v1"
+
+
 def test_evidence_log_refresh_job_skips_publish_when_latest_ranking_is_empty():
     spring_client = _EvidenceSpringClient(
         ranking={

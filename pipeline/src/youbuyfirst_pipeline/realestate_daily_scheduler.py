@@ -126,6 +126,7 @@ class RealEstateEvidenceLogRefreshJob:
         market_fact_limit: int = 20,
         timeline_limit: int = 20,
         content_limit: int = 20,
+        llm_evaluator: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.client = client
@@ -135,6 +136,7 @@ class RealEstateEvidenceLogRefreshJob:
         self.market_fact_limit = market_fact_limit
         self.timeline_limit = timeline_limit
         self.content_limit = content_limit
+        self.llm_evaluator = llm_evaluator
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     def run_once(self) -> RealEstateEvidenceLogRefreshResult:
@@ -181,17 +183,18 @@ class RealEstateEvidenceLogRefreshJob:
             market_fact_count += len(market_facts)
             timeline_event_count += len(timeline_events)
             content_item_count += len(content_items)
-            logs.extend(
-                build_real_estate_evidence_logs(
-                    [_snapshot_from_ranking_row(row, ranking)],
-                    target_id=target_id,
-                    window_start=ranking["windowStart"],
-                    evaluated_at=self.clock(),
-                    market_facts=market_facts,
-                    timeline_events=timeline_events,
-                    content_items=content_items,
-                )
+            built_logs = build_real_estate_evidence_logs(
+                [_snapshot_from_ranking_row(row, ranking)],
+                target_id=target_id,
+                window_start=ranking["windowStart"],
+                evaluated_at=self.clock(),
+                market_facts=market_facts,
+                timeline_events=timeline_events,
+                content_items=content_items,
             )
+            if self.llm_evaluator is not None:
+                built_logs = [self.llm_evaluator(log) for log in built_logs]
+            logs.extend(built_logs)
 
         if logs:
             self.client.publish_real_estate_evidence_logs(logs)

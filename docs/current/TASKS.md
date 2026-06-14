@@ -157,6 +157,7 @@
 - [x] 평가 입력: timeline event
 - [x] 평가 입력: SerpApi/search API 기반 최근 이슈 후보
 - [x] `realestate-evidence-logs(-push)`로 reaction snapshot, market fact, timeline event, 최근 이슈 후보, 유사 과거 후보를 EvidenceLog payload로 조립/전송
+- [x] GMS OpenAI-compatible LLM provider로 EvidenceLog summary/subtitle를 선택 보강하고 forbidden copy guardrail 적용
 - [ ] 사용자용 summary/caveat 문구 기준 정리
 - [x] Langfuse trace와 DB evidence log 정본의 경계 정리
 - [ ] 내부 추론 전문 비노출 기준 정리
@@ -207,11 +208,12 @@
 - [ ] `realestate-eval-v1` 입력/출력 JSON schema 확정
 - [x] Python pipeline의 부동산 반응 분류 baseline command 구현 (`realestate-reaction-observations`)
 - [ ] 부동산 target mention prompt와 OpenAI provider 분리
-- [ ] forbidden copy guardrail 테스트 추가
+- [x] forbidden copy guardrail 테스트 추가
 - [x] 지역/단지 평가와 evidence log 입력 필드 정의
 - [x] 룰 기반 EvidenceLog 생성/전송 command 구현 (`realestate-evidence-logs`, `realestate-evidence-logs-push`)
 - [x] 유사 과거 상황 설명 방식 정리
 - [x] GMS `gemini-embedding-2` 임베딩 client와 `realestate-embeddings` command 구현
+- [x] GMS `gpt-5-mini` EvidenceLog summary 보강 client와 `--evidence-use-gms-llm` 옵션 구현
 - [x] 최근 이슈 후보 검색 provider/query/keyword 저장 기준 정리
 - [x] 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성 job 구현
 - [ ] 임베딩 결과를 pgvector/Qdrant 등 벡터 저장소에 적재하고 유사 과거 검색에 연결
