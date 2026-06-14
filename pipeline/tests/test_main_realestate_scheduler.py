@@ -22,6 +22,65 @@ class _FakeRecentIssueClient:
     pass
 
 
+class _FakeQdrantClient:
+    collection_name = "realestate_reaction_windows"
+
+    def __init__(self, *, ready: bool = True) -> None:
+        self.ready = ready
+        self.search_requests = []
+
+    def collection_info(self):
+        if not self.ready:
+            return {"status": "missing", "result": None}
+        return {
+            "result": {
+                "status": "green",
+                "points_count": 8,
+                "vectors_count": 8,
+            }
+        }
+
+    def search(self, *, vector, top_n: int, exclude_input_id: str | None = None):
+        self.search_requests.append(
+            {
+                "vector": vector,
+                "top_n": top_n,
+                "exclude_input_id": exclude_input_id,
+            }
+        )
+        return [
+            {
+                "id": "matched-window",
+                "score": 0.93,
+                "payload": {
+                    "targetId": "region-gwangju",
+                    "refId": "snapshot-gwangju-20260301000000",
+                    "windowStart": "2026-03-01T00:00:00Z",
+                    "windowEnd": "2026-03-01T01:00:00Z",
+                    "text": "광주 전세 우려와 교통 기대",
+                },
+            }
+        ]
+
+
+def _daily_embedding_item(target_id: str = "region-daejeon") -> dict:
+    return {
+        "inputId": f"reaction-window:{target_id}:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z",
+        "targetType": "region",
+        "targetId": target_id,
+        "refType": "reaction_snapshot",
+        "refId": f"snapshot-{target_id}-20260614000000",
+        "provider": "gms:gemini",
+        "modelName": "gemini-embedding-2",
+        "text": "대전 교통 기대와 공급 우려",
+        "embedding": [0.1, 0.2, 0.3],
+        "dimensions": 3,
+        "dataStatus": "generated",
+        "windowStart": "2026-06-14T00:00:00Z",
+        "windowEnd": "2026-06-14T01:00:00Z",
+    }
+
+
 def test_serve_command_can_enable_real_estate_market_facts_refresh(monkeypatch):
     captured = {}
     realestate_job = object()
@@ -307,6 +366,105 @@ def test_serve_command_can_attach_similar_windows_jsonl_to_daily_evidence_refres
         {"windowStart": "2026-06-14T00:00:00Z"},
     )
     assert [item["matchedTargetId"] for item in similar_windows] == ["region-gwangju"]
+
+
+def test_serve_command_can_attach_qdrant_similar_provider_to_daily_evidence_refresh(monkeypatch, tmp_path):
+    captured = {}
+    spring_client = _FakeSpringClient()
+    fake_qdrant = _FakeQdrantClient()
+    embeddings_path = tmp_path / "embeddings.json"
+    embeddings_path.write_text(json.dumps({"items": [_daily_embedding_item()]}, ensure_ascii=False), encoding="utf-8")
+
+    async def fake_serve(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: _FakePipeline())
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(pipeline_main, "_qdrant_vector_store_client", lambda: fake_qdrant)
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-evidence-logs-refresh",
+            "--similar-engine",
+            "qdrant",
+            "--embeddings-jsonl",
+            str(embeddings_path),
+            "--similar-top-n",
+            "1",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    evidence_step = daily_job.steps[0][1]
+    similar_windows = evidence_step.similar_windows_provider(
+        "region-daejeon",
+        {"targetId": "region-daejeon"},
+        {
+            "windowStart": "2026-06-14T00:00:00Z",
+            "windowEnd": "2026-06-14T01:00:00Z",
+        },
+    )
+    assert [item["matchedTargetId"] for item in similar_windows] == ["region-gwangju"]
+    assert similar_windows[0]["evidenceItem"]["evidenceType"] == "similar_window"
+    assert fake_qdrant.search_requests == [
+        {
+            "vector": [0.1, 0.2, 0.3],
+            "top_n": 21,
+            "exclude_input_id": "reaction-window:region-daejeon:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z",
+        }
+    ]
+
+
+def test_serve_command_qdrant_similar_provider_skips_when_collection_is_not_ready(monkeypatch, tmp_path):
+    captured = {}
+    spring_client = _FakeSpringClient()
+    fake_qdrant = _FakeQdrantClient(ready=False)
+    embeddings_path = tmp_path / "embeddings.json"
+    embeddings_path.write_text(json.dumps({"items": [_daily_embedding_item()]}, ensure_ascii=False), encoding="utf-8")
+
+    async def fake_serve(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: _FakePipeline())
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(pipeline_main, "_qdrant_vector_store_client", lambda: fake_qdrant)
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-evidence-logs-refresh",
+            "--similar-engine",
+            "qdrant",
+            "--embeddings-jsonl",
+            str(embeddings_path),
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    evidence_step = captured["kwargs"]["realestate_daily_refresh_job"].steps[0][1]
+    assert evidence_step.similar_windows_provider(
+        "region-daejeon",
+        {"targetId": "region-daejeon"},
+        {
+            "windowStart": "2026-06-14T00:00:00Z",
+            "windowEnd": "2026-06-14T01:00:00Z",
+        },
+    ) == []
+    assert fake_qdrant.search_requests == []
 
 
 def test_serve_command_can_group_map_layer_refresh_into_daily_refresh(monkeypatch):

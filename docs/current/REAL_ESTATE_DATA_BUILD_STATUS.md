@@ -70,7 +70,8 @@
 - `serve --enable-realestate-daily-refresh` scheduler job을 추가했습니다. 현재는 market fact refresh, reaction snapshot refresh, SerpApi 최근 이슈 후보 refresh, EvidenceLog refresh를 하루 단위 step으로 묶을 수 있으며, 각 step은 `OK`, `EMPTY`, `*_ERROR`, `PARTIAL` 상태를 남깁니다. EvidenceLog refresh는 최신 backend reaction ranking을 읽고 target별 market fact/content 후보를 붙여 `POST /internal/realestate/evidence-logs`로 전송합니다.
 - 현재 seed marker 좌표는 DB/API로 내려오지만 검증 좌표가 아니므로 `provider=front_fixture`, `dataStatus=mock`, `stale=true`로 노출합니다. 실제 단지 좌표, 법정동 코드, provider key 검증은 계속 남아 있습니다.
 - GMS OpenAI-compatible chat endpoint를 쓰는 EvidenceLog summary 보강 client를 추가했습니다. `realestate-evidence-logs(-push) --evidence-use-gms-llm`을 켜면 기존 룰 기반 EvidenceLog를 만든 뒤 LLM이 `summary`, `subtitle`, `tone`만 보강합니다. 금지 문구가 포함되면 LLM 문구를 폐기하고 `skipReason=forbidden_copy_detected`와 caveat을 남깁니다.
-- 일일 EvidenceLog refresh는 `--evidence-similar-windows-jsonl`을 함께 받으면 target/window가 맞는 유사 과거 후보를 EvidenceLog `similar_window` 근거로 자동 병합합니다. Qdrant 검색을 daily step 안에서 즉석 실행하는 것은 아직 후속 작업이며, 현재는 `realestate-similar-windows --similar-engine qdrant` 결과 JSON을 먼저 만들어 연결하는 방식입니다.
+- 일일 EvidenceLog refresh는 `--evidence-similar-windows-jsonl`을 함께 받으면 target/window가 맞는 유사 과거 후보를 EvidenceLog `similar_window` 근거로 자동 병합합니다.
+- `--similar-engine qdrant --embeddings-jsonl <path>`를 함께 주면 일일 EvidenceLog refresh가 Qdrant collection health를 먼저 확인한 뒤, 현재 target/window의 임베딩으로 유사 과거 window를 직접 검색해 EvidenceLog에 붙입니다. collection이 준비되지 않았거나 source embedding이 없으면 전체 배치를 실패시키지 않고 유사 과거 후보만 비운 상태로 진행합니다.
 
 ## 1차 provider
 
@@ -426,7 +427,15 @@ C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\pyt
 
 이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/timeline`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/timeline/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.
 
-유사 과거 후보까지 매일 EvidenceLog에 붙이려면 먼저 `realestate-similar-windows --similar-engine qdrant` 또는 `batch` 결과를 JSON으로 만든 뒤 같은 명령에 `--evidence-similar-windows-jsonl <similar-window-output>`을 추가합니다. 일일 EvidenceLog refresh는 `sourceTargetId`와 `sourceWindowStart`가 현재 ranking의 target/window와 맞는 후보만 병합하고, step detail의 `similar_window_count`로 병합 건수를 남깁니다.
+유사 과거 후보까지 매일 EvidenceLog에 붙이는 방법은 두 가지입니다. 이미 만들어 둔 batch/Qdrant 결과 JSON이 있으면 같은 명령에 `--evidence-similar-windows-jsonl <similar-window-output>`을 추가합니다. Qdrant collection과 임베딩 JSON이 준비되어 있으면 `--similar-engine qdrant --embeddings-jsonl <embeddings-output>`을 추가해 daily step 안에서 직접 검색할 수도 있습니다. 두 방식 모두 현재 ranking의 target/window와 맞는 후보만 병합하고, step detail의 `similar_window_count`로 병합 건수를 남깁니다.
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:QDRANT_URL="http://localhost:6333"
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh --similar-engine qdrant --embeddings-jsonl C:\data\ybf-realestate\embeddings.json --similar-top-n 5 --similar-market-facts-jsonl C:\data\ybf-realestate\market-facts.jsonl
+```
+
+이 경로는 daily step 안에서 새 임베딩을 생성하거나 Qdrant에 upsert하지 않습니다. 먼저 `realestate-embeddings`, `realestate-vector-upsert`, `realestate-vector-health`로 임베딩과 collection 상태를 준비해야 합니다.
 
 GMS LLM으로 일일 EvidenceLog summary를 보강하려면 같은 명령에 `--evidence-use-gms-llm --evidence-llm-model gpt-5-mini`를 붙입니다. 이 경우에도 먼저 룰 기반 EvidenceLog를 만들고, LLM 결과는 `summary`, `subtitle`, `tone`만 보강합니다. forbidden copy guardrail에 걸리면 룰 기반 문구를 유지하고 `skipReason=forbidden_copy_detected`를 남깁니다.
 
