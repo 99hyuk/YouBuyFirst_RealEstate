@@ -8,3 +8,12 @@ app:
     public-data:
       # Copy this file to application-local.yml and keep the real key out of git.
       data-go-service-key: "put-your-data-go-service-key-here"
+    ai:
+      # GMS is an OpenAI-compatible gateway when base-url points to the GMS OpenAI path.
+      # Keep the real key in application-local.yml, .env, or a secret manager only.
+      gms-key: "put-your-gms-key-here"
+      openai-base-url: "https://gms.ssafy.io/gmsapi/api.openai.com/v1"
+      chat-model: "gpt-5-mini"
+      # Embeddings use the Gemini-compatible GMS path, not the OpenAI-compatible path.
+      gemini-base-url: "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com"
+      embedding-model: "gemini-embedding-2"

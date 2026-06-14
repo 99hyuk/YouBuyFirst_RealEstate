@@ -78,6 +78,13 @@ from youbuyfirst_pipeline.realestate_evidence import (
     load_real_estate_evidence_reaction_snapshots,
     load_real_estate_evidence_similar_windows,
 )
+from youbuyfirst_pipeline.realestate_embeddings import (
+    DEFAULT_GMS_GEMINI_BASE_URL,
+    DEFAULT_GMS_GEMINI_EMBEDDING_MODEL,
+    GmsGeminiEmbeddingClient,
+    build_real_estate_embedding_inputs,
+    load_real_estate_embedding_inputs,
+)
 from youbuyfirst_pipeline.realestate_reactions import (
     build_real_estate_reaction_snapshots,
     load_real_estate_reaction_observations,
@@ -138,6 +145,7 @@ ACTIVE_COMMANDS = [
     "realestate-recent-issues",
     "realestate-recent-issues-push",
     "realestate-similar-windows",
+    "realestate-embeddings",
     "realestate-evidence-logs",
     "realestate-evidence-logs-push",
 ]
@@ -484,6 +492,15 @@ async def async_main() -> None:
         default=int(os.getenv("REALESTATE_SIMILAR_HORIZON_DAYS", "90")),
     )
     parser.add_argument(
+        "--embedding-model-name",
+        default=os.getenv("GMS_GEMINI_EMBEDDING_MODEL", DEFAULT_GMS_GEMINI_EMBEDDING_MODEL),
+    )
+    parser.add_argument(
+        "--embedding-timeout-seconds",
+        type=float,
+        default=float(os.getenv("GMS_TIMEOUT_SECONDS", "30")),
+    )
+    parser.add_argument(
         "--evidence-target-id",
         default=os.getenv("REALESTATE_EVIDENCE_TARGET_ID"),
     )
@@ -715,6 +732,31 @@ async def async_main() -> None:
             top_n=args.similar_top_n,
         )
         print(json.dumps({"items": [match.to_dict() for match in matches]}, ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "realestate-embeddings":
+        if not args.reaction_snapshots_jsonl:
+            raise SystemExit("--reaction-snapshots-jsonl is required")
+        inputs = build_real_estate_embedding_inputs(
+            load_real_estate_embedding_inputs(args.reaction_snapshots_jsonl),
+            model_name=args.embedding_model_name,
+        )
+        embedding_client = _gms_gemini_embedding_client(
+            model_name=args.embedding_model_name,
+            timeout_seconds=args.embedding_timeout_seconds,
+        )
+        print(
+            json.dumps(
+                {
+                    "items": [
+                        item.to_embedding_dict(embedding_client.embed_text(item.text))
+                        for item in inputs
+                    ]
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return
 
     if args.command in {"realestate-evidence-logs", "realestate-evidence-logs-push"}:
@@ -1540,6 +1582,22 @@ def _serpapi_recent_issue_client() -> SerpApiRecentIssueClient:
     return SerpApiRecentIssueClient(
         api_key,
         timeout_seconds=float(os.getenv("SERPAPI_TIMEOUT_SECONDS", "30")),
+    )
+
+
+def _gms_gemini_embedding_client(
+    *,
+    model_name: str = DEFAULT_GMS_GEMINI_EMBEDDING_MODEL,
+    timeout_seconds: float = 30.0,
+) -> GmsGeminiEmbeddingClient:
+    api_key = os.getenv("GMS_KEY")
+    if not api_key:
+        raise SystemExit("GMS_KEY is required")
+    return GmsGeminiEmbeddingClient(
+        api_key,
+        base_url=os.getenv("GMS_GEMINI_BASE_URL", DEFAULT_GMS_GEMINI_BASE_URL),
+        model_name=model_name,
+        timeout_seconds=timeout_seconds,
     )
 
 

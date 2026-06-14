@@ -9766,6 +9766,19 @@ a {
   font-weight: 900;
 }
 
+.watchlist-target-row strong a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(234, 88, 12, 0.32);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.watchlist-target-row strong a:hover {
+  color: #ea580c;
+  text-decoration-color: rgba(234, 88, 12, 0.72);
+}
+
 .watchlist-target-row span,
 .watchlist-target-row small {
   color: #64748b;
