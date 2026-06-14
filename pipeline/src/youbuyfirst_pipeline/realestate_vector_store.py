@@ -81,12 +81,25 @@ class QdrantRealEstateVectorStoreClient:
         result = response.get("result")
         return result if isinstance(result, list) else []
 
-    def _request(self, method: str, path: str, *, json: dict[str, Any]) -> dict[str, Any]:
-        headers = {"Content-Type": "application/json"}
+    def collection_info(self) -> dict[str, Any]:
+        try:
+            return self._request("GET", f"/collections/{self.collection_name}")
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                return {"status": "missing", "result": None}
+            raise
+
+    def _request(self, method: str, path: str, *, json: dict[str, Any] | None = None) -> dict[str, Any]:
+        headers = {}
+        if json is not None:
+            headers["Content-Type"] = "application/json"
         if self.api_key:
             headers["api-key"] = self.api_key
         with httpx.Client(timeout=self.timeout_seconds) as client:
-            response = client.request(method, f"{self.base_url}{path}", headers=headers, json=json)
+            kwargs: dict[str, Any] = {"headers": headers}
+            if json is not None:
+                kwargs["json"] = json
+            response = client.request(method, f"{self.base_url}{path}", **kwargs)
             response.raise_for_status()
             return response.json()
 
@@ -124,6 +137,51 @@ def build_qdrant_points(embedding_items: list[dict[str, Any]]) -> list[dict[str,
             }
         )
     return points
+
+
+def qdrant_collection_health_payload(client: QdrantRealEstateVectorStoreClient) -> dict[str, Any]:
+    collection_name = getattr(client, "collection_name", DEFAULT_QDRANT_COLLECTION)
+    try:
+        info = client.collection_info()
+    except httpx.HTTPError as exc:
+        return _qdrant_collection_health_payload(
+            collection_name=collection_name,
+            ready=False,
+            status="error",
+            points_count=None,
+            vectors_count=None,
+            message=f"collection_health_error:{exc.__class__.__name__}",
+        )
+    result = info.get("result") if isinstance(info, dict) else None
+    if result is None or info.get("status") == "missing":
+        return _qdrant_collection_health_payload(
+            collection_name=collection_name,
+            ready=False,
+            status="missing",
+            points_count=None,
+            vectors_count=None,
+            message="collection_not_found",
+        )
+    if not isinstance(result, dict):
+        return _qdrant_collection_health_payload(
+            collection_name=collection_name,
+            ready=False,
+            status="unknown",
+            points_count=None,
+            vectors_count=None,
+            message="collection_info_unexpected_shape",
+        )
+    status = str(result.get("status") or "unknown").strip().lower() or "unknown"
+    points_count = _optional_int(result.get("points_count", result.get("pointsCount")))
+    vectors_count = _optional_int(result.get("vectors_count", result.get("vectorsCount")))
+    return _qdrant_collection_health_payload(
+        collection_name=collection_name,
+        ready=status == "green",
+        status=status,
+        points_count=points_count,
+        vectors_count=vectors_count,
+        message="collection_ready" if status == "green" else "collection_not_ready",
+    )
 
 
 def qdrant_search_results_to_similar_windows(
@@ -285,6 +343,34 @@ def _is_past_window(source_window_start: str, matched_window_start: str) -> bool
 
 def _point_id(input_id: str) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, f"youbuyfirst-realestate:{input_id.strip()}"))
+
+
+def _qdrant_collection_health_payload(
+    *,
+    collection_name: str,
+    ready: bool,
+    status: str,
+    points_count: int | None,
+    vectors_count: int | None,
+    message: str,
+) -> dict[str, Any]:
+    return {
+        "collection": collection_name,
+        "ready": ready,
+        "status": status,
+        "pointsCount": points_count,
+        "vectorsCount": vectors_count,
+        "message": message,
+    }
+
+
+def _optional_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _stable_id(*parts: str) -> str:

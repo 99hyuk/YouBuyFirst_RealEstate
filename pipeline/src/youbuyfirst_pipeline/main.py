@@ -111,6 +111,7 @@ from youbuyfirst_pipeline.realestate_vector_store import (
     build_qdrant_points,
     find_embedding_by_input_id,
     load_real_estate_embedding_payloads,
+    qdrant_collection_health_payload,
     qdrant_search_results_to_similar_windows,
 )
 from youbuyfirst_pipeline.realestate_source_registry import (
@@ -164,6 +165,7 @@ ACTIVE_COMMANDS = [
     "realestate-recent-issues-push",
     "realestate-similar-windows",
     "realestate-embeddings",
+    "realestate-vector-health",
     "realestate-vector-upsert",
     "realestate-vector-search",
     "realestate-evidence-logs",
@@ -901,6 +903,11 @@ async def async_main() -> None:
                 indent=2,
             )
         )
+        return
+
+    if args.command == "realestate-vector-health":
+        vector_client = _qdrant_vector_store_client()
+        print(json.dumps(qdrant_collection_health_payload(vector_client), ensure_ascii=False, indent=2))
         return
 
     if args.command == "realestate-vector-upsert":

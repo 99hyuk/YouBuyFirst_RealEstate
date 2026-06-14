@@ -7,6 +7,7 @@ import respx
 from youbuyfirst_pipeline.realestate_vector_store import (
     QdrantRealEstateVectorStoreClient,
     build_qdrant_points,
+    qdrant_collection_health_payload,
     qdrant_search_results_to_similar_windows,
 )
 
@@ -97,6 +98,61 @@ def test_qdrant_client_searches_by_vector_and_returns_raw_results():
                 }
             ]
         },
+    }
+
+
+@respx.mock
+def test_qdrant_client_reads_collection_info_without_exposing_secret():
+    info_route = respx.get("http://qdrant.local/collections/realestate_windows").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "result": {
+                    "status": "green",
+                    "points_count": 42,
+                    "vectors_count": 42,
+                }
+            },
+        )
+    )
+    client = QdrantRealEstateVectorStoreClient(
+        base_url="http://qdrant.local",
+        api_key="test-qdrant-key",
+        collection_name="realestate_windows",
+    )
+
+    payload = qdrant_collection_health_payload(client)
+
+    assert info_route.called
+    assert info_route.calls[0].request.headers["api-key"] == "test-qdrant-key"
+    assert payload == {
+        "collection": "realestate_windows",
+        "ready": True,
+        "status": "green",
+        "pointsCount": 42,
+        "vectorsCount": 42,
+        "message": "collection_ready",
+    }
+    assert "test-qdrant-key" not in json.dumps(payload)
+
+
+@respx.mock
+def test_qdrant_collection_health_payload_marks_missing_collection_not_ready():
+    respx.get("http://qdrant.local/collections/realestate_windows").mock(return_value=httpx.Response(404))
+    client = QdrantRealEstateVectorStoreClient(
+        base_url="http://qdrant.local",
+        collection_name="realestate_windows",
+    )
+
+    payload = qdrant_collection_health_payload(client)
+
+    assert payload == {
+        "collection": "realestate_windows",
+        "ready": False,
+        "status": "missing",
+        "pointsCount": None,
+        "vectorsCount": None,
+        "message": "collection_not_found",
     }
 
 

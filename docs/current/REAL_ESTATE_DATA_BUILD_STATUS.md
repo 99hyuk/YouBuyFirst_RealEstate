@@ -118,7 +118,6 @@ real_estate_targets
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
 - LLM provider 기반 평가의 재시도/품질평가/Langfuse 관측 고도화
-- 실제 Qdrant runtime smoke와 운영 collection health check 정리
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
 
 ## 다음 작업
@@ -148,6 +147,17 @@ $env:QDRANT_URL="http://localhost:6333"
 $env:QDRANT_API_KEY="필요한 경우에만"
 C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-vector-upsert --embeddings-jsonl C:\data\ybf-realestate\embeddings.json
 ```
+
+Qdrant collection health check:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:QDRANT_URL="http://localhost:6333"
+$env:QDRANT_API_KEY="필요한 경우에만"
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-vector-health
+```
+
+이 명령은 `collection`, `ready`, `status`, `pointsCount`, `vectorsCount`, `message`만 출력합니다. Qdrant API key는 요청 헤더에만 사용하고 출력 JSON에는 포함하지 않습니다. `status=missing`이면 먼저 `realestate-vector-upsert`로 collection을 만들고 임베딩 포인트를 적재해야 합니다.
 
 Qdrant 유사 window 검색:
 
