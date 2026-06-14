@@ -133,6 +133,9 @@ from youbuyfirst_pipeline.scheduler import serve
 from youbuyfirst_pipeline.source_policy import default_source_policy_registry, runtime_environment_from_env
 
 
+logger = logging.getLogger(__name__)
+
+
 ACTIVE_COMMANDS = [
     "run-once",
     "serve",
@@ -1455,7 +1458,13 @@ def _configured_csv_values(value: str | None, default: list[str]) -> list[str]:
 
 def _similar_windows_provider_from_args(args):
     if not args.evidence_similar_windows_jsonl:
+        if args.similar_engine == "qdrant":
+            return _qdrant_similar_windows_provider_from_args(args)
         return None
+    return _similar_windows_jsonl_provider_from_args(args)
+
+
+def _similar_windows_jsonl_provider_from_args(args):
     similar_windows = load_real_estate_evidence_similar_windows(args.evidence_similar_windows_jsonl)
 
     def provider(target_id: str, _ranking_row: dict[str, object], ranking: dict[str, object]) -> list[dict[str, object]]:
@@ -1467,6 +1476,70 @@ def _similar_windows_provider_from_args(args):
         ]
 
     return provider
+
+
+def _qdrant_similar_windows_provider_from_args(args):
+    if not args.embeddings_jsonl:
+        raise SystemExit("--embeddings-jsonl is required when daily evidence refresh uses --similar-engine qdrant")
+    embedding_items = load_real_estate_embedding_payloads(args.embeddings_jsonl)
+    market_facts = (
+        load_real_estate_market_fact_payloads(args.similar_market_facts_jsonl)
+        if args.similar_market_facts_jsonl
+        else None
+    )
+    vector_client = _qdrant_vector_store_client()
+    health = qdrant_collection_health_payload(vector_client)
+    if not health.get("ready"):
+        logger.warning(
+            "real-estate qdrant similar provider skipped; collection=%s status=%s message=%s",
+            health.get("collection"),
+            health.get("status"),
+            health.get("message"),
+        )
+
+        def unavailable_provider(
+            _target_id: str,
+            _ranking_row: dict[str, object],
+            _ranking: dict[str, object],
+        ) -> list[dict[str, object]]:
+            return []
+
+        return unavailable_provider
+
+    def provider(target_id: str, _ranking_row: dict[str, object], ranking: dict[str, object]) -> list[dict[str, object]]:
+        input_id = _daily_evidence_embedding_input_id(target_id, ranking)
+        if not input_id:
+            return []
+        try:
+            source_input = find_embedding_by_input_id(embedding_items, input_id)
+        except ValueError:
+            logger.warning("real-estate qdrant similar provider skipped; embedding input not found: %s", input_id)
+            return []
+        try:
+            search_results = vector_client.search(
+                vector=source_input["embedding"],
+                top_n=_qdrant_similar_fetch_limit(args.similar_top_n),
+                exclude_input_id=source_input["inputId"],
+            )
+        except Exception as exc:
+            logger.warning("real-estate qdrant similar provider search failed: %s", exc.__class__.__name__)
+            return []
+        return qdrant_search_results_to_similar_windows(
+            source_input=source_input,
+            search_results=search_results,
+            market_facts=market_facts,
+            horizon_days=args.similar_horizon_days,
+        )[: args.similar_top_n]
+
+    return provider
+
+
+def _daily_evidence_embedding_input_id(target_id: str, ranking: dict[str, object]) -> str | None:
+    window_start = str(ranking.get("windowStart") or ranking.get("window_start") or "").strip()
+    window_end = str(ranking.get("windowEnd") or ranking.get("window_end") or "").strip()
+    if not target_id or not window_start or not window_end:
+        return None
+    return f"reaction-window:{target_id}:{window_start}:{window_end}"
 
 
 def _similar_window_matches_daily_evidence_target(
