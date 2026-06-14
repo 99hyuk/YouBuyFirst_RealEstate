@@ -28,6 +28,7 @@ const mountTargetDetail = async (path = '/realestate/targets/region-seoul-mapo')
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe('real-estate target detail content feed', () => {
@@ -114,6 +115,85 @@ describe('real-estate target detail content feed', () => {
     expect(wrapper.text()).toContain('marker API 반영');
     expect(wrapper.text()).toContain('candidate · stale');
     expect(wrapper.text()).not.toContain('마포래미안푸르지오');
+  });
+
+  it('uses target timeline API rows before the local fixture timeline', async () => {
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('/timeline')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              id: 'timeline-policy-mapo-20260614',
+              targetId: 'region-seoul-mapo',
+              eventType: 'policy',
+              sourceRefType: 'policy_event',
+              sourceRefId: 'policy-mapo-20260614',
+              title: '마포 주거정비 후보지 발표',
+              summary: '정책 발표 이후 정비사업 기대와 가격 부담 우려가 함께 언급됩니다.',
+              occurredAt: '2026-06-14T09:30:00Z',
+              asOf: '2026-06-14T09:35:00Z',
+              dataStatus: 'ok'
+            }
+          ]
+        }));
+      }
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountTargetDetail();
+
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/timeline?limit=6');
+    expect(wrapper.text()).toContain('timeline API 반영');
+    expect(wrapper.text()).toContain('마포 주거정비 후보지 발표');
+    expect(wrapper.text()).toContain('정책 발표 이후 정비사업 기대와 가격 부담 우려');
+    expect(wrapper.text()).toContain('policy · ok');
+    expect(wrapper.text()).not.toContain('전세 우려 급증');
+  });
+
+  it('keeps same-minute timeline API rows keyed without duplicate warnings', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('/timeline')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              id: 'timeline-market-mapo-20260614-a',
+              targetId: 'region-seoul-mapo',
+              eventType: 'market_fact',
+              sourceRefType: 'market_fact',
+              sourceRefId: 'fact-a',
+              title: '매매 실거래 공개',
+              summary: '첫 번째 실거래 이벤트입니다.',
+              occurredAt: '2026-06-14T09:00:00Z',
+              asOf: '2026-06-14T09:05:00Z',
+              dataStatus: 'ok'
+            },
+            {
+              id: 'timeline-market-mapo-20260614-b',
+              targetId: 'region-seoul-mapo',
+              eventType: 'market_fact',
+              sourceRefType: 'market_fact',
+              sourceRefId: 'fact-b',
+              title: '매매 실거래 공개',
+              summary: '두 번째 실거래 이벤트입니다.',
+              occurredAt: '2026-06-14T09:00:00Z',
+              asOf: '2026-06-14T09:05:00Z',
+              dataStatus: 'ok'
+            }
+          ]
+        }));
+      }
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountTargetDetail();
+
+    expect(wrapper.findAll('.vertical-timeline article')).toHaveLength(2);
+    expect(wrapper.text()).toContain('첫 번째 실거래 이벤트입니다.');
+    expect(wrapper.text()).toContain('두 번째 실거래 이벤트입니다.');
+    expect(warnSpy.mock.calls.some((call) => String(call[0]).includes('Duplicate keys'))).toBe(false);
   });
 
   it('opens a complex target detail with the same map and report frame', async () => {
