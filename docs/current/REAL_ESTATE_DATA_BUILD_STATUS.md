@@ -70,6 +70,7 @@
 - `serve --enable-realestate-daily-refresh` scheduler job을 추가했습니다. 현재는 market fact refresh, reaction snapshot refresh, SerpApi 최근 이슈 후보 refresh, EvidenceLog refresh를 하루 단위 step으로 묶을 수 있으며, 각 step은 `OK`, `EMPTY`, `*_ERROR`, `PARTIAL` 상태를 남깁니다. EvidenceLog refresh는 최신 backend reaction ranking을 읽고 target별 market fact/content 후보를 붙여 `POST /internal/realestate/evidence-logs`로 전송합니다.
 - 현재 seed marker 좌표는 DB/API로 내려오지만 검증 좌표가 아니므로 `provider=front_fixture`, `dataStatus=mock`, `stale=true`로 노출합니다. 실제 단지 좌표, 법정동 코드, provider key 검증은 계속 남아 있습니다.
 - GMS OpenAI-compatible chat endpoint를 쓰는 EvidenceLog summary 보강 client를 추가했습니다. `realestate-evidence-logs(-push) --evidence-use-gms-llm`을 켜면 기존 룰 기반 EvidenceLog를 만든 뒤 LLM이 `summary`, `subtitle`, `tone`만 보강합니다. 금지 문구가 포함되면 LLM 문구를 폐기하고 `skipReason=forbidden_copy_detected`와 caveat을 남깁니다.
+- 일일 EvidenceLog refresh는 `--evidence-similar-windows-jsonl`을 함께 받으면 target/window가 맞는 유사 과거 후보를 EvidenceLog `similar_window` 근거로 자동 병합합니다. Qdrant 검색을 daily step 안에서 즉석 실행하는 것은 아직 후속 작업이며, 현재는 `realestate-similar-windows --similar-engine qdrant` 결과 JSON을 먼저 만들어 연결하는 방식입니다.
 
 ## 1차 provider
 
@@ -424,6 +425,8 @@ C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\pyt
 ```
 
 이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/timeline`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/timeline/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.
+
+유사 과거 후보까지 매일 EvidenceLog에 붙이려면 먼저 `realestate-similar-windows --similar-engine qdrant` 또는 `batch` 결과를 JSON으로 만든 뒤 같은 명령에 `--evidence-similar-windows-jsonl <similar-window-output>`을 추가합니다. 일일 EvidenceLog refresh는 `sourceTargetId`와 `sourceWindowStart`가 현재 ranking의 target/window와 맞는 후보만 병합하고, step detail의 `similar_window_count`로 병합 건수를 남깁니다.
 
 GMS LLM으로 일일 EvidenceLog summary를 보강하려면 같은 명령에 `--evidence-use-gms-llm --evidence-llm-model gpt-5-mini`를 붙입니다. 이 경우에도 먼저 룰 기반 EvidenceLog를 만들고, LLM 결과는 `summary`, `subtitle`, `tone`만 보강합니다. forbidden copy guardrail에 걸리면 룰 기반 문구를 유지하고 `skipReason=forbidden_copy_detected`를 남깁니다.
 
