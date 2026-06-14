@@ -113,6 +113,7 @@ real_estate_targets
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
 - 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성, LLM provider 기반 평가 생성, forbidden copy guardrail, timeline event 입력 병합
+- GMS `gemini-embedding-2` 임베딩 결과를 벡터 저장소에 적재하고 `realestate-similar-windows` 내부 검색 엔진으로 연결
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
 - 실제 market fact와 reaction snapshot을 `map_layer_snapshots`로 집계하는 지도 배치 구현
 
@@ -124,6 +125,16 @@ real_estate_targets
 4. 레거시 제거 이후 남은 작업은 실제 공공데이터 전체 백필, 공개 source adapter 활성화, alias 후보 운영자 검수, SerpApi 후보 링크 승인 workflow, LLM provider/guardrail 기반 평가 고도화입니다.
 
 ## 현재 실행 가능한 명령
+
+GMS Gemini 임베딩 생성:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:GMS_KEY="로컬 GMS 키"
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-embeddings --reaction-snapshots-jsonl C:\data\ybf-realestate\reaction-snapshots.jsonl
+```
+
+이 명령은 reaction snapshot window를 임베딩용 텍스트로 요약하고 `gemini-embedding-2` 벡터를 출력합니다. 출력은 아직 DB/VectorDB에 자동 적재하지 않으며, 다음 단계에서 pgvector 또는 Qdrant 같은 저장소와 연결합니다.
 
 Provider catalog 확인:
 

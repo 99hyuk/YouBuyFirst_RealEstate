@@ -20,6 +20,7 @@ const allocation = [
 ];
 
 const watchRegions: {
+  targetId: string;
   name: string;
   scope: string;
   index: string;
@@ -29,11 +30,11 @@ const watchRegions: {
   next: string;
   tone: WatchTone;
 }[] = [
-  { name: '마포구 아파트', scope: '서울', index: '+0.55%', status: '실거래 지연', issue: '전세·학군', reaction: '기대 49 / 우려 33', next: '전세 매물 원문 확인', tone: 'up' },
-  { name: '동탄역권', scope: '경기', index: '+0.31%', status: 'stale', issue: 'GTX·입주', reaction: '기대 44 / 우려 39', next: '입주 물량 대조', tone: 'flat' },
-  { name: '성수동 생활권', scope: '서울', index: '+0.66%', status: 'mock', issue: '상권·임대료', reaction: '언급 +86%', next: '상권 키워드 분리', tone: 'up' },
-  { name: '송도국제도시', scope: '인천', index: '-0.18%', status: 'stale', issue: '공급·국제학교', reaction: '우려 36', next: '미분양 추이 확인', tone: 'down' },
-  { name: '분당·판교', scope: '경기', index: '+0.51%', status: 'mock', issue: '일자리·재건축', reaction: '기대 58', next: '재건축 별칭 매핑', tone: 'up' }
+  { targetId: 'region-seoul-mapo', name: '마포구 아파트', scope: '서울', index: '+0.55%', status: '실거래 지연', issue: '전세·학군', reaction: '기대 49 / 우려 33', next: '전세 매물 원문 확인', tone: 'up' },
+  { targetId: 'living-area-gyeonggi-dongtan-station', name: '동탄역권', scope: '경기', index: '+0.31%', status: 'stale', issue: 'GTX·입주', reaction: '기대 44 / 우려 39', next: '입주 물량 대조', tone: 'flat' },
+  { targetId: 'living-area-seoul-seongsu', name: '성수동 생활권', scope: '서울', index: '+0.66%', status: 'mock', issue: '상권·임대료', reaction: '언급 +86%', next: '상권 키워드 분리', tone: 'up' },
+  { targetId: 'living-area-incheon-songdo', name: '송도국제도시', scope: '인천', index: '-0.18%', status: 'stale', issue: '공급·국제학교', reaction: '우려 36', next: '미분양 추이 확인', tone: 'down' },
+  { targetId: 'living-area-gyeonggi-bundang-pangyo', name: '분당·판교', scope: '경기', index: '+0.51%', status: 'mock', issue: '일자리·재건축', reaction: '기대 58', next: '재건축 별칭 매핑', tone: 'up' }
 ];
 
 const actions: { time: string; target: string; state: WatchState; amount: string; reason: string }[] = [
@@ -110,7 +111,9 @@ const reviews = [
           <span>다음 확인</span>
         </div>
         <article v-for="region in watchRegions" :key="region.name" class="watchlist-target-row">
-          <strong>{{ region.name }}</strong>
+          <strong>
+            <RouterLink :to="`/realestate/targets/${region.targetId}`">{{ region.name }}</RouterLink>
+          </strong>
           <span>{{ region.scope }}</span>
           <span>{{ region.index }}</span>
           <span>{{ region.status }}</span>
