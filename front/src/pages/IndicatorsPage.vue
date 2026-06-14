@@ -1,20 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import {
+  fetchRealEstateIndicatorOverview,
+  mergeIndicatorFreshnessRows,
+  mergeIndicatorGroups,
+  type IndicatorGroupFallback,
+  type IndicatorGroupView,
+  type RealEstateIndicatorFreshnessRow
+} from '../lib/realestate-indicators';
 
 type Tone = 'up' | 'down' | 'neutral';
 
-type MarketGroup = {
-  id: string;
-  label: string;
-  title: string;
-  headline: string;
-  change: string;
-  tone: Tone;
-  summary: string;
-  chips: string[];
-  metrics: { name: string; value: string; tone: Tone }[];
-};
+type MarketGroup = IndicatorGroupFallback;
 
 type IndicatorItem = {
   category: string;
@@ -34,7 +32,7 @@ type RegionTile = {
 
 const route = useRoute();
 
-const marketGroups: MarketGroup[] = [
+const fallbackMarketGroups: MarketGroup[] = [
   {
     id: 'price-transaction',
     label: 'price & volume',
@@ -97,6 +95,10 @@ const marketGroups: MarketGroup[] = [
   }
 ];
 
+const marketGroups = ref<IndicatorGroupView[]>(mergeIndicatorGroups([], fallbackMarketGroups));
+const indicatorLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const indicatorAsOf = ref<string | null>(null);
+
 const detailRows: Record<string, { label: string; value: string; note: string; tone: Tone }[]> = {
   'price-transaction': [
     { label: '매매가격지수', value: '101.8', note: '기준 시점 100 대비 가격 레벨을 비교합니다.', tone: 'up' },
@@ -126,7 +128,7 @@ const detailRows: Record<string, { label: string; value: string; note: string; t
 
 const selectedGroup = computed(() => {
   const category = Array.isArray(route.params.category) ? route.params.category[0] : route.params.category;
-  return marketGroups.find((group) => group.id === category) ?? null;
+  return marketGroups.value.find((group) => group.id === category) ?? null;
 });
 
 const regionTiles: RegionTile[] = [
@@ -152,15 +154,42 @@ const schedules = [
   { date: '06.12', time: '수시', title: '기준금리·대출 금리 변화', watch: 'K-HAI·수요 심리' }
 ];
 
-const freshnessRows = [
+const fallbackFreshnessRows = [
   { source: '한국부동산원 가격지수', state: '주간 공개', used: '매매·전세가격지수' },
   { source: '국토부 실거래가', state: '신고·공개 지연', used: '실거래가 지수·거래량' },
   { source: '국토부 주택통계', state: '월간 공개', used: '미분양·인허가·착공·준공' },
   { source: '한국은행·통계청', state: '월간·수시', used: '기준금리·M2·물가' }
 ];
+const freshnessRows = ref<RealEstateIndicatorFreshnessRow[]>(fallbackFreshnessRows);
 
 const themeChips = ['매매가격지수 101.8', '전세가율 62.4%', '미분양 5.7만호', '매매수급 104.2', 'K-HAI 172.4', 'M2 +5.1%'];
 const detailChartTicks = ['D-30', 'D-21', 'D-14', 'D-7', 'D-3', '현재'];
+const indicatorDataStatusLabel = computed(() => {
+  if (indicatorLoadState.value === 'live') {
+    return `API 반영 · ${indicatorAsOf.value ?? 'asOf unknown'}`;
+  }
+  if (indicatorLoadState.value === 'loading') return '불러오는 중';
+  return 'mock fallback';
+});
+
+const refreshIndicatorOverview = async () => {
+  try {
+    const overview = await fetchRealEstateIndicatorOverview({ period: 'month' });
+    marketGroups.value = mergeIndicatorGroups(overview.groups, fallbackMarketGroups);
+    freshnessRows.value = mergeIndicatorFreshnessRows(overview.freshnessRows, fallbackFreshnessRows);
+    indicatorAsOf.value = overview.asOf ?? null;
+    indicatorLoadState.value = overview.groups.length ? 'live' : 'fallback';
+  } catch {
+    marketGroups.value = mergeIndicatorGroups([], fallbackMarketGroups);
+    freshnessRows.value = fallbackFreshnessRows;
+    indicatorAsOf.value = null;
+    indicatorLoadState.value = 'fallback';
+  }
+};
+
+onMounted(() => {
+  void refreshIndicatorOverview();
+});
 </script>
 
 <template>
@@ -265,7 +294,7 @@ const detailChartTicks = ['D-30', 'D-21', 'D-14', 'D-7', 'D-3', '현재'];
       </div>
       <div class="indicator-hub-clock">
         <strong>10:05</strong>
-        <span>mock · 공개 지연 혼합</span>
+        <span>{{ indicatorDataStatusLabel }}</span>
       </div>
     </section>
 
@@ -278,7 +307,7 @@ const detailChartTicks = ['D-30', 'D-21', 'D-14', 'D-7', 'D-3', '현재'];
       >
         <div class="indicator-core-top">
           <span>{{ group.label }}</span>
-          <em>상세 분석으로 이동</em>
+          <em>{{ group.statusLabel }}</em>
         </div>
         <strong>{{ group.title }}</strong>
         <b>{{ group.change }}</b>

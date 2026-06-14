@@ -64,6 +64,7 @@
 - [x] 한국부동산원/미분양/인허가용 공통 지역 통계 CSV adapter 구현
 - [x] `serve` 모드에서 부동산 market fact 주기 갱신 job 옵션 추가
 - [x] 대시보드 주요 지표 카드가 공공데이터 market fact 요약 API를 우선 사용하도록 연결
+- [x] `/indicators` 주요 지표 화면이 `GET /api/realestate/indicators?period=month`를 우선 조회하고 가격·거래량 그룹의 provider/asOf/mock fallback 상태를 표시
 - [x] 뉴스룸 화면이 content/news API 응답을 우선 사용하고 정적 데모에서는 mock fallback을 표시하도록 연결
 - [x] 지역/단지 반응 ranking용 `real_estate_reaction_snapshots` 저장 API와 최신 window 조회 API 구현
 - [x] 분류된 커뮤니티 관측치 JSONL을 지역/단지 반응 snapshot으로 집계하고 내부 API에 전송하는 pipeline 명령 구현

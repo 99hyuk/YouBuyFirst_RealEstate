@@ -16,8 +16,8 @@
 
 ## 현재 섹션
 
-- 지표 hub hero: 데이터 기준 시각, 공개 지연 안내
-- 핵심 지표 카테고리 카드: 네 가지 지표 묶음과 대표 수치
+- 지표 hub hero: 데이터 기준 시각, 공개 지연 안내, API/mock fallback 상태
+- 핵심 지표 카테고리 카드: 네 가지 지표 묶음과 대표 수치. 현재 `가격 및 거래량`은 `GET /api/realestate/indicators?period=month` 응답을 우선 사용하고, 나머지 지표 묶음은 정식 통계 테이블 구축 전까지 `mock fallback`으로 표시합니다.
 - 지역별 지표 방향: 상승/하락 지역군과 핵심 키워드
 - 지표 묶음별 관찰 포인트: 가격, 공급, 심리, 금융의 해석 포인트
 - 지표와 반응이 엇갈린 지역: 공식 지표와 커뮤니티 반응 괴리 후보
@@ -59,6 +59,12 @@
 | `freshnessRows` | backend | 지표 출처별 공개 주기와 stale 상태 |
 | `schedules` | backend/content | 주요 발표 일정 |
 
+현재 구현 endpoint:
+
+- `GET /api/realestate/indicators?legalDongCode=&period=`: `real_estate_market_facts`를 요약해 `가격 및 거래량` 그룹과 `freshnessRows`를 반환합니다.
+- 응답의 `groups[].dataStatus`, `groups[].stale`, `groups[].provider`, `groups[].asOf`는 화면 카드의 `공공데이터 반영`, `지연 가능`, `mock fallback` 표시에 사용합니다.
+- API가 비어 있거나 실패하면 기존 fixture 카드를 유지하되 같은 위치에 `mock fallback`을 보여줍니다.
+
 ## 기획 확인 필요
 
 - 실거래가 지수는 전국/시도/시군구 중 어떤 단위까지 1차로 제공할지.
@@ -67,4 +73,5 @@
 
 ## 변경 로그
 
+- 2026-06-14: `/indicators`가 `GET /api/realestate/indicators?period=month`를 호출해 가격·거래량 그룹과 데이터 신선도 행을 API 우선으로 표시하도록 갱신.
 - 2026-06-01: 금융시장 지표 묶음을 부동산 핵심 지표 네 그룹으로 교체.
