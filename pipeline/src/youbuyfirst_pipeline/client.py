@@ -183,6 +183,64 @@ class SpringIngestionClient:
             response = client.post(f"{self.base_url}/internal/realestate/evidence-logs", json=payload)
             response.raise_for_status()
 
+    def get_real_estate_reaction_ranking(
+        self,
+        *,
+        target_type: str = "region",
+        window_minutes: int = 60,
+        limit: int = 20,
+    ) -> dict:
+        params = {
+            "type": target_type,
+            "windowMinutes": str(window_minutes),
+            "limit": str(limit),
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(f"{self.base_url}/api/realestate/reactions/rankings", params=params)
+            response.raise_for_status()
+            data = response.json()
+        return data if isinstance(data, dict) else {}
+
+    def list_real_estate_target_market_facts(
+        self,
+        target_id: str,
+        *,
+        limit: int = 20,
+    ) -> list[dict]:
+        params = {
+            "limit": str(limit),
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(
+                f"{self.base_url}/api/realestate/targets/{target_id}/market-facts",
+                params=params,
+            )
+            response.raise_for_status()
+            data = response.json()
+        items = data.get("items", []) if isinstance(data, dict) else []
+        return [item for item in items if isinstance(item, dict)]
+
+    def list_real_estate_target_content_items(
+        self,
+        target_id: str,
+        *,
+        feed: str = "all",
+        limit: int = 20,
+    ) -> list[dict]:
+        params = {
+            "feed": feed,
+            "limit": str(limit),
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(
+                f"{self.base_url}/api/realestate/targets/{target_id}/content",
+                params=params,
+            )
+            response.raise_for_status()
+            data = response.json()
+        items = data.get("items", []) if isinstance(data, dict) else []
+        return [item for item in items if isinstance(item, dict)]
+
     def publish_real_estate_alias_candidates(self, candidates: Iterable[object]) -> None:
         items = [
             candidate.to_request_dict() if hasattr(candidate, "to_request_dict") else candidate

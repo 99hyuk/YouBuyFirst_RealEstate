@@ -211,7 +211,7 @@
 - [x] 유사 과거 상황 설명 방식 정리
 - [x] GMS `gemini-embedding-2` 임베딩 client와 `realestate-embeddings` command 구현
 - [x] 최근 이슈 후보 검색 provider/query/keyword 저장 기준 정리
-- [ ] 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성 job 구현
+- [x] 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성 job 구현
 - [ ] 임베딩 결과를 pgvector/Qdrant 등 벡터 저장소에 적재하고 유사 과거 검색에 연결
 - [ ] 행동 지시처럼 보이는 평가 문구 금지 기준 정리
 - [x] evaluationVersion과 skipReason 관리 기준 정리

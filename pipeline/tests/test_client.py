@@ -80,6 +80,80 @@ class _FakeHttpxClient:
                     ]
                 }
             )
+        if url.endswith("/api/realestate/reactions/rankings"):
+            return _Response(
+                {
+                    "window": "60m",
+                    "windowStart": "2026-06-14T00:00:00Z",
+                    "windowEnd": "2026-06-14T01:00:00Z",
+                    "freshness": {
+                        "source": "real_estate_reaction_snapshots",
+                        "asOf": "2026-06-14T01:02:00Z",
+                        "staleCount": 0,
+                        "sourceCount": 2,
+                        "coverageStatus": "partial",
+                    },
+                    "items": [
+                        {
+                            "rank": 1,
+                            "targetId": "region-daejeon",
+                            "targetType": "region",
+                            "displayName": "대전",
+                            "mentionCount": 24,
+                            "mentionDeltaPct": 38.5,
+                            "reactionDirectionRatio": {
+                                "expectation": 0.58,
+                                "concern": 0.27,
+                                "neutral": 0.15,
+                            },
+                            "heatScore": 81,
+                            "confidence": 0.74,
+                            "sourceCount": 2,
+                            "sourceSkew": 0.41,
+                            "coverageStatus": "partial",
+                            "stale": False,
+                            "issueMix": [
+                                {
+                                    "issueKey": "transport",
+                                    "label": "교통",
+                                    "share": 0.45,
+                                    "direction": "expectation",
+                                    "summary": "광역 교통 기대가 반복됩니다.",
+                                    "confidence": 0.7,
+                                }
+                            ],
+                        }
+                    ],
+                }
+            )
+        if url.endswith("/api/realestate/targets/region-daejeon/market-facts"):
+            return _Response(
+                {
+                    "items": [
+                        {
+                            "targetId": "region-daejeon",
+                            "factType": "apt_trade",
+                            "providerObjectId": "molit_apt_trade:30110:202606:1",
+                            "observedAt": "2026-06-03",
+                            "valueJson": {"dealAmountManwon": 42000},
+                        }
+                    ]
+                }
+            )
+        if url.endswith("/api/realestate/targets/region-daejeon/content"):
+            return _Response(
+                {
+                    "items": [
+                        {
+                            "contentId": "serpapi-region-daejeon-transport",
+                            "title": "대전 교통 이슈 후보",
+                            "targetId": "region-daejeon",
+                            "linkType": "search_candidate",
+                            "reviewState": "candidate",
+                        }
+                    ]
+                }
+            )
         return _Response(
             {
                 "items": [
@@ -380,6 +454,60 @@ def test_spring_client_lists_real_estate_market_data_targets(monkeypatch):
             "lawdCode": "11110",
             "enabled": True,
         }
+    ]
+
+
+def test_spring_client_gets_real_estate_reaction_ranking(monkeypatch):
+    _FakeHttpxClient.gets = []
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    ranking = client.get_real_estate_reaction_ranking(
+        target_type="region",
+        window_minutes=60,
+        limit=5,
+    )
+
+    assert ranking["items"][0]["targetId"] == "region-daejeon"
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/api/realestate/reactions/rankings",
+            "params": {
+                "type": "region",
+                "windowMinutes": "60",
+                "limit": "5",
+            },
+            "timeout": 45,
+        }
+    ]
+
+
+def test_spring_client_lists_target_market_facts_and_content(monkeypatch):
+    _FakeHttpxClient.gets = []
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    facts = client.list_real_estate_target_market_facts("region-daejeon", limit=10)
+    content_items = client.list_real_estate_target_content_items("region-daejeon", feed="all", limit=10)
+
+    assert facts[0]["providerObjectId"] == "molit_apt_trade:30110:202606:1"
+    assert content_items[0]["contentId"] == "serpapi-region-daejeon-transport"
+    assert _FakeHttpxClient.gets[-2:] == [
+        {
+            "url": "http://backend:8080/api/realestate/targets/region-daejeon/market-facts",
+            "params": {
+                "limit": "10",
+            },
+            "timeout": 45,
+        },
+        {
+            "url": "http://backend:8080/api/realestate/targets/region-daejeon/content",
+            "params": {
+                "feed": "all",
+                "limit": "10",
+            },
+            "timeout": 45,
+        },
     ]
 
 

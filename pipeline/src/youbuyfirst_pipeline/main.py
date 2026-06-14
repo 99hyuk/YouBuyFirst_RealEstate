@@ -67,6 +67,7 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
 )
 from youbuyfirst_pipeline.realestate_daily_scheduler import (
     RealEstateDailyRefreshJob,
+    RealEstateEvidenceLogRefreshJob,
     RealEstateRecentIssuesRefreshJob,
 )
 from youbuyfirst_pipeline.realestate_evidence import (
@@ -388,6 +389,30 @@ async def async_main() -> None:
         "--enable-realestate-recent-issues-refresh",
         action="store_true",
         default=os.getenv("REALESTATE_RECENT_ISSUES_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--enable-realestate-evidence-logs-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_EVIDENCE_LOG_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-evidence-target-type",
+        default=os.getenv("REALESTATE_EVIDENCE_TARGET_TYPE", "region"),
+    )
+    parser.add_argument(
+        "--realestate-evidence-ranking-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_EVIDENCE_RANKING_LIMIT", "20")),
+    )
+    parser.add_argument(
+        "--realestate-evidence-market-fact-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_EVIDENCE_MARKET_FACT_LIMIT", "20")),
+    )
+    parser.add_argument(
+        "--realestate-evidence-content-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_EVIDENCE_CONTENT_LIMIT", "20")),
     )
     parser.add_argument("--legal-dong-code-csv", default=os.getenv("REALESTATE_LEGAL_DONG_CODE_CSV"))
     parser.add_argument(
@@ -1104,6 +1129,8 @@ async def async_main() -> None:
             )
         if args.enable_realestate_recent_issues_refresh and not args.enable_realestate_daily_refresh:
             raise SystemExit("--enable-realestate-recent-issues-refresh requires --enable-realestate-daily-refresh")
+        if args.enable_realestate_evidence_logs_refresh and not args.enable_realestate_daily_refresh:
+            raise SystemExit("--enable-realestate-evidence-logs-refresh requires --enable-realestate-daily-refresh")
         if args.enable_realestate_daily_refresh:
             daily_steps = []
             if realestate_market_facts_refresh_job is not None:
@@ -1127,10 +1154,24 @@ async def async_main() -> None:
                         ),
                     )
                 )
+            if args.enable_realestate_evidence_logs_refresh:
+                daily_steps.append(
+                    (
+                        "evidence_logs",
+                        RealEstateEvidenceLogRefreshJob(
+                            client=market_client,
+                            target_type=args.realestate_evidence_target_type,
+                            window_minutes=args.reaction_window_minutes,
+                            ranking_limit=args.realestate_evidence_ranking_limit,
+                            market_fact_limit=args.realestate_evidence_market_fact_limit,
+                            content_limit=args.realestate_evidence_content_limit,
+                        ),
+                    )
+                )
             if not daily_steps:
                 raise SystemExit(
                     "--enable-realestate-daily-refresh requires at least one real-estate refresh step "
-                    "(market facts, reaction snapshots, or recent issues)"
+                    "(market facts, reaction snapshots, recent issues, or evidence logs)"
                 )
             realestate_daily_refresh_job = RealEstateDailyRefreshJob(daily_steps)
         await serve(
