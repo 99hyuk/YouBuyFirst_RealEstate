@@ -118,7 +118,7 @@ real_estate_targets
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
 - LLM provider 기반 평가의 재시도/품질평가/Langfuse 관측 고도화
-- GMS `gemini-embedding-2` 임베딩 결과를 벡터 저장소에 적재하고 `realestate-similar-windows` 내부 검색 엔진으로 연결
+- Qdrant 검색 결과에 이후 market fact 흐름을 자동 join하고 `realestate-similar-windows` 내부 검색 엔진 선택지로 통합
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
 
 ## 다음 작업
@@ -138,7 +138,26 @@ $env:GMS_KEY="로컬 GMS 키"
 C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-embeddings --reaction-snapshots-jsonl C:\data\ybf-realestate\reaction-snapshots.jsonl
 ```
 
-이 명령은 reaction snapshot window를 임베딩용 텍스트로 요약하고 `gemini-embedding-2` 벡터를 출력합니다. 출력은 아직 DB/VectorDB에 자동 적재하지 않으며, 다음 단계에서 pgvector 또는 Qdrant 같은 저장소와 연결합니다.
+이 명령은 reaction snapshot window를 임베딩용 텍스트로 요약하고 `gemini-embedding-2` 벡터를 출력합니다.
+
+Qdrant vector store 적재:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:QDRANT_URL="http://localhost:6333"
+$env:QDRANT_API_KEY="필요한 경우에만"
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-vector-upsert --embeddings-jsonl C:\data\ybf-realestate\embeddings.json
+```
+
+Qdrant 유사 window 검색:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:QDRANT_URL="http://localhost:6333"
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-vector-search --embeddings-jsonl C:\data\ybf-realestate\embeddings.json --vector-source-input-id reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z --vector-top-n 5
+```
+
+검색 출력은 `similar_window` evidence item shape를 포함하므로 `realestate-evidence-logs --evidence-similar-windows-jsonl <vector-search-output>` 입력으로 이어 붙일 수 있습니다. 현재 Qdrant 검색은 의미 유사 window 후보를 찾는 역할이며, 이후 market fact 흐름은 기존 `realestate-similar-windows --similar-market-facts-jsonl` 경로 또는 후속 join 단계에서 보강합니다.
 
 GMS LLM EvidenceLog summary 보강:
 

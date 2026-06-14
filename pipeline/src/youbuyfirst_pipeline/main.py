@@ -105,6 +105,14 @@ from youbuyfirst_pipeline.realestate_similarity import (
     load_real_estate_market_fact_payloads,
     load_real_estate_reaction_snapshot_payloads,
 )
+from youbuyfirst_pipeline.realestate_vector_store import (
+    DEFAULT_QDRANT_COLLECTION,
+    QdrantRealEstateVectorStoreClient,
+    build_qdrant_points,
+    find_embedding_by_input_id,
+    load_real_estate_embedding_payloads,
+    qdrant_search_results_to_similar_windows,
+)
 from youbuyfirst_pipeline.realestate_source_registry import (
     build_real_estate_crawl_target_manifest,
     load_real_estate_source_candidates_jsonl,
@@ -156,6 +164,8 @@ ACTIVE_COMMANDS = [
     "realestate-recent-issues-push",
     "realestate-similar-windows",
     "realestate-embeddings",
+    "realestate-vector-upsert",
+    "realestate-vector-search",
     "realestate-evidence-logs",
     "realestate-evidence-logs-push",
 ]
@@ -555,6 +565,19 @@ async def async_main() -> None:
         default=float(os.getenv("GMS_TIMEOUT_SECONDS", "30")),
     )
     parser.add_argument(
+        "--embeddings-jsonl",
+        default=os.getenv("REALESTATE_EMBEDDINGS_JSONL"),
+    )
+    parser.add_argument(
+        "--vector-source-input-id",
+        default=os.getenv("REALESTATE_VECTOR_SOURCE_INPUT_ID"),
+    )
+    parser.add_argument(
+        "--vector-top-n",
+        type=int,
+        default=int(os.getenv("REALESTATE_VECTOR_TOP_N", "5")),
+    )
+    parser.add_argument(
         "--evidence-target-id",
         default=os.getenv("REALESTATE_EVIDENCE_TARGET_ID"),
     )
@@ -831,6 +854,58 @@ async def async_main() -> None:
                         item.to_embedding_dict(embedding_client.embed_text(item.text))
                         for item in inputs
                     ]
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+
+    if args.command == "realestate-vector-upsert":
+        if not args.embeddings_jsonl:
+            raise SystemExit("--embeddings-jsonl is required")
+        embedding_items = load_real_estate_embedding_payloads(args.embeddings_jsonl)
+        points = build_qdrant_points(embedding_items)
+        if not points:
+            print(json.dumps({"collection": DEFAULT_QDRANT_COLLECTION, "vectorSize": 0, "upsertedPoints": 0}, ensure_ascii=False, indent=2))
+            return
+        vector_size = len(points[0]["vector"])
+        vector_client = _qdrant_vector_store_client()
+        vector_client.ensure_collection(vector_size=vector_size)
+        vector_client.upsert_points(points)
+        print(
+            json.dumps(
+                {
+                    "collection": vector_client.collection_name,
+                    "vectorSize": vector_size,
+                    "upsertedPoints": len(points),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+
+    if args.command == "realestate-vector-search":
+        if not args.embeddings_jsonl:
+            raise SystemExit("--embeddings-jsonl is required")
+        if not args.vector_source_input_id:
+            raise SystemExit("--vector-source-input-id is required")
+        embedding_items = load_real_estate_embedding_payloads(args.embeddings_jsonl)
+        source_input = find_embedding_by_input_id(embedding_items, args.vector_source_input_id)
+        vector_client = _qdrant_vector_store_client()
+        search_results = vector_client.search(
+            vector=source_input["embedding"],
+            top_n=args.vector_top_n,
+            exclude_input_id=source_input["inputId"],
+        )
+        print(
+            json.dumps(
+                {
+                    "items": qdrant_search_results_to_similar_windows(
+                        source_input=source_input,
+                        search_results=search_results,
+                    )
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -1764,6 +1839,18 @@ def _gms_openai_evaluation_client(
         base_url=os.getenv("GMS_OPENAI_BASE_URL", DEFAULT_GMS_OPENAI_BASE_URL),
         model_name=model_name,
         timeout_seconds=timeout_seconds,
+    )
+
+
+def _qdrant_vector_store_client() -> QdrantRealEstateVectorStoreClient:
+    base_url = os.getenv("QDRANT_URL")
+    if not base_url:
+        raise SystemExit("QDRANT_URL is required")
+    return QdrantRealEstateVectorStoreClient(
+        base_url=base_url,
+        api_key=os.getenv("QDRANT_API_KEY"),
+        collection_name=os.getenv("REALESTATE_VECTOR_COLLECTION", DEFAULT_QDRANT_COLLECTION),
+        timeout_seconds=float(os.getenv("QDRANT_TIMEOUT_SECONDS", "30")),
     )
 
 
