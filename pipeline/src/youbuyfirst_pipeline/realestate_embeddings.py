@@ -131,7 +131,7 @@ def _embedding_input_from_reaction_snapshot(
     window_end = str(record.get("windowEnd") or record.get("window_end") or "").strip()
     if not target_type or not target_id or not window_start:
         raise ValueError("reaction snapshot embedding requires targetType, targetId, and windowStart")
-    input_id = f"reaction-window:{target_id}:{window_start}"
+    input_id = f"reaction-window:{target_id}:{window_start}:{window_end or 'unknown'}"
     return RealEstateEmbeddingInput(
         input_id=input_id,
         target_type=target_type,

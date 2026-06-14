@@ -741,6 +741,9 @@ async def async_main() -> None:
             load_real_estate_embedding_inputs(args.reaction_snapshots_jsonl),
             model_name=args.embedding_model_name,
         )
+        if not inputs:
+            print(json.dumps({"items": []}, ensure_ascii=False, indent=2))
+            return
         embedding_client = _gms_gemini_embedding_client(
             model_name=args.embedding_model_name,
             timeout_seconds=args.embedding_timeout_seconds,

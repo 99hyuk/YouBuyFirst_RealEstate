@@ -50,8 +50,34 @@ def test_realestate_embeddings_command_prints_embedding_payload(monkeypatch, tmp
 
     payload = json.loads(capsys.readouterr().out)
     assert fake_client.texts == [payload["items"][0]["text"]]
-    assert payload["items"][0]["inputId"] == "reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z"
+    assert payload["items"][0]["inputId"] == "reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z"
     assert payload["items"][0]["targetId"] == "region-seoul-mapo"
     assert payload["items"][0]["provider"] == "gms:gemini"
     assert payload["items"][0]["modelName"] == "gemini-embedding-2"
     assert payload["items"][0]["embedding"] == [0.1, 0.2, 0.3]
+
+
+def test_realestate_embeddings_command_skips_client_for_empty_input(monkeypatch, tmp_path, capsys):
+    snapshots_path = tmp_path / "empty-snapshots.jsonl"
+    snapshots_path.write_text("", encoding="utf-8")
+
+    def fail_client(**_kwargs):
+        raise AssertionError("empty embedding input must not create a GMS client")
+
+    monkeypatch.delenv("GMS_KEY", raising=False)
+    monkeypatch.setattr(pipeline_main, "_gms_gemini_embedding_client", fail_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-embeddings",
+            "--reaction-snapshots-jsonl",
+            str(snapshots_path),
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == {"items": []}

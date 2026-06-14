@@ -72,7 +72,7 @@ def test_embedding_inputs_are_loaded_from_jsonl_and_use_window_summary_text(tmp_
     inputs = build_real_estate_embedding_inputs(loaded)
 
     assert len(inputs) == 1
-    assert inputs[0].input_id == "reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z"
+    assert inputs[0].input_id == "reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z"
     assert inputs[0].target_id == "region-seoul-mapo"
     assert inputs[0].ref_type == "reaction_snapshot"
     assert inputs[0].model_name == "gemini-embedding-2"
