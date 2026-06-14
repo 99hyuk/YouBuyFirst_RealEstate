@@ -196,6 +196,71 @@ describe('real-estate target detail content feed', () => {
     expect(warnSpy.mock.calls.some((call) => String(call[0]).includes('Duplicate keys'))).toBe(false);
   });
 
+  it('uses target evidence log API rows as the agent rationale card', async () => {
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('/evidence-logs')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              evidenceLogId: 'evidence-region-seoul-mapo-20260614',
+              targetId: 'region-seoul-mapo',
+              snapshotId: 12,
+              evaluationVersion: 'realestate-eval-v1',
+              promptVersion: 'realestate-eval-prompt-v1',
+              modelName: 'gpt-5-mini',
+              tone: 'watch',
+              summary: '전세 우려와 학군 기대가 함께 관찰됩니다.',
+              subtitle: '반응 지표, 실거래, timeline event를 함께 본 룰 기반 평가',
+              caveats: ['timeline_event_missing', 'market_fact_partial'],
+              dataQuality: 'partial',
+              confidence: 0.72,
+              skipReason: null,
+              evaluatedAt: '2026-06-14T09:20:00Z',
+              asOf: '2026-06-14T09:15:00Z',
+              evidenceItems: [
+                {
+                  evidenceItemId: 'evidence-item-reaction-1',
+                  evidenceType: 'reaction',
+                  refType: 'reaction_snapshot',
+                  refId: 'snapshot-region-seoul-mapo',
+                  label: '언급 증가',
+                  valueText: '+42%',
+                  severity: 'watch'
+                },
+                {
+                  evidenceItemId: 'evidence-item-market-1',
+                  evidenceType: 'market_fact',
+                  refType: 'market_fact',
+                  refId: 'fact-region-seoul-mapo',
+                  label: '전세가율',
+                  valueText: '64.8%',
+                  severity: 'info'
+                }
+              ]
+            }
+          ]
+        }));
+      }
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountTargetDetail();
+
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/evidence-logs?limit=3');
+    expect(wrapper.text()).toContain('AI 근거 로그');
+    expect(wrapper.text()).toContain('EvidenceLog API 반영');
+    expect(wrapper.text()).toContain('전세 우려와 학군 기대가 함께 관찰됩니다.');
+    expect(wrapper.text()).toContain('반응 지표, 실거래, timeline event를 함께 본 룰 기반 평가');
+    expect(wrapper.text()).toContain('언급 증가');
+    expect(wrapper.text()).toContain('+42%');
+    expect(wrapper.text()).toContain('전세가율');
+    expect(wrapper.text()).toContain('64.8%');
+    expect(wrapper.text()).toContain('timeline_event_missing');
+    expect(wrapper.text()).toContain('신뢰도 72%');
+    expect(wrapper.text()).toContain('realestate-eval-v1');
+  });
+
   it('opens a complex target detail with the same map and report frame', async () => {
     const wrapper = await mountTargetDetail('/realestate/targets/complex-mapo-raemian-prugio');
 

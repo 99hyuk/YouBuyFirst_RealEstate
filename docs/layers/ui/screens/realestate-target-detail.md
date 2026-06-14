@@ -91,6 +91,7 @@
 - `GET /api/realestate/targets/{targetId}/nearby-complexes?limit=` 응답을 동/단지 상세 내장 지도 marker 입력으로 사용합니다. 화면은 유효한 좌표가 있는 `items[]`를 먼저 그리고, 실패하거나 빈 응답이면 기존 fixture marker를 `mock fallback`으로 유지합니다.
 - `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답을 해당 지역/단지와 연결된 뉴스, 리포트, 영상, 링크 카드 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=` 응답을 정책, 공급, 교통, 뉴스/컬럼 맥락 이벤트, `market_fact`, `reaction`, `content` 시간축 입력으로 사용합니다. 이벤트는 가격 변화의 직접 원인처럼 쓰지 않고 함께 관찰된 맥락 또는 관측 사실로 표시합니다.
+- `GET /api/realestate/targets/{targetId}/evidence-logs?limit=` 응답을 AI 근거 로그 섹션 입력으로 사용합니다. 화면에는 평가 요약, 평가 버전, model/prompt, confidence, caveat, evidence item을 보여주며 내부 추론 전문이나 행동 지시 문구는 표시하지 않습니다.
 - 프론트 상세 화면은 route의 `targetId`를 그대로 backend API에 넘깁니다. 예시는 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`처럼 `real_estate_targets.id`와 같은 값입니다. API 응답이 있으면 근거 링크 후보를 승인된 content row로 교체하고, 없거나 실패하면 기존 mock evidence를 `원문 확인 필요` 상태로 유지합니다.
 - 단지 위치 레이어 1차 구현은 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`에서 front fixture marker를 사용합니다. 실제 좌표 DB/API 연결 전까지 marker `dataStatus`는 `mock 좌표`로 표시합니다.
 - content row는 원문 전문을 복제하지 않고 제목, 출처, URL, 발행일/metric label만 근거 링크 카드에 표시합니다.
@@ -111,6 +112,7 @@
 
 ## 변경 로그
 
+- 2026-06-14: 지역/단지 상세에 `evidence-logs` API 우선 AI 근거 로그 섹션을 연결하고, 비어 있으면 대기 상태를 보여주는 기준 추가.
 - 2026-06-14: 단지 내장 지도 marker를 `nearby-complexes` API 우선 구조로 연결하고, 실패 시 fixture fallback을 유지하는 기준 추가.
 - 2026-06-13: 동/단지 상세 카카오맵 SDK 내장 prototype, marker 선택 패널, mock 좌표 fallback 표시 기준 추가.
 - 2026-06-13: 전국~동은 자체 도식화 heatmap, 동/단지 상세부터는 카카오맵 SDK 내장 지도로 보는 하이브리드 기준 추가.

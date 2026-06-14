@@ -9,6 +9,10 @@ import {
 } from '../lib/realestate-content';
 import { fetchRealEstateNearbyComplexes } from '../lib/realestate-complex-map';
 import {
+  fetchRealEstateTargetEvidenceLogs,
+  type RealEstateEvidenceLog
+} from '../lib/realestate-evidence-logs';
+import {
   fetchRealEstateTargetTimeline,
   type RealEstateTimelineEvent
 } from '../lib/realestate-timeline';
@@ -296,6 +300,8 @@ const evidenceLinks = ref<EvidenceLink[]>([]);
 const evidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const timelineItems = ref<TimelineItem[]>([]);
 const timelineLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const agentEvidenceLogs = ref<RealEstateEvidenceLog[]>([]);
+const agentEvidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const targetEvidence = computed(() => (
   evidenceLoadState.value === 'live' ? evidenceLinks.value : target.value?.evidence ?? []
 ));
@@ -319,6 +325,11 @@ const timelineSourceStatusLabel = computed(() => {
   if (timelineLoadState.value === 'live') return 'timeline API 반영';
   if (timelineLoadState.value === 'loading') return 'timeline API 확인 중';
   return 'fixture fallback';
+});
+const agentEvidenceStatusLabel = computed(() => {
+  if (agentEvidenceLoadState.value === 'live') return 'EvidenceLog API 반영';
+  if (agentEvidenceLoadState.value === 'loading') return 'EvidenceLog API 확인 중';
+  return '근거 로그 대기';
 });
 const mapCenter = computed(() => {
   const firstMarker = targetMapMarkers.value[0];
@@ -409,6 +420,26 @@ const refreshTargetTimeline = async () => {
   }
 };
 
+const refreshTargetAgentEvidenceLogs = async () => {
+  if (!target.value) {
+    agentEvidenceLogs.value = [];
+    agentEvidenceLoadState.value = 'fallback';
+    return;
+  }
+
+  agentEvidenceLoadState.value = 'loading';
+  try {
+    const logs = await fetchRealEstateTargetEvidenceLogs(target.value.targetId, {
+      limit: 3
+    });
+    agentEvidenceLogs.value = logs;
+    agentEvidenceLoadState.value = logs.length ? 'live' : 'fallback';
+  } catch {
+    agentEvidenceLogs.value = [];
+    agentEvidenceLoadState.value = 'fallback';
+  }
+};
+
 const selectMapMarker = (marker: ComplexMapMarker) => {
   selectedMapMarkerId.value = marker.targetId;
 };
@@ -417,6 +448,7 @@ onMounted(() => {
   void refreshTargetContent();
   void refreshTargetMapMarkers();
   void refreshTargetTimeline();
+  void refreshTargetAgentEvidenceLogs();
 });
 
 watch(() => target.value?.targetId, () => {
@@ -424,6 +456,7 @@ watch(() => target.value?.targetId, () => {
   void refreshTargetContent();
   void refreshTargetMapMarkers();
   void refreshTargetTimeline();
+  void refreshTargetAgentEvidenceLogs();
 });
 
 function timeLabel(value?: string | null): string {
@@ -442,6 +475,39 @@ function timelineMeta(item: RealEstateTimelineEvent): string {
   const eventType = item.eventType?.trim() || 'event';
   const dataStatus = item.dataStatus?.trim() || 'unknown';
   return `${eventType} · ${dataStatus}`;
+}
+
+function evidenceLogMeta(log: RealEstateEvidenceLog): string {
+  const parts = [
+    log.dataQuality?.trim(),
+    log.tone?.trim(),
+    confidenceLabel(log.confidence)
+  ].filter((item): item is string => Boolean(item));
+  return parts.join(' · ') || '품질 확인 필요';
+}
+
+function confidenceLabel(value?: number | null): string | null {
+  if (!Number.isFinite(value)) return null;
+  return `신뢰도 ${Math.round(Number(value) * 100)}%`;
+}
+
+function logVersionLabel(log: RealEstateEvidenceLog): string {
+  return [log.evaluationVersion, log.promptVersion, log.modelName]
+    .map((item) => item?.trim())
+    .filter((item): item is string => Boolean(item))
+    .join(' · ') || '평가 버전 확인 필요';
+}
+
+function caveats(log: RealEstateEvidenceLog): string[] {
+  return Array.isArray(log.caveats)
+    ? log.caveats.filter((item) => item.trim().length > 0)
+    : [];
+}
+
+function evidenceItems(log: RealEstateEvidenceLog) {
+  return Array.isArray(log.evidenceItems)
+    ? log.evidenceItems.filter((item) => item.evidenceItemId && item.label)
+    : [];
 }
 </script>
 
@@ -574,6 +640,40 @@ function timelineMeta(item: RealEstateTimelineEvent): string {
           <span v-if="item.meta">{{ item.meta }}</span>
         </article>
       </div>
+    </section>
+
+    <section class="panel content-feed-card surface-data-card decision-log-panel region-agent-evidence-card">
+      <div class="section-band-title">
+        <div>
+          <p class="label">agent evidence</p>
+          <h3>AI 근거 로그</h3>
+        </div>
+        <span>{{ agentEvidenceStatusLabel }}</span>
+      </div>
+      <div v-if="agentEvidenceLogs.length" class="decision-log-list agent-evidence-list">
+        <article v-for="log in agentEvidenceLogs" :key="log.evidenceLogId">
+          <time>{{ timeLabel(log.evaluatedAt) }}</time>
+          <div>
+            <strong>{{ log.summary }}</strong>
+            <p v-if="log.subtitle">{{ log.subtitle }}</p>
+            <div class="agent-evidence-meta-strip">
+              <span>{{ evidenceLogMeta(log) }}</span>
+              <code>{{ logVersionLabel(log) }}</code>
+            </div>
+            <div v-if="caveats(log).length" class="agent-evidence-caveats" aria-label="근거 로그 주의점">
+              <span v-for="caveat in caveats(log)" :key="`${log.evidenceLogId}-${caveat}`">{{ caveat }}</span>
+            </div>
+            <div v-if="evidenceItems(log).length" class="agent-evidence-items" aria-label="근거 항목">
+              <span v-for="item in evidenceItems(log)" :key="item.evidenceItemId">
+                <b>{{ item.label }}</b>
+                <em>{{ item.valueText || item.evidenceType || '값 확인 필요' }}</em>
+              </span>
+            </div>
+            <p v-if="log.skipReason" class="agent-evidence-skip">스킵 사유: {{ log.skipReason }}</p>
+          </div>
+        </article>
+      </div>
+      <p v-else class="agent-evidence-empty">아직 저장된 AI 근거 로그가 없습니다. 배치가 평가를 생성하면 이 영역에 평가 버전, caveat, 근거 항목이 표시됩니다.</p>
     </section>
 
     <section class="panel content-feed-card surface-data-card evidence-panel region-evidence-card">

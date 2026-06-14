@@ -23,6 +23,7 @@
 - 핵심 쟁점: 정책, 교통, 학군, 입주 물량, 전세 매물 등 원인 후보
 - 신뢰도: 출처 수, stale 여부, alias match confidence
 - 시간대별 변화: 최근 반응 변화와 이벤트 timeline
+- AI 근거 로그: 저장된 EvidenceLog 평가 요약, caveat, 근거 항목
 - 근거 링크 후보: 뉴스, 리포트, 커뮤니티, 공공데이터
 - 단지 위치 레이어: 동/단지 상세 단계에서 카카오맵 SDK 또는 mock fallback으로 주변 단지 marker와 선택 패널을 표시
 
@@ -50,6 +51,7 @@
 | `quality` | backend | stale, confidence, source count |
 | `embeddedMap.markers[]` | realestate/ui | `GET /api/realestate/targets/{targetId}/nearby-complexes` 우선 응답. `targetId`, 주소, 좌표, 가격 흐름, 반응 요약, `provider/asOf/dataStatus/stale`를 함께 둡니다. API 실패나 좌표 누락 시 fixture fallback을 씁니다. |
 | `timeline.items[]` | realestate/backend | `GET /api/realestate/targets/{targetId}/timeline?limit=` 우선 응답. 정책, 공급, 교통, market fact, reaction, content 이벤트를 시간순으로 표시하고, API 실패나 빈 응답이면 fixture fallback을 씁니다. |
+| `evidenceLogs.items[]` | agent/backend | `GET /api/realestate/targets/{targetId}/evidence-logs?limit=` 우선 응답. 평가 요약, 평가 버전, confidence, caveat, evidence item을 표시하고, 비어 있으면 근거 로그 대기 상태를 보여줍니다. |
 
 ## 기획 확인 필요
 
@@ -60,6 +62,7 @@
 
 ## 변경 로그
 
+- 2026-06-14: AI 근거 로그 섹션을 target EvidenceLog API 우선 구조로 연결하고, 비어 있으면 근거 로그 대기 상태를 표시하는 기준 추가.
 - 2026-06-14: 시간대별 변화를 target timeline API 우선으로 연결하고, 응답이 없거나 실패하면 fixture fallback을 유지하는 기준 추가.
 - 2026-06-14: 단지 marker를 `nearby-complexes` API 우선으로 연결하고, 좌표 검증 전 상태를 `mock/stale`로 노출하는 기준 추가.
 - 2026-06-13: 카카오맵 SDK 내장 prototype 기준과 key missing/mock fallback 상태를 상세 화면 기준에 추가.
