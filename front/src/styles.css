@@ -5829,6 +5829,51 @@ a {
   white-space: nowrap;
 }
 
+.agent-evidence-meta-strip,
+.agent-evidence-caveats,
+.agent-evidence-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.agent-evidence-meta-strip span,
+.agent-evidence-caveats span,
+.agent-evidence-items span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: #566276;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.agent-evidence-items b {
+  margin-right: 5px;
+  color: var(--ink);
+  font-weight: 860;
+}
+
+.agent-evidence-items em,
+.agent-evidence-skip,
+.agent-evidence-empty {
+  color: #657285;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 650;
+}
+
+.agent-evidence-empty {
+  margin: 10px 0 0;
+  line-height: 1.6;
+}
+
 .tag-cloud {
   display: flex;
   flex-wrap: wrap;
