@@ -118,7 +118,7 @@ real_estate_targets
 - alias 후보 운영자 검수 화면
 - SerpApi 후보 링크 운영 검수와 승인 workflow
 - LLM provider 기반 평가의 재시도/품질평가/Langfuse 관측 고도화
-- Qdrant 검색을 `realestate-similar-windows` 내부 검색 엔진 선택지로 통합
+- 실제 Qdrant runtime smoke와 운영 collection health check 정리
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
 
 ## 다음 작업
@@ -154,10 +154,10 @@ Qdrant 유사 window 검색:
 ```powershell
 cd C:\agents\YouBuyFirst_RealEstate\pipeline
 $env:QDRANT_URL="http://localhost:6333"
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-vector-search --embeddings-jsonl C:\data\ybf-realestate\embeddings.json --vector-source-input-id reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z --vector-top-n 5 --similar-market-facts-jsonl C:\data\ybf-realestate\market-facts.jsonl --similar-horizon-days 90
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-similar-windows --similar-engine qdrant --embeddings-jsonl C:\data\ybf-realestate\embeddings.json --vector-source-input-id reaction-window:region-seoul-mapo:2026-06-14T00:00:00Z:2026-06-14T01:00:00Z --similar-top-n 5 --similar-market-facts-jsonl C:\data\ybf-realestate\market-facts.jsonl --similar-horizon-days 90
 ```
 
-검색 출력은 `similar_window` evidence item shape를 포함하므로 `realestate-evidence-logs --evidence-similar-windows-jsonl <vector-search-output>` 입력으로 이어 붙일 수 있습니다. `--similar-market-facts-jsonl`을 함께 주면 matched window 이후 지정 horizon 안의 market fact 흐름을 `afterMarketSummary`로 붙이고, evidence label에도 대표 흐름을 반영합니다. 현재 Qdrant 검색은 별도 명령이며, `realestate-similar-windows` 내부 검색 엔진 선택지로 통합하는 작업은 남아 있습니다.
+검색 출력은 `engine=qdrant`와 `similar_window` evidence item shape를 포함하므로 `realestate-evidence-logs --evidence-similar-windows-jsonl <vector-search-output>` 입력으로 이어 붙일 수 있습니다. `--similar-market-facts-jsonl`을 함께 주면 matched window 이후 지정 horizon 안의 market fact 흐름을 `afterMarketSummary`로 붙이고, evidence label에도 대표 흐름을 반영합니다. 기존 별도 명령인 `realestate-vector-search`도 남아 있지만, 운영자가 쓰는 유사 과거 검색 정본은 `realestate-similar-windows --similar-engine <batch|qdrant>`입니다.
 
 GMS LLM EvidenceLog summary 보강:
 

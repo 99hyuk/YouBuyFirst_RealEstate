@@ -9,6 +9,7 @@ from typing import Any
 
 import httpx
 
+from youbuyfirst_pipeline.realestate_reactions import parse_reaction_datetime
 from youbuyfirst_pipeline.realestate_similarity import (
     primary_market_flow_label,
     summarize_after_market_facts,
@@ -144,6 +145,8 @@ def qdrant_search_results_to_similar_windows(
         ref_id = str(payload.get("refId") or result.get("id") or _stable_id("qdrant", matched_target_id)).strip()
         matched_window_start = _window_start(payload) or "unknown"
         matched_window_end = _window_end(payload) or "unknown"
+        if not _is_past_window(source_window_start, matched_window_start):
+            continue
         text = str(payload.get("text") or "").strip()
         after_market_summary = {"horizonDays": None, "items": []}
         caveat = "market_fact_not_joined"
@@ -269,6 +272,15 @@ def _window_parts_from_input_id(input_id: str) -> dict[str, str]:
         window_start, window_end = window_blob.split("Z:", 1)
         return {"windowStart": f"{window_start}Z", "windowEnd": window_end}
     return {}
+
+
+def _is_past_window(source_window_start: str, matched_window_start: str) -> bool:
+    if source_window_start == "unknown" or matched_window_start == "unknown":
+        return True
+    try:
+        return parse_reaction_datetime(matched_window_start) < parse_reaction_datetime(source_window_start)
+    except (TypeError, ValueError):
+        return True
 
 
 def _point_id(input_id: str) -> str:
