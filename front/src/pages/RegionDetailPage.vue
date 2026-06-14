@@ -8,6 +8,10 @@ import {
   type NewsroomFeedItem
 } from '../lib/realestate-content';
 import { fetchRealEstateNearbyComplexes } from '../lib/realestate-complex-map';
+import {
+  fetchRealEstateTargetTimeline,
+  type RealEstateTimelineEvent
+} from '../lib/realestate-timeline';
 import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
 
 type DetailTone = 'up' | 'down' | 'flat';
@@ -28,12 +32,20 @@ type RealEstateTarget = {
   keywords: string[];
   metrics: { label: string; value: string; note: string; tone: DetailTone }[];
   reactions: { source: string; mentions: number; positive: number; negative: number; note: string }[];
-  timeline: { time: string; title: string; detail: string }[];
+  timeline: TimelineItem[];
   evidence: EvidenceLink[];
   mapCenter?: { lat: number; lng: number };
   mapLevel?: number;
   preferredMapTargetId?: string;
   mapMarkers?: ComplexMapMarker[];
+};
+
+type TimelineItem = {
+  id?: string;
+  time: string;
+  title: string;
+  detail: string;
+  meta?: string;
 };
 
 type EvidenceLink = {
@@ -282,6 +294,8 @@ const mapMarkerLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const confidenceValue = computed(() => (target.value ? Number.parseInt(target.value.confidence, 10) : 0));
 const evidenceLinks = ref<EvidenceLink[]>([]);
 const evidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const timelineItems = ref<TimelineItem[]>([]);
+const timelineLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const targetEvidence = computed(() => (
   evidenceLoadState.value === 'live' ? evidenceLinks.value : target.value?.evidence ?? []
 ));
@@ -296,6 +310,14 @@ const targetMapMarkers = computed(() => (
 const mapMarkerSourceStatusLabel = computed(() => {
   if (mapMarkerLoadState.value === 'live') return 'marker API 반영';
   if (mapMarkerLoadState.value === 'loading') return 'marker API 확인 중';
+  return 'fixture fallback';
+});
+const targetTimeline = computed(() => (
+  timelineLoadState.value === 'live' ? timelineItems.value : target.value?.timeline ?? []
+));
+const timelineSourceStatusLabel = computed(() => {
+  if (timelineLoadState.value === 'live') return 'timeline API 반영';
+  if (timelineLoadState.value === 'loading') return 'timeline API 확인 중';
   return 'fixture fallback';
 });
 const mapCenter = computed(() => {
@@ -315,6 +337,14 @@ const contentToEvidenceLink = (item: NewsroomFeedItem): EvidenceLink => ({
   url: item.url,
   meta: item.meta,
   statusLabel: item.statusLabel
+});
+
+const timelineEventToItem = (item: RealEstateTimelineEvent): TimelineItem => ({
+  id: item.id,
+  time: timeLabel(item.occurredAt),
+  title: item.title,
+  detail: item.summary ?? '세부 요약 확인 필요',
+  meta: timelineMeta(item)
 });
 
 const refreshTargetContent = async () => {
@@ -359,6 +389,26 @@ const refreshTargetMapMarkers = async () => {
   }
 };
 
+const refreshTargetTimeline = async () => {
+  if (!target.value) {
+    timelineItems.value = [];
+    timelineLoadState.value = 'fallback';
+    return;
+  }
+
+  timelineLoadState.value = 'loading';
+  try {
+    const events = await fetchRealEstateTargetTimeline(target.value.targetId, {
+      limit: 6
+    });
+    timelineItems.value = events.map(timelineEventToItem);
+    timelineLoadState.value = timelineItems.value.length ? 'live' : 'fallback';
+  } catch {
+    timelineItems.value = [];
+    timelineLoadState.value = 'fallback';
+  }
+};
+
 const selectMapMarker = (marker: ComplexMapMarker) => {
   selectedMapMarkerId.value = marker.targetId;
 };
@@ -366,13 +416,33 @@ const selectMapMarker = (marker: ComplexMapMarker) => {
 onMounted(() => {
   void refreshTargetContent();
   void refreshTargetMapMarkers();
+  void refreshTargetTimeline();
 });
 
 watch(() => target.value?.targetId, () => {
   selectedMapMarkerId.value = '';
   void refreshTargetContent();
   void refreshTargetMapMarkers();
+  void refreshTargetTimeline();
 });
+
+function timeLabel(value?: string | null): string {
+  if (!value) return '시각 확인 필요';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value.slice(0, 5);
+  return new Intl.DateTimeFormat('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Asia/Seoul'
+  }).format(parsed);
+}
+
+function timelineMeta(item: RealEstateTimelineEvent): string {
+  const eventType = item.eventType?.trim() || 'event';
+  const dataStatus = item.dataStatus?.trim() || 'unknown';
+  return `${eventType} · ${dataStatus}`;
+}
 </script>
 
 <template>
@@ -494,13 +564,14 @@ watch(() => target.value?.targetId, () => {
           <p class="label">event timeline</p>
           <h3>시간대별 변화</h3>
         </div>
-        <span>실시간 수집 전 mock</span>
+        <span>{{ timelineSourceStatusLabel }}</span>
       </div>
       <div class="vertical-timeline">
-        <article v-for="item in target.timeline" :key="`${item.time}-${item.title}`">
+        <article v-for="(item, index) in targetTimeline" :key="item.id ?? `${item.time}-${item.title}-${index}`">
           <time>{{ item.time }}</time>
           <strong>{{ item.title }}</strong>
           <p>{{ item.detail }}</p>
+          <span v-if="item.meta">{{ item.meta }}</span>
         </article>
       </div>
     </section>
