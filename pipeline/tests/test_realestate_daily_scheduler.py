@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from youbuyfirst_pipeline.realestate_daily_scheduler import (
     RealEstateDailyRefreshJob,
     RealEstateEvidenceLogRefreshJob,
+    RealEstateMapLayerRefreshJob,
     RealEstateRecentIssuesRefreshJob,
 )
 from youbuyfirst_pipeline.realestate_recent_issues import SerpApiRecentIssueResult
@@ -129,6 +130,21 @@ class _EvidenceSpringClient:
         self.published_logs.append(list(logs))
 
 
+class _MapLayerSpringClient:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def refresh_real_estate_map_layer_snapshots(self, *, layer_type: str, periods, as_of: str):
+        self.calls.append({"layer_type": layer_type, "periods": list(periods), "as_of": as_of})
+        return {
+            "layerType": layer_type,
+            "periods": list(periods),
+            "asOf": as_of,
+            "acceptedSnapshots": 2 if layer_type == "sido" else 1,
+            "skippedTargets": 3,
+        }
+
+
 def test_daily_refresh_job_runs_steps_in_order_and_summarizes_ok_status():
     market_step = _Step({"status": "OK", "fact_count": 3})
     reaction_step = _Step({"status": "OK", "snapshot_count": 2})
@@ -253,3 +269,32 @@ def test_evidence_log_refresh_job_skips_publish_when_latest_ranking_is_empty():
     assert result.target_count == 0
     assert result.log_count == 0
     assert spring_client.published_logs == []
+
+
+def test_map_layer_refresh_job_calls_backend_for_each_layer_type():
+    spring_client = _MapLayerSpringClient()
+    job = RealEstateMapLayerRefreshJob(
+        client=spring_client,
+        layer_types=("sido", "sigungu"),
+        periods=("month", "halfYear"),
+        clock=lambda: datetime(2026, 6, 21, 0, 0, tzinfo=timezone.utc),
+    )
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert result.layer_count == 2
+    assert result.snapshot_count == 3
+    assert result.skipped_target_count == 6
+    assert spring_client.calls == [
+        {
+            "layer_type": "sido",
+            "periods": ["month", "halfYear"],
+            "as_of": "2026-06-21T00:00:00Z",
+        },
+        {
+            "layer_type": "sigungu",
+            "periods": ["month", "halfYear"],
+            "as_of": "2026-06-21T00:00:00Z",
+        },
+    ]

@@ -194,3 +194,41 @@ def test_serve_command_can_group_evidence_log_refresh_into_daily_refresh(monkeyp
     assert evidence_step.ranking_limit == 3
     assert evidence_step.market_fact_limit == 7
     assert evidence_step.content_limit == 5
+
+
+def test_serve_command_can_group_map_layer_refresh_into_daily_refresh(monkeypatch):
+    captured = {}
+    spring_client = _FakeSpringClient()
+
+    async def fake_serve(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: _FakePipeline())
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-map-layer-refresh",
+            "--realestate-map-layer-types",
+            "sido",
+            "sigungu",
+            "--realestate-map-layer-periods",
+            "month",
+            "halfYear",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    assert [name for name, _step in daily_job.steps] == ["map_layers"]
+    map_step = daily_job.steps[0][1]
+    assert map_step.client is spring_client
+    assert map_step.layer_types == ("sido", "sigungu")
+    assert map_step.periods == ("month", "halfYear")

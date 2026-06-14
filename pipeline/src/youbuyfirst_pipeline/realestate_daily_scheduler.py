@@ -63,6 +63,57 @@ class RealEstateEvidenceLogRefreshResult:
     content_item_count: int
 
 
+@dataclass(frozen=True)
+class RealEstateMapLayerRefreshResult:
+    status: str
+    layer_count: int
+    snapshot_count: int
+    skipped_target_count: int
+
+
+class RealEstateMapLayerRefreshJob:
+    def __init__(
+        self,
+        *,
+        client: SpringIngestionClient,
+        layer_types: Sequence[str] = ("sido", "sigungu"),
+        periods: Sequence[str] = ("week", "month", "halfYear"),
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        self.client = client
+        self.layer_types = tuple(layer_types)
+        self.periods = tuple(periods)
+        self.clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def run_once(self) -> RealEstateMapLayerRefreshResult:
+        if not self.layer_types or not self.periods:
+            return RealEstateMapLayerRefreshResult(
+                status="EMPTY",
+                layer_count=0,
+                snapshot_count=0,
+                skipped_target_count=0,
+            )
+
+        as_of = _iso_utc(self.clock())
+        snapshot_count = 0
+        skipped_target_count = 0
+        for layer_type in self.layer_types:
+            result = self.client.refresh_real_estate_map_layer_snapshots(
+                layer_type=layer_type,
+                periods=self.periods,
+                as_of=as_of,
+            )
+            snapshot_count += int(result.get("acceptedSnapshots") or 0)
+            skipped_target_count += int(result.get("skippedTargets") or 0)
+
+        return RealEstateMapLayerRefreshResult(
+            status="OK",
+            layer_count=len(self.layer_types),
+            snapshot_count=snapshot_count,
+            skipped_target_count=skipped_target_count,
+        )
+
+
 class RealEstateEvidenceLogRefreshJob:
     def __init__(
         self,
@@ -256,6 +307,12 @@ def _content_items_for_evidence(target_id: str, items: list[dict[str, Any]]) -> 
 def _ratio_percent(ratio: dict[str, Any], key: str) -> float:
     value = ratio.get(key) if isinstance(ratio, dict) else 0
     return float(value or 0) * 100
+
+
+def _iso_utc(value: datetime) -> str:
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class RealEstateDailyRefreshJob:

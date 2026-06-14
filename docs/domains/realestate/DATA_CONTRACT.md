@@ -477,6 +477,7 @@ GET /internal/realestate/public-data/import-runs?providerDataset=
 POST /internal/realestate/targets
 POST /internal/realestate/regions
 GET /api/realestate/sources
+POST /internal/realestate/map/layer-snapshots/refresh
 POST /internal/realestate/aliases
 POST /internal/realestate/aliases/candidates
 POST /internal/realestate/target-edges
@@ -493,6 +494,8 @@ POST /internal/community/crawl-sources
 `GET /api/realestate/dashboard/market-summary`는 원천 `real_estate_market_facts`를 대시보드 카드용으로 얇게 요약합니다. 현재는 최신 `apt_trade`, 최신 `apt_rent`를 우선 노출하며, 변동률이 확인되지 않은 값은 `changePct=null`로 둡니다.
 
 `GET /api/realestate/map/layers`는 자체 도식화 지도 heat layer 입력입니다. `layerType=sido`는 전국 시도, `layerType=sigungu&parentTargetId=region-seoul`은 특정 시도 하위 시군구를 반환합니다. 응답은 `targets[].targetId`를 정본 식별자로 쓰고, 각 기간 값에 `provider`, `asOf`, `dataStatus`, `stale`, `changePct`, `sampleCount`, `confidence`를 포함합니다. 실제 데이터 집계 전 seed 값은 `dataStatus=mock`, `stale=true`로 표시합니다.
+
+`POST /internal/realestate/map/layer-snapshots/refresh`는 배치가 호출하는 내부 API입니다. 요청은 `layerType`, `periods[]`, `asOf`를 받고, backend는 해당 layer의 `map_features`를 순회해 target별 `apt_trade` market fact와 최신 reaction snapshot을 `map_layer_snapshots`로 요약합니다. 기간 안에서 첫 관측일 평균과 마지막 관측일 평균을 비교해 `changePct`를 만들고, reaction snapshot이 있으면 그 `confidence`를 사용합니다. 거래 표본이 부족하거나 같은 관측일만 있으면 해당 target/period는 건너뛰며, 기존 seed/mock snapshot을 삭제하지 않습니다. 응답은 `layerType`, `periods[]`, `asOf`, `acceptedSnapshots`, `skippedTargets`입니다.
 
 동/단지 상세의 내장 지도는 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 우선 조회합니다. 응답은 `items[]`에 `targetId`, `name`, `address`, `region`, `latitude`, `longitude`, `tone`, `price`, `change`, `reaction`, `provider`, `asOf`, `dataStatus`, `stale`, `note`, `legalDongCode`, `coordinateProvider`, `coordinateStatus`를 포함합니다. API가 실패하거나 좌표가 없는 row만 내려오면 front fixture marker로 fallback하되, 좌표가 검증 전이면 값을 숨기지 않고 `dataStatus=mock|candidate|unknown`, `stale=true`로 표시합니다.
 

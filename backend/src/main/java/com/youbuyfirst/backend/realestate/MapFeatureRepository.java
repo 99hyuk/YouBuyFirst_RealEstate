@@ -8,6 +8,8 @@ import java.util.List;
 
 public interface MapFeatureRepository extends JpaRepository<MapFeature, String> {
 
+    List<MapFeature> findByLayerTypeOrderByRegionCodeAsc(String layerType);
+
     @Query("""
             select new com.youbuyfirst.backend.realestate.MapLayerSnapshotRow(
                 feature.targetId,

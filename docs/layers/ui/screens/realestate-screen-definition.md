@@ -200,6 +200,7 @@ API:
 - `targets[].targetId`는 `real_estate_targets.id`와 같은 값이다. 지도 route는 `seoul` 같은 화면용 slug보다 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용한다.
 - `targets[].periods.week|month|halfYear`는 `changePct`, `sampleCount`, `confidence`, `provider`, `asOf`, `dataStatus`, `stale`을 가진다.
 - API가 비어 있거나 실패하면 fixture fallback을 사용하되, 화면에는 `mock fallback` 상태를 표시한다.
+- 최신 snapshot은 backend 내부 `POST /internal/realestate/map/layer-snapshots/refresh`와 pipeline daily scheduler가 생성한다. 이 refresh는 실거래 market fact와 reaction snapshot을 읽어 `map_layer_snapshots`에 저장하며, 표본 부족 구간은 기존 seed/mock fallback을 유지한다.
 
 ### 6.2 지역 상세 지도 `/realestate/map/:regionId`
 
@@ -586,7 +587,7 @@ ERD 후보:
 - [x] 화면 route의 `targetId`를 DB의 `target_id`와 같은 값으로 고정
 - [ ] 대시보드 summary API fixture shape 확정
 - [x] 지도 전국/시군구 API shape 확정
-- [ ] 동/단지 상세 카카오맵 SDK 내장 지도 prototype 확정
+- [x] 동/단지 상세 카카오맵 SDK 내장 지도 prototype 확정
 - [ ] `mock`, `stale`, `unknown`, `low_sample` 상태 표시 공통화
 - [ ] 상승 빨강, 하락 파랑 색상 토큰 공통화
 - [ ] 뉴스/리포트/커뮤니티 링크의 출처 icon fallback 정리

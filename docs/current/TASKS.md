@@ -86,6 +86,7 @@
 - [x] source별 alias coverage 리포트 CLI 구현
 - [x] 로컬 secret 예시에 Kakao 지도 SDK 환경변수 이름을 추가하고 실제 key는 `.env`/`front/.env.local`에만 보관
 - [x] 지도 Screen Brief에 전국~동 자체 heatmap, 동/단지 상세 카카오맵 SDK 내장 기준 반영
+- [x] 실제 market fact와 reaction snapshot을 `map_layer_snapshots`로 집계하는 지도 refresh API와 daily scheduler step 구현
 
 ## 제품 세로 Slice
 
@@ -220,7 +221,7 @@
 
 - [x] realestate dashboard Screen Brief 생성
 - [x] realestate target detail Screen Brief 생성
-- [ ] realestate map Screen Brief를 API 우선 + fixture fallback 기준으로 분리
+- [x] realestate map Screen Brief를 API 우선 + fixture fallback 기준으로 분리
 - [x] Kakao map SDK 내장 컴포넌트와 key missing fallback 상태 구현
 - [ ] 너나사 시리즈 공통 shell을 유지하면서 부동산 brand accent를 warm orange 계열로 전환
 - [ ] front CSS에서 브랜드 blue와 의미색 blue를 분리
