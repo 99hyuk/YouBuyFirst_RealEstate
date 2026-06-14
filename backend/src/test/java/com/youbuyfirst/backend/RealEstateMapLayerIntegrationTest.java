@@ -140,7 +140,7 @@ class RealEstateMapLayerIntegrationTest {
                 Map.of(
                         "layerType", "sigungu",
                         "periods", List.of("month"),
-                        "asOf", "2026-06-12T00:00:00Z"
+                        "asOf", "2026-06-10T02:00:00Z"
                 ),
                 String.class
         );
@@ -161,7 +161,7 @@ class RealEstateMapLayerIntegrationTest {
         assertThat(month.path("changePct").asDouble()).isEqualTo(10.0);
         assertThat(month.path("sampleCount").asInt()).isEqualTo(2);
         assertThat(month.path("confidence").asDouble()).isEqualTo(80.0);
-        assertThat(month.path("asOf").asText()).isEqualTo("2026-06-12T00:00:00Z");
+        assertThat(month.path("asOf").asText()).isEqualTo("2026-06-10T02:00:00Z");
         assertThat(month.path("provider").asText()).isEqualTo("real_estate_map_layer_refresh");
         assertThat(month.path("sourceLabel").asText()).contains("실거래", "반응 snapshot");
         assertThat(month.path("dataStatus").asText()).isEqualTo("ok");

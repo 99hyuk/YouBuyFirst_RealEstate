@@ -465,6 +465,7 @@ GET /api/realestate/targets/{targetId}/evidence-logs?limit=
 GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=
 GET /api/realestate/market-facts?targetId=&legalDongCode=&factType=
 GET /api/realestate/dashboard/market-summary?legalDongCode=
+GET /api/realestate/indicators?legalDongCode=&period=
 GET /api/realestate/map/layers?layerType=sido
 GET /api/realestate/map/layers?layerType=sigungu&parentTargetId=
 GET /api/realestate/newsroom?feed=&page=&pageSize=
@@ -492,6 +493,8 @@ POST /internal/community/crawl-sources
 ```
 
 `GET /api/realestate/dashboard/market-summary`는 원천 `real_estate_market_facts`를 대시보드 카드용으로 얇게 요약합니다. 현재는 최신 `apt_trade`, 최신 `apt_rent`를 우선 노출하며, 변동률이 확인되지 않은 값은 `changePct=null`로 둡니다.
+
+`GET /api/realestate/indicators`는 주요 지표 화면의 API 우선 입력입니다. 현재는 별도 지표 통계 테이블이 생기기 전 단계이므로 `real_estate_market_facts`의 최신 `apt_trade`, `apt_rent`를 `가격 및 거래량` 그룹으로 요약합니다. 응답은 `period`, `dataStatus`, `asOf`, `groups[]`, `freshnessRows[]`를 포함하고, 각 group에는 `dataStatus`, `stale`, `provider`, `asOf`를 내려 UI가 실제 공공데이터와 `mock fallback`을 같은 위치에서 구분하게 합니다. 공급/수급, 수요/심리, 거시/금융 그룹은 후속 통계 원천이 연결될 때 같은 endpoint에 추가합니다.
 
 `GET /api/realestate/map/layers`는 자체 도식화 지도 heat layer 입력입니다. `layerType=sido`는 전국 시도, `layerType=sigungu&parentTargetId=region-seoul`은 특정 시도 하위 시군구를 반환합니다. 응답은 `targets[].targetId`를 정본 식별자로 쓰고, 각 기간 값에 `provider`, `asOf`, `dataStatus`, `stale`, `changePct`, `sampleCount`, `confidence`를 포함합니다. 실제 데이터 집계 전 seed 값은 `dataStatus=mock`, `stale=true`로 표시합니다.
 
