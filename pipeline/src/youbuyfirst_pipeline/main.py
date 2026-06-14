@@ -538,6 +538,11 @@ async def async_main() -> None:
         default=os.getenv("REALESTATE_SIMILAR_SOURCE_TARGET_ID"),
     )
     parser.add_argument(
+        "--similar-engine",
+        choices=("batch", "qdrant"),
+        default=os.getenv("REALESTATE_SIMILAR_ENGINE", "batch"),
+    )
+    parser.add_argument(
         "--similar-source-window-start",
         default=os.getenv("REALESTATE_SIMILAR_SOURCE_WINDOW_START"),
     )
@@ -811,6 +816,40 @@ async def async_main() -> None:
         return
 
     if args.command == "realestate-similar-windows":
+        if args.similar_engine == "qdrant":
+            if not args.embeddings_jsonl:
+                raise SystemExit("--embeddings-jsonl is required")
+            if not args.vector_source_input_id:
+                raise SystemExit("--vector-source-input-id is required")
+            embedding_items = load_real_estate_embedding_payloads(args.embeddings_jsonl)
+            source_input = find_embedding_by_input_id(embedding_items, args.vector_source_input_id)
+            market_facts = (
+                load_real_estate_market_fact_payloads(args.similar_market_facts_jsonl)
+                if args.similar_market_facts_jsonl
+                else None
+            )
+            vector_client = _qdrant_vector_store_client()
+            search_results = vector_client.search(
+                vector=source_input["embedding"],
+                top_n=args.similar_top_n,
+                exclude_input_id=source_input["inputId"],
+            )
+            print(
+                json.dumps(
+                    {
+                        "engine": "qdrant",
+                        "items": qdrant_search_results_to_similar_windows(
+                            source_input=source_input,
+                            search_results=search_results,
+                            market_facts=market_facts,
+                            horizon_days=args.similar_horizon_days,
+                        ),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return
         if not args.reaction_snapshots_jsonl:
             raise SystemExit("--reaction-snapshots-jsonl is required")
         if not args.similar_source_target_id:
@@ -830,7 +869,7 @@ async def async_main() -> None:
             horizon_days=args.similar_horizon_days,
             top_n=args.similar_top_n,
         )
-        print(json.dumps({"items": [match.to_dict() for match in matches]}, ensure_ascii=False, indent=2))
+        print(json.dumps({"engine": "batch", "items": [match.to_dict() for match in matches]}, ensure_ascii=False, indent=2))
         return
 
     if args.command == "realestate-embeddings":
