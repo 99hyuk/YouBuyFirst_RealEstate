@@ -893,6 +893,11 @@ async def async_main() -> None:
             raise SystemExit("--vector-source-input-id is required")
         embedding_items = load_real_estate_embedding_payloads(args.embeddings_jsonl)
         source_input = find_embedding_by_input_id(embedding_items, args.vector_source_input_id)
+        market_facts = (
+            load_real_estate_market_fact_payloads(args.similar_market_facts_jsonl)
+            if args.similar_market_facts_jsonl
+            else None
+        )
         vector_client = _qdrant_vector_store_client()
         search_results = vector_client.search(
             vector=source_input["embedding"],
@@ -905,6 +910,8 @@ async def async_main() -> None:
                     "items": qdrant_search_results_to_similar_windows(
                         source_input=source_input,
                         search_results=search_results,
+                        market_facts=market_facts,
+                        horizon_days=args.similar_horizon_days,
                     )
                 },
                 ensure_ascii=False,

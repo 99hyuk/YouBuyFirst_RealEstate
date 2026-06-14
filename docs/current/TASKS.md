@@ -217,7 +217,8 @@
 - [x] 최근 이슈 후보 검색 provider/query/keyword 저장 기준 정리
 - [x] 최신 DB snapshot 기반 EvidenceLog 일일 자동 생성 job 구현
 - [x] 임베딩 결과를 Qdrant에 적재하고 유사 window 검색 결과를 EvidenceLog `similar_window` 입력 shape로 출력
-- [ ] Qdrant 검색 결과에 이후 market fact 흐름을 자동 join하고 `realestate-similar-windows` 내부 검색 엔진 선택지로 통합
+- [x] Qdrant 검색 결과에 이후 market fact 흐름을 자동 join하고 EvidenceLog `similar_window` 입력 shape에 반영
+- [ ] Qdrant 검색을 `realestate-similar-windows` 내부 검색 엔진 선택지로 통합
 - [ ] 행동 지시처럼 보이는 평가 문구 금지 기준 정리
 - [x] evaluationVersion과 skipReason 관리 기준 정리
 
