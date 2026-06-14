@@ -171,6 +171,8 @@ Python pipeline은 대량 임베딩 batch와 벡터 저장소 적재를 맡고, 
 
 현재 pipeline에는 `realestate-embeddings` 명령이 있습니다. `--reaction-snapshots-jsonl`로 reaction snapshot JSONL을 입력하면 각 window를 임베딩용 텍스트로 요약하고, `GMS_KEY`, `GMS_GEMINI_BASE_URL`, `GMS_GEMINI_EMBEDDING_MODEL` 환경변수를 사용해 GMS Gemini embedding API를 호출합니다. 출력 payload는 `inputId`, `targetId`, `refType=reaction_snapshot`, `provider=gms:gemini`, `modelName`, `text`, `embedding`, `dimensions`, `dataStatus=generated`를 포함합니다. `realestate-vector-upsert`는 이 payload를 Qdrant collection에 저장합니다. `realestate-similar-windows --similar-engine qdrant --embeddings-jsonl ... --vector-source-input-id ...`는 특정 `inputId`의 vector로 유사 window를 검색해 EvidenceLog에 바로 넣을 수 있는 `similar_window` item shape를 출력합니다.
 
+운영 smoke는 `realestate-vector-health`로 확인합니다. 이 명령은 Qdrant collection의 `ready`, `status`, `pointsCount`, `vectorsCount`를 secret 없이 출력합니다. `status=missing`이면 아직 운영 collection이 만들어지지 않은 상태이므로 `realestate-vector-upsert`로 collection 생성과 임베딩 포인트 적재를 먼저 수행합니다. `ready=false`가 계속되면 Qdrant runtime, collection 이름(`REALESTATE_VECTOR_COLLECTION`), 네트워크, API key 설정을 점검한 뒤 유사 과거 검색 batch를 실행합니다.
+
 `--similar-market-facts-jsonl`을 함께 주면 matched window 이후 지정 horizon 안의 market fact 흐름을 `afterMarketSummary`로 붙입니다. 예를 들어 과거 window 이후 `apt_trade.dealAmountManwon`의 첫 값과 마지막 값을 비교해 `deltaPct`를 기록합니다. 이 값은 "이후 실제 시장 사실 흐름"을 보강하는 근거 후보이며, 가격 상승/하락의 원인 단정이나 행동 지시로 쓰지 않습니다.
 
 출력된 후보는 `evidenceItems[]`에 `evidenceType=similar_window`, `refType=similar_window`로 연결할 수 있습니다. batch와 Qdrant engine 모두 이 shape를 유지하므로 `realestate-evidence-logs --evidence-similar-windows-jsonl <similar-window-output>` 경로로 같은 EvidenceLog 생성 흐름을 재사용합니다.

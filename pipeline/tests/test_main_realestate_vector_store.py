@@ -43,6 +43,36 @@ class _FakeVectorStoreClient:
         ]
 
 
+class _FakeVectorStoreHealthClient:
+    collection_name = "realestate_reaction_windows"
+
+    def collection_info(self):
+        return {
+            "result": {
+                "status": "green",
+                "points_count": 7,
+                "vectors_count": 7,
+            }
+        }
+
+
+def test_realestate_vector_health_command_prints_collection_status(monkeypatch, capsys):
+    monkeypatch.setattr(pipeline_main, "_qdrant_vector_store_client", lambda: _FakeVectorStoreHealthClient())
+    monkeypatch.setattr(sys, "argv", ["youbuyfirst-pipeline", "realestate-vector-health"])
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == {
+        "collection": "realestate_reaction_windows",
+        "ready": True,
+        "status": "green",
+        "pointsCount": 7,
+        "vectorsCount": 7,
+        "message": "collection_ready",
+    }
+
+
 def test_realestate_vector_upsert_command_pushes_embeddings_to_qdrant(monkeypatch, tmp_path, capsys):
     embeddings_path = tmp_path / "embeddings.json"
     embeddings_path.write_text(json.dumps({"items": [_embedding_item("source-window")]}, ensure_ascii=False), encoding="utf-8")
