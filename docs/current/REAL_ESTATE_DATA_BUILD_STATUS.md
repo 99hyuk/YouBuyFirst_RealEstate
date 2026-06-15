@@ -77,7 +77,7 @@
 - `serve --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-community-posts`를 켜면 JSONL 파일 없이 backend `community_posts` export를 읽어 alias 매칭, reaction observation, snapshot 생성까지 이어갑니다.
 - `serve`와 `realestate-daily-refresh`의 reaction snapshot refresh가 `--realestate-use-backend-aliases`를 함께 받으면 JSONL alias 파일 없이 backend alias registry를 matcher 입력으로 사용합니다. 시연/배치 기본 경로는 backend community post export + backend alias registry 조합입니다.
 - `GET /api/realestate/reactions/rankings`는 `parentTargetId`를 받을 수 있습니다. 예를 들어 `parentTargetId=region-seoul`이면 서울 target과 직접 하위 region snapshot만 ranking합니다.
-- `/realestate/reactions`는 지역/단지 랭킹을 `limit=10`으로 요청하고, 전체 TOP10과 서울/경기/대전/인천 시도별 TOP10 필터를 제공합니다. 시도 필터를 누르면 지역 ranking은 `parentTargetId`로 재조회하고, 단지군은 아직 parent 정규화 전이라 화면 기준 필터를 함께 사용합니다. 실제 API가 비어 있거나 부족하면 수집 전/insufficient/stale 상태를 행에 남깁니다.
+- `/realestate/reactions`는 지역/단지 랭킹을 `limit=10`으로 요청하고, 전체 TOP10과 서울/경기/대전/인천 시도별 TOP10 필터를 제공합니다. 시도 필터를 누르면 지역 ranking과 단지군 ranking 모두 `parentTargetId`로 재조회합니다. API 요청이 성공했지만 특정 그룹이 비어 있으면 mock 행을 섞지 않고 수집 전/insufficient 빈 상태를 표시하며, API 실패 때만 fixture fallback을 씁니다.
 - 2026-06-15 로컬 smoke에서 공개 source 2곳 기준 게시글 849건을 수집했고, backend community post export와 backend alias registry로 24시간 reaction refresh를 실행해 observation 33건, snapshot 10건을 생성했습니다. `GET /api/realestate/reactions/rankings?windowMinutes=1440&limit=10`은 실제 DB snapshot 기준 TOP10 지역 행을 반환합니다.
 - 최신 reaction ranking 조회는 요청한 `windowMinutes`와 같은 window만 고르도록 보정했습니다. 60분 snapshot과 24시간 snapshot이 함께 있어도 24시간 화면이 더 짧은 최신 window를 섞어 읽지 않습니다.
 - 현재 seed marker 좌표는 DB/API로 내려오지만 검증 좌표가 아니므로 `provider=front_fixture`, `dataStatus=mock`, `stale=true`로 노출합니다. 실제 단지 좌표, 법정동 코드, provider key 검증은 계속 남아 있습니다.

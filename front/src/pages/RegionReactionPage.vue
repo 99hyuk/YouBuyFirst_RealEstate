@@ -102,9 +102,9 @@ const complexRows: RegionRankingRow[] = [
   { rank: 10, name: '새롬 더샵힐스', targetId: 'complex-sejong-saerom-thesharp', market: '세종', price: '7.2억', change: '-0.04%', mentions: '19건', mentionDelta: '+8%', positive: 36, negative: 39, event: '공급·정책', freshness: 'insufficient', tone: 'down' }
 ];
 
-const rankingLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
-const liveRegionRows = ref<RegionRankingRow[]>(regionRows);
-const liveComplexRows = ref<RegionRankingRow[]>(complexRows);
+const rankingLoadState = ref<'loading' | 'live' | 'empty' | 'fallback'>('loading');
+const liveRegionRows = ref<RegionRankingRow[]>([]);
+const liveComplexRows = ref<RegionRankingRow[]>([]);
 const selectedRegionScope = ref<RegionScope>('전체');
 
 const regionScopeOptions = [
@@ -130,9 +130,12 @@ const rowsForSelectedScope = (rows: RegionRankingRow[]) => {
   return rows.filter((row) => inferRegionScope(row) === selectedRegionScope.value);
 };
 
+const scopedRegionRows = computed(() => rowsForSelectedScope(liveRegionRows.value));
+const scopedComplexRows = computed(() => rowsForSelectedScope(liveComplexRows.value));
+
 const rankingGroups = computed(() => [
-  { id: 'regions', title: `${scopeTitlePrefix.value}지역 언급량 TOP 10`, caption: '시도·생활권 기준', rows: rowsForSelectedScope(liveRegionRows.value) },
-  { id: 'complexes', title: `${scopeTitlePrefix.value}단지군 관심 TOP 10`, caption: '아파트·생활권 후보', rows: rowsForSelectedScope(liveComplexRows.value) }
+  { id: 'regions', title: `${scopeTitlePrefix.value}지역 언급량 TOP 10`, caption: '시도·생활권 기준', rows: scopedRegionRows.value },
+  { id: 'complexes', title: `${scopeTitlePrefix.value}단지군 관심 TOP 10`, caption: '아파트·생활권 후보', rows: scopedComplexRows.value }
 ]);
 
 const refreshReactionRankings = async () => {
@@ -142,9 +145,11 @@ const refreshReactionRankings = async () => {
       fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 1440, limit: 10, parentTargetId }),
       fetchRealEstateReactionRanking({ type: 'complex', windowMinutes: 1440, limit: 10, parentTargetId })
     ]);
-    liveRegionRows.value = buildRegionRankingRows(regionRanking, regionRows);
-    liveComplexRows.value = buildRegionRankingRows(complexRanking, complexRows);
-    rankingLoadState.value = regionRanking.items.length || complexRanking.items.length ? 'live' : 'fallback';
+    const hasRegionItems = regionRanking.items.length > 0;
+    const hasComplexItems = complexRanking.items.length > 0;
+    liveRegionRows.value = hasRegionItems ? buildRegionRankingRows(regionRanking, regionRows) : [];
+    liveComplexRows.value = hasComplexItems ? buildRegionRankingRows(complexRanking, complexRows) : [];
+    rankingLoadState.value = hasRegionItems || hasComplexItems ? 'live' : 'empty';
   } catch {
     liveRegionRows.value = regionRows;
     liveComplexRows.value = complexRows;
@@ -171,12 +176,25 @@ function inferRegionScope(row: RegionRankingRow): RegionScope | '기타' {
   return '기타';
 }
 
-const rankSummary = [
-  { label: '정렬 기준', value: '언급량', meta: '커뮤니티 수집 mock' },
-  { label: '지역 표시', value: '10곳', meta: '서울·경기·대전 등' },
-  { label: '단지 표시', value: '10곳', meta: '좌표 매핑 후보' },
+const rankingSourceMeta = computed(() => {
+  if (rankingLoadState.value === 'fallback') return 'fixture fallback';
+  if (rankingLoadState.value === 'loading') return 'API 조회 중';
+  if (rankingLoadState.value === 'empty') return '수집 전/insufficient';
+  return 'API ranking';
+});
+
+const rowCountMeta = (count: number) => {
+  if (count > 0) return rankingSourceMeta.value;
+  if (rankingLoadState.value === 'loading') return '조회 중';
+  return '수집 전';
+};
+
+const rankSummary = computed(() => [
+  { label: '정렬 기준', value: '언급량', meta: rankingSourceMeta.value },
+  { label: '지역 표시', value: `${scopedRegionRows.value.length}곳`, meta: rowCountMeta(scopedRegionRows.value.length) },
+  { label: '단지 표시', value: `${scopedComplexRows.value.length}곳`, meta: rowCountMeta(scopedComplexRows.value.length) },
   { label: '보조 지표', value: '수급·전세', meta: '기대/우려 비율' }
-];
+]);
 
 const hotThemes = [
   { theme: '전세 매물', count: 14, heat: 88 },
@@ -233,7 +251,7 @@ const signalTiles: SignalTile[] = [
 ];
 
 const visibleSignalTiles = computed<SignalTile[]>(() => {
-  if (rankingLoadState.value !== 'live' || !liveRegionRows.value.length) {
+  if (rankingLoadState.value === 'fallback') {
     return signalTiles;
   }
 
@@ -351,8 +369,14 @@ const strategyRules = [
           <p class="label">community pulse</p>
           <h3>커뮤니티 언급 급증 지역</h3>
         </div>
-        <span>{{ rankingLoadState === 'live' ? 'TOP10 API 기준 언급 증가와 기대·우려를 한 줄로 통합' : '언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합' }}</span>
+        <span>{{ rankingLoadState === 'fallback' ? '언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합' : 'TOP10 API 기준 언급 증가와 기대·우려를 한 줄로 통합' }}</span>
       </div>
+      <p v-if="rankingLoadState === 'loading'" class="reaction-signal-empty">
+        지역 급증 신호를 불러오는 중입니다.
+      </p>
+      <p v-else-if="!visibleSignalTiles.length" class="reaction-signal-empty">
+        수집된 지역 급증 신호가 아직 없습니다. 수집 전/insufficient 상태로 표시합니다.
+      </p>
       <RouterLink
         v-for="tile in visibleSignalTiles"
         :key="tile.label"
@@ -413,7 +437,7 @@ const strategyRules = [
               <p class="label">{{ group.caption }}</p>
               <h3>{{ group.title }}</h3>
             </div>
-            <span>{{ rankingLoadState === 'live' ? 'API 반영' : '언급량순 mock' }}</span>
+            <span>{{ rankingLoadState === 'fallback' ? '언급량순 mock' : group.rows.length ? 'API 반영' : '수집 전' }}</span>
           </div>
 
           <div class="region-ranking-head">
@@ -423,6 +447,13 @@ const strategyRules = [
             <span>반응</span>
             <span>쟁점</span>
           </div>
+
+          <p v-if="rankingLoadState === 'loading'" class="region-ranking-empty">
+            TOP10 데이터를 불러오는 중입니다.
+          </p>
+          <p v-else-if="!group.rows.length" class="region-ranking-empty">
+            수집된 TOP10 데이터가 아직 없습니다. 수집 전/insufficient 상태로 표시합니다.
+          </p>
 
           <RouterLink
             v-for="row in group.rows"

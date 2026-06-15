@@ -131,5 +131,37 @@ describe('real-estate reaction ranking adapter', () => {
     expect(signalBoardText).toContain('서울특별시');
     expect(signalBoardText).toContain('+100%');
     expect(signalBoardText).not.toContain('성수동 생활권');
+    expect(wrapper.text()).toContain('단지군 관심 TOP 10');
+    expect(wrapper.text()).toContain('수집된 TOP10 데이터가 아직 없습니다');
+    expect(wrapper.text()).not.toContain('래미안 원베일리');
+  });
+
+  it('keeps all-empty API results distinct from fixture fallback rows', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ items: [] })));
+    vi.stubGlobal('fetch', fetcher);
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/realestate/reactions', component: RegionReactionPage },
+        { path: '/realestate/targets/:targetId', component: { template: '<div />' } }
+      ]
+    });
+    router.push('/realestate/reactions');
+    await router.isReady();
+
+    const wrapper = mount(RegionReactionPage, {
+      global: {
+        plugins: [router]
+      }
+    });
+    await flushPromises();
+
+    const signalBoardText = wrapper.find('.region-signal-overview-board').text();
+    expect(signalBoardText).toContain('수집된 지역 급증 신호가 아직 없습니다');
+    expect(signalBoardText).not.toContain('성수동 생활권');
+    expect(wrapper.findAll('.region-ranking-row')).toHaveLength(0);
+    expect(wrapper.text()).toContain('지역 표시0곳수집 전');
+    expect(wrapper.text()).toContain('단지 표시0곳수집 전');
   });
 });
