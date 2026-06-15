@@ -15,6 +15,7 @@ class _Response:
 class _FakeHttpxClient:
     posts: list[dict] = []
     gets: list[dict] = []
+    get_responses: list[dict] = []
 
     def __init__(self, timeout: float) -> None:
         self.timeout = timeout
@@ -43,6 +44,8 @@ class _FakeHttpxClient:
 
     def get(self, url: str, params: dict | None = None) -> _Response:
         self.gets.append({"url": url, "params": params, "timeout": self.timeout})
+        if self.get_responses:
+            return _Response(self.get_responses.pop(0))
         if url.endswith("/internal/realestate/aliases"):
             return _Response(
                 {
@@ -150,7 +153,7 @@ class _FakeHttpxClient:
                     ]
                 }
             )
-        if url.endswith("/api/realestate/targets/region-daejeon/content"):
+        if url.endswith("/internal/realestate/targets/region-daejeon/content"):
             return _Response(
                 {
                     "items": [
@@ -530,10 +533,12 @@ def test_spring_client_lists_target_market_facts_and_content(monkeypatch):
             "timeout": 45,
         },
         {
-            "url": "http://backend:8080/api/realestate/targets/region-daejeon/content",
+            "url": "http://backend:8080/internal/realestate/targets/region-daejeon/content",
             "params": {
                 "feed": "all",
                 "limit": "10",
+                "reviewState": "candidate",
+                "linkType": "search_candidate",
             },
             "timeout": 45,
         },
@@ -698,6 +703,57 @@ def test_spring_client_publishes_real_estate_reaction_snapshots(monkeypatch):
             "timeout": 45,
         }
     ]
+
+
+def test_spring_client_exports_community_posts_for_reaction_refresh(monkeypatch):
+    _FakeHttpxClient.gets = []
+    _FakeHttpxClient.get_responses = [
+        {
+            "source": "PPOMPPU",
+            "publishedFrom": "2026-06-14T00:00:00Z",
+            "publishedTo": "2026-06-14T01:00:00Z",
+            "items": [
+                {
+                    "source": "PPOMPPU",
+                    "externalId": "PPOMPPU-house-1",
+                    "url": "https://example.com/1",
+                    "title": "파주시 GTX 기대",
+                    "contentSnippet": "운정 신축 언급",
+                    "publishedAt": "2026-06-14T00:30:00Z",
+                }
+            ],
+        }
+    ]
+    monkeypatch.setattr("httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080")
+
+    posts = client.list_community_posts_for_reaction_refresh(
+        source="PPOMPPU",
+        published_from="2026-06-14T00:00:00Z",
+        published_to="2026-06-14T01:00:00Z",
+        limit=10,
+    )
+
+    assert posts == [
+        {
+            "source": "PPOMPPU",
+            "externalId": "PPOMPPU-house-1",
+            "url": "https://example.com/1",
+            "title": "파주시 GTX 기대",
+            "contentSnippet": "운정 신축 언급",
+            "publishedAt": "2026-06-14T00:30:00Z",
+        }
+    ]
+    assert _FakeHttpxClient.gets[-1] == {
+        "url": "http://backend:8080/internal/ingestions/community-posts/export",
+        "params": {
+            "source": "PPOMPPU",
+            "publishedFrom": "2026-06-14T00:00:00Z",
+            "publishedTo": "2026-06-14T01:00:00Z",
+            "limit": 10,
+        },
+        "timeout": 60.0,
+    }
 
 
 def test_spring_client_publishes_real_estate_content_items(monkeypatch):

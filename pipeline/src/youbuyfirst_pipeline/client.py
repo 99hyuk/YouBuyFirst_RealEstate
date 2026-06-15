@@ -91,6 +91,28 @@ class SpringIngestionClient:
                 return None
             return BoardWatermark(last_seen_external_id=external_id, cutoff_at=cutoff_at)
 
+    def list_community_posts_for_reaction_refresh(
+        self,
+        *,
+        source: str | None,
+        published_from: str,
+        published_to: str,
+        limit: int,
+    ) -> list[dict]:
+        params: dict[str, str | int] = {
+            "publishedFrom": published_from,
+            "publishedTo": published_to,
+            "limit": limit,
+        }
+        if source:
+            params["source"] = source
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(f"{self.base_url}/internal/ingestions/community-posts/export", params=params)
+            response.raise_for_status()
+            payload = response.json()
+        items = payload.get("items", []) if isinstance(payload, dict) else []
+        return items if isinstance(items, list) else []
+
     def publish_real_estate_market_facts(self, facts: Iterable[object]) -> None:
         items = [fact.to_ingestion_dict() for fact in facts]
         if not items:
@@ -251,10 +273,12 @@ class SpringIngestionClient:
         params = {
             "feed": feed,
             "limit": str(limit),
+            "reviewState": "candidate",
+            "linkType": "search_candidate",
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
             response = client.get(
-                f"{self.base_url}/api/realestate/targets/{target_id}/content",
+                f"{self.base_url}/internal/realestate/targets/{target_id}/content",
                 params=params,
             )
             response.raise_for_status()

@@ -5,6 +5,8 @@ import com.youbuyfirst.backend.crawl.CrawlRun;
 import com.youbuyfirst.backend.crawl.CrawlRunRepository;
 import com.youbuyfirst.backend.crawl.CrawlRunStatus;
 import com.youbuyfirst.backend.ingestion.dto.CommentCollectionTargetPayload;
+import com.youbuyfirst.backend.ingestion.dto.CommunityPostExportItemResponse;
+import com.youbuyfirst.backend.ingestion.dto.CommunityPostExportResponse;
 import com.youbuyfirst.backend.ingestion.dto.CrawlRunReportRequest;
 import com.youbuyfirst.backend.ingestion.dto.DiffusionPayload;
 import com.youbuyfirst.backend.ingestion.dto.IngestionRequest;
@@ -18,6 +20,7 @@ import com.youbuyfirst.backend.post.CommunityPostDiffusionEventRepository;
 import com.youbuyfirst.backend.post.CommunityPostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -104,6 +107,32 @@ public class IngestionService {
         ));
 
         return new IngestionResponse(source, request.runId(), request.posts().size(), accepted, duplicates);
+    }
+
+    @Transactional(readOnly = true)
+    public CommunityPostExportResponse exportCommunityPosts(
+            String source,
+            Instant publishedFrom,
+            Instant publishedTo,
+            int limit
+    ) {
+        int boundedLimit = Math.max(1, Math.min(limit, 5000));
+        String normalizedSource = trimTo(source, 40) == null ? null : normalize(source);
+        List<CommunityPostExportItemResponse> items = postRepository.findForReactionExport(
+                        normalizedSource,
+                        publishedFrom,
+                        publishedTo,
+                        PageRequest.of(0, boundedLimit)
+                ).stream()
+                .map(CommunityPostExportItemResponse::from)
+                .toList();
+        return new CommunityPostExportResponse(
+                normalizedSource,
+                publishedFrom,
+                publishedTo,
+                boundedLimit,
+                items
+        );
     }
 
     @Transactional

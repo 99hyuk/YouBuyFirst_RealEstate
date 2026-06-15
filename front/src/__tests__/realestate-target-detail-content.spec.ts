@@ -235,6 +235,20 @@ describe('real-estate target detail content feed', () => {
                   label: '전세가율',
                   valueText: '64.8%',
                   severity: 'info'
+                },
+                {
+                  evidenceItemId: 'evidence-item-search-1',
+                  evidenceType: 'search_candidate',
+                  refType: 'content',
+                  refId: 'serpapi-issue-mapo',
+                  label: '최근 이슈 후보',
+                  valueText: '마포 교통 정책 기사 후보',
+                  severity: 'info',
+                  sourceUrl: 'https://example.com/news/mapo-transport',
+                  sourceId: 'serpapi:google_news',
+                  sourceDomain: 'example.com',
+                  publishedAt: '2026-06-14T08:00:00Z',
+                  sourceDataStatus: 'candidate'
                 }
               ]
             }
@@ -256,9 +270,68 @@ describe('real-estate target detail content feed', () => {
     expect(wrapper.text()).toContain('+42%');
     expect(wrapper.text()).toContain('전세가율');
     expect(wrapper.text()).toContain('64.8%');
+    expect(wrapper.text()).toContain('최근 이슈 후보');
+    expect(wrapper.text()).toContain('마포 교통 정책 기사 후보');
+    const evidenceLink = wrapper.get('a[href="https://example.com/news/mapo-transport"]');
+    expect(evidenceLink.text()).toContain('최근 이슈 후보');
+    expect(evidenceLink.attributes('rel')).toContain('noopener');
+    expect(wrapper.text()).toContain('serpapi:google_news');
+    expect(wrapper.text()).toContain('candidate');
     expect(wrapper.text()).toContain('timeline_event_missing');
     expect(wrapper.text()).toContain('신뢰도 72%');
     expect(wrapper.text()).toContain('realestate-eval-v1');
+  });
+
+  it('shows live evidence logs for top ranking targets that do not have local detail fixtures yet', async () => {
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('/evidence-logs')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              evidenceLogId: 'evidence-region-seoul-20260615',
+              targetId: 'region-seoul',
+              snapshotId: 31,
+              evaluationVersion: 'realestate-eval-v1',
+              promptVersion: 'gms-evidence-v1',
+              modelName: 'gpt-5-mini',
+              tone: 'watch',
+              summary: '서울특별시는 언급량이 빠르게 늘어난 관찰 구간입니다.',
+              subtitle: 'TOP10 반응 snapshot과 시장 사실을 함께 본 EvidenceLog입니다.',
+              caveats: ['source_skewed'],
+              dataQuality: 'partial',
+              confidence: 0.66,
+              skipReason: null,
+              evaluatedAt: '2026-06-15T01:00:00Z',
+              asOf: '2026-06-15T00:00:00Z',
+              evidenceItems: [
+                {
+                  evidenceItemId: 'evidence-item-seoul-reaction',
+                  evidenceType: 'reaction',
+                  refType: 'reaction_snapshot',
+                  refId: 'snapshot-region-seoul',
+                  label: '24시간 언급 TOP',
+                  valueText: '1위',
+                  severity: 'watch'
+                }
+              ]
+            }
+          ]
+        }));
+      }
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountTargetDetail('/realestate/targets/region-seoul');
+
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul/evidence-logs?limit=3');
+    expect(wrapper.find('.unsupported-region-state').exists()).toBe(false);
+    expect(wrapper.find('.live-evidence-region-state').exists()).toBe(true);
+    expect(wrapper.text()).toContain('실시간 근거 리포트');
+    expect(wrapper.text()).toContain('EvidenceLog API 반영');
+    expect(wrapper.text()).toContain('서울특별시는 언급량이 빠르게 늘어난 관찰 구간입니다.');
+    expect(wrapper.text()).toContain('24시간 언급 TOP');
+    expect(wrapper.text()).toContain('gms-evidence-v1');
   });
 
   it('opens a complex target detail with the same map and report frame', async () => {

@@ -10,6 +10,7 @@ import {
 import { fetchRealEstateNearbyComplexes } from '../lib/realestate-complex-map';
 import {
   fetchRealEstateTargetEvidenceLogs,
+  type RealEstateEvidenceItem,
   type RealEstateEvidenceLog
 } from '../lib/realestate-evidence-logs';
 import {
@@ -292,6 +293,8 @@ const targets: RealEstateTarget[] = [
 
 const routeTargetId = computed(() => String(route.params.targetId ?? '').trim());
 const target = computed(() => targets.find((item) => item.targetId === routeTargetId.value));
+const activeTargetId = computed(() => target.value?.targetId ?? routeTargetId.value);
+const hasLiveAgentEvidenceOnly = computed(() => !target.value && agentEvidenceLogs.value.length > 0);
 const selectedMapMarkerId = ref('');
 const apiMapMarkers = ref<ComplexMapMarker[]>([]);
 const mapMarkerLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
@@ -421,7 +424,7 @@ const refreshTargetTimeline = async () => {
 };
 
 const refreshTargetAgentEvidenceLogs = async () => {
-  if (!target.value) {
+  if (!activeTargetId.value) {
     agentEvidenceLogs.value = [];
     agentEvidenceLoadState.value = 'fallback';
     return;
@@ -429,7 +432,7 @@ const refreshTargetAgentEvidenceLogs = async () => {
 
   agentEvidenceLoadState.value = 'loading';
   try {
-    const logs = await fetchRealEstateTargetEvidenceLogs(target.value.targetId, {
+    const logs = await fetchRealEstateTargetEvidenceLogs(activeTargetId.value, {
       limit: 3
     });
     agentEvidenceLogs.value = logs;
@@ -451,7 +454,7 @@ onMounted(() => {
   void refreshTargetAgentEvidenceLogs();
 });
 
-watch(() => target.value?.targetId, () => {
+watch(() => activeTargetId.value, () => {
   selectedMapMarkerId.value = '';
   void refreshTargetContent();
   void refreshTargetMapMarkers();
@@ -508,6 +511,18 @@ function evidenceItems(log: RealEstateEvidenceLog) {
   return Array.isArray(log.evidenceItems)
     ? log.evidenceItems.filter((item) => item.evidenceItemId && item.label)
     : [];
+}
+
+function linkedEvidenceItems(log: RealEstateEvidenceLog): RealEstateEvidenceItem[] {
+  return evidenceItems(log).filter((item) => Boolean(item.sourceUrl));
+}
+
+function evidenceItemSourceMeta(item: RealEstateEvidenceItem): string {
+  return [
+    item.sourceId?.trim(),
+    item.sourceDataStatus?.trim(),
+    timeLabel(item.publishedAt)
+  ].filter((value): value is string => Boolean(value)).join(' · ');
 }
 </script>
 
@@ -669,6 +684,19 @@ function evidenceItems(log: RealEstateEvidenceLog) {
                 <em>{{ item.valueText || item.evidenceType || '값 확인 필요' }}</em>
               </span>
             </div>
+            <div v-if="linkedEvidenceItems(log).length" class="agent-evidence-source-links" aria-label="근거 링크">
+              <a
+                v-for="item in linkedEvidenceItems(log)"
+                :key="`${item.evidenceItemId}-source-link`"
+                :href="item.sourceUrl ?? '#'"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <b>{{ item.label }}</b>
+                <em>{{ item.valueText || item.sourceDomain || item.evidenceType || '링크 확인 필요' }}</em>
+                <small v-if="evidenceItemSourceMeta(item)">{{ evidenceItemSourceMeta(item) }}</small>
+              </a>
+            </div>
             <p v-if="log.skipReason" class="agent-evidence-skip">스킵 사유: {{ log.skipReason }}</p>
           </div>
         </article>
@@ -694,11 +722,19 @@ function evidenceItems(log: RealEstateEvidenceLog) {
     </section>
   </section>
 
-  <section v-else class="surface-page region-detail-page unsupported-region-state" aria-label="지원 준비 중인 지역">
+  <section
+    v-else
+    :class="[
+      'surface-page',
+      'region-detail-page',
+      hasLiveAgentEvidenceOnly ? 'live-evidence-region-state' : 'unsupported-region-state'
+    ]"
+    :aria-label="hasLiveAgentEvidenceOnly ? '실시간 근거 리포트' : '지원 준비 중인 지역'"
+  >
     <section class="region-brief-panel panel">
       <div class="region-brief-topline">
         <div>
-          <strong>지원 준비 중인 지역</strong>
+          <strong>{{ hasLiveAgentEvidenceOnly ? '실시간 근거 리포트' : '지원 준비 중인 지역' }}</strong>
           <span>{{ routeTargetId || 'UNKNOWN' }}</span>
         </div>
         <RouterLink class="region-report-close region-report-close" to="/realestate/reactions" aria-label="지역 반응 목록으로 돌아가기">×</RouterLink>
@@ -706,24 +742,32 @@ function evidenceItems(log: RealEstateEvidenceLog) {
 
       <article class="region-brief-banner">
         <p class="eyebrow">지역 상세 리포트</p>
-        <h2>아직 상세 리포트가 연결되지 않았습니다</h2>
-        <span>선택한 지역/단지는 순위와 반응 화면에서 관찰 후보로 표시되지만, 상세 mock 데이터는 아직 준비되지 않았습니다. 잘못된 지역 리포트를 대신 보여주지 않고 지원 준비 상태로 표시합니다.</span>
+        <h2>{{ hasLiveAgentEvidenceOnly ? 'TOP 지역 근거 로그가 먼저 연결되었습니다' : '아직 상세 리포트가 연결되지 않았습니다' }}</h2>
+        <span>
+          {{ hasLiveAgentEvidenceOnly
+            ? '상세 mock 리포트가 없는 지역이지만, 반응 TOP10 배치가 만든 EvidenceLog를 우선 표시합니다. 시장 지표가 부족한 항목은 caveat으로 분리합니다.'
+            : '선택한 지역/단지는 순위와 반응 화면에서 관찰 후보로 표시되지만, 상세 mock 데이터는 아직 준비되지 않았습니다. 잘못된 지역 리포트를 대신 보여주지 않고 지원 준비 상태로 표시합니다.' }}
+        </span>
       </article>
     </section>
 
     <section class="region-hero panel">
       <div class="region-identity">
         <RouterLink class="detail-link region-back-link region-back-link" to="/realestate/reactions">← 지역 반응 목록으로</RouterLink>
-        <p class="eyebrow">unsupported target</p>
-        <h2>{{ routeTargetId || 'UNKNOWN' }} <span>상세 데이터 미연결</span></h2>
-        <p>해당 대상의 상세 지표, 커뮤니티 반응, 근거 링크가 준비되면 이 페이지에서 실제 리포트로 전환됩니다.</p>
+        <p class="eyebrow">{{ hasLiveAgentEvidenceOnly ? 'live evidence target' : 'unsupported target' }}</p>
+        <h2>{{ routeTargetId || 'UNKNOWN' }} <span>{{ hasLiveAgentEvidenceOnly ? 'EvidenceLog 연결' : '상세 데이터 미연결' }}</span></h2>
+        <p>
+          {{ hasLiveAgentEvidenceOnly
+            ? '지역 기본 상세 정보는 아직 비어 있지만, 최신 반응 snapshot과 SerpApi 후보 링크, GMS 평가 로그를 기준으로 시연 가능한 리포트를 표시합니다.'
+            : '해당 대상의 상세 지표, 커뮤니티 반응, 근거 링크가 준비되면 이 페이지에서 실제 리포트로 전환됩니다.' }}
+        </p>
       </div>
 
       <div class="region-metric-board">
         <article>
           <span>상태</span>
-          <strong>준비 중</strong>
-          <em>잘못된 fallback 차단</em>
+          <strong>{{ hasLiveAgentEvidenceOnly ? '근거 로그 연결' : '준비 중' }}</strong>
+          <em>{{ hasLiveAgentEvidenceOnly ? 'EvidenceLog API 반영' : '잘못된 fallback 차단' }}</em>
         </article>
         <article>
           <span>요청 대상 ID</span>
@@ -732,15 +776,62 @@ function evidenceItems(log: RealEstateEvidenceLog) {
         </article>
         <article>
           <span>상세 데이터</span>
-          <strong>미연결</strong>
-          <em>mock 확장 후보</em>
+          <strong>{{ hasLiveAgentEvidenceOnly ? '부분 연결' : '미연결' }}</strong>
+          <em>{{ hasLiveAgentEvidenceOnly ? 'market fact caveat 표시' : 'mock 확장 후보' }}</em>
         </article>
         <article>
           <span>다음 경로</span>
-          <strong>목록 복귀</strong>
-          <em>반응 화면에서 재확인</em>
+          <strong>{{ hasLiveAgentEvidenceOnly ? '근거 검토' : '목록 복귀' }}</strong>
+          <em>{{ hasLiveAgentEvidenceOnly ? '후보 링크와 caveat 확인' : '반응 화면에서 재확인' }}</em>
         </article>
       </div>
+    </section>
+
+    <section class="panel content-feed-card surface-data-card decision-log-panel region-agent-evidence-card">
+      <div class="section-band-title">
+        <div>
+          <p class="label">agent evidence</p>
+          <h3>AI 근거 로그</h3>
+        </div>
+        <span>{{ agentEvidenceStatusLabel }}</span>
+      </div>
+      <div v-if="agentEvidenceLogs.length" class="decision-log-list agent-evidence-list">
+        <article v-for="log in agentEvidenceLogs" :key="log.evidenceLogId">
+          <time>{{ timeLabel(log.evaluatedAt) }}</time>
+          <div>
+            <strong>{{ log.summary }}</strong>
+            <p v-if="log.subtitle">{{ log.subtitle }}</p>
+            <div class="agent-evidence-meta-strip">
+              <span>{{ evidenceLogMeta(log) }}</span>
+              <code>{{ logVersionLabel(log) }}</code>
+            </div>
+            <div v-if="caveats(log).length" class="agent-evidence-caveats" aria-label="근거 로그 주의점">
+              <span v-for="caveat in caveats(log)" :key="`${log.evidenceLogId}-${caveat}`">{{ caveat }}</span>
+            </div>
+            <div v-if="evidenceItems(log).length" class="agent-evidence-items" aria-label="근거 항목">
+              <span v-for="item in evidenceItems(log)" :key="item.evidenceItemId">
+                <b>{{ item.label }}</b>
+                <em>{{ item.valueText || item.evidenceType || '값 확인 필요' }}</em>
+              </span>
+            </div>
+            <div v-if="linkedEvidenceItems(log).length" class="agent-evidence-source-links" aria-label="근거 링크">
+              <a
+                v-for="item in linkedEvidenceItems(log)"
+                :key="`${item.evidenceItemId}-source-link`"
+                :href="item.sourceUrl ?? '#'"
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                <b>{{ item.label }}</b>
+                <em>{{ item.valueText || item.sourceDomain || item.evidenceType || '링크 확인 필요' }}</em>
+                <small v-if="evidenceItemSourceMeta(item)">{{ evidenceItemSourceMeta(item) }}</small>
+              </a>
+            </div>
+            <p v-if="log.skipReason" class="agent-evidence-skip">스킵 사유: {{ log.skipReason }}</p>
+          </div>
+        </article>
+      </div>
+      <p v-else class="agent-evidence-empty">아직 저장된 AI 근거 로그가 없습니다. 배치가 평가를 생성하면 이 영역에 평가 버전, caveat, 근거 항목이 표시됩니다.</p>
     </section>
   </section>
 </template>

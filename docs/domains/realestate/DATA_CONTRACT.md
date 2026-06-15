@@ -374,6 +374,7 @@ pipeline 입력 관측치:
 
 ```bash
 youbuyfirst-pipeline serve --enable-realestate-reaction-snapshots-refresh --realestate-aliases-jsonl aliases.jsonl --realestate-target-edges-jsonl target_edges.jsonl --community-posts-jsonl posts.jsonl --reaction-window-minutes 60 --reaction-stale-after-minutes 360 --realestate-reaction-snapshots-refresh-interval-minutes 30
+youbuyfirst-pipeline serve --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-aliases --realestate-use-backend-community-posts --reaction-window-minutes 60 --reaction-stale-after-minutes 360 --realestate-reaction-snapshots-refresh-interval-minutes 30
 ```
 
 주기 refresh는 실행 시각 기준 완료된 직전 window를 집계합니다. 예를 들어 01:02에 실행되고 `--reaction-window-minutes=60`이면 00:00-01:00 구간을 만들고, 01:00 이후 글은 다음 window로 넘깁니다.
@@ -432,6 +433,7 @@ youbuyfirst-pipeline serve --enable-realestate-reaction-snapshots-refresh --real
 - `POST /internal/realestate/evidence-logs`는 `logs[]`를 받아 `evidenceLogId` 기준으로 평가 로그와 근거 항목을 upsert합니다.
 - `GET /api/realestate/targets/{targetId}/evidence-logs?limit=10`은 최신 평가 로그를 `evaluatedAt desc` 기준으로 반환합니다.
 - API는 내부 추론 전문을 받지 않습니다. 반응 snapshot, market fact, timeline event, content, 검색 후보, 후속 유사 과거 결과의 참조 id와 요약만 저장합니다.
+- `evidenceItems[].refType=content`이고 `refId`가 `content_items.id`와 일치하면 공개 응답에서 `sourceUrl`, `sourceId`, `sourceDomain`, `publishedAt`, `sourceAsOf`, `sourceDataStatus`를 보강합니다. SerpApi 후보가 아직 `candidate` 상태여도 AI가 참고한 근거 링크로는 표시할 수 있으며, 이 값은 관심도 점수로 쓰지 않습니다.
 - `skipReason`이 빈 문자열이면 `null`로 저장해 "정상 평가"와 "건너뜀"을 구분합니다.
 
 pipeline 유사 과거 후보:
@@ -498,11 +500,11 @@ POST /internal/community/crawl-sources
 
 `GET /api/realestate/map/layers`는 자체 도식화 지도 heat layer 입력입니다. `layerType=sido`는 전국 시도, `layerType=sigungu&parentTargetId=region-seoul`은 특정 시도 하위 시군구를 반환합니다. 응답은 `targets[].targetId`를 정본 식별자로 쓰고, 각 기간 값에 `provider`, `asOf`, `dataStatus`, `stale`, `changePct`, `sampleCount`, `confidence`를 포함합니다. 실제 데이터 집계 전 seed 값은 `dataStatus=mock`, `stale=true`로 표시합니다.
 
-`POST /internal/realestate/map/layer-snapshots/refresh`는 배치가 호출하는 내부 API입니다. 요청은 `layerType`, `periods[]`, `asOf`를 받고, backend는 해당 layer의 `map_features`를 순회해 target별 `apt_trade` market fact와 최신 reaction snapshot을 `map_layer_snapshots`로 요약합니다. 기간 안에서 첫 관측일 평균과 마지막 관측일 평균을 비교해 `changePct`를 만들고, reaction snapshot이 있으면 그 `confidence`를 사용합니다. 거래 표본이 부족하거나 같은 관측일만 있으면 해당 target/period는 건너뛰며, 기존 seed/mock snapshot을 삭제하지 않습니다. 응답은 `layerType`, `periods[]`, `asOf`, `acceptedSnapshots`, `skippedTargets`입니다.
+`POST /internal/realestate/map/layer-snapshots/refresh`는 배치가 호출하는 내부 API입니다. 요청은 `layerType`, `periods[]`, `asOf`를 받고, backend는 해당 layer의 `map_features`를 순회해 target별 `apt_trade` market fact와 최신 reaction snapshot을 `map_layer_snapshots`로 요약합니다. 기간 안에서 첫 관측일 평균과 마지막 관측일 평균을 비교해 `changePct`를 만들고, reaction snapshot이 있으면 그 `confidence`를 사용합니다. 거래 표본이 부족하거나 같은 관측일만 있으면 해당 target/period는 건너뛰며, 기존 seed/mock snapshot을 삭제하지 않습니다. 실거래 표본 평균 비교에서 절대 변화율이 50%를 넘으면 값은 보존하되 `dataStatus=partial`, `stale=true`, 표본 기반 confidence로 낮춰 표시합니다. 응답은 `layerType`, `periods[]`, `asOf`, `acceptedSnapshots`, `skippedTargets`입니다.
 
 동/단지 상세의 내장 지도는 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 우선 조회합니다. 응답은 `items[]`에 `targetId`, `name`, `address`, `region`, `latitude`, `longitude`, `tone`, `price`, `change`, `reaction`, `provider`, `asOf`, `dataStatus`, `stale`, `note`, `legalDongCode`, `coordinateProvider`, `coordinateStatus`를 포함합니다. API가 실패하거나 좌표가 없는 row만 내려오면 front fixture marker로 fallback하되, 좌표가 검증 전이면 값을 숨기지 않고 `dataStatus=mock|candidate|unknown`, `stale=true`로 표시합니다.
 
-`GET /api/realestate/reactions/rankings`는 `real_estate_reaction_snapshots`를 지역/단지 랭킹 화면용으로 반환합니다. `windowStart`가 없으면 해당 target type의 최신 window를 반환하고, 없으면 빈 `items`와 `coverageStatus=empty`를 반환합니다.
+`GET /api/realestate/reactions/rankings`는 `real_estate_reaction_snapshots`를 지역/단지 랭킹 화면용으로 반환합니다. `windowStart`가 없으면 해당 target type의 최신 window를 반환하고, 없으면 빈 `items`와 `coverageStatus=empty`를 반환합니다. `parentTargetId`를 받으면 parent 지역과 하위 지역 target을 scope로 삼고, `type=complex`에서는 `real_estate_complexes.region_target_id`가 scope 안에 있는 단지도 포함합니다.
 
 `GET /api/realestate/targets/{targetId}/reaction-snapshot`는 지역/단지 상세와 지도 리포트 패널용 단일 snapshot 응답입니다. `windowStart`가 없으면 해당 target의 최신 window를 사용합니다.
 
@@ -513,6 +515,8 @@ POST /internal/community/crawl-sources
 `GET /api/realestate/market-facts`는 운영/검증용 범용 market fact 목록입니다. `targetId`, `legalDongCode`, `factType`, `limit`으로 좁힐 수 있으며, 특정 지역/단지 상세 화면은 가능한 한 `GET /api/realestate/targets/{targetId}/market-facts`를 우선 사용합니다.
 
 `GET /api/realestate/targets/{targetId}/content`는 승인된 content-target link 기준으로 해당 지역/단지에 연결된 뉴스, 리포트, 영상, 링크를 반환합니다. `feed=all|news|report|video|link|column`으로 좁힐 수 있습니다.
+
+`GET /internal/realestate/targets/{targetId}/content`는 EvidenceLog 배치가 후보 근거를 다시 읽기 위한 내부 API입니다. `reviewState=candidate`, `linkType=search_candidate` 같은 필터를 받을 수 있으며, SerpApi 후보처럼 아직 공개 timeline에 올리지 않는 content link도 AI 근거 조립 입력으로 조회할 수 있습니다. public content API는 계속 `approved` 연결만 반환합니다.
 
 `GET /api/realestate/newsroom`은 target과 무관하게 최신 content item을 feed별로 반환합니다. 외부 원문으로 보내기 위한 카드 입력이며, 원문 전문은 응답하지 않습니다.
 

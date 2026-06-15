@@ -17,7 +17,9 @@ import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(
@@ -133,8 +135,7 @@ public class RealEstateReactionSnapshot {
         this.sourceSkew = sourceSkew;
         this.coverageStatus = coverageStatus;
         this.stale = stale;
-        this.issues.clear();
-        nextIssues.forEach(this::addIssue);
+        replaceIssues(nextIssues);
         if (this.createdAt == null) {
             this.createdAt = now;
         }
@@ -144,6 +145,24 @@ public class RealEstateReactionSnapshot {
     private void addIssue(RealEstateReactionSnapshotIssue issue) {
         issue.attachTo(this);
         this.issues.add(issue);
+    }
+
+    private void replaceIssues(List<RealEstateReactionSnapshotIssue> nextIssues) {
+        Map<String, RealEstateReactionSnapshotIssue> existingByKey = new LinkedHashMap<>();
+        for (RealEstateReactionSnapshotIssue issue : issues) {
+            existingByKey.put(issue.getIssueKey(), issue);
+        }
+        List<String> nextIssueKeys = new ArrayList<>();
+        for (RealEstateReactionSnapshotIssue nextIssue : nextIssues) {
+            RealEstateReactionSnapshotIssue existing = existingByKey.get(nextIssue.getIssueKey());
+            if (existing == null) {
+                addIssue(nextIssue);
+            } else {
+                existing.updateFrom(nextIssue);
+            }
+            nextIssueKeys.add(nextIssue.getIssueKey());
+        }
+        issues.removeIf(issue -> !nextIssueKeys.contains(issue.getIssueKey()));
     }
 
     public Long getId() {

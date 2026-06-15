@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface RealEstateComplexRepository extends JpaRepository<RealEstateComplex, String> {
@@ -26,5 +27,14 @@ public interface RealEstateComplexRepository extends JpaRepository<RealEstateCom
     List<RealEstateComplex> findVisibleMarkersForTarget(
             @Param("targetId") String targetId,
             Pageable pageable
+    );
+
+    @Query("""
+            select complex.targetId
+            from RealEstateComplex complex
+            where complex.regionTargetId in :regionTargetIds
+            """)
+    List<String> findTargetIdsByRegionTargetIds(
+            @Param("regionTargetIds") Collection<String> regionTargetIds
     );
 }

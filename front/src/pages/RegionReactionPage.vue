@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import {
   buildRegionRankingRows,
@@ -9,6 +9,7 @@ import {
 type MovementTone = 'up' | 'down';
 type ReactionTone = 'positive' | 'negative' | 'watch' | 'neutral';
 type RegionReactionView = 'overview' | 'ranking' | 'signals' | 'agents';
+type RegionScope = '전체' | '서울' | '경기' | '대전' | '인천';
 
 type RegionRankingRow = {
   rank: number;
@@ -81,7 +82,11 @@ const regionRows: RegionRankingRow[] = [
   { rank: 3, name: '성수동 생활권', targetId: 'living-area-seoul-seongsu', market: '서울', price: '18.2억', change: '+0.66%', mentions: '41건', mentionDelta: '+86%', positive: 56, negative: 25, event: '상권·개발', freshness: 'mock', tone: 'up' },
   { rank: 4, name: '잠실동 단지군', targetId: 'living-area-seoul-jamsil', market: '서울', price: '22.5억', change: '-0.22%', mentions: '43건', mentionDelta: '+54%', positive: 47, negative: 29, event: '토허제·재건축', freshness: '정책 이슈', tone: 'down' },
   { rank: 5, name: '분당·판교', targetId: 'living-area-gyeonggi-bundang-pangyo', market: '경기', price: '17.6억', change: '+0.51%', mentions: '66건', mentionDelta: '+30%', positive: 58, negative: 24, event: '일자리·학군', freshness: 'mock', tone: 'up' },
-  { rank: 6, name: '송도국제도시', targetId: 'living-area-incheon-songdo', market: '인천', price: '8.4억', change: '-0.18%', mentions: '38건', mentionDelta: '+21%', positive: 42, negative: 36, event: '공급·국제학교', freshness: 'stale', tone: 'down' }
+  { rank: 6, name: '송도국제도시', targetId: 'living-area-incheon-songdo', market: '인천', price: '8.4억', change: '-0.18%', mentions: '38건', mentionDelta: '+21%', positive: 42, negative: 36, event: '공급·국제학교', freshness: 'stale', tone: 'down' },
+  { rank: 7, name: '대전 유성구', targetId: 'region-daejeon-yuseong', market: '대전', price: '7.6억', change: '+0.24%', mentions: '31건', mentionDelta: '+18%', positive: 45, negative: 31, event: '연구단지·전세', freshness: '수집 전', tone: 'up' },
+  { rank: 8, name: '파주 운정', targetId: 'living-area-gyeonggi-paju-unjeong', market: '경기', price: '6.7억', change: '-0.12%', mentions: '29건', mentionDelta: '+15%', positive: 39, negative: 43, event: 'GTX·입주물량', freshness: 'insufficient', tone: 'down' },
+  { rank: 9, name: '세종 새롬동', targetId: 'living-area-sejong-saerom', market: '세종', price: '7.1억', change: '+0.08%', mentions: '24건', mentionDelta: '+11%', positive: 41, negative: 34, event: '정책·공급', freshness: '수집 전', tone: 'up' },
+  { rank: 10, name: '부산 해운대', targetId: 'region-busan-haeundae', market: '부산', price: '10.4억', change: '-0.05%', mentions: '22건', mentionDelta: '+9%', positive: 38, negative: 37, event: '관광·전세', freshness: 'insufficient', tone: 'down' }
 ];
 
 const complexRows: RegionRankingRow[] = [
@@ -90,23 +95,52 @@ const complexRows: RegionRankingRow[] = [
   { rank: 3, name: '마포래미안푸르지오', targetId: 'complex-mapo-raemian-prugio', market: '마포', price: '15.3억', change: '+0.21%', mentions: '44건', mentionDelta: '+28%', positive: 48, negative: 31, event: '학군·역세권', freshness: '실거래 지연', tone: 'up' },
   { rank: 4, name: '판교푸르지오그랑블', targetId: 'complex-pangyo-prugio-grandble', market: '판교', price: '22.4억', change: '+0.34%', mentions: '37건', mentionDelta: '+18%', positive: 61, negative: 20, event: '일자리·학군', freshness: 'mock', tone: 'up' },
   { rank: 5, name: '송도더샵센트럴', targetId: 'complex-songdo-the-sharp-central', market: '송도', price: '8.9억', change: '-0.16%', mentions: '32건', mentionDelta: '+17%', positive: 39, negative: 40, event: '공급 부담', freshness: 'stale', tone: 'down' },
-  { rank: 6, name: '동탄역 롯데캐슬', targetId: 'complex-dongtan-lotte-castle', market: '동탄', price: '12.2억', change: '+0.19%', mentions: '35건', mentionDelta: '+22%', positive: 46, negative: 35, event: 'GTX·입주', freshness: 'mock', tone: 'up' }
+  { rank: 6, name: '동탄역 롯데캐슬', targetId: 'complex-dongtan-lotte-castle', market: '동탄', price: '12.2억', change: '+0.19%', mentions: '35건', mentionDelta: '+22%', positive: 46, negative: 35, event: 'GTX·입주', freshness: 'mock', tone: 'up' },
+  { rank: 7, name: '도안 우미린', targetId: 'complex-daejeon-doan-umirin', market: '대전', price: '6.9억', change: '+0.17%', mentions: '27건', mentionDelta: '+14%', positive: 43, negative: 32, event: '학군·신축', freshness: '수집 전', tone: 'up' },
+  { rank: 8, name: '운정 아이파크', targetId: 'complex-paju-unjeong-ipark', market: '파주', price: '6.4억', change: '-0.11%', mentions: '25건', mentionDelta: '+12%', positive: 37, negative: 45, event: '입주·교통', freshness: 'insufficient', tone: 'down' },
+  { rank: 9, name: '센텀 리더스마크', targetId: 'complex-busan-centum-leadersmark', market: '부산', price: '9.8억', change: '+0.06%', mentions: '21건', mentionDelta: '+10%', positive: 40, negative: 35, event: '상권·전세', freshness: '수집 전', tone: 'up' },
+  { rank: 10, name: '새롬 더샵힐스', targetId: 'complex-sejong-saerom-thesharp', market: '세종', price: '7.2억', change: '-0.04%', mentions: '19건', mentionDelta: '+8%', positive: 36, negative: 39, event: '공급·정책', freshness: 'insufficient', tone: 'down' }
 ];
 
 const rankingLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const liveRegionRows = ref<RegionRankingRow[]>(regionRows);
 const liveComplexRows = ref<RegionRankingRow[]>(complexRows);
+const selectedRegionScope = ref<RegionScope>('전체');
+
+const regionScopeOptions = [
+  { value: '전체', label: '전체 TOP10' },
+  { value: '서울', label: '서울 TOP10' },
+  { value: '경기', label: '경기 TOP10' },
+  { value: '대전', label: '대전 TOP10' },
+  { value: '인천', label: '인천 TOP10' }
+] satisfies { value: RegionScope; label: string }[];
+
+const regionScopeParentTargetIds: Partial<Record<RegionScope, string>> = {
+  서울: 'region-seoul',
+  경기: 'region-gyeonggi',
+  대전: 'region-daejeon',
+  인천: 'region-incheon'
+};
+
+const scopeTitlePrefix = computed(() => (selectedRegionScope.value === '전체' ? '' : `${selectedRegionScope.value} `));
+const selectedParentTargetId = computed(() => regionScopeParentTargetIds[selectedRegionScope.value]);
+
+const rowsForSelectedScope = (rows: RegionRankingRow[]) => {
+  if (selectedRegionScope.value === '전체') return rows;
+  return rows.filter((row) => inferRegionScope(row) === selectedRegionScope.value);
+};
 
 const rankingGroups = computed(() => [
-  { id: 'regions', title: '지역 언급량 TOP 6', caption: '시도·생활권 기준', rows: liveRegionRows.value },
-  { id: 'complexes', title: '단지군 관심 TOP 6', caption: '아파트·생활권 후보', rows: liveComplexRows.value }
+  { id: 'regions', title: `${scopeTitlePrefix.value}지역 언급량 TOP 10`, caption: '시도·생활권 기준', rows: rowsForSelectedScope(liveRegionRows.value) },
+  { id: 'complexes', title: `${scopeTitlePrefix.value}단지군 관심 TOP 10`, caption: '아파트·생활권 후보', rows: rowsForSelectedScope(liveComplexRows.value) }
 ]);
 
 const refreshReactionRankings = async () => {
   try {
+    const parentTargetId = selectedParentTargetId.value;
     const [regionRanking, complexRanking] = await Promise.all([
-      fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 60 }),
-      fetchRealEstateReactionRanking({ type: 'complex', windowMinutes: 60 })
+      fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 1440, limit: 10, parentTargetId }),
+      fetchRealEstateReactionRanking({ type: 'complex', windowMinutes: 1440, limit: 10, parentTargetId })
     ]);
     liveRegionRows.value = buildRegionRankingRows(regionRanking, regionRows);
     liveComplexRows.value = buildRegionRankingRows(complexRanking, complexRows);
@@ -122,12 +156,25 @@ onMounted(() => {
   void refreshReactionRankings();
 });
 
+watch(selectedRegionScope, () => {
+  void refreshReactionRankings();
+});
+
 const filters = ['언급 증가', '전세 우려', '실거래 지연', '공급 부담', '정책 민감', 'stale 제외'];
+
+function inferRegionScope(row: RegionRankingRow): RegionScope | '기타' {
+  const key = `${row.targetId} ${row.name} ${row.market}`;
+  if (/seoul|mapo|jamsil|songpa|banpo|helio|서울|마포|잠실|송파|반포|성수/.test(key)) return '서울';
+  if (/gyeonggi|dongtan|bundang|pangyo|paju|경기|동탄|분당|판교|파주|운정/.test(key)) return '경기';
+  if (/daejeon|대전|도안|유성/.test(key)) return '대전';
+  if (/incheon|songdo|인천|송도/.test(key)) return '인천';
+  return '기타';
+}
 
 const rankSummary = [
   { label: '정렬 기준', value: '언급량', meta: '커뮤니티 수집 mock' },
-  { label: '지역 표시', value: '6곳', meta: '서울·경기·인천' },
-  { label: '단지 표시', value: '6곳', meta: '좌표 매핑 후보' },
+  { label: '지역 표시', value: '10곳', meta: '서울·경기·대전 등' },
+  { label: '단지 표시', value: '10곳', meta: '좌표 매핑 후보' },
   { label: '보조 지표', value: '수급·전세', meta: '기대/우려 비율' }
 ];
 
@@ -184,6 +231,46 @@ const signalTiles: SignalTile[] = [
     community: '지역 카페'
   }
 ];
+
+const visibleSignalTiles = computed<SignalTile[]>(() => {
+  if (rankingLoadState.value !== 'live' || !liveRegionRows.value.length) {
+    return signalTiles;
+  }
+
+  return liveRegionRows.value.slice(0, 4).map(signalTileFromRankingRow);
+});
+
+function signalTileFromRankingRow(row: RegionRankingRow, index: number): SignalTile {
+  return {
+    label: signalTileLabel(row, index),
+    target: row.name,
+    targetId: row.targetId,
+    metric: row.mentionDelta,
+    tone: row.negative > row.positive ? 'negative' : row.tone === 'down' ? 'negative' : 'positive',
+    summary: `${row.mentions} 언급, ${row.event} 쟁점이 관찰됩니다.`,
+    reasons: [
+      row.freshness,
+      `기대 ${row.positive} / 우려 ${row.negative}`,
+      row.market
+    ],
+    pulse: signalPulse(row),
+    community: 'API ranking'
+  };
+}
+
+function signalTileLabel(row: RegionRankingRow, index: number): SignalTile['label'] {
+  if (index === 0) return '언급 급증';
+  if (row.negative > row.positive) return '우려 증가';
+  if (row.event.includes('정책')) return '정책 민감';
+  if (row.positive > row.negative) return '기대 우세';
+  return '반응 관찰';
+}
+
+function signalPulse(row: RegionRankingRow): number {
+  const mentionCount = Number(row.mentions.replace(/[^\d]/g, ''));
+  if (!Number.isFinite(mentionCount) || mentionCount <= 0) return 35;
+  return Math.max(35, Math.min(100, mentionCount * 3));
+}
 
 const agentLogs: AgentLog[] = [
   {
@@ -264,10 +351,10 @@ const strategyRules = [
           <p class="label">community pulse</p>
           <h3>커뮤니티 언급 급증 지역</h3>
         </div>
-        <span>언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합</span>
+        <span>{{ rankingLoadState === 'live' ? 'TOP10 API 기준 언급 증가와 기대·우려를 한 줄로 통합' : '언급 급증, 기대 우세, 우려 증가, 정책 민감을 한 줄로 통합' }}</span>
       </div>
       <RouterLink
-        v-for="tile in signalTiles"
+        v-for="tile in visibleSignalTiles"
         :key="tile.label"
         :class="['reaction-signal-tile', tile.tone]"
         :to="`/realestate/targets/${tile.targetId}`"
@@ -289,6 +376,18 @@ const strategyRules = [
     </section>
 
     <template v-if="isSectionVisible('ranking')">
+
+      <div class="region-filter-strip region-scope-filter" aria-label="시도별 TOP10 필터">
+        <button
+          v-for="scope in regionScopeOptions"
+          :key="scope.value"
+          type="button"
+          :class="{ active: selectedRegionScope === scope.value }"
+          @click="selectedRegionScope = scope.value"
+        >
+          {{ scope.label }}
+        </button>
+      </div>
 
       <div class="region-filter-strip" aria-label="지역 필터">
         <button v-for="filter in filters" :key="filter" type="button">{{ filter }}</button>

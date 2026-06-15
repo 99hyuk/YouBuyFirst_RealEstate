@@ -29,17 +29,20 @@ public class RealEstateEvidenceLogService {
     private final RealEstateEvidenceLogRepository evidenceLogRepository;
     private final RealEstateTargetRepository targetRepository;
     private final RealEstateReactionSnapshotRepository snapshotRepository;
+    private final RealEstateContentItemRepository contentItemRepository;
     private final ObjectMapper objectMapper;
 
     public RealEstateEvidenceLogService(
             RealEstateEvidenceLogRepository evidenceLogRepository,
             RealEstateTargetRepository targetRepository,
             RealEstateReactionSnapshotRepository snapshotRepository,
+            RealEstateContentItemRepository contentItemRepository,
             ObjectMapper objectMapper
     ) {
         this.evidenceLogRepository = evidenceLogRepository;
         this.targetRepository = targetRepository;
         this.snapshotRepository = snapshotRepository;
+        this.contentItemRepository = contentItemRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -140,6 +143,7 @@ public class RealEstateEvidenceLogService {
     }
 
     private RealEstateEvidenceItemResponse toItemResponse(RealEstateEvidenceLogItem item) {
+        RealEstateContentItem contentItem = contentItemFor(item);
         return new RealEstateEvidenceItemResponse(
                 item.getId(),
                 item.getEvidenceType(),
@@ -147,8 +151,21 @@ public class RealEstateEvidenceLogService {
                 item.getRefId(),
                 item.getLabel(),
                 item.getValueText(),
-                item.getSeverity()
+                item.getSeverity(),
+                contentItem == null ? null : contentItem.getUrl(),
+                contentItem == null ? null : contentItem.getSourceId(),
+                contentItem == null ? null : contentItem.getDomain(),
+                contentItem == null ? null : contentItem.getPublishedAt(),
+                contentItem == null ? null : contentItem.getIngestedAt(),
+                contentItem == null ? null : contentItem.getDataStatus()
         );
+    }
+
+    private RealEstateContentItem contentItemFor(RealEstateEvidenceLogItem item) {
+        if (!"content".equals(item.getRefType())) {
+            return null;
+        }
+        return contentItemRepository.findById(item.getRefId()).orElse(null);
     }
 
     private String writeStringList(List<String> values) {

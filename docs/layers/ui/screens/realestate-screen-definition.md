@@ -245,6 +245,7 @@ API:
 - 응답 shape는 전국 지도와 같고, `targets[]`는 해당 시도 하위 시군구 target이다.
 - 1차 구현은 DB snapshot이 있는 하위 지역만 실제 API 값으로 덮어쓴다. 예: `parentTargetId=region-seoul`은 종로구/마포구 seed snapshot을 내려준다.
 - 하위 snapshot이 없으면 기존 도식화 topology fallback을 유지하고, 하단 상태에 `하위 레이어 fallback`을 표시한다.
+- 하위 snapshot이 있으면 하단 상태에 대표 period의 `provider`, `dataStatus`, `fresh/stale`, `asOf`를 그대로 표시한다. `DB snapshot`처럼 출처와 기준 시각을 숨기는 축약 문구만 단독으로 쓰지 않는다.
 
 ### 6.3 동/단지 내장 지도
 

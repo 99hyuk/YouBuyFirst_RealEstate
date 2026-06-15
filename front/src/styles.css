@@ -5831,7 +5831,8 @@ a {
 
 .agent-evidence-meta-strip,
 .agent-evidence-caveats,
-.agent-evidence-items {
+.agent-evidence-items,
+.agent-evidence-source-links {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -5841,7 +5842,8 @@ a {
 
 .agent-evidence-meta-strip span,
 .agent-evidence-caveats span,
-.agent-evidence-items span {
+.agent-evidence-items span,
+.agent-evidence-source-links a {
   display: inline-flex;
   align-items: center;
   min-height: 22px;
@@ -5854,19 +5856,38 @@ a {
   font-weight: 760;
 }
 
+.agent-evidence-source-links a {
+  gap: 5px;
+  border-color: rgba(239, 111, 41, 0.28);
+  background: rgba(255, 248, 242, 0.92);
+  color: #8a451a;
+  text-decoration: none;
+}
+
 .agent-evidence-items b {
   margin-right: 5px;
   color: var(--ink);
   font-weight: 860;
 }
 
+.agent-evidence-source-links b {
+  color: #7b3715;
+  font-weight: 860;
+}
+
 .agent-evidence-items em,
+.agent-evidence-source-links em,
+.agent-evidence-source-links small,
 .agent-evidence-skip,
 .agent-evidence-empty {
   color: #657285;
   font-size: 12px;
   font-style: normal;
   font-weight: 650;
+}
+
+.agent-evidence-source-links small {
+  color: #9a5a2c;
 }
 
 .agent-evidence-empty {
@@ -6851,6 +6872,13 @@ a {
   color: #536174;
   font-size: 11px;
   font-weight: 780;
+}
+
+.region-filter-strip button.active {
+  border-color: rgba(234, 88, 12, 0.34);
+  background: rgba(255, 247, 237, 0.86);
+  color: #c2410c;
+  box-shadow: inset 0 0 0 1px rgba(234, 88, 12, 0.12);
 }
 
 .rank-summary-strip,

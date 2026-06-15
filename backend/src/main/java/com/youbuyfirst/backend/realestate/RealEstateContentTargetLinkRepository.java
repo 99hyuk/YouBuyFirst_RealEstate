@@ -24,4 +24,22 @@ public interface RealEstateContentTargetLinkRepository
             @Param("contentType") String contentType,
             Pageable pageable
     );
+
+    @Query("""
+            select link
+            from RealEstateContentTargetLink link
+            join fetch link.contentItem item
+            where link.targetId = :targetId
+              and (:contentType is null or item.contentType = :contentType)
+              and (:reviewState is null or link.reviewState = :reviewState)
+              and (:linkType is null or link.linkType = :linkType)
+            order by item.publishedAt desc nulls last, item.ingestedAt desc, item.id asc
+            """)
+    List<RealEstateContentTargetLink> findInternalByTarget(
+            @Param("targetId") String targetId,
+            @Param("contentType") String contentType,
+            @Param("reviewState") String reviewState,
+            @Param("linkType") String linkType,
+            Pageable pageable
+    );
 }

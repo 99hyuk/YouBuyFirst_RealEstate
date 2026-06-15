@@ -27,6 +27,29 @@ class RealEstateEvidenceLogIntegrationTest {
 
     @Test
     void upsertsEvidenceLogWithItemsAndListsLatestTargetLogs() throws Exception {
+        Map<String, Object> contentRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("contentId", "serpapi-issue-example"),
+                        Map.entry("sourceId", "serpapi:google_news"),
+                        Map.entry("contentType", "news"),
+                        Map.entry("title", "Seoul transport issue candidate"),
+                        Map.entry("snippet", "SerpApi candidate used as evidence."),
+                        Map.entry("url", "https://example.com/news/serpapi-issue-example"),
+                        Map.entry("domain", "example.com"),
+                        Map.entry("publishedAt", "2026-06-12T03:00:00Z"),
+                        Map.entry("metricLabel", "recent issue"),
+                        Map.entry("statusLabel", "search_candidate"),
+                        Map.entry("ingestedAt", "2026-06-12T03:05:00Z"),
+                        Map.entry("dataStatus", "candidate"),
+                        Map.entry("targets", List.of(Map.of(
+                                "targetId", "region-seoul-jongno",
+                                "linkType", "search_candidate",
+                                "confidence", 0.67,
+                                "reviewState", "candidate"
+                        )))
+                ))
+        );
         Map<String, Object> request = Map.of(
                 "logs",
                 List.of(Map.ofEntries(
@@ -67,6 +90,11 @@ class RealEstateEvidenceLogIntegrationTest {
                 ))
         );
 
+        ResponseEntity<String> contentIngest = restTemplate.postForEntity(
+                "/internal/realestate/content-items",
+                contentRequest,
+                String.class
+        );
         ResponseEntity<String> ingest = restTemplate.postForEntity(
                 "/internal/realestate/evidence-logs",
                 request,
@@ -78,6 +106,7 @@ class RealEstateEvidenceLogIntegrationTest {
                 "region-seoul-jongno"
         );
 
+        assertThat(contentIngest.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode ingestRoot = objectMapper.readTree(ingest.getBody());
         assertThat(ingestRoot.path("acceptedLogs").asInt()).isEqualTo(1);
@@ -105,5 +134,10 @@ class RealEstateEvidenceLogIntegrationTest {
         assertThat(evidenceItems.get(0).path("label").asText()).isEqualTo("언급 증가");
         assertThat(evidenceItems.get(1).path("refType").asText()).isEqualTo("content");
         assertThat(evidenceItems.get(1).path("severity").asText()).isEqualTo("info");
+        assertThat(evidenceItems.get(1).path("sourceUrl").asText()).isEqualTo("https://example.com/news/serpapi-issue-example");
+        assertThat(evidenceItems.get(1).path("sourceId").asText()).isEqualTo("serpapi:google_news");
+        assertThat(evidenceItems.get(1).path("sourceDomain").asText()).isEqualTo("example.com");
+        assertThat(evidenceItems.get(1).path("publishedAt").asText()).isEqualTo("2026-06-12T03:00:00Z");
+        assertThat(evidenceItems.get(1).path("sourceDataStatus").asText()).isEqualTo("candidate");
     }
 }

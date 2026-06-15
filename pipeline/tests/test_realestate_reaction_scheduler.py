@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from youbuyfirst_pipeline.realestate_matcher import RealEstateAliasRule
 from youbuyfirst_pipeline.realestate_reaction_scheduler import RealEstateReactionSnapshotRefreshJob
 from youbuyfirst_pipeline.scheduler import configure_scheduler
 
@@ -10,11 +11,24 @@ class _Client:
     def __init__(self, fail_push: bool = False) -> None:
         self.fail_push = fail_push
         self.pushed_batches = []
+        self.export_requests = []
+        self.export_posts = []
 
     def publish_real_estate_reaction_snapshots(self, snapshots) -> None:
         if self.fail_push:
             raise RuntimeError("backend unavailable")
         self.pushed_batches.append([snapshot.to_request_dict() for snapshot in snapshots])
+
+    def list_community_posts_for_reaction_refresh(self, *, source, published_from, published_to, limit):
+        self.export_requests.append(
+            {
+                "source": source,
+                "published_from": published_from,
+                "published_to": published_to,
+                "limit": limit,
+            }
+        )
+        return self.export_posts
 
 
 class _Pipeline:
@@ -60,6 +74,103 @@ def test_real_estate_reaction_snapshot_refresh_job_builds_previous_completed_win
     assert client.pushed_batches[0][0]["asOf"] == "2026-06-11T01:02:00Z"
     assert client.pushed_batches[0][0]["mentionCount"] == 1
     assert client.pushed_batches[0][0]["previousMentionCount"] == 1
+
+
+def test_real_estate_reaction_snapshot_refresh_job_can_read_posts_from_backend_export(tmp_path):
+    aliases_path = tmp_path / "aliases.jsonl"
+    aliases_path.write_text(
+        '{"targetType":"region","targetId":"region-gyeonggi-paju","alias":"파주시","reviewState":"approved","confidence":0.95}',
+        encoding="utf-8",
+    )
+    client = _Client()
+    client.export_posts = [
+        {
+            "source": "PPOMPPU",
+            "externalId": "paju-previous",
+            "publishedAt": "2026-06-13T23:40:00Z",
+            "title": "파주시 전세 우려",
+            "contentSnippet": "전세와 공급 부담 언급",
+        },
+        {
+            "source": "PPOMPPU",
+            "externalId": "paju-current",
+            "publishedAt": "2026-06-14T00:20:00Z",
+            "title": "파주시 GTX 기대",
+            "contentSnippet": "교통 기대와 신축 언급",
+        },
+    ]
+    now = datetime(2026, 6, 14, 1, 2, tzinfo=timezone.utc)
+    job = RealEstateReactionSnapshotRefreshJob(
+        client=client,
+        aliases_jsonl=aliases_path,
+        community_posts_jsonl=None,
+        backend_posts_source="PPOMPPU",
+        backend_posts_limit=100,
+        window_minutes=60,
+        clock=lambda: now,
+    )
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert result.observation_count == 2
+    assert result.snapshot_count == 1
+    assert client.export_requests == [
+        {
+            "source": "PPOMPPU",
+            "published_from": "2026-06-13T23:00:00Z",
+            "published_to": "2026-06-14T01:00:00Z",
+            "limit": 100,
+        }
+    ]
+    assert client.pushed_batches[0][0]["targetId"] == "region-gyeonggi-paju"
+    assert client.pushed_batches[0][0]["mentionCount"] == 1
+    assert client.pushed_batches[0][0]["previousMentionCount"] == 1
+
+
+def test_real_estate_reaction_snapshot_refresh_job_can_load_aliases_from_backend_loader():
+    client = _Client()
+    client.export_posts = [
+        {
+            "source": "PPOMPPU",
+            "externalId": "paju-current",
+            "publishedAt": "2026-06-14T00:20:00Z",
+            "title": "paju GTX expectation",
+            "contentSnippet": "paju transport topic is repeated",
+        }
+    ]
+    alias_loads = []
+
+    def load_aliases():
+        alias_loads.append("loaded")
+        return [
+            RealEstateAliasRule(
+                target_type="region",
+                target_id="region-gyeonggi-paju",
+                alias="paju",
+                review_state="approved",
+                confidence=0.95,
+            )
+        ]
+
+    job = RealEstateReactionSnapshotRefreshJob(
+        client=client,
+        aliases_jsonl=None,
+        alias_loader=load_aliases,
+        community_posts_jsonl=None,
+        backend_posts_source="PPOMPPU",
+        backend_posts_limit=100,
+        window_minutes=60,
+        clock=lambda: datetime(2026, 6, 14, 1, 2, tzinfo=timezone.utc),
+    )
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert alias_loads == ["loaded"]
+    assert result.observation_count == 1
+    assert result.snapshot_count == 1
+    assert client.pushed_batches[0][0]["targetId"] == "region-gyeonggi-paju"
 
 
 def test_real_estate_reaction_snapshot_refresh_job_rolls_child_region_up_to_parent(tmp_path):

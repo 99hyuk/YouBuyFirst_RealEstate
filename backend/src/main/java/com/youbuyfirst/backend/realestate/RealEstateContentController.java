@@ -36,6 +36,19 @@ public class RealEstateContentController {
         return new RealEstateContentListResponse(service.listForTarget(targetId, feed, limit));
     }
 
+    @GetMapping("/internal/realestate/targets/{targetId}/content")
+    public RealEstateContentListResponse internalTargetContent(
+            @PathVariable String targetId,
+            @RequestParam(defaultValue = "all") String feed,
+            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "candidate") String reviewState,
+            @RequestParam(defaultValue = "all") String linkType
+    ) {
+        return new RealEstateContentListResponse(
+                service.listInternalForTarget(targetId, feed, limit, reviewState, linkType)
+        );
+    }
+
     @GetMapping("/api/realestate/newsroom")
     public RealEstateContentListResponse newsroom(
             @RequestParam(defaultValue = "all") String feed,

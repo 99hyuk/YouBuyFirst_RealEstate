@@ -26,6 +26,33 @@ class RealEstateAliasIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
+    void exposesSeededRegionAliasesForMatcher() throws Exception {
+        ResponseEntity<String> matcherAliases = restTemplate.getForEntity(
+                "/internal/realestate/aliases?reviewState=approved&ambiguous=false&targetType=region&limit=200",
+                String.class
+        );
+
+        assertThat(matcherAliases.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode items = objectMapper.readTree(matcherAliases.getBody()).path("items");
+        assertThat(items).anySatisfy(item -> {
+            assertThat(item.path("targetId").asText()).isEqualTo("region-seoul");
+            assertThat(item.path("alias").asText()).isEqualTo("서울");
+        });
+        assertThat(items).anySatisfy(item -> {
+            assertThat(item.path("targetId").asText()).isEqualTo("region-gyeonggi");
+            assertThat(item.path("alias").asText()).isEqualTo("경기");
+        });
+        assertThat(items).anySatisfy(item -> {
+            assertThat(item.path("targetId").asText()).isEqualTo("region-daejeon");
+            assertThat(item.path("alias").asText()).isEqualTo("대전");
+        });
+        assertThat(items).anySatisfy(item -> {
+            assertThat(item.path("targetId").asText()).isEqualTo("region-seoul-mapo");
+            assertThat(item.path("alias").asText()).isEqualTo("마포구");
+        });
+    }
+
+    @Test
     void upsertsAliasesAndExposesOnlyApprovedNonAmbiguousAliasesForMatcher() throws Exception {
         Map<String, Object> request = Map.of(
                 "items",
@@ -33,7 +60,7 @@ class RealEstateAliasIntegrationTest {
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
                                 Map.entry("targetId", "region-seoul-jongno"),
-                                Map.entry("alias", "종로 재건축"),
+                                Map.entry("alias", "jongno-rebuild"),
                                 Map.entry("aliasType", "community_slang"),
                                 Map.entry("source", "manual:seed"),
                                 Map.entry("evidenceUrl", "https://example.com/jongno"),
@@ -45,7 +72,7 @@ class RealEstateAliasIntegrationTest {
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
                                 Map.entry("targetId", "region-seoul-jongno"),
-                                Map.entry("alias", "종로"),
+                                Map.entry("alias", "jongno"),
                                 Map.entry("aliasType", "short_name"),
                                 Map.entry("source", "crawler:candidate"),
                                 Map.entry("confidence", 0.52),
@@ -56,8 +83,8 @@ class RealEstateAliasIntegrationTest {
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
                                 Map.entry("targetId", "region-seoul"),
-                                Map.entry("alias", "서울"),
-                                Map.entry("aliasType", "official"),
+                                Map.entry("alias", "seoul-hot"),
+                                Map.entry("aliasType", "community_slang"),
                                 Map.entry("source", "seed:region"),
                                 Map.entry("confidence", 1.0),
                                 Map.entry("reviewState", "approved"),
@@ -79,7 +106,7 @@ class RealEstateAliasIntegrationTest {
                         List.of(Map.ofEntries(
                                 Map.entry("targetType", "region"),
                                 Map.entry("targetId", "region-seoul-jongno"),
-                                Map.entry("alias", " 종로-재건축 "),
+                                Map.entry("alias", " jongno rebuild "),
                                 Map.entry("aliasType", "community_slang"),
                                 Map.entry("source", "manual:review"),
                                 Map.entry("evidenceUrl", "https://example.com/jongno-updated"),
@@ -113,22 +140,25 @@ class RealEstateAliasIntegrationTest {
 
         assertThat(publicAliases.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode publicItems = objectMapper.readTree(publicAliases.getBody()).path("items");
-        assertThat(publicItems).hasSize(1);
-        assertThat(publicItems.get(0).path("targetId").asText()).isEqualTo("region-seoul-jongno");
-        assertThat(publicItems.get(0).path("alias").asText()).isEqualTo("종로-재건축");
-        assertThat(publicItems.get(0).path("normalizedAlias").asText()).isEqualTo("종로재건축");
-        assertThat(publicItems.get(0).path("source").asText()).isEqualTo("manual:review");
-        assertThat(publicItems.get(0).path("evidenceUrl").asText()).isEqualTo("https://example.com/jongno-updated");
-        assertThat(publicItems.get(0).path("confidence").asDouble()).isEqualTo(0.91);
-        assertThat(publicItems.get(0).path("reviewState").asText()).isEqualTo("approved");
-        assertThat(publicItems.get(0).path("ambiguous").asBoolean()).isFalse();
+        assertThat(publicItems).anySatisfy(item -> {
+            assertThat(item.path("targetId").asText()).isEqualTo("region-seoul-jongno");
+            assertThat(item.path("alias").asText()).isEqualTo("jongno rebuild");
+            assertThat(item.path("normalizedAlias").asText()).isEqualTo("jongnorebuild");
+            assertThat(item.path("aliasType").asText()).isEqualTo("community_slang");
+            assertThat(item.path("source").asText()).isEqualTo("manual:review");
+            assertThat(item.path("evidenceUrl").asText()).isEqualTo("https://example.com/jongno-updated");
+            assertThat(item.path("confidence").asDouble()).isEqualTo(0.91);
+            assertThat(item.path("reviewState").asText()).isEqualTo("approved");
+            assertThat(item.path("ambiguous").asBoolean()).isFalse();
+        });
 
         assertThat(matcherAliases.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode matcherItems = objectMapper.readTree(matcherAliases.getBody()).path("items");
-        assertThat(matcherItems).hasSize(1);
-        assertThat(matcherItems.get(0).path("alias").asText()).isEqualTo("종로-재건축");
-        assertThat(matcherItems.get(0).path("aliasType").asText()).isEqualTo("community_slang");
-        assertThat(matcherItems.get(0).path("targetType").asText()).isEqualTo("region");
-        assertThat(matcherItems.get(0).path("targetId").asText()).isEqualTo("region-seoul-jongno");
+        assertThat(matcherItems).anySatisfy(item -> {
+            assertThat(item.path("alias").asText()).isEqualTo("jongno rebuild");
+            assertThat(item.path("aliasType").asText()).isEqualTo("community_slang");
+            assertThat(item.path("targetType").asText()).isEqualTo("region");
+            assertThat(item.path("targetId").asText()).isEqualTo("region-seoul-jongno");
+        });
     }
 }

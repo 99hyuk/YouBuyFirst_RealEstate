@@ -48,7 +48,8 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
     @Query("""
             select fact
             from RealEstateMarketFact fact
-            where fact.targetId = :targetId
+            left join RealEstateRegion region on region.targetId = fact.targetId
+            where (fact.targetId = :targetId or region.parentRegionId = :targetId)
               and fact.factType = :factType
               and fact.observedAt between :startDate and :endDate
             order by fact.observedAt asc, fact.providerObjectId asc
@@ -57,6 +58,20 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
             @Param("targetId") String targetId,
             @Param("factType") String factType,
             @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+            select max(fact.observedAt)
+            from RealEstateMarketFact fact
+            left join RealEstateRegion region on region.targetId = fact.targetId
+            where (fact.targetId = :targetId or region.parentRegionId = :targetId)
+              and fact.factType = :factType
+              and fact.observedAt <= :endDate
+            """)
+    Optional<LocalDate> findLatestMapLayerObservedAt(
+            @Param("targetId") String targetId,
+            @Param("factType") String factType,
             @Param("endDate") LocalDate endDate
     );
 }

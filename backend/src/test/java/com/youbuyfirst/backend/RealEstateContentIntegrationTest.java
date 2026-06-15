@@ -79,6 +79,11 @@ class RealEstateContentIntegrationTest {
                 String.class,
                 "region-seoul"
         );
+        ResponseEntity<String> evidenceContent = restTemplate.getForEntity(
+                "/internal/realestate/targets/{targetId}/content?feed=news&limit=10&reviewState=candidate&linkType=context",
+                String.class,
+                "region-seoul"
+        );
 
         assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode ingestRoot = objectMapper.readTree(ingest.getBody());
@@ -113,5 +118,13 @@ class RealEstateContentIntegrationTest {
 
         assertThat(candidateTimeline.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(objectMapper.readTree(candidateTimeline.getBody()).path("items")).isEmpty();
+
+        assertThat(evidenceContent.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode evidenceContentItems = objectMapper.readTree(evidenceContent.getBody()).path("items");
+        assertThat(evidenceContentItems).hasSize(1);
+        assertThat(evidenceContentItems.get(0).path("contentId").asText()).isEqualTo("content-news-20260612-jongno");
+        assertThat(evidenceContentItems.get(0).path("targetId").asText()).isEqualTo("region-seoul");
+        assertThat(evidenceContentItems.get(0).path("reviewState").asText()).isEqualTo("candidate");
+        assertThat(evidenceContentItems.get(0).path("linkType").asText()).isEqualTo("context");
     }
 }

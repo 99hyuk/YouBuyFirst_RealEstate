@@ -92,7 +92,9 @@
 - `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답을 해당 지역/단지와 연결된 뉴스, 리포트, 영상, 링크 카드 입력으로 사용합니다.
 - `GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=` 응답을 정책, 공급, 교통, 뉴스/컬럼 맥락 이벤트, `market_fact`, `reaction`, `content` 시간축 입력으로 사용합니다. 이벤트는 가격 변화의 직접 원인처럼 쓰지 않고 함께 관찰된 맥락 또는 관측 사실로 표시합니다.
 - `GET /api/realestate/targets/{targetId}/evidence-logs?limit=` 응답을 AI 근거 로그 섹션 입력으로 사용합니다. 화면에는 평가 요약, 평가 버전, model/prompt, confidence, caveat, evidence item을 보여주며 내부 추론 전문이나 행동 지시 문구는 표시하지 않습니다.
+- EvidenceLog의 `evidenceItems[]` 중 `sourceUrl`이 있는 항목은 AI 근거 로그 안에서도 외부 근거 링크로 렌더링합니다. 링크 칩에는 label, valueText, `sourceId`, `sourceDataStatus`, 발행 시각을 함께 표시해 SerpApi 후보가 `candidate`인지 숨기지 않습니다.
 - 프론트 상세 화면은 route의 `targetId`를 그대로 backend API에 넘깁니다. 예시는 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`처럼 `real_estate_targets.id`와 같은 값입니다. API 응답이 있으면 근거 링크 후보를 승인된 content row로 교체하고, 없거나 실패하면 기존 mock evidence를 `원문 확인 필요` 상태로 유지합니다.
+- TOP10에 오른 `region-seoul` 같은 target이 아직 상세 fixture에 없더라도, route `targetId`로 `evidence-logs` API를 조회해 AI 근거 로그를 먼저 보여줍니다. 로그가 있으면 unsupported가 아니라 `실시간 근거 리포트` 상태로 전환하고, 잘못된 지역 mock 리포트로 대체하지 않습니다.
 - 단지 위치 레이어 1차 구현은 `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`에서 front fixture marker를 사용합니다. 실제 좌표 DB/API 연결 전까지 marker `dataStatus`는 `mock 좌표`로 표시합니다.
 - content row는 원문 전문을 복제하지 않고 제목, 출처, URL, 발행일/metric label만 근거 링크 카드에 표시합니다.
 - `eventType=market_fact` 항목은 `sourceRefType=market_fact`, `sourceRefId=real_estate_market_facts.id`를 가지며, 제목은 `매매 실거래`, `전월세 실거래`, `매물 수`, `가격지수`처럼 사용자용 라벨로 표시합니다.
@@ -113,6 +115,7 @@
 ## 변경 로그
 
 - 2026-06-14: 지역/단지 상세에 `evidence-logs` API 우선 AI 근거 로그 섹션을 연결하고, 비어 있으면 대기 상태를 보여주는 기준 추가.
+- 2026-06-15: 상세 fixture가 없는 TOP10 region target도 route `targetId` 기준 EvidenceLog를 조회하고, 로그가 있으면 `실시간 근거 리포트` 상태로 표시하는 기준 추가.
 - 2026-06-14: 단지 내장 지도 marker를 `nearby-complexes` API 우선 구조로 연결하고, 실패 시 fixture fallback을 유지하는 기준 추가.
 - 2026-06-13: 동/단지 상세 카카오맵 SDK 내장 prototype, marker 선택 패널, mock 좌표 fallback 표시 기준 추가.
 - 2026-06-13: 전국~동은 자체 도식화 heatmap, 동/단지 상세부터는 카카오맵 SDK 내장 지도로 보는 하이브리드 기준 추가.
@@ -122,3 +125,7 @@
 - 2026-06-01: 지도 stage 확대, heat 색상 대비 강화, 커뮤니티 언급량/핵심 쟁점 리포트 강화
 - 2026-06-01: 지도형 heat layer와 drilldown 구현 방향 추가
 - 2026-06-01: 지역/단지 상세 Screen Brief 생성
+
+## 추가 변경 메모
+
+- 2026-06-15: EvidenceLog item의 `sourceUrl`이 있으면 AI 근거 로그 안에서 SerpApi/content 후보 링크와 candidate/source 상태를 함께 표시합니다.

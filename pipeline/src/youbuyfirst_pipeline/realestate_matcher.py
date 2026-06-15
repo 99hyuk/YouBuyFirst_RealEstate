@@ -214,6 +214,10 @@ def load_real_estate_alias_rules(path: str | Path) -> list[RealEstateAliasRule]:
 
 def load_real_estate_posts_for_matching(path: str | Path) -> list[RealEstatePostForMatching]:
     records = _load_json_records(path)
+    return real_estate_posts_for_matching_from_records(records)
+
+
+def real_estate_posts_for_matching_from_records(records: list[dict[str, Any]]) -> list[RealEstatePostForMatching]:
     return [_post_from_mapping(record) for record in records]
 
 
