@@ -9,6 +9,9 @@
 | 화면 | 영역 | 변경 |
 | --- | --- | --- |
 | `/dashboard` | 상단 지역 반응 캐러셀, 언급 합계, 관심 drawer | `reaction-ranking.json` 대신 `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10` 우선 표시 |
+| `/dashboard` | 부동산 투기 과열 지표, headline, 라이징 스타 drawer | `dashboard-summary.json` fixture 대신 region reaction ranking 응답에서 파생하고, 비어 있으면 `수집 전/insufficient` 표시 |
+| `/dashboard` | 핵심 지역별 상승률 chart | `dashboard-summary.json` 지역 series 대신 `GET /api/realestate/map/layers?layerType=sido` period snapshot을 랭킹형 차트로 표시 |
+| `/dashboard` | 주요 지표 카드와 drawer 지표 | market summary API가 비거나 실패하면 fixture 지표를 섞지 않고 빈 상태/오류 상태 표시 |
 | `/dashboard` | 뉴스, 리포트, 영상, 블로그/커뮤니티 카드 | `dashboard-summary.json` fixture feed 대신 `GET /api/realestate/newsroom?feed=all&page=1&pageSize=40` 우선 표시 |
 | `/newsroom` | 종합/개별 feed 목록 | API 빈 응답 또는 실패 때 mock feed를 넣지 않고 빈 상태와 오류 상태 표시 |
 
@@ -16,8 +19,7 @@
 
 | 화면 | 남은 영역 | 현재 상태 | 다음 조치 |
 | --- | --- | --- | --- |
-| `/dashboard` | 부동산 투기 과열 지표, headline, 핵심 지역별 상승률 chart | `dashboard-summary.json` 기반 fixture | market summary, map layer snapshot, reaction summary를 조합한 dashboard summary API로 승격 |
-| `/dashboard` | 요즘 뜨는 지역, 확인 필요, drawer 지표 | 일부 fixture | reaction ranking, EvidenceLog, market fact 기반으로 재구성 |
+| `/dashboard` | 확인 필요 copy, 시장 fact coverage 부족 | fixture 수치 노출은 제거했지만 운영 체크리스트와 공공데이터 coverage 부족이 남음 | 확인 필요 copy를 배치 상태/품질 지표 API로 승격 |
 | `/newsroom` | fallback fixture 배열 | 화면에는 노출하지 않지만 파일 내부에 남아 있음 | 다음 PR에서 미사용 fixture 생성 코드를 제거 |
 | `/realestate/map` | seed/mock map snapshot, 일부 지역 drilldown | API 우선이지만 coverage 부족 시 seed/mock fallback | 실제 공공데이터/반응 snapshot refresh coverage 확대, fallback 표시 유지 |
 | `/realestate/map/:regionId` | 지역별 오른쪽 보고서 | 모든 지역에 EvidenceLog가 있는 상태는 아님 | 지도 클릭 target에 EvidenceLog가 없으면 일일 배치 대상에 포함하거나 빈 리포트 상태 표시 |
