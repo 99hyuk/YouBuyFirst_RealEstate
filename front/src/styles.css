@@ -9687,6 +9687,18 @@ a {
   line-height: 1.5;
 }
 
+.newsroom-empty-state {
+  margin: 0;
+  padding: 18px 14px;
+  border: 1px solid rgba(212, 223, 236, 0.92);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.88);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.5;
+}
+
 .region-ranking-row:hover {
   background: #f8fbff;
 }

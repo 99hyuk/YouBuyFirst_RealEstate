@@ -262,8 +262,8 @@ const activeFilter = computed<NewsroomFilter>(() => {
   const value = Array.isArray(feed) ? feed[0] : feed;
   return filterIds.includes(value as NewsroomFilter) ? (value as NewsroomFilter) : 'all';
 });
-const feedItems = ref<NewsroomFeedItem[]>(fallbackFeedItems);
-const newsroomLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const feedItems = ref<NewsroomFeedItem[]>([]);
+const newsroomLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 
 const activeTab = computed(() => filterLabels[activeFilter.value]);
 const activeItems = computed(() =>
@@ -355,13 +355,15 @@ const listStatusLabel = computed(() =>
 const newsroomSourceLabel = computed(() => {
   if (newsroomLoadState.value === 'live') return 'content API 반영';
   if (newsroomLoadState.value === 'loading') return 'content API 확인 중';
-  return 'mock fallback';
+  if (newsroomLoadState.value === 'empty') return '수집 전/insufficient';
+  return 'content API 오류';
 });
 
 const titleStatusLabel = computed(() => `뉴스 · 리포트 · 영상 · 원문 · ${newsroomSourceLabel.value}`);
 
 const refreshNewsroomContent = async () => {
   newsroomLoadState.value = 'loading';
+  feedItems.value = [];
   try {
     const contentItems = await fetchRealEstateNewsroom({
       feed: activeFilter.value,
@@ -369,11 +371,11 @@ const refreshNewsroomContent = async () => {
       pageSize: 100
     });
     const mappedItems = buildNewsroomFeedItems(contentItems);
-    feedItems.value = mappedItems.length ? mappedItems : fallbackFeedItems;
-    newsroomLoadState.value = mappedItems.length ? 'live' : 'fallback';
+    feedItems.value = mappedItems;
+    newsroomLoadState.value = mappedItems.length ? 'live' : 'empty';
   } catch {
-    feedItems.value = fallbackFeedItems;
-    newsroomLoadState.value = 'fallback';
+    feedItems.value = [];
+    newsroomLoadState.value = 'error';
   }
 };
 
@@ -415,6 +417,9 @@ watch(activeFilter, () => {
         </div>
 
         <div class="newsroom-list compact-newsroom-list">
+          <p v-if="!column.items.length" class="newsroom-empty-state">
+            {{ newsroomLoadState === 'loading' ? '콘텐츠를 불러오는 중입니다.' : newsroomLoadState === 'error' ? '콘텐츠 API를 불러오지 못했습니다. provider/asOf 확인이 필요합니다.' : '수집된 항목이 아직 없습니다. 수집 전/insufficient 상태입니다.' }}
+          </p>
           <a
             v-for="item in column.items"
             :key="item.id"
@@ -450,6 +455,9 @@ watch(activeFilter, () => {
       </div>
 
       <div class="newsroom-list">
+        <p v-if="!pagedItems.length" class="newsroom-empty-state">
+          {{ newsroomLoadState === 'loading' ? '콘텐츠를 불러오는 중입니다.' : newsroomLoadState === 'error' ? '콘텐츠 API를 불러오지 못했습니다. provider/asOf 확인이 필요합니다.' : '선택한 feed에 수집된 항목이 아직 없습니다. 수집 전/insufficient 상태입니다.' }}
+        </p>
         <a
           v-for="item in pagedItems"
           :key="item.id"
