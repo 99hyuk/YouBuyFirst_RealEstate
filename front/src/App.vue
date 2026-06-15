@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
+
+import {
+  fetchRealEstateReactionRanking,
+  type RealEstateReactionRankingItem
+} from './lib/realestate-reactions';
 
 const railItems = [
   { id: 'watch', label: '관심', shortcut: 'W' },
@@ -9,23 +14,11 @@ const railItems = [
   { id: 'live', label: '실시간', shortcut: 'L' }
 ];
 
-const liveTopics = [
-  '속보 09:20 마포 전세 매물 체감 언급 30분 전 대비 +18%',
-  '속보 09:35 동탄역권 GTX 키워드가 네이버 카페 상위권 도달',
-  '정책 10:00 대출 규제 관망 댓글이 잠실·송파 생활권에 확산',
-  '커뮤니티 10:05 성수동 상권·임대료 키워드 동반 증가'
-];
-
-const watchTargets = [
-  { name: '마포구 아파트', targetId: 'region-seoul-mapo', value: '14.5억', change: '+0.55%', tone: 'up' },
-  { name: '성수동 생활권', targetId: 'living-area-seoul-seongsu', value: '18.2억', change: '+0.66%', tone: 'up' },
-  { name: '동탄역권', targetId: 'living-area-gyeonggi-dongtan-station', value: '9.8억', change: '+0.31%', tone: 'up' },
-  { name: '잠실동 단지군', targetId: 'living-area-seoul-jamsil', value: '22.5억', change: '-0.22%', tone: 'down' }
-];
-
 const activeRailItem = ref('watch');
 const railExpanded = ref(false);
 const newsroomMenuDismissed = ref(false);
+const shellRankingItems = ref<RealEstateReactionRankingItem[]>([]);
+const shellReactionState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const route = useRoute();
 const activeRailLabel = computed(() => railItems.find((item) => item.id === activeRailItem.value)?.label ?? '관심');
 const newsroomFeeds = [
@@ -39,6 +32,70 @@ const activeNewsroomFeed = computed(() => {
   const feed = route.query.feed;
   return Array.isArray(feed) ? feed[0] ?? '' : feed ?? '';
 });
+
+const loadShellSignals = async () => {
+  shellReactionState.value = 'loading';
+  try {
+    const ranking = await fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 1440, limit: 6 });
+    shellRankingItems.value = ranking.items;
+    shellReactionState.value = ranking.items.length ? 'live' : 'empty';
+  } catch {
+    shellRankingItems.value = [];
+    shellReactionState.value = 'error';
+  }
+};
+
+onMounted(() => {
+  void loadShellSignals();
+});
+
+const shellStatusLabel = computed(() => {
+  if (shellReactionState.value === 'live') return 'reaction API 반영';
+  if (shellReactionState.value === 'loading') return 'reaction API 확인 중';
+  if (shellReactionState.value === 'empty') return '수집 전/insufficient';
+  return 'reaction API 오류';
+});
+
+const liveTopics = computed(() => {
+  if (!shellRankingItems.value.length) {
+    return [
+      {
+        label: shellReactionState.value === 'loading' ? '확인' : '상태',
+        text: shellReactionState.value === 'error'
+          ? '지역 반응 API 오류 · 크롤링/스냅샷 배치 확인 필요'
+          : '지역 반응 TOP10 수집 전 · 크롤링/스냅샷 배치 대기'
+      }
+    ];
+  }
+
+  return shellRankingItems.value.slice(0, 4).map((item) => ({
+    label: item.stale ? 'STALE' : 'LIVE',
+    text: `${item.displayName} 언급 ${formatDelta(item.mentionDeltaPct)} · ${issueLabel(item)}`
+  }));
+});
+
+const watchTargets = computed(() =>
+  shellRankingItems.value.slice(0, 4).map((item) => {
+    const concern = item.reactionDirectionRatio.concern;
+    const expectation = item.reactionDirectionRatio.expectation;
+    return {
+      name: item.displayName,
+      targetId: item.targetId,
+      value: `${item.mentionCount.toLocaleString('ko-KR')}건`,
+      change: formatDelta(item.mentionDeltaPct),
+      tone: concern > expectation ? 'down' : expectation > concern ? 'up' : 'flat'
+    };
+  })
+);
+
+function formatDelta(value: number): string {
+  return `${value > 0 ? '+' : ''}${value.toLocaleString('ko-KR', { maximumFractionDigits: 1 })}%`;
+}
+
+function issueLabel(item: RealEstateReactionRankingItem): string {
+  const issue = item.issueMix[0]?.label;
+  return issue ? `${issue} 쟁점` : '쟁점 확인 필요';
+}
 
 const openRail = (id: string) => {
   activeRailItem.value = id;
@@ -63,7 +120,7 @@ const dismissNewsroomMenu = () => {
           <RouterLink class="brand-home" data-testid="app-title" to="/dashboard">
             <h1>너나사 <span>YouBuyFirst</span></h1>
           </RouterLink>
-          <strong>MOCK</strong>
+          <strong>BETA</strong>
         </div>
 
         <nav class="main-nav" aria-label="주요 화면">
@@ -103,12 +160,12 @@ const dismissNewsroomMenu = () => {
       <div class="topbar-live-strip">
         <section class="live-strip" aria-label="상단 실시간 속보">
           <div class="live-strip-track">
-            <span class="live-dot">속보</span>
-            <span v-for="topic in liveTopics" :key="topic" class="live-topic">
-              <strong>LIVE</strong>
-              {{ topic }}
+            <span class="live-dot">반응</span>
+            <span v-for="topic in liveTopics" :key="`${topic.label}-${topic.text}`" class="live-topic">
+              <strong>{{ topic.label }}</strong>
+              {{ topic.text }}
             </span>
-            <span class="live-edge-test">mock data · 실시간 수집 전 API 계약 후보</span>
+            <span class="live-edge-test">{{ shellStatusLabel }}</span>
           </div>
         </section>
       </div>
@@ -160,7 +217,7 @@ const dismissNewsroomMenu = () => {
 
         <div class="site-footer-bottom">
           <span>© 2026 YouBuyFirst · 모든 부동산 지표는 참고용이며 실시간이 아닐 수 있습니다.</span>
-          <span>BETA · mock wireframe · 2026.05</span>
+          <span>BETA · 관찰형 부동산 인사이트 · 2026.06</span>
         </div>
       </div>
     </footer>
@@ -172,10 +229,14 @@ const dismissNewsroomMenu = () => {
             <p class="label">quick panel</p>
             <h2>{{ activeRailLabel }}</h2>
           </div>
-          <span class="panel-mini-badge">mock</span>
+          <span class="panel-mini-badge">{{ shellStatusLabel }}</span>
         </div>
 
         <div v-if="activeRailItem === 'watch'" class="edge-watch-list">
+          <div v-if="!watchTargets.length" class="edge-empty-state">
+            <strong>관심 후보 수집 전</strong>
+            <p>{{ shellStatusLabel }} · reaction ranking이 쌓이면 이 영역에 TOP 후보가 표시됩니다.</p>
+          </div>
           <article v-for="target in watchTargets" :key="target.targetId" class="edge-watch-row">
             <span class="edge-initial">{{ target.name.slice(0, 1) }}</span>
             <div>
@@ -190,26 +251,22 @@ const dismissNewsroomMenu = () => {
         </div>
 
         <div v-else-if="activeRailItem === 'pulse'" class="edge-live-list">
-          <article>
-            <span>반응 변화</span>
-            <strong>마포구</strong>
-            <em class="up">+18%</em>
-          </article>
-          <article>
-            <span>전세 우려</span>
-            <strong>잠실동</strong>
-            <em class="down">관망 증가</em>
-          </article>
-          <article>
-            <span>관심 테마</span>
-            <strong>GTX</strong>
-            <em class="up">상위권</em>
+          <div v-if="!shellRankingItems.length" class="edge-empty-state">
+            <strong>반응 수집 전</strong>
+            <p>{{ shellStatusLabel }} · 커뮤니티 snapshot이 생성되면 쟁점 변화가 표시됩니다.</p>
+          </div>
+          <article v-for="item in shellRankingItems.slice(0, 3)" :key="item.targetId">
+            <span>{{ issueLabel(item) }}</span>
+            <strong>{{ item.displayName }}</strong>
+            <em :class="item.reactionDirectionRatio.concern > item.reactionDirectionRatio.expectation ? 'down' : 'up'">
+              {{ formatDelta(item.mentionDeltaPct) }}
+            </em>
           </article>
         </div>
 
         <div v-else class="edge-empty-state">
           <strong>{{ activeRailLabel }} 패널</strong>
-          <p>현재는 화면 구조 확인용 mock 영역입니다. 실제 데이터 연결 전까지 표시 항목만 고정합니다.</p>
+          <p>{{ shellStatusLabel }} · 해당 패널의 실제 API가 열리면 항목을 표시합니다.</p>
         </div>
       </section>
     </aside>

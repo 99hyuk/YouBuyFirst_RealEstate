@@ -13,7 +13,9 @@
 | `/dashboard` | 핵심 지역별 상승률 chart | `dashboard-summary.json` 지역 series 대신 `GET /api/realestate/map/layers?layerType=sido` period snapshot을 랭킹형 차트로 표시 |
 | `/dashboard` | 주요 지표 카드와 drawer 지표 | market summary API가 비거나 실패하면 fixture 지표를 섞지 않고 빈 상태/오류 상태 표시 |
 | `/dashboard` | 뉴스, 리포트, 영상, 블로그/커뮤니티 카드 | `dashboard-summary.json` fixture feed 대신 `GET /api/realestate/newsroom?feed=all&page=1&pageSize=40` 우선 표시 |
+| 공통 shell | 상단 mock badge, 고정 속보, 오른쪽 rail mock 관심 목록 | `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=6` 기반으로 전환하고 비면 `수집 전/insufficient` 표시 |
 | `/newsroom` | 종합/개별 feed 목록 | API 빈 응답 또는 실패 때 mock feed를 넣지 않고 빈 상태와 오류 상태 표시 |
+| `/realestate/watchlist` | 관심 지역 목록, 요약, 원문 후보, 알림 판단 | 저장 기능 전 mock watchlist 대신 `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10` 기반 관심 후보와 `수집 전/insufficient` 표시 |
 
 ## 아직 남은 mock/fixture 노출 위험
 
@@ -26,7 +28,7 @@
 | `/realestate/reactions` | 단지군 TOP10, 보조 console 일부 | 지역 ranking은 API, 단지군은 coverage 부족 시 빈 상태 | alias/source coverage 보강 후 complex snapshot 생성 |
 | `/realestate/targets/:targetId` | 마포/동탄/단지 일부 상세 fixture, mock 좌표 | EvidenceLog API는 우선 조회하지만 market/timeline/좌표 fixture가 남음 | target detail summary API와 검증 좌표 provider 연결 |
 | `/indicators` | 일부 trend chart와 보조 히트맵 | API 우선 + mock fallback 혼합 | 지표별 API 빈 상태 분리, chart mock 제거 |
-| `/realestate/watchlist` | 관심 지역 목록과 원문 묶음 | 대부분 mock | watchlist API 또는 saved target registry 없으면 수집 전 상태로 전환 |
+| `/realestate/watchlist` | 실제 사용자 저장 watchlist | mock 목록은 제거했고 현재는 reaction ranking 관심 후보 | 로그인/사용자 watch API가 열리면 후보 목록과 저장 목록을 분리 |
 
 ## 크롤링/SerpApi/AI 운영 기준
 
@@ -37,7 +39,7 @@
 
 ## 다음 PR 우선순위
 
-1. `/dashboard`의 투기 과열 지표와 지역 상승률 chart를 실제 API summary로 대체합니다.
-2. `/realestate/targets/:targetId`에서 fixture market/timeline 값을 EvidenceLog, content, market fact API 빈 상태와 분리합니다.
-3. `/indicators`와 `/realestate/watchlist`의 visible mock fallback을 수집 전/insufficient 상태로 바꿉니다.
-4. 뉴스룸 파일 내부의 미사용 fallback fixture 생성 코드를 제거합니다.
+1. `/realestate/targets/:targetId`에서 fixture market/timeline 값을 EvidenceLog, content, market fact API 빈 상태와 분리합니다.
+2. `/indicators`의 visible mock fallback과 chart mock을 수집 전/insufficient 상태로 바꿉니다.
+3. 뉴스룸 파일 내부의 미사용 fallback fixture 생성 코드를 제거합니다.
+4. 지도/지역 상세의 seed/mock coverage를 실제 공공데이터/반응 snapshot refresh로 확대합니다.

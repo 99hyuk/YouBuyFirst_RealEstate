@@ -158,6 +158,9 @@ describe('front dashboard shell', () => {
     expect(wrapper.get('[data-testid="nav-watchlist"]').text()).toContain('관심 지역');
     expect(wrapper.get('[data-testid="nav-watchlist"]').attributes('href')).toBe('/realestate/watchlist');
     expect(wrapper.find('.topbar .live-strip').exists()).toBe(true);
+    expect(wrapper.find('.brand-lockup > strong').text()).toBe('BETA');
+    expect(wrapper.find('.topbar').text()).not.toContain('MOCK');
+    expect(wrapper.find('.topbar-live-strip').text()).not.toContain('mock data');
     expect(wrapper.text()).toContain('부동산 투기 과열 지표');
     expect(wrapper.text()).toContain('0점');
     expect(wrapper.text()).toContain('수집 전 · 최근 24시간 최신');
@@ -301,6 +304,9 @@ describe('front dashboard shell', () => {
     const watchlist = await mountAt('/realestate/watchlist');
     expect(watchlist.text()).toContain('관심 지역');
     expect(watchlist.text()).toContain('부동산 자문 아님');
+    expect(watchlist.text()).toContain('reaction API 확인 중');
+    expect(watchlist.text()).not.toContain('mock watchlist');
+    expect(watchlist.text()).not.toContain('원문 묶음 선택 mock');
     expect(watchlist.text()).toContain('커뮤니티 원문 · 별칭 DB 연결 준비');
     expect(watchlist.text()).toContain('원문/공공데이터 후보');
     expect(watchlist.text()).toContain('민감정보 마스킹');

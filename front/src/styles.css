@@ -1513,11 +1513,15 @@ a {
   display: inline-grid;
   place-items: center;
   min-width: 24px;
+  max-width: 128px;
   min-height: 22px;
+  padding: 0 8px;
   border-radius: 6px;
   color: #7d8898;
   font-size: 11px;
   font-weight: 820;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .market-unit-toggle strong,
