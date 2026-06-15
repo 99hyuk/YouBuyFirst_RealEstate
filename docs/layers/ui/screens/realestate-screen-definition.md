@@ -467,8 +467,9 @@ Route: `/realestate/watchlist`
 - `POST /api/users/me/watch-targets`
 - `GET /api/users/me/alerts`
 - `GET /api/users/me/observation-logs`
+- 저장 기능 전 임시 후보: `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10`
 
-현재 로그인은 화면상 버튼만 존재한다. 실제 사용자 기능이 열리기 전에는 mock watchlist로 명확히 표시한다.
+현재 로그인은 화면상 버튼만 존재한다. 실제 사용자 기능이 열리기 전에는 저장된 관심 목록처럼 보이는 mock watchlist를 두지 않고, 지역 반응 TOP10을 `관심 후보`로 표시한다. API가 비거나 실패하면 `수집 전/insufficient` 또는 오류 상태를 표시한다.
 
 ## 11. 지역/단지 상세 화면 정의
 
@@ -521,6 +522,8 @@ Route: `/realestate/targets/:targetId`
 - `GET /api/realestate/targets/:targetId/similar-windows`
 
 ## 12. 공통 컴포넌트 정의
+
+공통 shell의 상단 반응 strip과 오른쪽 rail은 정적 mock 문구를 두지 않는다. 로그인/사용자 저장 기능이 열리기 전에는 `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=6` 응답을 우선 사용하고, 응답이 비면 `수집 전/insufficient`, 실패하면 `reaction API 오류`를 표시한다.
 
 ### 12.1 상태 배지
 
@@ -593,7 +596,7 @@ ERD 후보:
 - [ ] 상승 빨강, 하락 파랑 색상 토큰 공통화
 - [ ] 뉴스/리포트/커뮤니티 링크의 출처 icon fallback 정리
 - [ ] 지역/단지 상세의 evidence log 구조 확정
-- [ ] 관심 지역은 로그인 전 mock 상태와 로그인 후 실제 사용자 상태 분리
+- [ ] 관심 지역은 로그인 전 reaction ranking 관심 후보와 로그인 후 실제 사용자 저장 상태 분리
 
 ## 15. 아직 결정이 필요한 부분
 
