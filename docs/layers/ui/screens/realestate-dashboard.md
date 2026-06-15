@@ -57,8 +57,9 @@
 현재 구현:
 
 - `GET /api/realestate/market-facts` 응답을 `실거래·지표 상태` 패널에 우선 표시합니다.
-- `GET /api/realestate/dashboard/market-summary` 응답을 `주요 부동산 지표` 카드에 우선 표시합니다.
-- `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10` 응답을 상단 반응 캐러셀, 언급 합계, 관심 drawer에 우선 표시합니다. API가 비거나 실패하면 fixture를 섞지 않고 `수집 전/insufficient` 또는 오류 상태를 표시합니다.
+- `GET /api/realestate/dashboard/market-summary` 응답을 `주요 부동산 지표` 카드와 지표 drawer에 우선 표시합니다. API가 비거나 실패하면 fixture 지표를 섞지 않고 `수집 전/insufficient` 또는 오류 상태를 표시합니다.
+- `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10` 응답을 부동산 투기 과열 지표, headline, 상단 반응 캐러셀, 언급 합계, 관심 drawer, 라이징 스타 drawer에 우선 표시합니다. API가 비거나 실패하면 fixture를 섞지 않고 `수집 전/insufficient` 또는 오류 상태를 표시합니다.
+- `GET /api/realestate/map/layers?layerType=sido` 응답을 `핵심 지역별 상승률` 랭킹형 차트에 우선 표시합니다. 주/월/6개월은 snapshot period를 사용하고, 연간 snapshot이 없으면 `연간 수집 전`으로 둡니다.
 - `GET /api/realestate/newsroom?feed=all&page=1&pageSize=40` 응답을 대시보드 뉴스/리포트/영상/커뮤니티 링크 카드에 우선 표시합니다. API가 비거나 실패하면 mock feed 대신 수집 전/오류 상태를 표시합니다.
 - API가 비어 있거나 실패하면 `수집 대기`, `데이터 없음`, `공공데이터 대기` 상태로 표시하고, fixture 값을 실제 데이터처럼 보이게 대체하지 않습니다.
 - 주요 지표 카드의 `changePct`가 없으면 `0%`로 보정하지 않고 `최신`으로 표시합니다.
@@ -81,3 +82,4 @@
 - 2026-06-11: `실거래·지표 상태` 패널을 `GET /api/realestate/market-facts` 우선 표시로 연결
 - 2026-06-11: `주요 부동산 지표` 카드를 `GET /api/realestate/dashboard/market-summary` 우선 표시로 연결
 - 2026-06-15: 대시보드 반응 캐러셀과 뉴스/리포트/영상/링크 카드를 API 우선으로 전환하고, 빈 응답은 mock feed 대신 수집 전 상태로 표시
+- 2026-06-15: 투기 과열 지표와 headline을 지역 reaction ranking 기반으로 계산하고, 핵심 지역별 상승률 chart를 map layer snapshot 기반 랭킹으로 전환

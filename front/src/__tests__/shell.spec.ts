@@ -159,10 +159,11 @@ describe('front dashboard shell', () => {
     expect(wrapper.get('[data-testid="nav-watchlist"]').attributes('href')).toBe('/realestate/watchlist');
     expect(wrapper.find('.topbar .live-strip').exists()).toBe(true);
     expect(wrapper.text()).toContain('부동산 투기 과열 지표');
-    expect(wrapper.text()).toContain('73점');
-    expect(wrapper.text()).toContain('어제 대비 +6.4%');
-    expect(wrapper.text()).toContain('가격·전세 동반');
+    expect(wrapper.text()).toContain('0점');
+    expect(wrapper.text()).toContain('수집 전 · 최근 24시간 최신');
+    expect(wrapper.text()).toContain('반응 수집 대기');
     expect(wrapper.text()).toContain('핵심 지역별 상승률');
+    expect(wrapper.text()).toContain('map layer 확인 중');
     expect(wrapper.text()).toContain('주월6개월년');
     expect(wrapper.text()).not.toContain('유사 과거 흐름 비교');
     expect(wrapper.find('.edge-rail').exists()).toBe(true);

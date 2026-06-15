@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue';
-import dashboardSummary from '../fixtures/dashboard-summary.json';
 import {
   buildNewsroomFeedItems,
   fetchRealEstateNewsroom,
   type NewsroomCategory,
   type NewsroomFeedItem
 } from '../lib/realestate-content';
+import {
+  buildDashboardSpeculationHeat,
+  buildRegionalMomentumRows,
+  dashboardReturnModeLabel,
+  dashboardReturnModes,
+  type DashboardRegionalMomentumRow,
+  type DashboardReturnMode
+} from '../lib/realestate-dashboard';
+import { fetchRealEstateMapLayer, type RealEstateMapLayerResponse } from '../lib/realestate-map';
 import {
   fetchRealEstateReactionRanking,
   type RealEstateReactionIssue,
@@ -23,26 +31,35 @@ import {
 import { sourceIconUrl } from '../lib/source-icons';
 
 const marketFilters = ['전체', '언급 증가', '정책 변화', '공공데이터 stale'];
-const returnTimeModes = ['주', '월', '6개월', '년'];
+const returnTimeModes = dashboardReturnModes;
+const confirmationNeeded = [
+  '지역별 시장 fact coverage 확대',
+  '카페/커뮤니티 공개 source 수집 범위 확정',
+  '전국·시도·시군구 map layer daily refresh 점검',
+  'SerpApi 후보 링크와 EvidenceLog 검수 흐름 확인'
+];
 const drawerTabs = [
   { id: 'reaction', label: '반응' },
   { id: 'metrics', label: '지표' },
   { id: 'watch', label: '관심' }
 ];
 const activeDrawerTab = ref('reaction');
-const speculationHeatIndex = dashboardSummary.speculationHeatIndex;
-const topRiser = dashboardSummary.risingStars[0];
-const marketIndicators = ref<RealEstateMarketIndicatorCard[]>(dashboardSummary.marketIndicators);
+const activeReturnMode = ref<DashboardReturnMode>('month');
+const marketIndicators = ref<RealEstateMarketIndicatorCard[]>([]);
 const marketFactRows = ref<RealEstateMarketFactRow[]>(buildMarketFactRows([]));
-const marketIndicatorLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const marketIndicatorLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const marketFactLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
+const dashboardMapLayer = ref<RealEstateMapLayerResponse | null>(null);
+const mapLayerLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const dashboardContentItems = ref<NewsroomFeedItem[]>([]);
 const dashboardContentLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 type ReactionKeyword = { word: string; weight: number };
+type ReactionDriver = { type: string; label: string };
 type DashboardReactionItem = {
   targetId: string;
   name: string;
   market: string;
+  previousMentionCount: number;
   mentionCount: number;
   mentionDeltaPct: number;
   reactionDirectionRatio: {
@@ -52,18 +69,29 @@ type DashboardReactionItem = {
   };
   heatScore: number;
   topKeywords: string[];
+  issueMix: RealEstateReactionIssue[];
   positiveKeywords: ReactionKeyword[];
   negativeKeywords: ReactionKeyword[];
   positiveLinks: { title: string; source: string }[];
   negativeLinks: { title: string; source: string }[];
   priceStatus: string;
   dataStatus: string;
+  reactionDrivers: ReactionDriver[];
+  movementReasons: string[];
 };
 const dashboardReactionItems = ref<DashboardReactionItem[]>([]);
+const rawReactionRankingItems = ref<RealEstateReactionRankingItem[]>([]);
 const reactionRankingLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 type ReactionMetric = 'bullish' | 'bearish';
 
 const totalMentions = computed(() => dashboardReactionItems.value.reduce((sum, item) => sum + item.mentionCount, 0));
+const topRiser = computed(() => dashboardReactionItems.value[0] ?? null);
+const risingStars = computed(() => dashboardReactionItems.value.slice(0, 4));
+const speculationHeatIndex = computed(() => buildDashboardSpeculationHeat(rawReactionRankingItems.value));
+const regionalMomentumRows = computed(() =>
+  buildRegionalMomentumRows(dashboardMapLayer.value, activeReturnMode.value, 6)
+);
+const activeReturnModeLabel = computed(() => dashboardReturnModeLabel(activeReturnMode.value));
 const reactionSignalScore = (item: DashboardReactionItem, metric: ReactionMetric) =>
   Math.round(item.mentionCount * item.reactionDirectionRatio[metric]);
 const buildReactionGroup = (id: 'positive' | 'negative', label: string, caption: string, metric: ReactionMetric) => ({
@@ -101,19 +129,46 @@ const refreshMarketFacts = async () => {
   }
 };
 const refreshMarketSummary = async () => {
+  marketIndicatorLoadState.value = 'loading';
   try {
     const summary = await fetchRealEstateMarketSummary();
-    marketIndicators.value = buildMarketSummaryIndicators(summary, dashboardSummary.marketIndicators);
-    marketIndicatorLoadState.value = summary.items.length ? 'live' : 'fallback';
+    marketIndicators.value = buildMarketSummaryIndicators(summary);
+    marketIndicatorLoadState.value = summary.items.length ? 'live' : 'empty';
   } catch {
-    marketIndicators.value = dashboardSummary.marketIndicators;
-    marketIndicatorLoadState.value = 'fallback';
+    marketIndicators.value = [];
+    marketIndicatorLoadState.value = 'error';
   }
 };
 const reactionKeywordFromIssue = (issue: RealEstateReactionIssue, index: number): ReactionKeyword => ({
   word: issue.label,
   weight: Math.max(1, Math.min(5, Math.round(issue.share * 10) || 5 - index))
 });
+
+const previousMentionCount = (item: RealEstateReactionRankingItem) => {
+  const denominator = 1 + item.mentionDeltaPct / 100;
+  if (denominator <= 0) return item.mentionCount;
+  return Math.max(0, Math.round(item.mentionCount / denominator));
+};
+
+const reactionDriverType = (direction: string) => {
+  if (direction === 'expectation') return '기대';
+  if (direction === 'concern') return '우려';
+  return '쟁점';
+};
+
+const movementReasons = (item: RealEstateReactionRankingItem) => {
+  const issues = item.issueMix.slice(0, 3);
+  if (!issues.length) {
+    return [
+      '지역 언급량은 집계됐지만 쟁점 분류 표본은 아직 충분하지 않습니다.',
+      '실거래·전세 흐름과 연결하려면 다음 배치의 market fact 확인이 필요합니다.'
+    ];
+  }
+
+  return issues.map((issue) =>
+    `${issue.label} 쟁점이 ${reactionDriverType(issue.direction)} 방향으로 묶이며 언급 변화에 기여했습니다.`
+  );
+};
 
 const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): DashboardReactionItem => {
   const expectationIssues = item.issueMix.filter((issue) => issue.direction === 'expectation');
@@ -126,6 +181,7 @@ const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): Dash
     targetId: item.targetId,
     name: item.displayName,
     market: item.targetType === 'complex' ? '단지' : item.targetType === 'living_area' ? '생활권' : '지역',
+    previousMentionCount: previousMentionCount(item),
     mentionCount: item.mentionCount,
     mentionDeltaPct: item.mentionDeltaPct,
     reactionDirectionRatio: {
@@ -134,6 +190,7 @@ const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): Dash
       neutral: item.reactionDirectionRatio.neutral
     },
     heatScore: Math.round(item.heatScore),
+    issueMix: item.issueMix,
     topKeywords: topIssues.slice(0, 3).map((issue) => issue.label),
     positiveKeywords: (expectationIssues.length ? expectationIssues : topIssues)
       .slice(0, 5)
@@ -150,21 +207,41 @@ const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): Dash
       { title: item.stale ? '수집 지연 가능' : `출처 ${item.sourceCount}곳`, source: item.stale ? 'stale' : 'source coverage' }
     ],
     priceStatus: item.stale ? 'reaction snapshot stale' : 'market fact separate',
-    dataStatus: item.stale ? 'stale' : item.coverageStatus
+    dataStatus: item.stale ? 'stale' : item.coverageStatus,
+    reactionDrivers: topIssues.slice(0, 4).map((issue) => ({
+      type: reactionDriverType(issue.direction),
+      label: issue.label
+    })),
+    movementReasons: movementReasons(item)
   };
 };
 
 const refreshDashboardReactions = async () => {
   reactionRankingLoadState.value = 'loading';
   dashboardReactionItems.value = [];
+  rawReactionRankingItems.value = [];
   currentSlide.value = 0;
   try {
     const ranking = await fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 1440, limit: 10 });
+    rawReactionRankingItems.value = ranking.items;
     dashboardReactionItems.value = ranking.items.map(dashboardReactionItemFromApi);
     reactionRankingLoadState.value = dashboardReactionItems.value.length ? 'live' : 'empty';
   } catch {
+    rawReactionRankingItems.value = [];
     dashboardReactionItems.value = [];
     reactionRankingLoadState.value = 'error';
+  }
+};
+const refreshDashboardMapLayer = async () => {
+  mapLayerLoadState.value = 'loading';
+  dashboardMapLayer.value = null;
+  try {
+    const layer = await fetchRealEstateMapLayer({ layerType: 'sido' });
+    dashboardMapLayer.value = layer;
+    mapLayerLoadState.value = layer.targets.length ? 'live' : 'empty';
+  } catch {
+    dashboardMapLayer.value = null;
+    mapLayerLoadState.value = 'error';
   }
 };
 const refreshDashboardContent = async () => {
@@ -248,14 +325,12 @@ const kwWordStyles = computed(() => Object.fromEntries(
 onMounted(() => {
   startTimer();
   void refreshDashboardReactions();
+  void refreshDashboardMapLayer();
   void refreshMarketSummary();
   void refreshMarketFacts();
   void refreshDashboardContent();
 });
 onUnmounted(() => clearInterval(autoSlideTimer));
-
-type TooltipPoint = { x: number; y: number; value: number; color: string; region: string } | null;
-const hoveredPoint = ref<TooltipPoint>(null);
 
 const formatPct = (value: number | null) => value === null ? '최신' : `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
@@ -263,7 +338,43 @@ const trendClass = (trend: string) => (trend === 'down' ? 'down' : 'up');
 const marketIndicatorStatusLabel = () => {
   if (marketIndicatorLoadState.value === 'live') return 'API 반영';
   if (marketIndicatorLoadState.value === 'loading') return '불러오는 중';
+  if (marketIndicatorLoadState.value === 'empty') return '수집 전/insufficient';
+  return 'market summary API 오류';
+};
+const dashboardHeadline = computed(() => {
+  if (reactionRankingLoadState.value === 'loading') return '지역 반응과 시장 지표를 불러오는 중입니다';
+  if (reactionRankingLoadState.value === 'error') return '지역 반응 API 확인이 필요합니다';
+  if (!topRiser.value) return '수집 전 상태입니다. 지역 반응 배치가 생성되면 이곳에 최신 관심 지역이 표시됩니다';
+  return `${topRiser.value.name}에 최근 24시간 반응이 가장 많이 몰렸습니다`;
+});
+const regionalMomentumStatusLabel = computed(() => {
+  if (activeReturnMode.value === 'year') return '연간 수집 전';
+  if (mapLayerLoadState.value === 'live' && regionalMomentumRows.value.length) return 'map layer API 반영';
+  if (mapLayerLoadState.value === 'loading') return 'map layer 확인 중';
+  if (mapLayerLoadState.value === 'error') return 'map layer API 오류';
   return '수집 전/insufficient';
+});
+const regionalMomentumEmptyText = computed(() => {
+  if (activeReturnMode.value === 'year') return '연간 지역 상승률 snapshot은 아직 수집 전입니다.';
+  if (mapLayerLoadState.value === 'loading') return '지역별 상승률 snapshot을 불러오는 중입니다.';
+  if (mapLayerLoadState.value === 'error') return '지도 레이어 API를 불러오지 못했습니다. map layer refresh 상태 확인이 필요합니다.';
+  return '표시할 지역별 상승률 snapshot이 아직 없습니다. 수집 전/insufficient 상태입니다.';
+});
+const regionalMomentumNote = computed(() => {
+  if (!regionalMomentumRows.value.length) return regionalMomentumEmptyText.value;
+  const staleCount = regionalMomentumRows.value.filter((row) => row.stale).length;
+  const source = dashboardMapLayer.value?.sourceLabel ?? 'map_layer_snapshots';
+  const asOf = dashboardMapLayer.value?.asOf ?? regionalMomentumRows.value[0]?.asOf ?? '기준 시각 확인 필요';
+  return `${activeReturnModeLabel.value} · ${source} · 기준 ${asOf} · stale ${staleCount}곳 · 부동산 자문 아님`;
+});
+const regionalMomentumStatusClass = (row: DashboardRegionalMomentumRow) =>
+  row.stale || row.dataStatus === 'mock' ? 'warning' : '';
+const regionalMomentumStatusText = (row: DashboardRegionalMomentumRow) => {
+  if (row.stale) return 'stale';
+  if (row.dataStatus === 'ok') return '공공데이터 반영';
+  if (row.dataStatus === 'mock') return 'mock';
+  if (row.dataStatus === 'empty') return '수집 전';
+  return row.dataStatus;
 };
 const dashboardContentStatusLabel = computed(() => {
   if (dashboardContentLoadState.value === 'live') return 'content API 반영';
@@ -298,38 +409,6 @@ const hideBrokenIcon = (event: Event) => {
   image.hidden = true;
   image.closest('.site-icon')?.classList.remove('real-icon');
 };
-const newsIconClass = (tag: string) => {
-  const map: Record<string, string> = {
-    macro: 'news-macro',
-    index: 'news-index',
-    community: 'community',
-    research: 'news-research',
-    strategy: 'news-research',
-    disclosure: 'news-market'
-  };
-
-  return map[tag] ?? 'news';
-};
-const externalIconClass = (item: { type: string; source?: string; iconDomain?: string }) => {
-  if (item.type === 'youtube') return 'youtube';
-  if (item.iconDomain === 'blog.naver.com') return 'naver-blog';
-  if (item.iconDomain === 'finance.naver.com') return 'naver';
-  if (item.iconDomain === 'www.tossinvest.com') return 'toss';
-  return item.type;
-};
-type SeriesPoint = { x: number; y: number };
-
-const wideX = (x: number) => Math.round(50 + x * 3.65);
-const wideY = (y: number) => Math.round(54 + (y - 58) * 8);
-const widePointString = (pointString: string) =>
-  pointString
-    .split(' ')
-    .map((pair) => {
-      const [x, y] = pair.split(',').map(Number);
-      return `${wideX(x)},${wideY(y)}`;
-    })
-    .join(' ');
-const endLabelX = (points: SeriesPoint[]) => Math.min(wideX(points[points.length - 1]?.x ?? 0) + 8, 1138);
 const gaugeCenter = { x: 92, y: 92 };
 const gaugeRadius = 70;
 const gaugePoint = (value: number, radius = gaugeRadius) => {
@@ -347,7 +426,7 @@ const gaugeArcPath = (start: number, end: number) => {
 
   return `M ${startPoint.x} ${startPoint.y} A ${gaugeRadius} ${gaugeRadius} 0 ${largeArcFlag} 1 ${endPoint.x} ${endPoint.y}`;
 };
-const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
+const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56));
 </script>
 
 <template>
@@ -385,13 +464,13 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
               </div>
             </div>
           </aside>
-          <button class="mock-search" type="button" disabled>
+          <button class="dashboard-search-control" type="button" disabled>
             <span class="search-icon" aria-hidden="true"></span>
             <strong>/</strong>
             <span>지역이나 단지 검색</span>
           </button>
         </div>
-        <p>{{ dashboardSummary.headline }}</p>
+        <p>{{ dashboardHeadline }}</p>
       </div>
       <div class="market-filter-row" aria-label="지금 뜨는 반응 필터">
         <span class="market-title">지금 뜨는 반응</span>
@@ -423,7 +502,9 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                 <h3 id="return-title">핵심 지역별 상승률</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill warning">mock</span>
+                <span :class="['status-pill', mapLayerLoadState === 'live' && regionalMomentumRows.length ? '' : 'warning']">
+                  {{ regionalMomentumStatusLabel }}
+                </span>
                 <RouterLink class="detail-link" to="/realestate/map">지도에서 보기 →</RouterLink>
               </div>
             </div>
@@ -433,113 +514,50 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                 <div class="return-range-tabs in-graph-tabs" aria-label="지역 상승률 기간">
                   <button
                     v-for="mode in returnTimeModes"
-                    :key="mode"
+                    :key="mode.id"
                     type="button"
-                    :class="{ active: mode === '월' }"
+                    :class="{ active: mode.id === activeReturnMode }"
+                    @click="activeReturnMode = mode.id"
                   >
-                    {{ mode }}
+                    {{ mode.label }}
                   </button>
                 </div>
                 <div class="graph-legend in-graph" aria-label="지역별 색상 범례">
-                  <div v-for="series in dashboardSummary.regionalReturnSeries" :key="series.region" class="legend-item">
-                    <span class="legend-swatch" :style="`--swatch: ${series.color}`"></span>
-                    <strong>{{ series.region }}</strong>
+                  <div class="legend-item">
+                    <span class="legend-swatch return-up"></span>
+                    <strong>상승</strong>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-swatch return-down"></span>
+                    <strong>하락</strong>
                   </div>
                 </div>
               </div>
-              <svg viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="return-title">
-                <text class="axis-title" x="50" y="50">price change (%)</text>
-                <line class="chart-grid" x1="50" x2="1142" y1="90" y2="90" />
-                <line class="chart-grid" x1="50" x2="1142" y1="250" y2="250" />
-                <line class="chart-grid" x1="50" x2="1142" y1="410" y2="410" />
-                <line class="chart-grid" x1="50" x2="1142" y1="570" y2="570" />
-                <line class="chart-grid" x1="50" x2="1142" y1="730" y2="730" />
-                <line class="chart-grid vertical" x1="320" x2="320" y1="90" y2="780" />
-                <line class="chart-grid vertical" x1="525" x2="525" y1="90" y2="780" />
-                <line class="chart-grid vertical" x1="729" x2="729" y1="90" y2="780" />
-                <line class="chart-grid vertical" x1="933" x2="933" y1="90" y2="780" />
-                <line class="chart-grid vertical" x1="1138" x2="1138" y1="90" y2="780" />
-                <line class="chart-y-axis" x1="50" x2="50" y1="90" y2="780" />
-                <line class="chart-x-axis" x1="50" x2="1142" y1="780" y2="780" />
-                <line class="chart-zero-line" x1="50" x2="1142" y1="570" y2="570" />
-                <text class="axis-label" x="0" y="100">+6%</text>
-                <text class="axis-label" x="18" y="580">0</text>
-                <text class="axis-label" x="0" y="790">-2%</text>
-                <text class="axis-label y-axis-right" x="1152" y="100">+6.0</text>
-                <text class="axis-label y-axis-right" x="1152" y="580">0.0</text>
-                <text class="axis-label y-axis-right" x="1152" y="790">-2.0</text>
-                <text class="axis-label x-axis" x="116" y="850">D-30</text>
-                <text class="axis-label x-axis" x="320" y="850">D-21</text>
-                <text class="axis-label x-axis" x="525" y="850">D-14</text>
-                <text class="axis-label x-axis" x="729" y="850">D-7</text>
-                <text class="axis-label x-axis" x="933" y="850">D-3</text>
-                <text class="axis-label x-axis" x="1138" y="850">현재</text>
-                <polyline
-                  v-for="series in dashboardSummary.regionalReturnSeries"
-                  :key="`${series.region}-line`"
-                  class="return-line"
-                  :points="widePointString(series.pointString)"
-                  :stroke="series.color"
-                />
-                <g v-for="series in dashboardSummary.regionalReturnSeries" :key="`${series.region}-points`">
-                  <circle
-                    v-for="point in series.points"
-                    :key="`${series.region}-${point.x}-${point.y}`"
-                    class="return-dot"
-                    :cx="wideX(point.x)"
-                    :cy="wideY(point.y)"
-                    r="10"
-                    :fill="series.color"
-                    pointer-events="none"
-                  />
-                  <!-- transparent hit area for easier hover -->
-                  <circle
-                    v-for="point in series.points"
-                    :key="`hit-${series.region}-${point.x}-${point.y}`"
-                    :cx="wideX(point.x)"
-                    :cy="wideY(point.y)"
-                    r="24"
-                    fill="transparent"
-                    style="cursor: crosshair"
-                    @mouseenter="hoveredPoint = { x: wideX(point.x), y: wideY(point.y), value: point.value, color: series.color, region: series.region }"
-                    @mouseleave="hoveredPoint = null"
-                  />
-                </g>
-                <text
-                  v-for="series in dashboardSummary.regionalReturnSeries"
-                  :key="`${series.region}-end-label`"
-                  class="series-end-label"
-                  :x="endLabelX(series.points)"
-                  :y="wideY(series.points[series.points.length - 1].y) + 8"
-                  :fill="series.color"
+              <div v-if="!regionalMomentumRows.length" class="newsroom-empty-state dashboard-chart-empty">
+                {{ regionalMomentumEmptyText }}
+              </div>
+              <div v-else class="regional-momentum-list">
+                <article
+                  v-for="row in regionalMomentumRows"
+                  :key="`${row.targetId}-${activeReturnMode}`"
+                  :class="['regional-momentum-row', row.tone]"
                 >
-                  {{ formatPct(series.returnPct) }}
-                </text>
-
-                <!-- hover tooltip -->
-                <g
-                  v-if="hoveredPoint"
-                  :transform="`translate(${hoveredPoint.x}, ${hoveredPoint.y})`"
-                  class="chart-tooltip-group"
-                  pointer-events="none"
-                >
-                  <template v-if="hoveredPoint.y >= 120">
-                    <path d="M -11,-22 L 0,-7 L 11,-22 Z" :fill="hoveredPoint.color"/>
-                    <rect x="-88" y="-96" width="176" height="74" rx="10" :fill="hoveredPoint.color" opacity="0.94"/>
-                    <text x="0" y="-72" text-anchor="middle" class="tooltip-region-text">{{ hoveredPoint.region }}</text>
-                    <text x="0" y="-40" text-anchor="middle" class="tooltip-value-text">{{ formatPct(hoveredPoint.value) }}</text>
-                  </template>
-                  <template v-else>
-                    <path d="M -11,22 L 0,7 L 11,22 Z" :fill="hoveredPoint.color"/>
-                    <rect x="-88" y="24" width="176" height="74" rx="10" :fill="hoveredPoint.color" opacity="0.94"/>
-                    <text x="0" y="48" text-anchor="middle" class="tooltip-region-text">{{ hoveredPoint.region }}</text>
-                    <text x="0" y="80" text-anchor="middle" class="tooltip-value-text">{{ formatPct(hoveredPoint.value) }}</text>
-                  </template>
-                </g>
-              </svg>
+                  <div class="regional-momentum-copy">
+                    <strong>{{ row.name }}</strong>
+                    <span>{{ row.provider }} · 표본 {{ row.sampleCount.toLocaleString('ko-KR') }}건 · 신뢰 {{ Math.round(row.confidence) }}%</span>
+                  </div>
+                  <div class="regional-momentum-bar-track" aria-hidden="true">
+                    <i :style="`--bar-pct: ${row.barPct}%`"></i>
+                  </div>
+                  <strong class="regional-momentum-value">{{ formatPct(row.changePct) }}</strong>
+                  <span :class="['status-pill', regionalMomentumStatusClass(row)]">
+                    {{ regionalMomentumStatusText(row) }}
+                  </span>
+                </article>
+              </div>
             </div>
 
-            <p class="chart-note">핵심 지역별 상승률 fixture · 실거래 신고 지연 보정 전 · 부동산 자문 아님</p>
+            <p class="chart-note">{{ regionalMomentumNote }}</p>
           </article>
 
           <section class="mood-board region-bubble-section reaction-panel" aria-labelledby="mood-title">
@@ -551,12 +569,12 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
               <div class="section-actions">
                 <div class="period-tabs mood-period-tabs" aria-label="지역·단지별 반응 비교 기간">
                   <button
-                    v-for="period in dashboardSummary.moodPeriods"
-                    :key="period"
+                    v-for="period in returnTimeModes"
+                    :key="`mood-${period.id}`"
                     type="button"
-                    :class="{ active: period === dashboardSummary.activeMoodPeriod }"
+                    :class="{ active: period.id === 'month' }"
                   >
-                    {{ period }}
+                    {{ period.label }}
                   </button>
                 </div>
                 <RouterLink class="detail-link" to="/realestate/targets/region-seoul-mapo">자세히 보기 →</RouterLink>
@@ -758,11 +776,11 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
               <div class="period-tabs indicator-period-tabs" aria-label="주요 부동산 지표 기간">
                 <button
                   v-for="mode in returnTimeModes"
-                  :key="`indicator-${mode}`"
+                  :key="`indicator-${mode.id}`"
                   type="button"
-                  :class="{ active: mode === '월' }"
+                  :class="{ active: mode.id === 'month' }"
                 >
-                  {{ mode }}
+                  {{ mode.label }}
                 </button>
               </div>
               <span :class="['status-pill', marketIndicatorLoadState === 'live' ? '' : 'warning']">
@@ -773,6 +791,15 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
           </div>
 
           <div class="indicator-grid">
+            <p v-if="!marketIndicators.length" class="newsroom-empty-state dashboard-indicator-empty">
+              {{
+                marketIndicatorLoadState === 'loading'
+                  ? '주요 지표를 불러오는 중입니다.'
+                  : marketIndicatorLoadState === 'error'
+                    ? '시장 요약 API를 불러오지 못했습니다. provider/asOf 확인이 필요합니다.'
+                    : '수집된 주요 지표가 아직 없습니다. 수집 전/insufficient 상태입니다.'
+              }}
+            </p>
             <article
               v-for="indicator in marketIndicators"
               :key="indicator.label"
@@ -968,7 +995,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
               <h3 id="confirm-title">확인 필요</h3>
             </div>
             <ul class="check-list compact-check-list">
-              <li v-for="item in dashboardSummary.confirmationNeeded" :key="item">{{ item }}</li>
+              <li v-for="item in confirmationNeeded" :key="item">{{ item }}</li>
             </ul>
           </article>
         </section>
@@ -990,7 +1017,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
         </div>
 
         <section v-show="activeDrawerTab === 'reaction'" class="drawer-tab-screen drawer-reaction-screen">
-          <div class="drawer-card hot-region-panel" aria-labelledby="hot-region-title">
+          <div v-if="topRiser" class="drawer-card hot-region-panel" aria-labelledby="hot-region-title">
             <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
             <h3 id="hot-region-title">{{ topRiser.name }}</h3>
             <strong>{{ formatPct(topRiser.mentionDeltaPct) }}</strong>
@@ -1018,6 +1045,12 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
               <li v-for="reason in topRiser.movementReasons" :key="reason">{{ reason }}</li>
             </ul>
           </div>
+          <div v-else class="drawer-card hot-region-panel" aria-labelledby="hot-region-title-empty">
+            <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
+            <h3 id="hot-region-title-empty">수집 전</h3>
+            <strong>insufficient</strong>
+            <span>{{ dashboardReactionEmptyText }}</span>
+          </div>
           <div class="drawer-card drawer-rising-stars" aria-labelledby="drawer-rising-title">
             <div class="drawer-section-title">
               <p class="label">early signal</p>
@@ -1025,7 +1058,10 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
               <RouterLink class="detail-link" to="/realestate/targets/region-seoul-mapo">자세히 보기 →</RouterLink>
             </div>
             <div class="drawer-rising-list">
-              <article v-for="item in dashboardSummary.risingStars" :key="item.targetId">
+              <p v-if="!risingStars.length" class="newsroom-empty-state">
+                {{ dashboardReactionEmptyText }}
+              </p>
+              <article v-for="item in risingStars" :key="item.targetId">
                 <strong>{{ item.name }}</strong>
                 <span>{{ item.targetId }} · 언급 {{ item.previousMentionCount }} → {{ item.mentionCount }}</span>
                 <em>{{ formatPct(item.mentionDeltaPct) }}</em>
@@ -1033,7 +1069,10 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
             </div>
           </div>
           <div class="drawer-feed">
-            <div v-for="indicator in dashboardSummary.marketIndicators.slice(0, 3)" :key="indicator.label">
+            <p v-if="!marketIndicators.length" class="newsroom-empty-state">
+              {{ marketIndicatorStatusLabel() }}
+            </p>
+            <div v-for="indicator in marketIndicators.slice(0, 3)" :key="indicator.label">
               <span>{{ indicator.label }}</span>
               <strong>{{ indicator.value }}</strong>
               <em :class="trendClass(indicator.trend)">{{ formatPct(indicator.changePct) }}</em>
@@ -1051,7 +1090,10 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
             <h3>지표</h3>
           </div>
           <div class="drawer-mini-bars">
-            <div v-for="indicator in dashboardSummary.marketIndicators.slice(0, 4)" :key="`${indicator.label}-bar`">
+            <p v-if="!marketIndicators.length" class="newsroom-empty-state">
+              {{ marketIndicatorStatusLabel() }}
+            </p>
+            <div v-for="indicator in marketIndicators.slice(0, 4)" :key="`${indicator.label}-bar`">
               <span>{{ indicator.label }}</span>
               <i :class="trendClass(indicator.trend)"></i>
               <strong>{{ formatPct(indicator.changePct) }}</strong>
