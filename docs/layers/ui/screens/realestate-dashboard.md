@@ -58,6 +58,8 @@
 
 - `GET /api/realestate/market-facts` 응답을 `실거래·지표 상태` 패널에 우선 표시합니다.
 - `GET /api/realestate/dashboard/market-summary` 응답을 `주요 부동산 지표` 카드에 우선 표시합니다.
+- `GET /api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10` 응답을 상단 반응 캐러셀, 언급 합계, 관심 drawer에 우선 표시합니다. API가 비거나 실패하면 fixture를 섞지 않고 `수집 전/insufficient` 또는 오류 상태를 표시합니다.
+- `GET /api/realestate/newsroom?feed=all&page=1&pageSize=40` 응답을 대시보드 뉴스/리포트/영상/커뮤니티 링크 카드에 우선 표시합니다. API가 비거나 실패하면 mock feed 대신 수집 전/오류 상태를 표시합니다.
 - API가 비어 있거나 실패하면 `수집 대기`, `데이터 없음`, `공공데이터 대기` 상태로 표시하고, fixture 값을 실제 데이터처럼 보이게 대체하지 않습니다.
 - 주요 지표 카드의 `changePct`가 없으면 `0%`로 보정하지 않고 `최신`으로 표시합니다.
 - row와 카드에는 `provider`, `observedAt`, `asOf`, `stale/dataStatus`를 함께 노출합니다.
@@ -78,3 +80,4 @@
 - 2026-06-01: 부동산 전용 대시보드 Screen Brief 생성
 - 2026-06-11: `실거래·지표 상태` 패널을 `GET /api/realestate/market-facts` 우선 표시로 연결
 - 2026-06-11: `주요 부동산 지표` 카드를 `GET /api/realestate/dashboard/market-summary` 우선 표시로 연결
+- 2026-06-15: 대시보드 반응 캐러셀과 뉴스/리포트/영상/링크 카드를 API 우선으로 전환하고, 빈 응답은 mock feed 대신 수집 전 상태로 표시

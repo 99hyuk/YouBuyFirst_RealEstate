@@ -1,7 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import dashboardSummary from '../fixtures/dashboard-summary.json';
-import reactionRanking from '../fixtures/reaction-ranking.json';
+import {
+  buildNewsroomFeedItems,
+  fetchRealEstateNewsroom,
+  type NewsroomCategory,
+  type NewsroomFeedItem
+} from '../lib/realestate-content';
+import {
+  fetchRealEstateReactionRanking,
+  type RealEstateReactionIssue,
+  type RealEstateReactionRankingItem
+} from '../lib/realestate-reactions';
 import {
   buildMarketFactRows,
   buildMarketSummaryIndicators,
@@ -22,15 +32,39 @@ const drawerTabs = [
 const activeDrawerTab = ref('reaction');
 const speculationHeatIndex = dashboardSummary.speculationHeatIndex;
 const topRiser = dashboardSummary.risingStars[0];
-const totalMentions = reactionRanking.items.reduce((sum, item) => sum + item.mentionCount, 0);
 const marketIndicators = ref<RealEstateMarketIndicatorCard[]>(dashboardSummary.marketIndicators);
 const marketFactRows = ref<RealEstateMarketFactRow[]>(buildMarketFactRows([]));
 const marketIndicatorLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const marketFactLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
-type ReactionRankingItem = (typeof reactionRanking.items)[number];
+const dashboardContentItems = ref<NewsroomFeedItem[]>([]);
+const dashboardContentLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+type ReactionKeyword = { word: string; weight: number };
+type DashboardReactionItem = {
+  targetId: string;
+  name: string;
+  market: string;
+  mentionCount: number;
+  mentionDeltaPct: number;
+  reactionDirectionRatio: {
+    bullish: number;
+    bearish: number;
+    neutral: number;
+  };
+  heatScore: number;
+  topKeywords: string[];
+  positiveKeywords: ReactionKeyword[];
+  negativeKeywords: ReactionKeyword[];
+  positiveLinks: { title: string; source: string }[];
+  negativeLinks: { title: string; source: string }[];
+  priceStatus: string;
+  dataStatus: string;
+};
+const dashboardReactionItems = ref<DashboardReactionItem[]>([]);
+const reactionRankingLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 type ReactionMetric = 'bullish' | 'bearish';
 
-const reactionSignalScore = (item: ReactionRankingItem, metric: ReactionMetric) =>
+const totalMentions = computed(() => dashboardReactionItems.value.reduce((sum, item) => sum + item.mentionCount, 0));
+const reactionSignalScore = (item: DashboardReactionItem, metric: ReactionMetric) =>
   Math.round(item.mentionCount * item.reactionDirectionRatio[metric]);
 const buildReactionGroup = (id: 'positive' | 'negative', label: string, caption: string, metric: ReactionMetric) => ({
   id,
@@ -38,23 +72,23 @@ const buildReactionGroup = (id: 'positive' | 'negative', label: string, caption:
   caption,
   metric,
   ratioLabel: metric === 'bullish' ? '기대' : '우려',
-  items: [...reactionRanking.items]
+  items: [...dashboardReactionItems.value]
     .sort((left, right) => reactionSignalScore(right, metric) - reactionSignalScore(left, metric))
     .slice(0, 3)
 });
-const reactionSignalGroups = [
+const reactionSignalGroups = computed(() => [
   buildReactionGroup('positive', '언급+기대 TOP 3', '언급량 x 기대', 'bullish'),
   buildReactionGroup('negative', '언급+우려 TOP 3', '언급량 x 우려', 'bearish')
-];
+]);
 
 const currentSlide = ref(0);
 const isPaused = ref(false);
-const totalSlides = reactionRanking.items.length;
+const totalSlides = computed(() => Math.max(dashboardReactionItems.value.length, 1));
 let autoSlideTimer: ReturnType<typeof setInterval> | undefined;
 
 const startTimer = () => {
   if (autoSlideTimer) clearInterval(autoSlideTimer);
-  autoSlideTimer = setInterval(() => { currentSlide.value = (currentSlide.value + 1) % totalSlides; }, 4500);
+  autoSlideTimer = setInterval(() => { currentSlide.value = (currentSlide.value + 1) % totalSlides.value; }, 4500);
 };
 const refreshMarketFacts = async () => {
   try {
@@ -76,9 +110,79 @@ const refreshMarketSummary = async () => {
     marketIndicatorLoadState.value = 'fallback';
   }
 };
+const reactionKeywordFromIssue = (issue: RealEstateReactionIssue, index: number): ReactionKeyword => ({
+  word: issue.label,
+  weight: Math.max(1, Math.min(5, Math.round(issue.share * 10) || 5 - index))
+});
+
+const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): DashboardReactionItem => {
+  const expectationIssues = item.issueMix.filter((issue) => issue.direction === 'expectation');
+  const concernIssues = item.issueMix.filter((issue) => issue.direction === 'concern');
+  const topIssues = item.issueMix.length ? item.issueMix : [
+    { issueKey: 'unknown', label: '쟁점 확인 필요', share: 0.5, direction: 'neutral', confidence: item.confidence }
+  ];
+
+  return {
+    targetId: item.targetId,
+    name: item.displayName,
+    market: item.targetType === 'complex' ? '단지' : item.targetType === 'living_area' ? '생활권' : '지역',
+    mentionCount: item.mentionCount,
+    mentionDeltaPct: item.mentionDeltaPct,
+    reactionDirectionRatio: {
+      bullish: item.reactionDirectionRatio.expectation,
+      bearish: item.reactionDirectionRatio.concern,
+      neutral: item.reactionDirectionRatio.neutral
+    },
+    heatScore: Math.round(item.heatScore),
+    topKeywords: topIssues.slice(0, 3).map((issue) => issue.label),
+    positiveKeywords: (expectationIssues.length ? expectationIssues : topIssues)
+      .slice(0, 5)
+      .map(reactionKeywordFromIssue),
+    negativeKeywords: (concernIssues.length ? concernIssues : topIssues)
+      .slice(0, 5)
+      .map(reactionKeywordFromIssue),
+    positiveLinks: [
+      { title: `기대 쟁점: ${(expectationIssues[0] ?? topIssues[0]).label}`, source: 'reaction snapshot' },
+      { title: `표본 신뢰도 ${Math.round(item.confidence * 100)}%`, source: item.coverageStatus }
+    ],
+    negativeLinks: [
+      { title: `우려 쟁점: ${(concernIssues[0] ?? topIssues[0]).label}`, source: 'reaction snapshot' },
+      { title: item.stale ? '수집 지연 가능' : `출처 ${item.sourceCount}곳`, source: item.stale ? 'stale' : 'source coverage' }
+    ],
+    priceStatus: item.stale ? 'reaction snapshot stale' : 'market fact separate',
+    dataStatus: item.stale ? 'stale' : item.coverageStatus
+  };
+};
+
+const refreshDashboardReactions = async () => {
+  reactionRankingLoadState.value = 'loading';
+  dashboardReactionItems.value = [];
+  currentSlide.value = 0;
+  try {
+    const ranking = await fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 1440, limit: 10 });
+    dashboardReactionItems.value = ranking.items.map(dashboardReactionItemFromApi);
+    reactionRankingLoadState.value = dashboardReactionItems.value.length ? 'live' : 'empty';
+  } catch {
+    dashboardReactionItems.value = [];
+    reactionRankingLoadState.value = 'error';
+  }
+};
+const refreshDashboardContent = async () => {
+  dashboardContentLoadState.value = 'loading';
+  dashboardContentItems.value = [];
+  try {
+    const contentItems = await fetchRealEstateNewsroom({ feed: 'all', page: 1, pageSize: 40 });
+    const mappedItems = buildNewsroomFeedItems(contentItems);
+    dashboardContentItems.value = mappedItems;
+    dashboardContentLoadState.value = mappedItems.length ? 'live' : 'empty';
+  } catch {
+    dashboardContentItems.value = [];
+    dashboardContentLoadState.value = 'error';
+  }
+};
 const resetTimer = () => { if (!isPaused.value) startTimer(); };
-const prevSlide = () => { currentSlide.value = (currentSlide.value - 1 + totalSlides) % totalSlides; resetTimer(); };
-const nextSlide = () => { currentSlide.value = (currentSlide.value + 1) % totalSlides; resetTimer(); };
+const prevSlide = () => { currentSlide.value = (currentSlide.value - 1 + totalSlides.value) % totalSlides.value; resetTimer(); };
+const nextSlide = () => { currentSlide.value = (currentSlide.value + 1) % totalSlides.value; resetTimer(); };
 const goToSlide = (i: number) => { currentSlide.value = i; resetTimer(); };
 const togglePause = () => {
   isPaused.value = !isPaused.value;
@@ -134,17 +238,19 @@ const placeWords = (keywords: { word: string; weight: number }[]) => {
   return (idx: number) => styles[idx] ?? {};
 };
 
-const kwWordStyles = Object.fromEntries(
-  reactionRanking.items.map(item => [
+const kwWordStyles = computed(() => Object.fromEntries(
+  dashboardReactionItems.value.map(item => [
     item.targetId,
     { pos: placeWords(item.positiveKeywords), neg: placeWords(item.negativeKeywords) },
   ])
-);
+));
 
 onMounted(() => {
   startTimer();
+  void refreshDashboardReactions();
   void refreshMarketSummary();
   void refreshMarketFacts();
+  void refreshDashboardContent();
 });
 onUnmounted(() => clearInterval(autoSlideTimer));
 
@@ -157,8 +263,36 @@ const trendClass = (trend: string) => (trend === 'down' ? 'down' : 'up');
 const marketIndicatorStatusLabel = () => {
   if (marketIndicatorLoadState.value === 'live') return 'API 반영';
   if (marketIndicatorLoadState.value === 'loading') return '불러오는 중';
-  return 'mock fallback';
+  return '수집 전/insufficient';
 };
+const dashboardContentStatusLabel = computed(() => {
+  if (dashboardContentLoadState.value === 'live') return 'content API 반영';
+  if (dashboardContentLoadState.value === 'loading') return 'content API 확인 중';
+  if (dashboardContentLoadState.value === 'empty') return '수집 전/insufficient';
+  return 'content API 오류';
+});
+const reactionStatusLabel = computed(() => {
+  if (reactionRankingLoadState.value === 'live') return 'reaction API 반영';
+  if (reactionRankingLoadState.value === 'loading') return 'reaction API 확인 중';
+  if (reactionRankingLoadState.value === 'empty') return '수집 전/insufficient';
+  return 'reaction API 오류';
+});
+const dashboardReactionEmptyText = computed(() => {
+  if (reactionRankingLoadState.value === 'loading') return '지역 반응 TOP10을 불러오는 중입니다.';
+  if (reactionRankingLoadState.value === 'error') return '지역 반응 API를 불러오지 못했습니다. 크롤링/스냅샷 배치 상태 확인이 필요합니다.';
+  return '수집된 지역 반응 TOP10이 아직 없습니다. 수집 전/insufficient 상태입니다.';
+});
+const contentItemsByCategory = (category: NewsroomCategory) =>
+  computed(() => dashboardContentItems.value.filter((item) => item.category === category).slice(0, 5));
+const dashboardNewsItems = contentItemsByCategory('news');
+const dashboardReportItems = contentItemsByCategory('reports');
+const dashboardVideoItems = contentItemsByCategory('videos');
+const dashboardLinkItems = contentItemsByCategory('links');
+const dashboardContentEmptyText = computed(() => {
+  if (dashboardContentLoadState.value === 'loading') return '콘텐츠를 불러오는 중입니다.';
+  if (dashboardContentLoadState.value === 'error') return '콘텐츠 API를 불러오지 못했습니다. provider/asOf 확인이 필요합니다.';
+  return '수집된 항목이 아직 없습니다. 수집 전/insufficient 상태입니다.';
+});
 const hideBrokenIcon = (event: Event) => {
   const image = event.target as HTMLImageElement;
   image.hidden = true;
@@ -219,7 +353,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
 <template>
   <section class="dashboard-page">
     <section class="standalone-search" aria-label="대시보드 검색과 필터">
-      <p class="eyebrow">{{ reactionRanking.windowLabel }} · mock data</p>
+      <p class="eyebrow">최근 24시간 · {{ reactionStatusLabel }}</p>
       <div class="search-line">
         <div class="search-primary-row">
           <aside class="speculation-heat-gauge-card" aria-label="부동산 투기 과열 지표">
@@ -274,7 +408,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
       <div class="dashboard-meta-strip" aria-label="대시보드 집계 메타">
         <span>언급 합계 <strong>{{ totalMentions }}</strong></span>
         <span>지연 지표 <strong>{{ marketFactRows.filter((row) => row.stale).length }}건</strong></span>
-        <span>관찰 <strong>{{ reactionRanking.items.length }}곳</strong></span>
+        <span>관찰 <strong>{{ dashboardReactionItems.length }}곳</strong></span>
         <span>부동산 자문 아님</span>
       </div>
     </section>
@@ -462,10 +596,13 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
             </div>
 
             <div class="reaction-carousel" aria-label="지역별 반응 슬라이드">
+              <p v-if="!dashboardReactionItems.length" class="newsroom-empty-state dashboard-reaction-empty">
+                {{ dashboardReactionEmptyText }}
+              </p>
               <div class="carousel-track-wrap">
                 <div class="carousel-track" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
                   <article
-                    v-for="item in reactionRanking.items"
+                    v-for="item in dashboardReactionItems"
                     :key="item.targetId"
                     class="reaction-carousel-card"
                     :data-tone="item.reactionDirectionRatio.bullish >= item.reactionDirectionRatio.bearish ? 'positive' : 'negative'"
@@ -497,7 +634,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                             v-for="(kw, idx) in item.positiveKeywords"
                             :key="kw.word"
                             class="kw-word kw-word-positive"
-                            :style="kwWordStyles[item.targetId].pos(idx)"
+                            :style="kwWordStyles[item.targetId]?.pos(idx)"
                           >{{ kw.word }}</span>
                         </div>
                       </div>
@@ -519,7 +656,7 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                             v-for="(kw, idx) in item.negativeKeywords"
                             :key="kw.word"
                             class="kw-word kw-word-negative"
-                            :style="kwWordStyles[item.targetId].neg(idx)"
+                            :style="kwWordStyles[item.targetId]?.neg(idx)"
                           >{{ kw.word }}</span>
                         </div>
                       </div>
@@ -574,13 +711,13 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
               </div>
             </div>
 
-            <div class="carousel-controls">
+            <div v-if="dashboardReactionItems.length" class="carousel-controls">
               <button class="carousel-btn" type="button" @click="prevSlide" aria-label="이전 지역">
                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 L5 8 L10 13"/></svg>
               </button>
               <div class="carousel-dots" role="tablist" aria-label="슬라이드 선택">
                 <button
-                  v-for="(item, i) in reactionRanking.items"
+                  v-for="(item, i) in dashboardReactionItems"
                   :key="`dot-${item.targetId}`"
                   :class="['carousel-dot', { active: i === currentSlide }]"
                   type="button"
@@ -659,28 +796,30 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                 <h3 id="news-title">실시간 뉴스</h3>
               </div>
               <div class="section-actions">
+                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'news' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
+              <p v-if="!dashboardNewsItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
               <a
-                v-for="news in dashboardSummary.liveNews.slice(0, 5)"
-                :key="news.title"
+                v-for="news in dashboardNewsItems"
+                :key="news.id"
                 class="feed-row"
                 :href="news.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
                 <span
-                  :class="['site-icon', 'real-icon', 'news-source', newsIconClass(news.tag)]"
-                  :aria-label="`${news.source} ${news.tag}`"
+                  :class="['site-icon', 'real-icon', 'news-source', news.iconClass]"
+                  :aria-label="`${news.source} ${news.category}`"
                   role="img"
                 >
                   <img :src="sourceIconUrl(news.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="news.title">{{ news.title }}</strong>
-                  <em>{{ news.source }} · {{ news.timeLabel }}</em>
+                  <em>{{ news.source }} · {{ news.meta }} · {{ news.statusLabel }}</em>
                 </span>
               </a>
             </div>
@@ -693,28 +832,30 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                 <h3 id="analyst-title">정책·통계 리포트</h3>
               </div>
               <div class="section-actions">
+                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'reports' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
+              <p v-if="!dashboardReportItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
               <a
-                v-for="report in dashboardSummary.analystReports.slice(0, 5)"
-                :key="report.title"
+                v-for="report in dashboardReportItems"
+                :key="report.id"
                 class="feed-row"
                 :href="report.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
                 <span
-                  :class="['site-icon', 'real-icon', 'news-source', newsIconClass(report.tag)]"
-                  :aria-label="`${report.source} ${report.tag}`"
+                  :class="['site-icon', 'real-icon', 'news-source', report.iconClass]"
+                  :aria-label="`${report.source} ${report.category}`"
                   role="img"
                 >
                   <img :src="sourceIconUrl(report.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="report.title">{{ report.title }}</strong>
-                  <em>{{ report.source }} · {{ report.timeLabel }}</em>
+                  <em>{{ report.source }} · {{ report.meta }} · {{ report.statusLabel }}</em>
                 </span>
               </a>
             </div>
@@ -727,29 +868,31 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                 <h3 id="external-video-title">부동산 영상 새 글</h3>
               </div>
               <div class="section-actions">
+                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'videos' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
+              <p v-if="!dashboardVideoItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
               <a
-                v-for="(video, index) in dashboardSummary.externalContent.videos.slice(0, 5)"
-                :key="video.url"
+                v-for="(video, index) in dashboardVideoItems"
+                :key="video.id"
                 class="feed-row ranked-feed-row"
                 :href="video.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                <span class="feed-rank">{{ index + 1 }}위</span>
+                <span class="feed-rank">{{ video.rankLabel ?? `${index + 1}위` }}</span>
                 <span
-                  :class="['site-icon', 'real-icon', 'source-badge', externalIconClass(video)]"
-                  :aria-label="`${video.source} ${video.typeLabel}`"
+                  :class="['site-icon', 'real-icon', 'source-badge', video.iconClass]"
+                  :aria-label="`${video.source} ${video.category}`"
                   role="img"
                 >
                   <img :src="sourceIconUrl(video.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="video.title">{{ video.title }}</strong>
-                  <em>{{ video.source }} · {{ video.publishedLabel }} · {{ video.engagementLabel }}</em>
+                  <em>{{ video.source }} · {{ video.meta }} · {{ video.statusLabel }}</em>
                 </span>
               </a>
             </div>
@@ -762,29 +905,31 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
                 <h3 id="external-link-title">블로그와 커뮤니티 링크</h3>
               </div>
               <div class="section-actions">
+                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'links' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
+              <p v-if="!dashboardLinkItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
               <a
-                v-for="(link, index) in dashboardSummary.externalContent.links.slice(0, 5)"
-                :key="link.url"
+                v-for="(link, index) in dashboardLinkItems"
+                :key="link.id"
                 class="feed-row ranked-feed-row"
                 :href="link.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                <span class="feed-rank">{{ index + 1 }}위</span>
+                <span class="feed-rank">{{ link.rankLabel ?? `${index + 1}위` }}</span>
                 <span
-                  :class="['site-icon', 'real-icon', 'source-badge', externalIconClass(link)]"
-                  :aria-label="`${link.source} ${link.typeLabel}`"
+                  :class="['site-icon', 'real-icon', 'source-badge', link.iconClass]"
+                  :aria-label="`${link.source} ${link.category}`"
                   role="img"
                 >
                   <img :src="sourceIconUrl(link.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="link.title">{{ link.title }}</strong>
-                  <em>{{ link.source }} · {{ link.publishedLabel }} · {{ link.engagementLabel }}</em>
+                  <em>{{ link.source }} · {{ link.meta }} · {{ link.statusLabel }}</em>
                 </span>
               </a>
             </div>
@@ -924,7 +1069,10 @@ const needleEnd = gaugePoint(speculationHeatIndex.value, 56);
             <h3>관심</h3>
           </div>
           <div class="drawer-watch-list">
-            <article v-for="item in reactionRanking.items.slice(0, 4)" :key="`${item.targetId}-watch`">
+            <p v-if="!dashboardReactionItems.length" class="newsroom-empty-state">
+              {{ dashboardReactionEmptyText }}
+            </p>
+            <article v-for="item in dashboardReactionItems.slice(0, 4)" :key="`${item.targetId}-watch`">
               <strong>{{ item.name }}</strong>
               <span>{{ item.targetId }}</span>
               <em>{{ formatPct(item.mentionDeltaPct) }}</em>

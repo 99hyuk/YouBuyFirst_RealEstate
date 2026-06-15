@@ -250,14 +250,19 @@ describe('front dashboard shell', () => {
     expect(unsupportedTarget.find('.region-reaction-card').exists()).toBe(false);
 
     const newsroomAll = await mountAt('/newsroom');
+    await flushPromises();
+
     expect(newsroomAll.text()).toContain('뉴스룸');
     expect(newsroomAll.findAll('.nav-submenu a.active')).toHaveLength(0);
     expect(newsroomAll.text()).toContain('블로그와 커뮤니티 링크');
     expect(newsroomAll.find('.newsroom-switch').exists()).toBe(false);
     expect(newsroomAll.findAll('.newsroom-overview-card')).toHaveLength(4);
     for (const card of newsroomAll.findAll('.newsroom-overview-card')) {
-      expect(card.findAll('.newsroom-row')).toHaveLength(8);
+      expect(card.findAll('.newsroom-row')).toHaveLength(0);
+      expect(card.find('.newsroom-empty-state').exists()).toBe(true);
     }
+    expect(newsroomAll.text()).toContain('content API 오류');
+    expect(newsroomAll.text()).toContain('콘텐츠 API를 불러오지 못했습니다');
     expect(newsroomAll.text()).toContain('실시간 뉴스');
     expect(newsroomAll.text()).toContain('정책·통계 리포트');
     expect(newsroomAll.text()).toContain('부동산 영상 새 글');
@@ -266,8 +271,10 @@ describe('front dashboard shell', () => {
     expect(newsroomAll.text()).toContain('원문 링크만 몰아보기');
 
     const newsroom = await mountAt('/newsroom?feed=videos&page=2');
+    await flushPromises();
+
     expect(newsroom.text()).toContain('영상');
-    expect(newsroom.text()).toContain('조회 7.4만');
+    expect(newsroom.text()).toContain('콘텐츠 API를 불러오지 못했습니다');
     expect(newsroom.find('.newsroom-pager').exists()).toBe(true);
     expect(newsroom.findAll('.nav-submenu a.active')).toHaveLength(1);
     expect(newsroom.find('.nav-submenu a.active').text()).toContain('영상');
