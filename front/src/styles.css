@@ -8607,6 +8607,19 @@ a {
   order: -1;
 }
 
+.reaction-signal-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px solid rgba(212, 223, 236, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.5;
+}
+
 .reaction-signal-tile {
   position: relative;
   display: flex;
@@ -9662,6 +9675,16 @@ a {
 
 .region-ranking-row {
   border-top: 1px solid #edf2f7;
+}
+
+.region-ranking-empty {
+  margin: 0;
+  padding: 18px 12px;
+  border-top: 1px solid #edf2f7;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.5;
 }
 
 .region-ranking-row:hover {

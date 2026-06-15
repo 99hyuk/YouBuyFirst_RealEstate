@@ -188,6 +188,8 @@ describe('front dashboard shell', () => {
 
   it('renders the core product pages with the expanded planning content', async () => {
     const reactions = await mountAt('/realestate/reactions');
+    await flushPromises();
+
     expect(reactions.text()).toContain('지역 반응');
     expect(reactions.text()).toContain('지역 언급량 TOP 10');
     expect(reactions.text()).toContain('단지군 관심 TOP 10');
