@@ -4,6 +4,8 @@ import com.youbuyfirst.backend.realestate.RealEstateTarget;
 import com.youbuyfirst.backend.realestate.RealEstateTargetGraphService;
 import com.youbuyfirst.backend.realestate.RealEstateTargetRepository;
 import com.youbuyfirst.backend.realestate.RealEstateTimelineService;
+import com.youbuyfirst.backend.realestate.RealEstateComplexRepository;
+import com.youbuyfirst.backend.realestate.RealEstateRegionRepository;
 import com.youbuyfirst.backend.realestate.dto.RealEstateTargetEdgeResponse;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -16,9 +18,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -26,20 +30,27 @@ import java.util.Set;
 public class RealEstateReactionSnapshotService {
 
     private static final String FRESHNESS_SOURCE = "real_estate_reaction_snapshots";
+    private static final int LATEST_WINDOW_CANDIDATE_LIMIT = 500;
 
     private final RealEstateReactionSnapshotRepository snapshotRepository;
     private final RealEstateTargetRepository targetRepository;
+    private final RealEstateComplexRepository complexRepository;
+    private final RealEstateRegionRepository regionRepository;
     private final RealEstateTargetGraphService targetGraphService;
     private final RealEstateTimelineService timelineService;
 
     public RealEstateReactionSnapshotService(
             RealEstateReactionSnapshotRepository snapshotRepository,
             RealEstateTargetRepository targetRepository,
+            RealEstateComplexRepository complexRepository,
+            RealEstateRegionRepository regionRepository,
             RealEstateTargetGraphService targetGraphService,
             RealEstateTimelineService timelineService
     ) {
         this.snapshotRepository = snapshotRepository;
         this.targetRepository = targetRepository;
+        this.complexRepository = complexRepository;
+        this.regionRepository = regionRepository;
         this.targetGraphService = targetGraphService;
         this.timelineService = timelineService;
     }
@@ -90,14 +101,35 @@ public class RealEstateReactionSnapshotService {
             int windowMinutes,
             int limit
     ) {
+        return ranking(targetType, windowStart, windowMinutes, limit, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RealEstateReactionRankingResponse ranking(
+            String targetType,
+            Instant windowStart,
+            int windowMinutes,
+            int limit,
+            String parentTargetId
+    ) {
         int boundedLimit = Math.max(1, Math.min(limit, 100));
         Instant windowEnd = windowStart.plus(Duration.ofMinutes(windowMinutes));
-        List<RealEstateReactionSnapshot> snapshots = snapshotRepository.findRanking(
-                normalizeLower(targetType),
-                windowStart,
-                windowEnd,
-                PageRequest.of(0, boundedLimit)
-        );
+        String normalizedTargetType = normalizeLower(targetType);
+        Set<String> targetIds = rankingTargetIds(parentTargetId);
+        List<RealEstateReactionSnapshot> snapshots = targetIds.isEmpty()
+                ? snapshotRepository.findRanking(
+                        normalizedTargetType,
+                        windowStart,
+                        windowEnd,
+                        PageRequest.of(0, boundedLimit)
+                )
+                : snapshotRepository.findRankingByTargetIds(
+                        normalizedTargetType,
+                        windowStart,
+                        windowEnd,
+                        targetIds,
+                        PageRequest.of(0, boundedLimit)
+                );
         List<RealEstateReactionRankingRowResponse> rows = toRankingRows(snapshots);
         return new RealEstateReactionRankingResponse(
                 windowMinutes + "m",
@@ -114,8 +146,21 @@ public class RealEstateReactionSnapshotService {
             int windowMinutes,
             int limit
     ) {
+        return latestRanking(targetType, windowMinutes, limit, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RealEstateReactionRankingResponse latestRanking(
+            String targetType,
+            int windowMinutes,
+            int limit,
+            String parentTargetId
+    ) {
         String normalizedTargetType = normalizeLower(targetType);
-        Instant latestWindowStart = snapshotRepository.findLatestWindowStart(normalizedTargetType);
+        Set<String> targetIds = rankingTargetIds(parentTargetId);
+        Instant latestWindowStart = targetIds.isEmpty()
+                ? latestWindowStartByTargetType(normalizedTargetType, windowMinutes)
+                : latestWindowStartByTargetTypeAndTargetIds(normalizedTargetType, targetIds, windowMinutes);
         if (latestWindowStart == null) {
             return new RealEstateReactionRankingResponse(
                     windowMinutes + "m",
@@ -125,7 +170,26 @@ public class RealEstateReactionSnapshotService {
                     List.of()
             );
         }
-        return ranking(normalizedTargetType, latestWindowStart, windowMinutes, limit);
+        return ranking(normalizedTargetType, latestWindowStart, windowMinutes, limit, parentTargetId);
+    }
+
+    private Set<String> rankingTargetIds(String parentTargetId) {
+        String normalizedParentTargetId = trimToNull(parentTargetId);
+        if (normalizedParentTargetId == null) {
+            return Set.of();
+        }
+        targetRepository.findById(normalizedParentTargetId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "unknown real-estate parent target: " + normalizedParentTargetId
+                ));
+        Set<String> targetIds = new LinkedHashSet<>();
+        targetIds.add(normalizedParentTargetId);
+        regionRepository.findByParentRegionId(normalizedParentTargetId).stream()
+                .map(region -> region.getTargetId())
+                .forEach(targetIds::add);
+        complexRepository.findTargetIdsByRegionTargetIds(targetIds).forEach(targetIds::add);
+        return targetIds;
     }
 
     @Transactional(readOnly = true)
@@ -140,7 +204,7 @@ public class RealEstateReactionSnapshotService {
                         "unknown real-estate target: " + targetId
                 ));
         Instant effectiveWindowStart = windowStart == null
-                ? snapshotRepository.findLatestWindowStartByTargetId(targetId)
+                ? latestWindowStartByTargetId(targetId, windowMinutes)
                 : windowStart;
         if (effectiveWindowStart == null) {
             return emptyTargetSnapshot(target, windowMinutes);
@@ -174,7 +238,7 @@ public class RealEstateReactionSnapshotService {
                 limit
         );
         Instant effectiveWindowStart = windowStart == null
-                ? latestWindowStartForGraph(targetId, normalizedDirection, edges)
+                ? latestWindowStartForGraph(targetId, normalizedDirection, edges, windowMinutes)
                 : windowStart;
         Instant windowEnd = effectiveWindowStart == null
                 ? null
@@ -286,14 +350,81 @@ public class RealEstateReactionSnapshotService {
     private Instant latestWindowStartForGraph(
             String targetId,
             String direction,
-            List<RealEstateTargetEdgeResponse> edges
+            List<RealEstateTargetEdgeResponse> edges,
+            int windowMinutes
     ) {
         Set<String> targetIds = new LinkedHashSet<>();
         targetIds.add(targetId);
         edges.stream()
                 .map(edge -> relatedTarget(targetId, direction, edge).targetId())
                 .forEach(targetIds::add);
-        return snapshotRepository.findLatestWindowStartByTargetIds(targetIds);
+        return latestWindowStartByTargetIds(targetIds, windowMinutes);
+    }
+
+    private Instant latestWindowStartByTargetType(String targetType, int windowMinutes) {
+        return latestWindowStartFromCandidates(
+                snapshotRepository.findLatestWindowCandidatesByTargetType(
+                        targetType,
+                        PageRequest.of(0, LATEST_WINDOW_CANDIDATE_LIMIT)
+                ),
+                windowMinutes
+        );
+    }
+
+    private Instant latestWindowStartByTargetTypeAndTargetIds(
+            String targetType,
+            Set<String> targetIds,
+            int windowMinutes
+    ) {
+        if (targetIds.isEmpty()) {
+            return null;
+        }
+        return latestWindowStartFromCandidates(
+                snapshotRepository.findLatestWindowCandidatesByTargetTypeAndTargetIds(
+                        targetType,
+                        targetIds,
+                        PageRequest.of(0, LATEST_WINDOW_CANDIDATE_LIMIT)
+                ),
+                windowMinutes
+        );
+    }
+
+    private Instant latestWindowStartByTargetId(String targetId, int windowMinutes) {
+        return latestWindowStartFromCandidates(
+                snapshotRepository.findLatestWindowCandidatesByTargetId(
+                        targetId,
+                        PageRequest.of(0, LATEST_WINDOW_CANDIDATE_LIMIT)
+                ),
+                windowMinutes
+        );
+    }
+
+    private Instant latestWindowStartByTargetIds(Set<String> targetIds, int windowMinutes) {
+        if (targetIds.isEmpty()) {
+            return null;
+        }
+        return latestWindowStartFromCandidates(
+                snapshotRepository.findLatestWindowCandidatesByTargetIds(
+                        targetIds,
+                        PageRequest.of(0, LATEST_WINDOW_CANDIDATE_LIMIT)
+                ),
+                windowMinutes
+        );
+    }
+
+    private Instant latestWindowStartFromCandidates(
+            List<RealEstateReactionSnapshot> candidates,
+            int windowMinutes
+    ) {
+        return candidates.stream()
+                .filter(snapshot -> snapshotWindowMinutes(snapshot) == windowMinutes)
+                .map(RealEstateReactionSnapshot::getWindowStart)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private long snapshotWindowMinutes(RealEstateReactionSnapshot snapshot) {
+        return Duration.between(snapshot.getWindowStart(), snapshot.getWindowEnd()).toMinutes();
     }
 
     private RealEstateReactionGraphTargetResponse relatedTarget(
@@ -470,16 +601,87 @@ public class RealEstateReactionSnapshotService {
         if (requests == null) {
             return List.of();
         }
-        return requests.stream()
-                .map(request -> new RealEstateReactionSnapshotIssue(
-                        normalizeLower(request.issueKey()),
-                        request.label().trim(),
-                        request.share(),
-                        normalizeLower(request.direction()),
-                        trimToNull(request.summary()),
-                        request.confidence()
-                ))
+        Map<String, IssueAccumulator> byIssueKey = new LinkedHashMap<>();
+        for (RealEstateReactionSnapshotIssueRequest request : requests) {
+            String issueKey = normalizeLower(request.issueKey());
+            if (issueKey.isBlank()) {
+                continue;
+            }
+            byIssueKey.compute(
+                    issueKey,
+                    (key, existing) -> {
+                        if (existing == null) {
+                            return new IssueAccumulator(
+                                    key,
+                                    request.label().trim(),
+                                    request.share(),
+                                    normalizeLower(request.direction()),
+                                    trimToNull(request.summary()),
+                                    request.confidence()
+                            );
+                        }
+                        existing.merge(request);
+                        return existing;
+                    }
+            );
+        }
+        return byIssueKey.values().stream()
+                .map(IssueAccumulator::toEntity)
                 .toList();
+    }
+
+    private static final class IssueAccumulator {
+        private final String issueKey;
+        private String label;
+        private double share;
+        private String direction;
+        private String summary;
+        private double confidence;
+        private double primaryShare;
+
+        private IssueAccumulator(
+                String issueKey,
+                String label,
+                double share,
+                String direction,
+                String summary,
+                double confidence
+        ) {
+            this.issueKey = issueKey;
+            this.label = label;
+            this.share = boundedShare(share);
+            this.direction = direction;
+            this.summary = summary;
+            this.confidence = confidence;
+            this.primaryShare = share;
+        }
+
+        private void merge(RealEstateReactionSnapshotIssueRequest request) {
+            double requestShare = request.share();
+            this.share = boundedShare(this.share + requestShare);
+            this.confidence = Math.max(this.confidence, request.confidence());
+            if (requestShare > this.primaryShare) {
+                this.label = request.label().trim();
+                this.direction = normalizeLower(request.direction());
+                this.summary = trimToNull(request.summary());
+                this.primaryShare = requestShare;
+            }
+        }
+
+        private RealEstateReactionSnapshotIssue toEntity() {
+            return new RealEstateReactionSnapshotIssue(
+                    issueKey,
+                    label,
+                    share,
+                    direction,
+                    summary,
+                    confidence
+            );
+        }
+
+        private static double boundedShare(double value) {
+            return Math.max(0.0, Math.min(1.0, value));
+        }
     }
 
     private static String normalizeLower(String value) {

@@ -34,15 +34,16 @@ public class RealEstateReactionController {
             @RequestParam(defaultValue = "region") String type,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant windowStart,
             @RequestParam(defaultValue = "60") int windowMinutes,
-            @RequestParam(defaultValue = "20") int limit
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(required = false) String parentTargetId
     ) {
         if (windowMinutes <= 0 || windowMinutes > 10_080) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "windowMinutes must be between 1 and 10080");
         }
         if (windowStart == null) {
-            return service.latestRanking(type, windowMinutes, limit);
+            return service.latestRanking(type, windowMinutes, limit, parentTargetId);
         }
-        return service.ranking(type, windowStart, windowMinutes, limit);
+        return service.ranking(type, windowStart, windowMinutes, limit, parentTargetId);
     }
 
     @GetMapping("/api/realestate/targets/{targetId}/reaction-snapshot")

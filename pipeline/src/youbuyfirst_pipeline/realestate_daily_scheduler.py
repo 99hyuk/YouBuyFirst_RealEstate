@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+import threading
 from dataclasses import asdict, dataclass, is_dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,6 +10,7 @@ from typing import Any, Callable, Protocol, Sequence
 
 from youbuyfirst_pipeline.client import SpringIngestionClient
 from youbuyfirst_pipeline.realestate_recent_issues import (
+    RealEstateRecentIssueSearchTarget,
     RealEstateRecentIssueSearchClient,
     build_recent_issue_content_items,
     load_recent_issue_search_targets,
@@ -55,6 +58,13 @@ class RealEstateRecentIssuesRefreshResult:
 
 
 @dataclass(frozen=True)
+class RealEstateConfigMissingRefreshResult:
+    status: str
+    missing: list[str]
+    message: str
+
+
+@dataclass(frozen=True)
 class RealEstateEvidenceLogRefreshResult:
     status: str
     target_count: int
@@ -71,6 +81,56 @@ class RealEstateMapLayerRefreshResult:
     layer_count: int
     snapshot_count: int
     skipped_target_count: int
+
+
+@dataclass(frozen=True)
+class RealEstateCommunityCrawlRefreshResult:
+    status: str
+    source_count: int
+    seen_post_count: int
+    accepted_post_count: int
+    skipped_count: int = 0
+    blocked_count: int = 0
+    failed_count: int = 0
+
+
+class RealEstateCommunityCrawlRefreshJob:
+    def __init__(self, *, pipeline) -> None:
+        self.pipeline = pipeline
+
+    def run_once(self) -> RealEstateCommunityCrawlRefreshResult:
+        results = _run_async(self.pipeline.run_once())
+        rows = [row for row in results if isinstance(row, dict)]
+        seen_post_count = sum(_int_field(row, "seenPosts") for row in rows)
+        accepted_post_count = sum(_int_field(row, "acceptedPosts") for row in rows)
+        skipped_count = sum(1 for row in rows if _normalized_status(row) == "SKIPPED")
+        blocked_count = sum(1 for row in rows if _normalized_status(row) == "BLOCKED")
+        failed_count = sum(1 for row in rows if _normalized_status(row) in {"FAILED", "ERROR"})
+        status = "EMPTY"
+        if rows:
+            status = "PARTIAL" if blocked_count or failed_count else "OK"
+        return RealEstateCommunityCrawlRefreshResult(
+            status=status,
+            source_count=len(rows),
+            seen_post_count=seen_post_count,
+            accepted_post_count=accepted_post_count,
+            skipped_count=skipped_count,
+            blocked_count=blocked_count,
+            failed_count=failed_count,
+        )
+
+
+class RealEstateConfigMissingRefreshJob:
+    def __init__(self, *, missing: Sequence[str], message: str) -> None:
+        self.missing = list(missing)
+        self.message = message
+
+    def run_once(self) -> RealEstateConfigMissingRefreshResult:
+        return RealEstateConfigMissingRefreshResult(
+            status="CONFIG_MISSING",
+            missing=self.missing,
+            message=self.message,
+        )
 
 
 class RealEstateMapLayerRefreshJob:
@@ -211,9 +271,10 @@ class RealEstateEvidenceLogRefreshJob:
 
         if logs:
             self.client.publish_real_estate_evidence_logs(logs)
+        needs_attention = any(_log_needs_attention(log) for log in logs)
 
         return RealEstateEvidenceLogRefreshResult(
-            status="OK" if logs else "EMPTY",
+            status="PARTIAL" if needs_attention else "OK" if logs else "EMPTY",
             target_count=len(rows),
             log_count=len(logs),
             market_fact_count=market_fact_count,
@@ -229,21 +290,27 @@ class RealEstateRecentIssuesRefreshJob:
         *,
         client: SpringIngestionClient,
         search_client: RealEstateRecentIssueSearchClient,
-        search_targets_jsonl: str | Path,
+        search_targets_jsonl: str | Path | None = None,
         issue_keywords: Sequence[str] | None = None,
+        target_type: str = "region",
+        window_minutes: int = 60,
+        ranking_limit: int = 10,
         result_limit: int = 5,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self.client = client
         self.search_client = search_client
-        self.search_targets_jsonl = Path(search_targets_jsonl)
+        self.search_targets_jsonl = Path(search_targets_jsonl) if search_targets_jsonl else None
         self.issue_keywords = tuple(issue_keywords or ())
+        self.target_type = target_type
+        self.window_minutes = window_minutes
+        self.ranking_limit = ranking_limit
         self.result_limit = result_limit
         self.clock = clock or (lambda: datetime.now(timezone.utc))
 
     def run_once(self) -> RealEstateRecentIssuesRefreshResult:
         try:
-            targets = load_recent_issue_search_targets(self.search_targets_jsonl)
+            targets = self._load_targets()
         except Exception as exc:
             logger.warning("real-estate recent issues refresh skipped; input unavailable: %s", exc)
             return RealEstateRecentIssuesRefreshResult(status="INPUT_ERROR", target_count=0, item_count=0)
@@ -287,6 +354,17 @@ class RealEstateRecentIssuesRefreshJob:
             result.item_count,
         )
         return result
+
+    def _load_targets(self):
+        if self.search_targets_jsonl is not None:
+            return load_recent_issue_search_targets(self.search_targets_jsonl)
+
+        ranking = self.client.get_real_estate_reaction_ranking(
+            target_type=self.target_type,
+            window_minutes=self.window_minutes,
+            limit=self.ranking_limit,
+        )
+        return _recent_issue_targets_from_ranking(ranking)
 
 
 def _snapshot_from_ranking_row(row: dict[str, Any], ranking: dict[str, Any]) -> dict[str, Any]:
@@ -345,6 +423,39 @@ def _similar_windows_for_evidence(
     return [item for item in provider(target_id, ranking_row, ranking) if isinstance(item, dict)]
 
 
+def _recent_issue_targets_from_ranking(ranking: dict[str, Any]) -> list[RealEstateRecentIssueSearchTarget]:
+    targets: list[RealEstateRecentIssueSearchTarget] = []
+    for row in ranking.get("items", []):
+        if not isinstance(row, dict):
+            continue
+        target_id = str(row.get("targetId") or row.get("target_id") or "").strip()
+        target_type = str(row.get("targetType") or row.get("target_type") or "region").strip()
+        display_name = str(row.get("displayName") or row.get("display_name") or "").strip()
+        if not target_id or not display_name:
+            continue
+        keywords = _issue_keywords_from_ranking_row(row)
+        targets.append(
+            RealEstateRecentIssueSearchTarget(
+                target_type=target_type,
+                target_id=target_id,
+                display_name=display_name,
+                keywords=tuple(keywords),
+            )
+        )
+    return targets
+
+
+def _issue_keywords_from_ranking_row(row: dict[str, Any]) -> list[str]:
+    keywords: list[str] = []
+    for issue in row.get("issueMix") or row.get("issues") or []:
+        if not isinstance(issue, dict):
+            continue
+        label = str(issue.get("label") or issue.get("issueKey") or issue.get("issue_key") or "").strip()
+        if label and label not in keywords:
+            keywords.append(label)
+    return keywords or [""]
+
+
 def _ratio_percent(ratio: dict[str, Any], key: str) -> float:
     value = ratio.get(key) if isinstance(ratio, dict) else 0
     return float(value or 0) * 100
@@ -383,9 +494,10 @@ class RealEstateDailyRefreshJob:
             step_results.append(RealEstateDailyRefreshStepResult(name=name, status=status, detail=detail))
 
         failed_count = sum(1 for step_result in step_results if _is_failed_status(step_result.status))
+        attention_count = sum(1 for step_result in step_results if _needs_attention_status(step_result.status))
         ok_count = len(step_results) - failed_count
         result = RealEstateDailyRefreshResult(
-            status="OK" if failed_count == 0 else "PARTIAL",
+            status="OK" if failed_count == 0 and attention_count == 0 else "PARTIAL",
             step_count=len(step_results),
             ok_count=ok_count,
             failed_count=failed_count,
@@ -418,3 +530,53 @@ def _result_to_dict(result: Any) -> dict[str, Any]:
 def _is_failed_status(status: str) -> bool:
     normalized = status.strip().upper()
     return normalized in {"ERROR", "FAILED", "FAIL"} or normalized.endswith("_ERROR")
+
+
+def _needs_attention_status(status: str) -> bool:
+    normalized = status.strip().upper()
+    return normalized in {"PARTIAL", "CONFIG_MISSING", "INPUT_MISSING"}
+
+
+def _log_needs_attention(log: dict[str, Any]) -> bool:
+    caveats = log.get("caveats")
+    if not isinstance(caveats, list):
+        return False
+    required_evidence_missing = {
+        "market_fact_missing",
+        "timeline_event_missing",
+        "search_candidate_missing",
+    }
+    return any(str(caveat) in required_evidence_missing for caveat in caveats)
+
+
+def _run_async(awaitable):
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(awaitable)
+
+    result_box: dict[str, Any] = {}
+
+    def runner() -> None:
+        try:
+            result_box["result"] = asyncio.run(awaitable)
+        except BaseException as exc:
+            result_box["error"] = exc
+
+    thread = threading.Thread(target=runner, daemon=True)
+    thread.start()
+    thread.join()
+    if "error" in result_box:
+        raise result_box["error"]
+    return result_box.get("result")
+
+
+def _int_field(row: dict[str, Any], key: str) -> int:
+    try:
+        return int(row.get(key) or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _normalized_status(row: dict[str, Any]) -> str:
+    return str(row.get("status") or row.get("crawlStatus") or "OK").strip().upper()

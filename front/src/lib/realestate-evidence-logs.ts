@@ -6,6 +6,12 @@ export type RealEstateEvidenceItem = {
   label: string;
   valueText?: string | null;
   severity?: string | null;
+  sourceUrl?: string | null;
+  sourceId?: string | null;
+  sourceDomain?: string | null;
+  publishedAt?: string | null;
+  sourceAsOf?: string | null;
+  sourceDataStatus?: string | null;
 };
 
 export type RealEstateEvidenceLog = {

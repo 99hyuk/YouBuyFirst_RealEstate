@@ -46,6 +46,8 @@ export type FetchRealEstateReactionRankingParams = {
   type?: string;
   windowMinutes?: number;
   windowStart?: string;
+  limit?: number;
+  parentTargetId?: string;
 };
 
 export type RegionReactionRankingRow = {
@@ -72,8 +74,10 @@ export async function fetchRealEstateReactionRanking(
 ): Promise<RealEstateReactionRanking> {
   const query = new URLSearchParams();
   query.set('type', params.type ?? 'region');
-  query.set('windowMinutes', String(params.windowMinutes ?? 60));
+  query.set('windowMinutes', String(params.windowMinutes ?? 1440));
   if (params.windowStart) query.set('windowStart', params.windowStart);
+  if (params.limit) query.set('limit', String(params.limit));
+  if (params.parentTargetId) query.set('parentTargetId', params.parentTargetId);
 
   const response = await fetcher(`/api/realestate/reactions/rankings?${query.toString()}`);
   if (!response.ok) {

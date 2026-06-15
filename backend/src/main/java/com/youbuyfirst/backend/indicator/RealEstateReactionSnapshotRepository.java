@@ -35,11 +35,40 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
     );
 
     @Query("""
+            select snapshot
+            from RealEstateReactionSnapshot snapshot
+            join fetch snapshot.target target
+            where snapshot.targetType = :targetType
+              and snapshot.windowStart = :windowStart
+              and snapshot.windowEnd = :windowEnd
+              and target.id in :targetIds
+            order by snapshot.mentionCount desc, snapshot.heatScore desc, target.id asc
+            """)
+    List<RealEstateReactionSnapshot> findRankingByTargetIds(
+            @Param("targetType") String targetType,
+            @Param("windowStart") Instant windowStart,
+            @Param("windowEnd") Instant windowEnd,
+            @Param("targetIds") Collection<String> targetIds,
+            Pageable pageable
+    );
+
+    @Query("""
             select max(snapshot.windowStart)
             from RealEstateReactionSnapshot snapshot
             where snapshot.targetType = :targetType
             """)
     Instant findLatestWindowStart(@Param("targetType") String targetType);
+
+    @Query("""
+            select max(snapshot.windowStart)
+            from RealEstateReactionSnapshot snapshot
+            where snapshot.targetType = :targetType
+              and snapshot.target.id in :targetIds
+            """)
+    Instant findLatestWindowStartByTargetTypeAndTargetIds(
+            @Param("targetType") String targetType,
+            @Param("targetIds") Collection<String> targetIds
+    );
 
     @Query("""
             select max(snapshot.windowStart)
@@ -54,6 +83,52 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
             where snapshot.target.id in :targetIds
             """)
     Instant findLatestWindowStartByTargetIds(@Param("targetIds") Collection<String> targetIds);
+
+    @Query("""
+            select snapshot
+            from RealEstateReactionSnapshot snapshot
+            where snapshot.targetType = :targetType
+            order by snapshot.windowStart desc, snapshot.windowEnd desc
+            """)
+    List<RealEstateReactionSnapshot> findLatestWindowCandidatesByTargetType(
+            @Param("targetType") String targetType,
+            Pageable pageable
+    );
+
+    @Query("""
+            select snapshot
+            from RealEstateReactionSnapshot snapshot
+            where snapshot.targetType = :targetType
+              and snapshot.target.id in :targetIds
+            order by snapshot.windowStart desc, snapshot.windowEnd desc
+            """)
+    List<RealEstateReactionSnapshot> findLatestWindowCandidatesByTargetTypeAndTargetIds(
+            @Param("targetType") String targetType,
+            @Param("targetIds") Collection<String> targetIds,
+            Pageable pageable
+    );
+
+    @Query("""
+            select snapshot
+            from RealEstateReactionSnapshot snapshot
+            where snapshot.target.id = :targetId
+            order by snapshot.windowStart desc, snapshot.windowEnd desc
+            """)
+    List<RealEstateReactionSnapshot> findLatestWindowCandidatesByTargetId(
+            @Param("targetId") String targetId,
+            Pageable pageable
+    );
+
+    @Query("""
+            select snapshot
+            from RealEstateReactionSnapshot snapshot
+            where snapshot.target.id in :targetIds
+            order by snapshot.windowStart desc, snapshot.windowEnd desc
+            """)
+    List<RealEstateReactionSnapshot> findLatestWindowCandidatesByTargetIds(
+            @Param("targetIds") Collection<String> targetIds,
+            Pageable pageable
+    );
 
     @Query("""
             select distinct snapshot

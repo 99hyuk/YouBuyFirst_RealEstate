@@ -70,6 +70,14 @@ public class RealEstateReactionSnapshotIssue {
         this.snapshot = snapshot;
     }
 
+    void updateFrom(RealEstateReactionSnapshotIssue issue) {
+        this.label = issue.label;
+        this.share = issue.share;
+        this.direction = issue.direction;
+        this.summary = issue.summary;
+        this.confidence = issue.confidence;
+    }
+
     public String getIssueKey() {
         return issueKey;
     }

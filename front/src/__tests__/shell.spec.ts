@@ -51,6 +51,44 @@ beforeAll(() => {
         });
       }
 
+      if (url.includes('/api/realestate/map/layers') && url.includes('layerType=sigungu') && url.includes('region-daejeon')) {
+        return new Response(JSON.stringify({
+          layerType: 'sigungu',
+          parentTargetId: 'region-daejeon',
+          asOf: '2026-06-15T00:00:00Z',
+          sourceLabel: 'map_layer_snapshots',
+          mapDataSource: 'KOSTAT 2018',
+          dataStatus: 'ok',
+          stale: false,
+          periods: ['week', 'month', 'halfYear'],
+          targets: [
+            {
+              targetId: 'region-daejeon-yuseong',
+              targetType: 'region',
+              displayName: '대전 유성구',
+              regionLevel: 'sigungu',
+              regionCode: '25040',
+              parentTargetId: 'region-daejeon',
+              periods: {
+                month: {
+                  changePct: 0.31,
+                  sampleCount: 42,
+                  confidence: 77,
+                  asOf: '2026-06-15T00:00:00Z',
+                  provider: 'reb_stat',
+                  sourceLabel: 'map_layer_snapshots',
+                  dataStatus: 'ok',
+                  stale: false
+                }
+              }
+            }
+          ]
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
       return nativeFetch(input, init);
     })
   );
@@ -151,8 +189,12 @@ describe('front dashboard shell', () => {
   it('renders the core product pages with the expanded planning content', async () => {
     const reactions = await mountAt('/realestate/reactions');
     expect(reactions.text()).toContain('지역 반응');
-    expect(reactions.text()).toContain('지역 언급량 TOP 6');
-    expect(reactions.text()).toContain('단지군 관심 TOP 6');
+    expect(reactions.text()).toContain('지역 언급량 TOP 10');
+    expect(reactions.text()).toContain('단지군 관심 TOP 10');
+    expect(reactions.text()).toContain('전체 TOP10');
+    expect(reactions.text()).toContain('서울 TOP10');
+    expect(reactions.text()).toContain('경기 TOP10');
+    expect(reactions.text()).toContain('대전 TOP10');
     expect(reactions.text()).toContain('지역·단지 순위, 급증 신호');
     expect(reactions.text()).toContain('정렬 기준');
     expect(reactions.text()).toContain('커뮤니티 언급 급증 지역');
@@ -161,7 +203,15 @@ describe('front dashboard shell', () => {
     expect(reactions.text()).toContain('모의 에이전트 판단 기록');
     expect(reactions.text()).not.toContain('커뮤니티별 언급 급증과 반응 비율');
     expect(reactions.text()).not.toContain('커뮤니티 반응과 공식 지표 비교 그래프');
-    expect(reactions.findAll('.region-ranking-row').length).toBe(12);
+    expect(reactions.findAll('.region-ranking-row').length).toBe(20);
+    await reactions.findAll('.region-scope-filter button').find((button) => button.text() === '서울 TOP10')?.trigger('click');
+    await flushPromises();
+    expect(reactions.text()).toContain('서울 지역 언급량 TOP 10');
+    expect(reactions.findAll('.region-ranking-row').length).toBe(6);
+    const fetchCalls = (globalThis.fetch as unknown as { mock: { calls: [RequestInfo | URL][] } }).mock.calls;
+    const reactionRankingRequests = fetchCalls.map(([input]) => String(input));
+    expect(reactionRankingRequests).toContain('/api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10&parentTargetId=region-seoul');
+    expect(reactionRankingRequests).toContain('/api/realestate/reactions/rankings?type=complex&windowMinutes=1440&limit=10&parentTargetId=region-seoul');
 
     const target = await mountAt('/realestate/targets/region-seoul-mapo');
     expect(target.text()).toContain('지역 반응 목록으로');
@@ -265,6 +315,7 @@ describe('front dashboard shell', () => {
     expect(wrapper.findAll('.subregion-labels text')).toHaveLength(0);
     expect(wrapper.text()).toContain('동구');
     expect(wrapper.text()).toContain('유성구');
+    expect(wrapper.get('[data-testid="subregion-layer-status"]').text()).toContain('reb_stat · ok · fresh · 2026-06-15T00:00:00Z');
 
     await wrapper.get('[data-testid="subregion-button-25040"]').trigger('click');
 

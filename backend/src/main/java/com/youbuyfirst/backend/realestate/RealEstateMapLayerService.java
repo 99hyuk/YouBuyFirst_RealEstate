@@ -36,6 +36,7 @@ public class RealEstateMapLayerService {
     private static final List<String> PERIOD_ORDER = List.of("week", "month", "halfYear");
     private static final String MAP_REFRESH_PROVIDER = "real_estate_map_layer_refresh";
     private static final String MAP_REFRESH_SOURCE_LABEL = "실거래 market facts + 반응 snapshot";
+    private static final BigDecimal EXTREME_CHANGE_THRESHOLD_PCT = BigDecimal.valueOf(50);
 
     private final MapFeatureRepository mapFeatureRepository;
     private final MapLayerSnapshotRepository mapLayerSnapshotRepository;
@@ -94,9 +95,7 @@ public class RealEstateMapLayerService {
                 .filter(value -> value != null && !value.isBlank())
                 .findFirst()
                 .orElse("map_boundary_assets");
-        String dataStatus = targetResponses.isEmpty()
-                ? "empty"
-                : rows.stream().allMatch(row -> "mock".equals(row.dataStatus())) ? "mock" : "ok";
+        String dataStatus = layerDataStatus(rows, targetResponses.isEmpty());
         boolean stale = rows.stream().anyMatch(MapLayerSnapshotRow::stale);
 
         return new RealEstateMapLayerResponse(
@@ -131,7 +130,7 @@ public class RealEstateMapLayerService {
                     continue;
                 }
                 MapLayerComputation value = computation.get();
-                String id = mapRefreshId(layerType, feature.getTargetId(), period, asOf);
+                String id = mapRefreshId(layerType, feature.getTargetId(), period, value.asOf());
                 MapLayerSnapshot snapshot = mapLayerSnapshotRepository.findById(id)
                         .orElseGet(() -> new MapLayerSnapshot(id));
                 snapshot.update(
@@ -141,7 +140,7 @@ public class RealEstateMapLayerService {
                         value.changePct(),
                         value.sampleCount(),
                         value.confidence(),
-                        asOf,
+                        value.asOf(),
                         MAP_REFRESH_PROVIDER,
                         MAP_REFRESH_SOURCE_LABEL,
                         value.dataStatus(),
@@ -165,16 +164,24 @@ public class RealEstateMapLayerService {
     private Optional<MapLayerComputation> computeSnapshot(MapFeature feature, String period, Instant asOf) {
         LocalDate endDate = LocalDate.ofInstant(asOf, ZoneOffset.UTC);
         LocalDate startDate = endDate.minusDays(periodDays(period));
-        List<RealEstateMarketFact> facts = marketFactRepository.findMapLayerFacts(
-                        feature.getTargetId(),
-                        "apt_trade",
-                        startDate,
-                        endDate
-                ).stream()
-                .filter(fact -> "ok".equals(fact.getDataStatus()))
-                .toList();
+        List<RealEstateMarketFact> facts = findMapLayerOkFacts(feature, startDate, endDate);
+        boolean staleWindow = false;
         if (facts.size() < 2) {
-            return Optional.empty();
+            Optional<LocalDate> fallbackEndDate = marketFactRepository.findLatestMapLayerObservedAt(
+                    feature.getTargetId(),
+                    "apt_trade",
+                    endDate
+            );
+            if (fallbackEndDate.isEmpty()) {
+                return Optional.empty();
+            }
+            endDate = fallbackEndDate.get();
+            startDate = endDate.minusDays(periodDays(period));
+            facts = findMapLayerOkFacts(feature, startDate, endDate);
+            staleWindow = true;
+            if (facts.size() < 2) {
+                return Optional.empty();
+            }
         }
 
         LocalDate firstObservedAt = facts.get(0).getObservedAt();
@@ -193,19 +200,43 @@ public class RealEstateMapLayerService {
                 .multiply(BigDecimal.valueOf(100))
                 .divide(firstAverage, 4, RoundingMode.HALF_UP);
         Optional<RealEstateReactionSnapshot> reactionSnapshot = latestReactionSnapshot(feature.getTargetId(), asOf);
+        boolean extremeChange = changePct.abs().compareTo(EXTREME_CHANGE_THRESHOLD_PCT) > 0;
+        BigDecimal sampleConfidence = sampleConfidence(facts.size());
         BigDecimal confidence = reactionSnapshot
                 .map(snapshot -> BigDecimal.valueOf(snapshot.getConfidence()).setScale(4, RoundingMode.HALF_UP))
-                .orElseGet(() -> sampleConfidence(facts.size()));
-        boolean stale = facts.stream().anyMatch(RealEstateMarketFact::isStale)
+                .orElse(sampleConfidence);
+        if (extremeChange) {
+            confidence = confidence.min(sampleConfidence);
+        }
+        boolean stale = staleWindow
+                || facts.stream().anyMatch(RealEstateMarketFact::isStale)
                 || reactionSnapshot.map(RealEstateReactionSnapshot::isStale).orElse(false);
+        boolean weak = stale || extremeChange;
+        Instant snapshotAsOf = staleWindow ? lastObservedAt.atStartOfDay().toInstant(ZoneOffset.UTC) : asOf;
 
         return Optional.of(new MapLayerComputation(
                 changePct,
                 facts.size(),
                 confidence,
-                stale ? "partial" : "ok",
-                stale
+                snapshotAsOf,
+                weak ? "partial" : "ok",
+                weak
         ));
+    }
+
+    private List<RealEstateMarketFact> findMapLayerOkFacts(
+            MapFeature feature,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        return marketFactRepository.findMapLayerFacts(
+                        feature.getTargetId(),
+                        "apt_trade",
+                        startDate,
+                        endDate
+                ).stream()
+                .filter(fact -> "ok".equals(fact.getDataStatus()))
+                .toList();
     }
 
     private Optional<RealEstateReactionSnapshot> latestReactionSnapshot(String targetId, Instant asOf) {
@@ -365,10 +396,24 @@ public class RealEstateMapLayerService {
         return Math.round(value * 10.0) / 10.0;
     }
 
+    private static String layerDataStatus(List<MapLayerSnapshotRow> rows, boolean empty) {
+        if (empty) {
+            return "empty";
+        }
+        if (rows.stream().allMatch(row -> "mock".equals(row.dataStatus()))) {
+            return "mock";
+        }
+        if (rows.stream().allMatch(row -> "ok".equals(row.dataStatus()))) {
+            return "ok";
+        }
+        return "partial";
+    }
+
     private record MapLayerComputation(
             BigDecimal changePct,
             int sampleCount,
             BigDecimal confidence,
+            Instant asOf,
             String dataStatus,
             boolean stale
     ) {

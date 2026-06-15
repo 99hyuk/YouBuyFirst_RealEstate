@@ -9,6 +9,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class RealEstateMapLayerIntegrationTest {
 
     @Autowired
@@ -168,15 +170,182 @@ class RealEstateMapLayerIntegrationTest {
         assertThat(month.path("stale").asBoolean()).isFalse();
     }
 
+    @Test
+    void refreshesSidoMapLayerFromChildSigunguMarketFacts() throws Exception {
+        ResponseEntity<String> marketFacts = restTemplate.postForEntity(
+                "/internal/realestate/market-facts",
+                Map.of(
+                        "items",
+                        List.of(
+                                mapFactForTarget(
+                                        "region-seoul-mapo",
+                                        "11440",
+                                        "molit_apt_trade:11440:202501:sido-before",
+                                        "2025-01-04",
+                                        70000
+                                ),
+                                mapFactForTarget(
+                                        "region-seoul-mapo",
+                                        "11440",
+                                        "molit_apt_trade:11440:202501:sido-after",
+                                        "2025-01-31",
+                                        73500
+                                )
+                        )
+                ),
+                String.class
+        );
+
+        ResponseEntity<String> refresh = restTemplate.postForEntity(
+                "/internal/realestate/map/layer-snapshots/refresh",
+                Map.of(
+                        "layerType", "sido",
+                        "periods", List.of("month"),
+                        "asOf", "2025-01-31T02:00:00Z"
+                ),
+                String.class
+        );
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/map/layers?layerType=sido",
+                String.class
+        );
+
+        assertThat(marketFacts.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refresh.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refresh.getBody()).contains("\"acceptedSnapshots\":1");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode body = objectMapper.readTree(response.getBody());
+        assertThat(body.path("dataStatus").asText()).isEqualTo("partial");
+        assertThat(body.path("stale").asBoolean()).isTrue();
+
+        JsonNode seoul = findTarget(body.path("targets"), "region-seoul");
+        assertThat(seoul).isNotNull();
+        JsonNode month = seoul.path("periods").path("month");
+        assertThat(month.path("changePct").asDouble()).isEqualTo(5.0);
+        assertThat(month.path("sampleCount").asInt()).isEqualTo(2);
+        assertThat(month.path("asOf").asText()).isEqualTo("2025-01-31T02:00:00Z");
+        assertThat(month.path("provider").asText()).isEqualTo("real_estate_map_layer_refresh");
+        assertThat(month.path("dataStatus").asText()).isEqualTo("ok");
+        assertThat(month.path("stale").asBoolean()).isFalse();
+    }
+
+    @Test
+    void refreshUsesLatestAvailableMarketFactWindowWhenCurrentWindowHasNoData() throws Exception {
+        ResponseEntity<String> marketFacts = restTemplate.postForEntity(
+                "/internal/realestate/market-facts",
+                Map.of(
+                        "items",
+                        List.of(
+                                mapFactForTarget(
+                                        "region-seoul-mapo",
+                                        "11440",
+                                        "molit_apt_trade:11440:202501:stale-window-before",
+                                        "2025-01-04",
+                                        70000
+                                ),
+                                mapFactForTarget(
+                                        "region-seoul-mapo",
+                                        "11440",
+                                        "molit_apt_trade:11440:202501:stale-window-after",
+                                        "2025-01-31",
+                                        73500
+                                )
+                        )
+                ),
+                String.class
+        );
+
+        ResponseEntity<String> refresh = restTemplate.postForEntity(
+                "/internal/realestate/map/layer-snapshots/refresh",
+                Map.of(
+                        "layerType", "sigungu",
+                        "periods", List.of("month"),
+                        "asOf", "2026-06-21T02:00:00Z"
+                ),
+                String.class
+        );
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/map/layers?layerType=sigungu&parentTargetId=region-seoul",
+                String.class
+        );
+
+        assertThat(marketFacts.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refresh.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode mapo = findTarget(objectMapper.readTree(response.getBody()).path("targets"), "region-seoul-mapo");
+        assertThat(mapo).isNotNull();
+        JsonNode month = mapo.path("periods").path("month");
+        assertThat(month.path("changePct").asDouble()).isEqualTo(5.0);
+        assertThat(month.path("sampleCount").asInt()).isEqualTo(2);
+        assertThat(month.path("asOf").asText()).isEqualTo("2025-01-31T00:00:00Z");
+        assertThat(month.path("provider").asText()).isEqualTo("real_estate_map_layer_refresh");
+        assertThat(month.path("dataStatus").asText()).isEqualTo("partial");
+        assertThat(month.path("stale").asBoolean()).isTrue();
+    }
+
+    @Test
+    void marksExtremeMapLayerChangeAsPartialInsteadOfNormalOk() throws Exception {
+        ResponseEntity<String> marketFacts = restTemplate.postForEntity(
+                "/internal/realestate/market-facts",
+                Map.of(
+                        "items",
+                        List.of(
+                                mapFact("molit_apt_trade:11110:202701:extreme-before", "2027-01-02", 1000),
+                                mapFact("molit_apt_trade:11110:202701:extreme-after", "2027-01-10", 200000)
+                        )
+                ),
+                String.class
+        );
+
+        ResponseEntity<String> refresh = restTemplate.postForEntity(
+                "/internal/realestate/map/layer-snapshots/refresh",
+                Map.of(
+                        "layerType", "sigungu",
+                        "periods", List.of("month"),
+                        "asOf", "2027-01-10T02:00:00Z"
+                ),
+                String.class
+        );
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/map/layers?layerType=sigungu&parentTargetId=region-seoul",
+                String.class
+        );
+
+        assertThat(marketFacts.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refresh.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(refresh.getBody()).contains("\"acceptedSnapshots\":1");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode jongno = findTarget(objectMapper.readTree(response.getBody()).path("targets"), "region-seoul-jongno");
+        assertThat(jongno).isNotNull();
+        JsonNode month = jongno.path("periods").path("month");
+        assertThat(month.path("changePct").asDouble()).isEqualTo(19900.0);
+        assertThat(month.path("dataStatus").asText()).isEqualTo("partial");
+        assertThat(month.path("confidence").asDouble()).isEqualTo(10.0);
+        assertThat(month.path("stale").asBoolean()).isTrue();
+    }
+
     private static Map<String, Object> mapFact(String providerObjectId, String observedAt, int dealAmountManwon) {
+        return mapFactForTarget("region-seoul-jongno", "11110", providerObjectId, observedAt, dealAmountManwon);
+    }
+
+    private static Map<String, Object> mapFactForTarget(
+            String targetId,
+            String legalDongCode,
+            String providerObjectId,
+            String observedAt,
+            int dealAmountManwon
+    ) {
         return Map.ofEntries(
                 Map.entry("targetType", "region"),
-                Map.entry("targetId", "region-seoul-jongno"),
+                Map.entry("targetId", targetId),
                 Map.entry("factType", "apt_trade"),
                 Map.entry("provider", "molit"),
                 Map.entry("providerDataset", "molit_apt_trade"),
                 Map.entry("providerObjectId", providerObjectId),
-                Map.entry("legalDongCode", "11110"),
+                Map.entry("legalDongCode", legalDongCode),
                 Map.entry("observedAt", observedAt),
                 Map.entry("asOf", "2026-06-01"),
                 Map.entry("ingestedAt", "2026-06-12T00:00:00Z"),

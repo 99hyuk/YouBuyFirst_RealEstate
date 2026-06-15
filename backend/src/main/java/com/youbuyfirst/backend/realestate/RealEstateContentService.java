@@ -122,6 +122,29 @@ public class RealEstateContentService {
     }
 
     @Transactional(readOnly = true)
+    public List<RealEstateContentItemResponse> listInternalForTarget(
+            String targetId,
+            String feed,
+            int limit,
+            String reviewState,
+            String linkType
+    ) {
+        int boundedLimit = Math.max(1, Math.min(limit, 100));
+        targetRepository.findById(targetId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "unknown real-estate target: " + targetId
+                ));
+        return linkRepository.findInternalByTarget(
+                targetId,
+                feedType(feed),
+                filterType(reviewState),
+                filterType(linkType),
+                PageRequest.of(0, boundedLimit)
+        ).stream().map(this::toLinkedResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<RealEstateContentItemResponse> listNewsroom(String feed, int page, int pageSize) {
         int boundedPage = Math.max(0, page - 1);
         int boundedPageSize = Math.max(1, Math.min(pageSize, 100));
@@ -176,6 +199,14 @@ public class RealEstateContentService {
 
     private static String feedType(String feed) {
         String normalized = trimToNull(feed);
+        if (normalized == null || "all".equalsIgnoreCase(normalized)) {
+            return null;
+        }
+        return normalizeLower(normalized);
+    }
+
+    private static String filterType(String value) {
+        String normalized = trimToNull(value);
         if (normalized == null || "all".equalsIgnoreCase(normalized)) {
             return null;
         }

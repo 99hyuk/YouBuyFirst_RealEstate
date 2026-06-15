@@ -1,6 +1,8 @@
+import asyncio
 from datetime import datetime, timezone
 
 from youbuyfirst_pipeline.realestate_daily_scheduler import (
+    RealEstateCommunityCrawlRefreshJob,
     RealEstateDailyRefreshJob,
     RealEstateEvidenceLogRefreshJob,
     RealEstateMapLayerRefreshJob,
@@ -22,6 +24,16 @@ class _Step:
         return self.result
 
 
+class _CommunityPipeline:
+    def __init__(self, results) -> None:
+        self.results = results
+        self.calls = 0
+
+    async def run_once(self):
+        self.calls += 1
+        return self.results
+
+
 class _RecentIssueSearchClient:
     def __init__(self) -> None:
         self.queries = []
@@ -31,7 +43,7 @@ class _RecentIssueSearchClient:
         return [
             SerpApiRecentIssueResult(
                 title=f"{query} 기사",
-                link="https://example.com/recent-issue",
+                link=f"https://example.com/recent-issue-{len(self.queries)}",
                 source="Example News",
                 snippet="최근 이슈 후보입니다.",
             )
@@ -41,6 +53,38 @@ class _RecentIssueSearchClient:
 class _RecentIssueSpringClient:
     def __init__(self) -> None:
         self.content_batches = []
+        self.ranking_calls = []
+
+    def get_real_estate_reaction_ranking(self, *, target_type: str, window_minutes: int, limit: int):
+        self.ranking_calls.append(
+            {
+                "target_type": target_type,
+                "window_minutes": window_minutes,
+                "limit": limit,
+            }
+        )
+        return {
+            "window": "60m",
+            "windowStart": "2026-06-14T00:00:00Z",
+            "windowEnd": "2026-06-14T01:00:00Z",
+            "items": [
+                {
+                    "targetId": "region-daejeon",
+                    "targetType": "region",
+                    "displayName": "대전광역시",
+                    "issueMix": [
+                        {"label": "교통"},
+                        {"label": "정책"},
+                    ],
+                },
+                {
+                    "targetId": "region-seoul-mapo",
+                    "targetType": "region",
+                    "displayName": "서울 마포구",
+                    "issueMix": [],
+                },
+            ],
+        }
 
     def publish_real_estate_content_items(self, items) -> None:
         self.content_batches.append([item.to_content_item_dict() for item in items])
@@ -200,6 +244,77 @@ def test_daily_refresh_job_marks_partial_when_a_step_fails():
     assert result.steps[1].status == "ERROR"
 
 
+def test_daily_refresh_job_marks_partial_when_a_step_needs_attention():
+    job = RealEstateDailyRefreshJob(
+        [
+            ("market_facts", _Step({"status": "OK"})),
+            ("recent_issues", _Step({"status": "CONFIG_MISSING", "missing": ["SERPAPI_API_KEY"]})),
+            ("evidence_logs", _Step({"status": "PARTIAL", "log_count": 1})),
+        ]
+    )
+
+    result = job.run_once()
+
+    assert result.status == "PARTIAL"
+    assert result.ok_count == 3
+    assert result.failed_count == 0
+    assert [step.status for step in result.steps] == ["OK", "CONFIG_MISSING", "PARTIAL"]
+
+
+def test_community_crawl_refresh_job_runs_pipeline_and_summarizes_results():
+    pipeline = _CommunityPipeline(
+        [
+            {
+                "source": "PPOMPPU",
+                "status": "OK",
+                "seenPosts": 8,
+                "acceptedPosts": 5,
+            },
+            {
+                "source": "DCINSIDE",
+                "status": "blocked",
+                "seenPosts": 2,
+                "acceptedPosts": 0,
+            },
+        ]
+    )
+    job = RealEstateCommunityCrawlRefreshJob(pipeline=pipeline)
+
+    result = job.run_once()
+
+    assert pipeline.calls == 1
+    assert result.status == "PARTIAL"
+    assert result.source_count == 2
+    assert result.seen_post_count == 10
+    assert result.accepted_post_count == 5
+    assert result.blocked_count == 1
+    assert result.failed_count == 0
+
+
+def test_community_crawl_refresh_job_can_run_inside_existing_event_loop():
+    pipeline = _CommunityPipeline(
+        [
+            {
+                "source": "PPOMPPU",
+                "status": "OK",
+                "seenPosts": 2,
+                "acceptedPosts": 1,
+            }
+        ]
+    )
+    job = RealEstateCommunityCrawlRefreshJob(pipeline=pipeline)
+
+    async def run_job():
+        return job.run_once()
+
+    result = asyncio.run(run_job())
+
+    assert result.status == "OK"
+    assert result.source_count == 1
+    assert result.seen_post_count == 2
+    assert result.accepted_post_count == 1
+
+
 def test_recent_issues_refresh_job_publishes_candidate_content(tmp_path):
     targets_path = tmp_path / "targets.jsonl"
     targets_path.write_text(
@@ -225,6 +340,44 @@ def test_recent_issues_refresh_job_publishes_candidate_content(tmp_path):
     assert search_client.queries == [("대전 교통 부동산", 2)]
     assert spring_client.content_batches[0][0]["dataStatus"] == "candidate"
     assert spring_client.content_batches[0][0]["targets"][0]["targetId"] == "region-daejeon"
+
+
+def test_recent_issues_refresh_job_can_use_latest_backend_ranking_as_search_targets():
+    spring_client = _RecentIssueSpringClient()
+    search_client = _RecentIssueSearchClient()
+    job = RealEstateRecentIssuesRefreshJob(
+        client=spring_client,
+        search_client=search_client,
+        search_targets_jsonl=None,
+        issue_keywords=(),
+        target_type="region",
+        window_minutes=60,
+        ranking_limit=10,
+        result_limit=2,
+        clock=lambda: datetime(2026, 6, 14, 0, 0, tzinfo=timezone.utc),
+    )
+
+    result = job.run_once()
+
+    assert result.status == "OK"
+    assert result.target_count == 2
+    assert result.item_count == 3
+    assert spring_client.ranking_calls == [
+        {
+            "target_type": "region",
+            "window_minutes": 60,
+            "limit": 10,
+        }
+    ]
+    assert search_client.queries == [
+        ("대전광역시 교통 부동산", 2),
+        ("대전광역시 정책 부동산", 2),
+        ("서울 마포구 부동산", 2),
+    ]
+    assert {item["targets"][0]["targetId"] for item in spring_client.content_batches[0]} == {
+        "region-daejeon",
+        "region-seoul-mapo",
+    }
 
 
 def test_evidence_log_refresh_job_builds_logs_from_latest_backend_snapshots():
@@ -378,6 +531,30 @@ def test_evidence_log_refresh_job_skips_publish_when_latest_ranking_is_empty():
     assert result.target_count == 0
     assert result.log_count == 0
     assert spring_client.published_logs == []
+
+
+def test_evidence_log_refresh_job_marks_partial_when_search_candidates_are_missing():
+    class _NoContentEvidenceSpringClient(_EvidenceSpringClient):
+        def list_real_estate_target_content_items(self, target_id: str, *, feed: str, limit: int):
+            self.content_calls.append({"target_id": target_id, "feed": feed, "limit": limit})
+            return []
+
+    spring_client = _NoContentEvidenceSpringClient()
+    job = RealEstateEvidenceLogRefreshJob(
+        client=spring_client,
+        target_type="region",
+        window_minutes=60,
+        ranking_limit=5,
+        clock=lambda: datetime(2026, 6, 14, 2, 0, tzinfo=timezone.utc),
+    )
+
+    result = job.run_once()
+
+    assert result.status == "PARTIAL"
+    assert result.log_count == 1
+    assert result.content_item_count == 0
+    published_log = spring_client.published_logs[0][0]
+    assert "search_candidate_missing" in published_log["caveats"]
 
 
 def test_map_layer_refresh_job_calls_backend_for_each_layer_type():

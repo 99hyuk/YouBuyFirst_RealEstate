@@ -1,5 +1,7 @@
 package com.youbuyfirst.backend.realestate.dto;
 
+import java.time.Instant;
+
 public record RealEstateEvidenceItemResponse(
         String evidenceItemId,
         String evidenceType,
@@ -7,6 +9,12 @@ public record RealEstateEvidenceItemResponse(
         String refId,
         String label,
         String valueText,
-        String severity
+        String severity,
+        String sourceUrl,
+        String sourceId,
+        String sourceDomain,
+        Instant publishedAt,
+        Instant sourceAsOf,
+        String sourceDataStatus
 ) {
 }

@@ -88,6 +88,7 @@
 - [x] 로컬 secret 예시에 Kakao 지도 SDK 환경변수 이름을 추가하고 실제 key는 `.env`/`front/.env.local`에만 보관
 - [x] 지도 Screen Brief에 전국~동 자체 heatmap, 동/단지 상세 카카오맵 SDK 내장 기준 반영
 - [x] 실제 market fact와 reaction snapshot을 `map_layer_snapshots`로 집계하는 지도 refresh API와 daily scheduler step 구현
+- [x] 시연/스케줄러용 `realestate-daily-refresh` one-shot 명령으로 market fact, crawl, reaction, SerpApi, EvidenceLog, map layer refresh를 한 번 실행하고 summary JSON을 출력
 
 ## 제품 세로 Slice
 
@@ -126,6 +127,7 @@
 - [ ] 공개 HTTP 우선, Playwright fallback, 금지 행위 기준 재확인
 - [x] 지역/단지 alias DB JSONL 입력과 matcher 초안 작성
 - [x] 지역/단지 alias DB 백엔드 저장/조회 API 작성
+- [x] 시연 MVP용 기본 지역 공식명/축약명 alias seed 추가
 - [x] `--realestate-use-backend-aliases`로 백엔드 alias registry를 matcher 입력으로 사용
 - [x] 공백/기호가 섞인 커뮤니티식 별칭을 같은 alias로 매칭하고 실제 원문 매칭 문자열을 근거로 보존
 - [x] 승인 alias 옆 괄호형 은어를 `community_slang` 후보 alias로 만들고, 운영자 승인 전에는 ranking/snapshot에 쓰지 않도록 분리
@@ -143,6 +145,7 @@
 - [x] 분류된 관측치 기준 expectation/concern/neutral, issueMix, source skew, sample confidence 1차 집계 구현
 - [x] 제한 게시글 JSONL과 alias JSONL에서 reaction snapshot 생성/전송까지 가는 end-to-end pipeline 명령 구현
 - [x] `serve` 모드에서 reaction snapshot refresh job 옵션 추가
+- [x] backend `community_posts` export를 reaction snapshot refresh 입력으로 사용
 - [x] 표본 수, source 다양성, source skew, 수집 지연을 confidence에 반영
 - [x] pipeline active CLI에서 부동산에 맞지 않는 시장 데이터, 차트, 수급 명령을 제거하고 기본 crawl/serve 경로를 부동산 seed target 중심으로 전환
 - [x] 유사 과거 상황 검색 후보 데이터 모델 정리
@@ -199,7 +202,13 @@
 - [x] issueMix, source skew, sample confidence 1차 pipeline 집계 구현
 - [x] `realestate-reaction-snapshots-from-posts(-push)` end-to-end 명령 구현
 - [x] `serve --enable-realestate-reaction-snapshots-refresh` 주기 refresh job 구현
+- [x] `serve --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-community-posts`로 DB 적재 게시글 기반 refresh 연결
+- [x] `serve --enable-realestate-daily-refresh --enable-realestate-daily-crawl-refresh`로 공개 source 크롤링을 일일 MVP refresh 순서에 포함
 - [x] `serve --enable-realestate-daily-refresh`로 market fact, reaction snapshot, 최근 이슈 refresh를 하루 단위 step으로 묶는 scheduler job 구현
+- [x] 최근 이슈 daily refresh가 `--realestate-search-targets-jsonl` 없이도 최신 backend reaction ranking TOP10을 읽어 SerpApi 검색 대상으로 사용
+- [x] 24시간 reaction snapshot 실제 크롤링 기반 TOP10 smoke 검증
+- [x] 최신 ranking 조회가 요청한 `windowMinutes`별 snapshot을 섞지 않도록 보정
+- [ ] 시도별 하위 TOP10이 충분한 행을 만들 수 있도록 하위 지역 alias/source coverage 보강
 - [ ] 1일/1주/1개월 window 집계 후보 정리
 
 ### agent
@@ -222,6 +231,13 @@
 - [x] Qdrant 검색 결과에 이후 market fact 흐름을 자동 join하고 EvidenceLog `similar_window` 입력 shape에 반영
 - [x] Qdrant 검색을 `realestate-similar-windows --similar-engine qdrant` 내부 검색 엔진 선택지로 통합
 - [x] 실제 Qdrant runtime smoke와 운영 collection health check 정리 (`realestate-vector-health`)
+- [x] GMS `gpt-5-mini` 기반 24시간 TOP10 EvidenceLog refresh smoke 검증
+- [x] 상세 fixture가 없는 TOP10 region target도 `/realestate/targets/:targetId`에서 EvidenceLog API를 조회해 AI 근거 로그를 표시
+- [x] `SERPAPI_API_KEY` 로컬 설정과 1개 target/1개 keyword 기준 SerpApi 최근 이슈 후보 생성 smoke 검증
+- [x] `SERPAPI_API_KEY` 값 설정 후 TOP10 최근 이슈 후보 실제 수집 smoke 검증
+- [x] SerpApi 후보를 붙인 TOP10 GMS EvidenceLog refresh smoke 검증
+- [x] `/realestate/reactions` 상단 커뮤니티 pulse 카드를 live region ranking 기반으로 전환
+- [x] 상세 fixture가 없는 TOP10 region target을 unsupported 대신 실시간 근거 리포트 상태로 표시
 - [ ] 행동 지시처럼 보이는 평가 문구 금지 기준 정리
 - [x] evaluationVersion과 skipReason 관리 기준 정리
 
@@ -231,6 +247,7 @@
 - [x] realestate target detail Screen Brief 생성
 - [x] realestate map Screen Brief를 API 우선 + fixture fallback 기준으로 분리
 - [x] Kakao map SDK 내장 컴포넌트와 key missing fallback 상태 구현
+- [x] 지역 상세 지도 footer에서 시군구 live snapshot의 `provider/dataStatus/stale/asOf` 표시
 - [ ] 너나사 시리즈 공통 shell을 유지하면서 부동산 brand accent를 warm orange 계열로 전환
 - [ ] front CSS에서 브랜드 blue와 의미색 blue를 분리
 - [ ] accent token 변경 후 dashboard/detail screenshot QA

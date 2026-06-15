@@ -13,6 +13,8 @@ public interface RealEstateRegionRepository extends JpaRepository<RealEstateRegi
 
     Optional<RealEstateRegion> findFirstByLegalDongCode(String legalDongCode);
 
+    List<RealEstateRegion> findByParentRegionId(String parentRegionId);
+
     @Query("""
             select new com.youbuyfirst.backend.realestate.dto.RealEstateTargetResponse(
                 target.id,

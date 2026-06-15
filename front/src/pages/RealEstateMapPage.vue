@@ -416,6 +416,14 @@ const subregionButtonStyle = (feature: SubregionFeature) => ({
 });
 const firstPeriod = (periods: Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>) =>
   periods.month ?? periods.week ?? periods.halfYear ?? Object.values(periods)[0] ?? null;
+const subregionRepresentativePeriod = computed(() => {
+  for (const layerTarget of subregionLayerByCode.value.values()) {
+    const period = layerTarget.periods?.[activePeriod.value] ?? firstPeriod(layerTarget.periods ?? {});
+    if (period) return period;
+  }
+
+  return null;
+});
 const applyTargetLayer = (target: MapTarget, layerTarget: RealEstateMapLayerTarget) => {
   target.targetId = layerTarget.targetId;
   target.geometryId = layerTarget.geometryId ?? target.geometryId;
@@ -494,7 +502,15 @@ const mapLayerStatusText = computed(() => {
 const mapDataSourceLabel = computed(() => mapLayerMeta.mapDataSource ?? mapFixture.mapDataSource);
 const subregionLayerStatusText = computed(() => {
   if (!selectedRegion.value) return '전국';
-  if (subregionLayerLoadState.value === 'live') return 'DB snapshot';
+  if (subregionLayerLoadState.value === 'live') {
+    const period = subregionRepresentativePeriod.value;
+    const provider = period?.provider ?? period?.sourceLabel ?? 'provider unknown';
+    const status = period?.dataStatus ?? 'unknown';
+    const freshness = period?.stale ? 'stale' : 'fresh';
+    const asOf = period?.asOf ?? 'asOf unknown';
+
+    return `${provider} · ${status} · ${freshness} · ${asOf}`;
+  }
   if (subregionLayerLoadState.value === 'loading') return '하위 레이어 로딩';
   return '하위 레이어 fallback';
 });
@@ -900,7 +916,7 @@ onMounted(() => {
           <article>
             <span>{{ selectedRegion ? '하위 지역' : '지역 단위' }}</span>
             <strong>{{ selectedRegion ? `${subregionFeatures.length}개 구·시·군` : '17개 시도' }}</strong>
-            <em>{{ selectedRegion ? subregionLayerStatusText : 'DB layer API 우선' }}</em>
+            <em data-testid="subregion-layer-status">{{ selectedRegion ? subregionLayerStatusText : 'DB layer API 우선' }}</em>
           </article>
           <article>
             <span>다음 단계</span>

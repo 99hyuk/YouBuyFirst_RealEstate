@@ -66,6 +66,8 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
     load_recent_issue_search_targets,
 )
 from youbuyfirst_pipeline.realestate_daily_scheduler import (
+    RealEstateCommunityCrawlRefreshJob,
+    RealEstateConfigMissingRefreshJob,
     RealEstateDailyRefreshJob,
     RealEstateEvidenceLogRefreshJob,
     RealEstateMapLayerRefreshJob,
@@ -166,6 +168,7 @@ ACTIVE_COMMANDS = [
     "realestate-reaction-snapshots-from-posts-push",
     "realestate-recent-issues",
     "realestate-recent-issues-push",
+    "realestate-daily-refresh",
     "realestate-similar-windows",
     "realestate-embeddings",
     "realestate-vector-health",
@@ -410,9 +413,23 @@ async def async_main() -> None:
         default=int(os.getenv("REALESTATE_DAILY_REFRESH_INTERVAL_MINUTES", "1440")),
     )
     parser.add_argument(
+        "--enable-realestate-daily-crawl-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_DAILY_CRAWL_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
         "--enable-realestate-recent-issues-refresh",
         action="store_true",
         default=os.getenv("REALESTATE_RECENT_ISSUES_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-recent-issues-target-type",
+        default=os.getenv("REALESTATE_RECENT_ISSUES_TARGET_TYPE", "region"),
+    )
+    parser.add_argument(
+        "--realestate-recent-issues-ranking-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_RECENT_ISSUES_RANKING_LIMIT", "10")),
     )
     parser.add_argument(
         "--enable-realestate-evidence-logs-refresh",
@@ -493,6 +510,20 @@ async def async_main() -> None:
     parser.add_argument(
         "--community-posts-jsonl",
         default=os.getenv("REALESTATE_COMMUNITY_POSTS_JSONL"),
+    )
+    parser.add_argument(
+        "--realestate-use-backend-community-posts",
+        action="store_true",
+        default=os.getenv("REALESTATE_USE_BACKEND_COMMUNITY_POSTS", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-community-posts-source",
+        default=os.getenv("REALESTATE_COMMUNITY_POSTS_SOURCE"),
+    )
+    parser.add_argument(
+        "--realestate-community-posts-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_COMMUNITY_POSTS_LIMIT", "1000")),
     )
     parser.add_argument(
         "--reaction-observations-jsonl",
@@ -1306,110 +1337,22 @@ async def async_main() -> None:
         results = await pipeline.run_once()
         for result in results:
             print(result)
+    elif args.command == "realestate-daily-refresh":
+        market_client = _spring_client()
+        daily_job = _build_real_estate_daily_refresh_job(args, pipeline, market_client)
+        print(json.dumps(daily_job.run_once().to_dict(), ensure_ascii=False, indent=2))
     else:
         realestate_market_facts_refresh_job = None
         realestate_reaction_snapshot_refresh_job = None
         realestate_daily_refresh_job = None
         market_client = _spring_client()
-        if args.enable_realestate_market_facts_refresh:
-            if not args.realestate_deal_ym:
-                raise SystemExit("--realestate-deal-ym is required when real-estate market facts refresh is enabled")
-            realestate_market_facts_refresh_job = build_real_estate_market_facts_refresh_job(
-                client=market_client,
-                deal_ym=args.realestate_deal_ym,
-            )
-        if args.enable_realestate_reaction_snapshots_refresh:
-            if not args.realestate_aliases_jsonl:
-                raise SystemExit("--realestate-aliases-jsonl is required when real-estate reaction snapshot refresh is enabled")
-            if not args.community_posts_jsonl:
-                raise SystemExit("--community-posts-jsonl is required when real-estate reaction snapshot refresh is enabled")
-            realestate_reaction_snapshot_refresh_job = build_real_estate_reaction_snapshot_refresh_job(
-                client=market_client,
-                aliases_jsonl=args.realestate_aliases_jsonl,
-                community_posts_jsonl=args.community_posts_jsonl,
-                window_minutes=args.reaction_window_minutes,
-                target_edges_jsonl=args.realestate_target_edges_jsonl,
-                stale_after_minutes=args.reaction_stale_after_minutes,
-            )
-        if args.enable_realestate_recent_issues_refresh and not args.enable_realestate_daily_refresh:
-            raise SystemExit("--enable-realestate-recent-issues-refresh requires --enable-realestate-daily-refresh")
-        if args.enable_realestate_evidence_logs_refresh and not args.enable_realestate_daily_refresh:
-            raise SystemExit("--enable-realestate-evidence-logs-refresh requires --enable-realestate-daily-refresh")
-        if args.enable_realestate_map_layer_refresh and not args.enable_realestate_daily_refresh:
-            raise SystemExit("--enable-realestate-map-layer-refresh requires --enable-realestate-daily-refresh")
+        realestate_market_facts_refresh_job = _build_real_estate_market_facts_refresh_job_from_args(args, market_client)
+        realestate_reaction_snapshot_refresh_job = _build_real_estate_reaction_snapshot_refresh_job_from_args(args, market_client)
+        _validate_real_estate_serve_refresh_flags(args)
         if args.enable_realestate_daily_refresh:
-            daily_steps = []
-            if realestate_market_facts_refresh_job is not None:
-                daily_steps.append(("market_facts", realestate_market_facts_refresh_job))
-                realestate_market_facts_refresh_job = None
-            if realestate_reaction_snapshot_refresh_job is not None:
-                daily_steps.append(("reaction_snapshots", realestate_reaction_snapshot_refresh_job))
-                realestate_reaction_snapshot_refresh_job = None
-            if args.enable_realestate_recent_issues_refresh:
-                if not args.realestate_search_targets_jsonl:
-                    raise SystemExit("--realestate-search-targets-jsonl is required when real-estate recent issues refresh is enabled")
-                daily_steps.append(
-                    (
-                        "recent_issues",
-                        RealEstateRecentIssuesRefreshJob(
-                            client=market_client,
-                            search_client=_serpapi_recent_issue_client(),
-                            search_targets_jsonl=args.realestate_search_targets_jsonl,
-                            issue_keywords=args.realestate_issue_keywords,
-                            result_limit=args.serpapi_result_limit,
-                        ),
-                    )
-                )
-            if args.enable_realestate_map_layer_refresh:
-                daily_steps.append(
-                    (
-                        "map_layers",
-                        RealEstateMapLayerRefreshJob(
-                            client=market_client,
-                            layer_types=args.realestate_map_layer_types,
-                            periods=args.realestate_map_layer_periods,
-                        ),
-                    )
-                )
-            if args.enable_realestate_evidence_logs_refresh:
-                evidence_llm_evaluator = None
-                if args.evidence_use_gms_llm:
-                    evidence_llm_client = _gms_openai_evaluation_client(
-                        model_name=args.evidence_llm_model,
-                        timeout_seconds=args.evidence_llm_timeout_seconds,
-                    )
-
-                    def evidence_llm_evaluator(log):
-                        return apply_real_estate_llm_evaluation(
-                            log,
-                            evidence_llm_client.evaluate(log),
-                            model_name=args.evidence_llm_model,
-                            prompt_version=args.evidence_llm_prompt_version,
-                        )
-
-                similar_windows_provider = _similar_windows_provider_from_args(args)
-                daily_steps.append(
-                    (
-                        "evidence_logs",
-                        RealEstateEvidenceLogRefreshJob(
-                            client=market_client,
-                            target_type=args.realestate_evidence_target_type,
-                            window_minutes=args.reaction_window_minutes,
-                            ranking_limit=args.realestate_evidence_ranking_limit,
-                            market_fact_limit=args.realestate_evidence_market_fact_limit,
-                            timeline_limit=args.realestate_evidence_timeline_limit,
-                            content_limit=args.realestate_evidence_content_limit,
-                            llm_evaluator=evidence_llm_evaluator,
-                            similar_windows_provider=similar_windows_provider,
-                        ),
-                    )
-                )
-            if not daily_steps:
-                raise SystemExit(
-                    "--enable-realestate-daily-refresh requires at least one real-estate refresh step "
-                    "(market facts, reaction snapshots, recent issues, map layers, or evidence logs)"
-                )
-            realestate_daily_refresh_job = RealEstateDailyRefreshJob(daily_steps)
+            realestate_daily_refresh_job = _build_real_estate_daily_refresh_job(args, pipeline, market_client)
+            realestate_market_facts_refresh_job = None
+            realestate_reaction_snapshot_refresh_job = None
         await serve(
             pipeline,
             interval_minutes=args.interval_minutes,
@@ -1420,6 +1363,156 @@ async def async_main() -> None:
             realestate_daily_refresh_job=realestate_daily_refresh_job,
             realestate_daily_refresh_interval_minutes=args.realestate_daily_refresh_interval_minutes,
         )
+
+
+def _build_real_estate_market_facts_refresh_job_from_args(args, market_client):
+    if not args.enable_realestate_market_facts_refresh:
+        return None
+    if not args.realestate_deal_ym:
+        raise SystemExit("--realestate-deal-ym is required when real-estate market facts refresh is enabled")
+    return build_real_estate_market_facts_refresh_job(
+        client=market_client,
+        deal_ym=args.realestate_deal_ym,
+    )
+
+
+def _build_real_estate_reaction_snapshot_refresh_job_from_args(args, market_client):
+    if not args.enable_realestate_reaction_snapshots_refresh:
+        return None
+    aliases_jsonl = args.realestate_aliases_jsonl
+    alias_loader = None
+    if args.realestate_use_backend_aliases:
+        aliases_jsonl = None
+
+        def load_backend_aliases() -> list[RealEstateAliasRule]:
+            return [
+                _real_estate_alias_rule_from_mapping(item)
+                for item in market_client.list_real_estate_aliases(
+                    review_state="approved",
+                    ambiguous=False,
+                )
+            ]
+
+        alias_loader = load_backend_aliases
+    elif not aliases_jsonl:
+        raise SystemExit("--realestate-aliases-jsonl is required when real-estate reaction snapshot refresh is enabled")
+    if not args.community_posts_jsonl and not args.realestate_use_backend_community_posts:
+        raise SystemExit("--community-posts-jsonl is required when real-estate reaction snapshot refresh is enabled")
+    return build_real_estate_reaction_snapshot_refresh_job(
+        client=market_client,
+        aliases_jsonl=aliases_jsonl,
+        alias_loader=alias_loader,
+        community_posts_jsonl=None if args.realestate_use_backend_community_posts else args.community_posts_jsonl,
+        window_minutes=args.reaction_window_minutes,
+        target_edges_jsonl=args.realestate_target_edges_jsonl,
+        backend_posts_source=args.realestate_community_posts_source if args.realestate_use_backend_community_posts else None,
+        backend_posts_limit=args.realestate_community_posts_limit,
+        stale_after_minutes=args.reaction_stale_after_minutes,
+    )
+
+
+def _build_real_estate_daily_refresh_job(args, pipeline, market_client) -> RealEstateDailyRefreshJob:
+    daily_steps = []
+    market_facts_job = _build_real_estate_market_facts_refresh_job_from_args(args, market_client)
+    reaction_snapshot_job = _build_real_estate_reaction_snapshot_refresh_job_from_args(args, market_client)
+    if market_facts_job is not None:
+        daily_steps.append(("market_facts", market_facts_job))
+    if args.enable_realestate_daily_crawl_refresh:
+        daily_steps.append(("community_crawl", RealEstateCommunityCrawlRefreshJob(pipeline=pipeline)))
+    if reaction_snapshot_job is not None:
+        daily_steps.append(("reaction_snapshots", reaction_snapshot_job))
+    if args.enable_realestate_recent_issues_refresh:
+        search_client = _optional_serpapi_recent_issue_client()
+        if search_client is None:
+            daily_steps.append(
+                (
+                    "recent_issues",
+                    RealEstateConfigMissingRefreshJob(
+                        missing=["SERPAPI_API_KEY"],
+                        message="SERPAPI_API_KEY is required for recent issue candidate collection.",
+                    ),
+                )
+            )
+        else:
+            daily_steps.append(
+                (
+                    "recent_issues",
+                    RealEstateRecentIssuesRefreshJob(
+                        client=market_client,
+                        search_client=search_client,
+                        search_targets_jsonl=args.realestate_search_targets_jsonl,
+                        issue_keywords=args.realestate_issue_keywords,
+                        target_type=args.realestate_recent_issues_target_type,
+                        window_minutes=args.reaction_window_minutes,
+                        ranking_limit=args.realestate_recent_issues_ranking_limit,
+                        result_limit=args.serpapi_result_limit,
+                    ),
+                )
+            )
+    if args.enable_realestate_evidence_logs_refresh:
+        daily_steps.append(
+            (
+                "evidence_logs",
+                RealEstateEvidenceLogRefreshJob(
+                    client=market_client,
+                    target_type=args.realestate_evidence_target_type,
+                    window_minutes=args.reaction_window_minutes,
+                    ranking_limit=args.realestate_evidence_ranking_limit,
+                    market_fact_limit=args.realestate_evidence_market_fact_limit,
+                    timeline_limit=args.realestate_evidence_timeline_limit,
+                    content_limit=args.realestate_evidence_content_limit,
+                    llm_evaluator=_real_estate_evidence_llm_evaluator_from_args(args),
+                    similar_windows_provider=_similar_windows_provider_from_args(args),
+                ),
+            )
+        )
+    if args.enable_realestate_map_layer_refresh:
+        daily_steps.append(
+            (
+                "map_layers",
+                RealEstateMapLayerRefreshJob(
+                    client=market_client,
+                    layer_types=args.realestate_map_layer_types,
+                    periods=args.realestate_map_layer_periods,
+                ),
+            )
+        )
+    if not daily_steps:
+        raise SystemExit(
+            "real-estate daily refresh requires at least one refresh step "
+            "(market facts, community crawl, reaction snapshots, recent issues, evidence logs, or map layers)"
+        )
+    return RealEstateDailyRefreshJob(daily_steps)
+
+
+def _real_estate_evidence_llm_evaluator_from_args(args):
+    if not args.evidence_use_gms_llm:
+        return None
+    evidence_llm_client = _gms_openai_evaluation_client(
+        model_name=args.evidence_llm_model,
+        timeout_seconds=args.evidence_llm_timeout_seconds,
+    )
+
+    def evidence_llm_evaluator(log):
+        return apply_real_estate_llm_evaluation(
+            log,
+            evidence_llm_client.evaluate(log),
+            model_name=args.evidence_llm_model,
+            prompt_version=args.evidence_llm_prompt_version,
+        )
+
+    return evidence_llm_evaluator
+
+
+def _validate_real_estate_serve_refresh_flags(args) -> None:
+    if args.enable_realestate_recent_issues_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-recent-issues-refresh requires --enable-realestate-daily-refresh")
+    if args.enable_realestate_daily_crawl_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-daily-crawl-refresh requires --enable-realestate-daily-refresh")
+    if args.enable_realestate_evidence_logs_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-evidence-logs-refresh requires --enable-realestate-daily-refresh")
+    if args.enable_realestate_map_layer_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-map-layer-refresh requires --enable-realestate-daily-refresh")
 
 
 def _configured_realestate_datasets(value: str | None) -> list[str]:
@@ -1968,6 +2061,15 @@ def _serpapi_recent_issue_client() -> SerpApiRecentIssueClient:
         api_key,
         timeout_seconds=float(os.getenv("SERPAPI_TIMEOUT_SECONDS", "30")),
     )
+
+
+def _optional_serpapi_recent_issue_client() -> SerpApiRecentIssueClient | None:
+    try:
+        return _serpapi_recent_issue_client()
+    except SystemExit as exc:
+        if str(exc) != "SERPAPI_API_KEY is required":
+            raise
+        return None
 
 
 def _gms_gemini_embedding_client(

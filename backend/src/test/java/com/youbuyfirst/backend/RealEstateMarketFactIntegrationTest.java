@@ -310,10 +310,23 @@ class RealEstateMarketFactIntegrationTest {
         assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode items = objectMapper.readTree(response.getBody()).path("items");
-        assertThat(items).hasSize(1);
-        JsonNode fact = items.get(0);
+        assertThat(items).isNotEmpty();
+        for (JsonNode item : items) {
+            assertThat(item.path("targetId").asText()).isEqualTo("region-seoul-mapo");
+        }
+        JsonNode fact = findByProviderObjectId(items, "molit_apt_trade:11440:202606:target-filter");
+        assertThat(fact).isNotNull();
         assertThat(fact.path("targetId").asText()).isEqualTo("region-seoul-mapo");
         assertThat(fact.path("legalDongCode").asText()).isEqualTo("11440");
         assertThat(fact.path("valueJson").path("apartmentName").asText()).isEqualTo("Mapo Palace");
+    }
+
+    private static JsonNode findByProviderObjectId(JsonNode items, String providerObjectId) {
+        for (JsonNode item : items) {
+            if (providerObjectId.equals(item.path("providerObjectId").asText())) {
+                return item;
+            }
+        }
+        return null;
     }
 }
