@@ -11575,6 +11575,20 @@ a {
   filter: drop-shadow(0 0 9px rgba(251, 146, 60, 0.82));
 }
 
+.dokdo-marker .dokdo-dot {
+  fill: rgba(223, 231, 240, 0.85);
+  stroke: rgba(136, 151, 170, 0.7);
+  stroke-width: 1.5;
+  transition: filter 200ms ease, fill 200ms ease;
+}
+
+.dokdo-marker.glow .dokdo-dot {
+  fill: #ffffff;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.95));
+}
+
 .realestate-map-page .map-target-buttons button {
   width: 58px;
   height: 36px;
