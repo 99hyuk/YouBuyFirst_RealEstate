@@ -144,4 +144,27 @@ describe('complex browse property type', () => {
     expect(aptOnly.every((item) => item.propertyType === 'apt')).toBe(true);
     expect(aptOnly.map((item) => item.name)).not.toContain('사이룩스');
   });
+
+  it('classifies rh_trade as 연립·다세대 and silv_trade as 분양권', () => {
+    const items = aggregateComplexes([
+      {
+        factType: 'rh_trade',
+        provider: 'molit',
+        legalDongCode: '11680',
+        observedAt: '2026-05-28',
+        valueJson: { apartmentName: '에이트', legalDongName: '역삼동', dealAmountManwon: 49301, exclusiveAreaM2: 28.49, builtYear: 2022 }
+      },
+      {
+        factType: 'silv_trade',
+        provider: 'molit',
+        legalDongCode: '11680',
+        observedAt: '2026-05-29',
+        valueJson: { apartmentName: '디에이치 퍼스티어 아이파크', legalDongName: '개포동', dealAmountManwon: 343000, exclusiveAreaM2: 84.99, builtYear: 2024 }
+      }
+    ]);
+    const rh = items.find((item) => item.name === '에이트');
+    const silv = items.find((item) => item.name === '디에이치 퍼스티어 아이파크');
+    expect(rh?.propertyType).toBe('rh');
+    expect(silv?.propertyType).toBe('silv');
+  });
 });

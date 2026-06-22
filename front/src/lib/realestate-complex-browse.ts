@@ -3,7 +3,7 @@ import { fetchRealEstateMarketFacts, type RealEstateMarketFact } from './realest
 import seed from '../fixtures/complex-browse-seed.json';
 
 export type DealType = 'trade' | 'rent';
-export type PropertyType = 'apt' | 'offi';
+export type PropertyType = 'apt' | 'offi' | 'rh' | 'silv';
 
 export type ComplexBrowseItem = {
   id: string;
@@ -50,7 +50,17 @@ const dealTypeLabels: Record<DealType, string> = {
 
 const propertyTypeLabels: Record<PropertyType, string> = {
   apt: '아파트',
-  offi: '오피스텔'
+  offi: '오피스텔',
+  rh: '연립·다세대',
+  silv: '분양권'
+};
+
+// 매물유형 → 백엔드 factType. 카테고리 선택 시 해당 factType만 받아와 소수 유형이 누락되지 않게 한다.
+export const propertyFactTypes: Record<PropertyType, string[]> = {
+  apt: ['apt_trade', 'apt_rent'],
+  offi: ['offi_trade', 'offi_rent'],
+  rh: ['rh_trade', 'rh_rent'],
+  silv: ['silv_trade']
 };
 
 export function dealTypeLabel(dealType: DealType): string {
@@ -86,6 +96,9 @@ function factTypeInfo(factType?: string): { propertyType: PropertyType; dealType
   if (factType === 'apt_rent') return { propertyType: 'apt', dealType: 'rent' };
   if (factType === 'offi_trade') return { propertyType: 'offi', dealType: 'trade' };
   if (factType === 'offi_rent') return { propertyType: 'offi', dealType: 'rent' };
+  if (factType === 'rh_trade') return { propertyType: 'rh', dealType: 'trade' };
+  if (factType === 'rh_rent') return { propertyType: 'rh', dealType: 'rent' };
+  if (factType === 'silv_trade') return { propertyType: 'silv', dealType: 'trade' };
   return null;
 }
 
@@ -323,16 +336,23 @@ function mockComplexItems(): ComplexBrowseItem[] {
 
 type Fetcher = (input: string) => Promise<Response>;
 
-export async function fetchComplexBrowse(fetcher: Fetcher = fetch): Promise<ComplexBrowseResult> {
+export async function fetchComplexBrowse(
+  propertyType: PropertyType = 'apt',
+  fetcher: Fetcher = fetch
+): Promise<ComplexBrowseResult> {
   try {
-    // Fetch a broad page so both apartment and officetel facts are represented.
-    const facts = await fetchRealEstateMarketFacts({ limit: 500 }, fetcher);
-    const items = aggregateComplexes(facts);
+    // Fetch only the selected category's factTypes so minority types are never
+    // crowded out of a shared page.
+    const factTypes = propertyFactTypes[propertyType];
+    const factPages = await Promise.all(
+      factTypes.map((factType) => fetchRealEstateMarketFacts({ factType, limit: 500 }, fetcher))
+    );
+    const items = aggregateComplexes(factPages.flat());
     if (items.length) {
       return { items, source: 'live' };
     }
   } catch {
     // fall through to mock fallback
   }
-  return { items: mockComplexItems(), source: 'fallback' };
+  return { items: mockComplexItems().filter((item) => item.propertyType === propertyType), source: 'fallback' };
 }

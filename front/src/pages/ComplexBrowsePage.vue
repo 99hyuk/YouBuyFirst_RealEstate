@@ -15,14 +15,16 @@ import {
 
 type DealFilter = DealType | 'all';
 
-// 네이버 부동산 a=APT:PRE:ABYG:JGC 매물유형 칩. value가 있으면 실데이터 연결(활성).
-// 재건축/분양권/재개발은 수집 데이터가 없어 준비중(비활성).
-const propertyTypeChips: { id: string; label: string; value?: PropertyType }[] = [
+// 매물유형 카테고리. value가 있으면 실데이터 연결(활성).
+// 단독·다가구는 단지명이 없어 단지 목록 표출 대상이 아니고, 재건축/재개발은 수집 데이터가 없어 준비중.
+const propertyTypeChips: { id: string; label: string; value?: PropertyType; note?: string }[] = [
   { id: 'APT', label: '아파트', value: 'apt' },
   { id: 'OPST', label: '오피스텔', value: 'offi' },
-  { id: 'ABYG', label: '재건축' },
-  { id: 'PRE', label: '분양권' },
-  { id: 'JGC', label: '재개발' }
+  { id: 'RH', label: '연립·다세대', value: 'rh' },
+  { id: 'SILV', label: '분양권', value: 'silv' },
+  { id: 'SH', label: '단독·다가구', note: '단지 단위 아님' },
+  { id: 'ABYG', label: '재건축', note: '준비중' },
+  { id: 'JGC', label: '재개발', note: '준비중' }
 ];
 const dealFilters: { id: DealFilter; label: string }[] = [
   { id: 'all', label: '전체' },
@@ -75,7 +77,7 @@ const refreshComplexes = async () => {
   const token = ++loadToken;
   loadState.value = 'loading';
   try {
-    const result = await fetchComplexBrowse();
+    const result = await fetchComplexBrowse(activePropertyType.value);
     if (token !== loadToken) return;
     items.value = result.items;
     selectedId.value = result.items[0]?.id ?? '';
@@ -95,6 +97,12 @@ const applyGeocoding = async (base: ComplexBrowseItem[], token: number) => {
   if (token === loadToken) {
     items.value = geocoded;
   }
+};
+
+const selectPropertyType = (value: PropertyType) => {
+  if (activePropertyType.value === value) return;
+  activePropertyType.value = value;
+  void refreshComplexes();
 };
 
 const selectComplex = (item: ComplexBrowseItem) => {
@@ -127,10 +135,10 @@ onMounted(() => {
             class="filter-chip"
             :class="{ active: chip.value && activePropertyType === chip.value, pending: !chip.value }"
             :disabled="!chip.value"
-            :title="chip.value ? '' : '아직 수집 데이터가 없습니다 (준비중)'"
-            @click="chip.value && (activePropertyType = chip.value)"
+            :title="chip.note ?? ''"
+            @click="chip.value && selectPropertyType(chip.value)"
           >
-            {{ chip.label }}<small v-if="!chip.value"> 준비중</small>
+            {{ chip.label }}<small v-if="chip.note"> {{ chip.note }}</small>
           </button>
         </div>
 
