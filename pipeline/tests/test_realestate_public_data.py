@@ -9,6 +9,9 @@ from youbuyfirst_pipeline.realestate_public_data import (
     MOLIT_APT_RENT_DATASET,
     MOLIT_APT_TRADE_DATASET,
     MOLIT_OFFI_TRADE_DATASET,
+    MOLIT_RH_TRADE_DATASET,
+    MOLIT_SH_RENT_DATASET,
+    MOLIT_SILV_TRADE_DATASET,
     MolitRealEstatePublicDataClient,
     PublicDataProviderError,
     build_official_apartment_price_raw_ingestions,
@@ -138,6 +141,78 @@ def test_molit_client_fetches_offi_trade_and_maps_offi_name():
     assert payload["valueJson"]["legalDongName"] == "수서동"
     assert payload["valueJson"]["dealAmountManwon"] == 28000
     assert payload["valueJson"]["exclusiveAreaM2"] == 40.88
+
+
+def test_molit_rh_trade_maps_mhouse_name():
+    def fetcher(url, params):
+        return (FIXTURE_DIR / "molit_rh_trade_sample.xml").read_text(encoding="utf-8")
+
+    client = MolitRealEstatePublicDataClient(service_key="k", fetcher=fetcher)
+    facts = client.fetch_rh_trades(lawd_code="11680", deal_ym="202605")
+
+    payload = facts[0].to_ingestion_dict()
+    assert payload["factType"] == "rh_trade"
+    assert payload["providerDataset"] == "molit_rh_trade"
+    # 연립다세대명(mhouseNm)을 단지명으로 매핑해 단지 화면 파이프라인을 재사용한다
+    assert payload["valueJson"]["apartmentName"] == "에이트"
+    assert payload["valueJson"]["dealAmountManwon"] == 49301
+    assert payload["valueJson"]["exclusiveAreaM2"] == 28.49
+
+
+def test_molit_silv_trade_maps_apt_name():
+    def fetcher(url, params):
+        return (
+            "<response><header><resultCode>000</resultCode></header><body><items>"
+            "<item><aptNm>디에이치 퍼스티어 아이파크</aptNm><dealAmount>343,000</dealAmount>"
+            "<dealYear>2026</dealYear><dealMonth>5</dealMonth><dealDay>29</dealDay>"
+            "<excluUseAr>84.99</excluUseAr><floor>8</floor><umdNm>개포동</umdNm><sggCd>11680</sggCd>"
+            "</item></items><totalCount>1</totalCount></body></response>"
+        )
+
+    client = MolitRealEstatePublicDataClient(service_key="k", fetcher=fetcher)
+    facts = client.fetch_silv_trades(lawd_code="11680", deal_ym="202605")
+
+    payload = facts[0].to_ingestion_dict()
+    assert payload["factType"] == "silv_trade"
+    assert payload["valueJson"]["apartmentName"] == "디에이치 퍼스티어 아이파크"
+    assert payload["valueJson"]["dealAmountManwon"] == 343000
+
+
+def test_molit_sh_rent_has_no_name_but_keeps_house_fields():
+    def fetcher(url, params):
+        return (FIXTURE_DIR / "molit_sh_rent_sample.xml").read_text(encoding="utf-8")
+
+    client = MolitRealEstatePublicDataClient(service_key="k", fetcher=fetcher)
+    facts = client.fetch_sh_rents(lawd_code="11680", deal_ym="202605")
+
+    payload = facts[0].to_ingestion_dict()
+    assert payload["factType"] == "sh_rent"
+    # 단독/다가구는 단지명이 없어 apartmentName이 비어 단지 지도에는 표출되지 않는다
+    assert "apartmentName" not in payload["valueJson"]
+    assert payload["valueJson"]["houseType"] == "다가구"
+    assert payload["valueJson"]["depositAmountManwon"] == 1000
+    assert payload["valueJson"]["monthlyRentAmountManwon"] == 66
+
+
+def test_collect_routes_new_housing_datasets():
+    class _Fake:
+        def __init__(self):
+            self.calls = []
+
+        def fetch_rh_trades(self, lawd_code, deal_ym, page_no=1, num_rows=100, now=None):
+            self.calls.append("rh_trade")
+            return ["rh"]
+
+        def fetch_silv_trades(self, lawd_code, deal_ym, page_no=1, num_rows=100, now=None):
+            self.calls.append("silv")
+            return ["silv"]
+
+    client = _Fake()
+    facts = collect_molit_real_estate_market_facts(
+        client, lawd_code="11680", deal_ym="202605", datasets=["rh_trade", "silv_trade"]
+    )
+    assert sorted(facts) == ["rh", "silv"]
+    assert sorted(client.calls) == ["rh_trade", "silv"]
 
 
 def test_collect_offi_trade_dataset_routes_to_offi_fetch():
