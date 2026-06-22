@@ -68,7 +68,7 @@ class RealEstateReactionSnapshotIntegrationTest {
                         ),
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
-                                Map.entry("targetId", "region-seoul"),
+                                Map.entry("targetId", "region-seoul-mapo"),
                                 Map.entry("windowStart", "2026-06-13T00:00:00Z"),
                                 Map.entry("windowEnd", "2026-06-13T01:00:00Z"),
                                 Map.entry("asOf", "2026-06-13T01:01:00Z"),
@@ -96,7 +96,7 @@ class RealEstateReactionSnapshotIntegrationTest {
                         ),
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
-                                Map.entry("targetId", "region-daejeon"),
+                                Map.entry("targetId", "region-daejeon-yuseong"),
                                 Map.entry("windowStart", "2026-06-13T00:00:00Z"),
                                 Map.entry("windowEnd", "2026-06-13T01:00:00Z"),
                                 Map.entry("asOf", "2026-06-13T01:03:00Z"),
@@ -138,10 +138,6 @@ class RealEstateReactionSnapshotIntegrationTest {
                 "/api/realestate/reactions/rankings?type=region&windowMinutes=60",
                 String.class
         );
-        ResponseEntity<String> seoulRanking = restTemplate.getForEntity(
-                "/api/realestate/reactions/rankings?type=region&windowStart=2026-06-13T00:00:00Z&windowMinutes=60&parentTargetId=region-seoul&limit=10",
-                String.class
-        );
         ResponseEntity<String> targetSnapshot = restTemplate.getForEntity(
                 "/api/realestate/targets/region-seoul-jongno/reaction-snapshot?windowMinutes=60",
                 String.class
@@ -151,11 +147,9 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(ingest.getBody()).contains("\"acceptedSnapshots\":3");
         assertThat(ranking.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(latestRanking.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(seoulRanking.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(targetSnapshot.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         JsonNode root = objectMapper.readTree(ranking.getBody());
-        JsonNode seoulRoot = objectMapper.readTree(seoulRanking.getBody());
         JsonNode targetRoot = objectMapper.readTree(targetSnapshot.getBody());
         assertThat(root.path("window").asText()).isEqualTo("60m");
         assertThat(root.path("windowStart").asText()).isEqualTo("2026-06-13T00:00:00Z");
@@ -183,12 +177,6 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(first.path("stale").asBoolean()).isFalse();
         assertThat(first.path("issueMix").get(0).path("label").asText()).isEqualTo("전세");
         assertThat(first.path("issueMix").get(0).path("direction").asText()).isEqualTo("concern");
-
-        assertThat(seoulRoot.path("items")).hasSize(2);
-        assertThat(seoulRoot.path("items").findValuesAsText("targetId"))
-                .containsExactly("region-seoul-jongno", "region-seoul");
-        assertThat(seoulRoot.path("items").findValuesAsText("targetId"))
-                .doesNotContain("region-daejeon");
 
         assertThat(targetRoot.path("targetId").asText()).isEqualTo("region-seoul-jongno");
         assertThat(targetRoot.path("targetType").asText()).isEqualTo("region");
@@ -220,7 +208,7 @@ class RealEstateReactionSnapshotIntegrationTest {
                 List.of(
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
-                                Map.entry("targetId", "region-daejeon"),
+                                Map.entry("targetId", "region-daejeon-yuseong"),
                                 Map.entry("windowStart", "2026-06-14T00:00:00Z"),
                                 Map.entry("windowEnd", "2026-06-15T00:00:00Z"),
                                 Map.entry("asOf", "2026-06-15T00:03:00Z"),
@@ -239,7 +227,7 @@ class RealEstateReactionSnapshotIntegrationTest {
                         ),
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
-                                Map.entry("targetId", "region-busan"),
+                                Map.entry("targetId", "region-busan-haeundae"),
                                 Map.entry("windowStart", "2026-06-15T00:00:00Z"),
                                 Map.entry("windowEnd", "2026-06-15T01:00:00Z"),
                                 Map.entry("asOf", "2026-06-15T01:03:00Z"),
@@ -253,6 +241,25 @@ class RealEstateReactionSnapshotIntegrationTest {
                                 Map.entry("sourceCount", 2),
                                 Map.entry("sourceSkew", 0.4),
                                 Map.entry("coverageStatus", "partial"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of())
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetType", "region"),
+                                Map.entry("targetId", "region-seoul-gangnam"),
+                                Map.entry("windowStart", "2026-06-15T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-16T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-15T00:03:00Z"),
+                                Map.entry("mentionCount", 150),
+                                Map.entry("previousMentionCount", 10),
+                                Map.entry("expectationScore", 70),
+                                Map.entry("concernScore", 20),
+                                Map.entry("neutralScore", 60),
+                                Map.entry("heatScore", 95),
+                                Map.entry("confidence", 0.82),
+                                Map.entry("sourceCount", 1),
+                                Map.entry("sourceSkew", 1.0),
+                                Map.entry("coverageStatus", "source_skewed"),
                                 Map.entry("stale", false),
                                 Map.entry("issues", List.of())
                         )
@@ -277,7 +284,7 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(root.path("windowStart").asText()).isEqualTo("2026-06-14T00:00:00Z");
         assertThat(root.path("windowEnd").asText()).isEqualTo("2026-06-15T00:00:00Z");
         assertThat(root.path("items")).hasSize(1);
-        assertThat(root.path("items").get(0).path("targetId").asText()).isEqualTo("region-daejeon");
+        assertThat(root.path("items").get(0).path("targetId").asText()).isEqualTo("region-daejeon-yuseong");
     }
 
     @Test
@@ -287,7 +294,7 @@ class RealEstateReactionSnapshotIntegrationTest {
                 List.of(
                         Map.ofEntries(
                                 Map.entry("targetType", "region"),
-                                Map.entry("targetId", "region-seoul"),
+                                Map.entry("targetId", "region-seoul-jongno"),
                                 Map.entry("windowStart", "2026-06-12T00:00:00Z"),
                                 Map.entry("windowEnd", "2026-06-13T00:00:00Z"),
                                 Map.entry("asOf", "2026-06-13T00:03:00Z"),
@@ -350,7 +357,7 @@ class RealEstateReactionSnapshotIntegrationTest {
         Map<String, Object> first = Map.of(
                 "items",
                 List.of(reactionSnapshotRequestWithIssues(
-                        "region-seoul",
+                        "region-seoul-jongno",
                         "2026-06-10T00:00:00Z",
                         "2026-06-11T00:00:00Z",
                         List.of(Map.of(
@@ -366,7 +373,7 @@ class RealEstateReactionSnapshotIntegrationTest {
         Map<String, Object> second = Map.of(
                 "items",
                 List.of(reactionSnapshotRequestWithIssues(
-                        "region-seoul",
+                        "region-seoul-jongno",
                         "2026-06-10T00:00:00Z",
                         "2026-06-11T00:00:00Z",
                         List.of(
@@ -417,7 +424,7 @@ class RealEstateReactionSnapshotIntegrationTest {
     }
 
     @Test
-    void parentScopedComplexRankingIncludesComplexesRegisteredUnderChildRegions() throws Exception {
+    void complexRankingReturnsGlobalTopTenWithoutParentScope() throws Exception {
         Map<String, Object> request = Map.of(
                 "items",
                 List.of(
@@ -467,19 +474,482 @@ class RealEstateReactionSnapshotIntegrationTest {
                 request,
                 String.class
         );
-        ResponseEntity<String> seoulComplexRanking = restTemplate.getForEntity(
-                "/api/realestate/reactions/rankings?type=complex&windowMinutes=1440&parentTargetId=region-seoul&limit=10",
+        ResponseEntity<String> complexRanking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=complex&windowStart=2026-06-14T00:00:00Z&windowMinutes=1440&limit=10",
                 String.class
         );
 
         assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(seoulComplexRanking.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(complexRanking.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        JsonNode root = objectMapper.readTree(seoulComplexRanking.getBody());
-        assertThat(root.path("items")).hasSize(1);
-        assertThat(root.path("items").get(0).path("targetId").asText()).isEqualTo("complex-mapo-raemian-prugio");
+        JsonNode root = objectMapper.readTree(complexRanking.getBody());
+        assertThat(root.path("items")).hasSize(2);
         assertThat(root.path("items").findValuesAsText("targetId"))
-                .doesNotContain("complex-dongtan-lotte-castle");
+                .containsExactly("complex-dongtan-lotte-castle", "complex-mapo-raemian-prugio");
+    }
+
+    @Test
+    void complexRankingIncludesComplexesRegisteredUnderNestedDongRegionsWithoutParentScope() throws Exception {
+        String dongTargetId = "region-seoul-jongno-sajik-mvp";
+        String complexTargetId = "complex-molit-1111011500-sajik-palace-mvp";
+        Map<String, Object> regionRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", dongTargetId,
+                        "displayName", "Sajik-dong",
+                        "regionLevel", "eupmyeondong",
+                        "parentTargetId", "region-seoul-jongno",
+                        "legalDongCode", "1111011500",
+                        "regionCode", "1111011500",
+                        "source", "test"
+                ))
+        );
+        Map<String, Object> targetRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", complexTargetId,
+                        "targetType", "complex",
+                        "displayName", "Sajik Palace MVP",
+                        "slug", "molit-1111011500-sajik-palace-mvp",
+                        "reviewState", "approved",
+                        "dataStatus", "partial"
+                ))
+        );
+        Map<String, Object> complexRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetId", complexTargetId),
+                        Map.entry("regionTargetId", dongTargetId),
+                        Map.entry("legalDongCode", "1111011500"),
+                        Map.entry("jibunAddress", "Sajik-dong 1-1"),
+                        Map.entry("source", "molit:market-fact"),
+                        Map.entry("markerDataStatus", "partial"),
+                        Map.entry("markerStale", true)
+                ))
+        );
+        Map<String, Object> snapshotRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetType", "complex"),
+                        Map.entry("targetId", complexTargetId),
+                        Map.entry("windowStart", "2026-06-16T00:00:00Z"),
+                        Map.entry("windowEnd", "2026-06-17T00:00:00Z"),
+                        Map.entry("asOf", "2026-06-17T00:02:00Z"),
+                        Map.entry("mentionCount", 66),
+                        Map.entry("previousMentionCount", 12),
+                        Map.entry("expectationScore", 38),
+                        Map.entry("concernScore", 14),
+                        Map.entry("neutralScore", 14),
+                        Map.entry("heatScore", 79),
+                        Map.entry("confidence", 0.76),
+                        Map.entry("sourceCount", 3),
+                        Map.entry("sourceSkew", 0.33),
+                        Map.entry("coverageStatus", "partial"),
+                        Map.entry("stale", false),
+                        Map.entry("issues", List.of())
+                ))
+        );
+
+        ResponseEntity<String> regionResponse = restTemplate.postForEntity(
+                "/internal/realestate/regions",
+                regionRequest,
+                String.class
+        );
+        ResponseEntity<String> targetResponse = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                targetRequest,
+                String.class
+        );
+        ResponseEntity<String> complexResponse = restTemplate.postForEntity(
+                "/internal/realestate/complexes",
+                complexRequest,
+                String.class
+        );
+        ResponseEntity<String> snapshotResponse = restTemplate.postForEntity(
+                "/internal/realestate/reaction-snapshots",
+                snapshotRequest,
+                String.class
+        );
+        ResponseEntity<String> complexRanking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=complex&windowStart=2026-06-16T00:00:00Z&windowMinutes=1440&limit=10",
+                String.class
+        );
+
+        assertThat(regionResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(targetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(complexResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(snapshotResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(complexRanking.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode root = objectMapper.readTree(complexRanking.getBody());
+        assertThat(root.path("items").findValuesAsText("targetId"))
+                .contains(complexTargetId);
+    }
+
+    @Test
+    void complexRankingResolvesOfficialCommunityNamesToCanonicalTargets() throws Exception {
+        String communityTargetId = "complex-community-ranking-canonical-match";
+        String canonicalTargetId = "complex-test-ranking-canonical-match";
+        String displayName = "Canonical Ranking Palace Official";
+        Map<String, Object> communityTargetRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", communityTargetId,
+                        "targetType", "complex",
+                        "displayName", displayName,
+                        "slug", "community-ranking-canonical-match",
+                        "reviewState", "candidate",
+                        "dataStatus", "community_observed"
+                ))
+        );
+        Map<String, Object> communityComplexRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetId", communityTargetId),
+                        Map.entry("regionTargetId", "region-seoul-jongno"),
+                        Map.entry("legalDongCode", "1111010100"),
+                        Map.entry("jibunAddress", "community observed address"),
+                        Map.entry("source", "community:observed"),
+                        Map.entry("coordinateStatus", "candidate"),
+                        Map.entry("markerDataStatus", "community_observed"),
+                        Map.entry("markerStale", true)
+                ))
+        );
+        Map<String, Object> snapshotRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetType", "complex"),
+                        Map.entry("targetId", communityTargetId),
+                        Map.entry("windowStart", "2026-06-21T00:00:00Z"),
+                        Map.entry("windowEnd", "2026-06-22T00:00:00Z"),
+                        Map.entry("asOf", "2026-06-22T00:02:00Z"),
+                        Map.entry("mentionCount", 54),
+                        Map.entry("previousMentionCount", 18),
+                        Map.entry("expectationScore", 30),
+                        Map.entry("concernScore", 12),
+                        Map.entry("neutralScore", 12),
+                        Map.entry("heatScore", 81),
+                        Map.entry("confidence", 0.74),
+                        Map.entry("sourceCount", 3),
+                        Map.entry("sourceSkew", 0.29),
+                        Map.entry("coverageStatus", "partial"),
+                        Map.entry("stale", false),
+                        Map.entry("issues", List.of())
+                ))
+        );
+        Map<String, Object> canonicalTargetRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", canonicalTargetId,
+                        "targetType", "complex",
+                        "displayName", displayName,
+                        "slug", "ranking-canonical-match",
+                        "reviewState", "approved",
+                        "dataStatus", "ok"
+                ))
+        );
+        Map<String, Object> canonicalComplexRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetId", canonicalTargetId),
+                        Map.entry("regionTargetId", "region-seoul-jongno"),
+                        Map.entry("legalDongCode", "1111010100"),
+                        Map.entry("jibunAddress", "canonical ranking address"),
+                        Map.entry("source", "ssafy_home:test"),
+                        Map.entry("latitude", 37.5712),
+                        Map.entry("longitude", 126.9823),
+                        Map.entry("coordinateProvider", "ssafy_home:test"),
+                        Map.entry("coordinateAsOf", "2026-06-16T00:00:00Z"),
+                        Map.entry("coordinateStatus", "ok"),
+                        Map.entry("markerDataStatus", "ok"),
+                        Map.entry("markerStale", false)
+                ))
+        );
+
+        ResponseEntity<String> communityTargetResponse = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                communityTargetRequest,
+                String.class
+        );
+        ResponseEntity<String> communityComplexResponse = restTemplate.postForEntity(
+                "/internal/realestate/complexes",
+                communityComplexRequest,
+                String.class
+        );
+        ResponseEntity<String> snapshotResponse = restTemplate.postForEntity(
+                "/internal/realestate/reaction-snapshots",
+                snapshotRequest,
+                String.class
+        );
+        ResponseEntity<String> canonicalTargetResponse = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                canonicalTargetRequest,
+                String.class
+        );
+        ResponseEntity<String> canonicalComplexResponse = restTemplate.postForEntity(
+                "/internal/realestate/complexes",
+                canonicalComplexRequest,
+                String.class
+        );
+        ResponseEntity<String> ranking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=complex&windowStart=2026-06-21T00:00:00Z&windowMinutes=1440&limit=10",
+                String.class
+        );
+
+        assertThat(communityTargetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(communityComplexResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(snapshotResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(canonicalTargetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(canonicalComplexResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ranking.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode root = objectMapper.readTree(ranking.getBody());
+        JsonNode row = root.path("items").get(0);
+        assertThat(row.path("targetId").asText()).isEqualTo(canonicalTargetId);
+        assertThat(row.path("displayName").asText()).isEqualTo(displayName);
+        assertThat(row.path("mentionCount").asInt()).isEqualTo(54);
+        assertThat(root.path("items").findValuesAsText("targetId"))
+                .doesNotContain(communityTargetId);
+    }
+
+    @Test
+    void complexRankingExcludesGenericStandaloneBrandNames() throws Exception {
+        ResponseEntity<String> targetUpsert = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                Map.of("items", List.of(
+                        Map.of(
+                                "targetId", "complex-generic-hillstate-ranking-test",
+                                "targetType", "complex",
+                                "displayName", "힐스테이트",
+                                "slug", "generic-hillstate-ranking-test",
+                                "reviewState", "approved",
+                                "dataStatus", "ok"
+                        ),
+                        Map.of(
+                                "targetId", "complex-specific-hillstate-ranking-test",
+                                "targetType", "complex",
+                                "displayName", "논현동 힐스테이트",
+                                "slug", "specific-hillstate-ranking-test",
+                                "reviewState", "approved",
+                                "dataStatus", "ok"
+                        )
+                )),
+                String.class
+        );
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", "complex-generic-hillstate-ranking-test"),
+                                Map.entry("windowStart", "2026-06-18T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-19T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-19T00:02:00Z"),
+                                Map.entry("mentionCount", 999),
+                                Map.entry("previousMentionCount", 10),
+                                Map.entry("expectationScore", 60),
+                                Map.entry("concernScore", 20),
+                                Map.entry("neutralScore", 20),
+                                Map.entry("heatScore", 99),
+                                Map.entry("confidence", 0.5),
+                                Map.entry("sourceCount", 1),
+                                Map.entry("sourceSkew", 1.0),
+                                Map.entry("coverageStatus", "source_skewed"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of())
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", "complex-specific-hillstate-ranking-test"),
+                                Map.entry("windowStart", "2026-06-18T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-19T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-19T00:03:00Z"),
+                                Map.entry("mentionCount", 12),
+                                Map.entry("previousMentionCount", 4),
+                                Map.entry("expectationScore", 5),
+                                Map.entry("concernScore", 4),
+                                Map.entry("neutralScore", 3),
+                                Map.entry("heatScore", 40),
+                                Map.entry("confidence", 0.71),
+                                Map.entry("sourceCount", 2),
+                                Map.entry("sourceSkew", 0.5),
+                                Map.entry("coverageStatus", "partial"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of())
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/reaction-snapshots",
+                request,
+                String.class
+        );
+        ResponseEntity<String> ranking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=complex&windowStart=2026-06-18T00:00:00Z&windowMinutes=1440&limit=10",
+                String.class
+        );
+
+        assertThat(targetUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ranking.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode root = objectMapper.readTree(ranking.getBody());
+        assertThat(root.path("items").findValuesAsText("targetId"))
+                .contains("complex-specific-hillstate-ranking-test")
+                .doesNotContain("complex-generic-hillstate-ranking-test");
+    }
+
+    @Test
+    void complexRankingExcludesSingleSourceSkewedCandidatesFromPrimaryRanking() throws Exception {
+        ResponseEntity<String> targetUpsert = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                Map.of("items", List.of(
+                        Map.of(
+                                "targetId", "complex-source-skewed-ranking-test",
+                                "targetType", "complex",
+                                "displayName", "Source Skewed Palace",
+                                "slug", "source-skewed-ranking-test",
+                                "reviewState", "approved",
+                                "dataStatus", "ok"
+                        ),
+                        Map.of(
+                                "targetId", "complex-qualified-ranking-test",
+                                "targetType", "complex",
+                                "displayName", "Qualified Palace",
+                                "slug", "qualified-ranking-test",
+                                "reviewState", "approved",
+                                "dataStatus", "ok"
+                        )
+                )),
+                String.class
+        );
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", "complex-source-skewed-ranking-test"),
+                                Map.entry("windowStart", "2026-06-19T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-20T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-20T00:02:00Z"),
+                                Map.entry("mentionCount", 200),
+                                Map.entry("previousMentionCount", 0),
+                                Map.entry("expectationScore", 80),
+                                Map.entry("concernScore", 10),
+                                Map.entry("neutralScore", 10),
+                                Map.entry("heatScore", 100),
+                                Map.entry("confidence", 0.92),
+                                Map.entry("sourceCount", 1),
+                                Map.entry("sourceSkew", 1.0),
+                                Map.entry("coverageStatus", "source_skewed"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of())
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", "complex-qualified-ranking-test"),
+                                Map.entry("windowStart", "2026-06-19T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-20T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-20T00:03:00Z"),
+                                Map.entry("mentionCount", 12),
+                                Map.entry("previousMentionCount", 4),
+                                Map.entry("expectationScore", 5),
+                                Map.entry("concernScore", 4),
+                                Map.entry("neutralScore", 3),
+                                Map.entry("heatScore", 40),
+                                Map.entry("confidence", 0.71),
+                                Map.entry("sourceCount", 2),
+                                Map.entry("sourceSkew", 0.5),
+                                Map.entry("coverageStatus", "partial"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of())
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/reaction-snapshots",
+                request,
+                String.class
+        );
+        ResponseEntity<String> ranking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=complex&windowStart=2026-06-19T00:00:00Z&windowMinutes=1440&limit=10",
+                String.class
+        );
+        ResponseEntity<String> skewedTargetSnapshot = restTemplate.getForEntity(
+                "/api/realestate/targets/complex-source-skewed-ranking-test/reaction-snapshot?windowStart=2026-06-19T00:00:00Z&windowMinutes=1440",
+                String.class
+        );
+
+        assertThat(targetUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ranking.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(skewedTargetSnapshot.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode root = objectMapper.readTree(ranking.getBody());
+        assertThat(root.path("items").findValuesAsText("targetId"))
+                .contains("complex-qualified-ranking-test")
+                .doesNotContain("complex-source-skewed-ranking-test");
+        JsonNode snapshotRoot = objectMapper.readTree(skewedTargetSnapshot.getBody());
+        assertThat(snapshotRoot.path("mentionCount").asInt()).isZero();
+        assertThat(snapshotRoot.path("quality").path("coverageStatus").asText()).isEqualTo("empty");
+    }
+
+    @Test
+    void rankingExcludesRejectedTargetsEvenWhenOldSnapshotExists() throws Exception {
+        ResponseEntity<String> targetUpsert = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                Map.of("items", List.of(
+                        Map.of(
+                                "targetId", "complex-rejected-ranking-test",
+                                "targetType", "complex",
+                                "displayName", "Rejected Ranking Test",
+                                "slug", "rejected-ranking-test",
+                                "reviewState", "rejected",
+                                "dataStatus", "community_observed"
+                        )
+                )),
+                String.class
+        );
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", "complex-rejected-ranking-test"),
+                                Map.entry("windowStart", "2026-06-20T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-21T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-20T01:02:00Z"),
+                                Map.entry("mentionCount", 999),
+                                Map.entry("previousMentionCount", 1),
+                                Map.entry("expectationScore", 60),
+                                Map.entry("concernScore", 20),
+                                Map.entry("neutralScore", 20),
+                                Map.entry("heatScore", 99),
+                                Map.entry("confidence", 0.5),
+                                Map.entry("sourceCount", 1),
+                                Map.entry("sourceSkew", 1.0),
+                                Map.entry("coverageStatus", "low_sample"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of())
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/reaction-snapshots",
+                request,
+                String.class
+        );
+        ResponseEntity<String> ranking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=complex&windowStart=2026-06-20T00:00:00Z&windowMinutes=1440&limit=10",
+                String.class
+        );
+
+        assertThat(targetUpsert.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ranking.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode root = objectMapper.readTree(ranking.getBody());
+        assertThat(root.path("items")).isEmpty();
     }
 
     private static Map<String, Object> reactionSnapshotRequestWithIssues(

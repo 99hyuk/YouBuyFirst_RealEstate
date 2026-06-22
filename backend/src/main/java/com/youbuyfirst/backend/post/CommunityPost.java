@@ -152,4 +152,43 @@ public class CommunityPost {
     public Instant getCrawledAt() {
         return crawledAt;
     }
+
+    public boolean enrichMissingDetails(
+            String contentSnippet,
+            String boardId,
+            Integer viewCount,
+            Integer recommendCount,
+            Integer commentCount,
+            String contentHash,
+            Instant crawledAt
+    ) {
+        boolean changed = false;
+        if (isBlank(this.contentSnippet) && !isBlank(contentSnippet)) {
+            this.contentSnippet = contentSnippet;
+            this.contentHash = contentHash;
+            this.crawledAt = crawledAt;
+            changed = true;
+        }
+        if (isBlank(this.boardId) && !isBlank(boardId)) {
+            this.boardId = boardId;
+            changed = true;
+        }
+        if (this.viewCount == null && viewCount != null) {
+            this.viewCount = viewCount;
+            changed = true;
+        }
+        if (this.recommendCount == null && recommendCount != null) {
+            this.recommendCount = recommendCount;
+            changed = true;
+        }
+        if (this.commentCount == null && commentCount != null) {
+            this.commentCount = commentCount;
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
 }

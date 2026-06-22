@@ -48,6 +48,8 @@ class FakeClient:
         posts_accepted,
         error_message=None,
         coverage=None,
+        target_id=None,
+        target_kind=None,
     ):
         self.recorded_runs.append(
             {
@@ -57,6 +59,8 @@ class FakeClient:
                 "postsSeen": posts_seen,
                 "postsAccepted": posts_accepted,
                 "errorMessage": error_message,
+                "targetId": target_id,
+                "targetKind": target_kind,
             }
         )
 
@@ -89,12 +93,16 @@ def test_blocked_run_sets_backoff_and_next_run_skips_fetch():
     assert first[0]["backoffSeconds"] == 21600
     assert first[0]["backoffUntil"] == "2026-05-15T06:00:00Z"
     assert client.recorded_runs[0]["status"] == "PARTIAL_FAILURE"
+    assert client.recorded_runs[0]["targetId"] == "SAFE:house"
+    assert client.recorded_runs[0]["targetKind"] == "community-board"
     assert "backoffCategory=blocked" in client.recorded_runs[0]["errorMessage"]
 
     assert second[0]["status"] == "backoff"
     assert second[0]["backoffCategory"] == "blocked"
     assert second[0]["backoffUntil"] == "2026-05-15T06:00:00Z"
     assert client.recorded_runs[1]["status"] == "SKIPPED"
+    assert client.recorded_runs[1]["targetId"] == "SAFE:house"
+    assert client.recorded_runs[1]["targetKind"] == "community-board"
     assert "backoffUntil=2026-05-15T06:00:00Z" in client.recorded_runs[1]["errorMessage"]
 
 
@@ -110,4 +118,6 @@ def test_timeout_failure_records_transient_backoff_metadata():
     assert result[0]["backoffSeconds"] == 900
     assert result[0]["backoffUntil"] == "2026-05-15T00:15:00Z"
     assert client.recorded_runs[0]["status"] == "FAILED"
+    assert client.recorded_runs[0]["targetId"] == "SAFE:house"
+    assert client.recorded_runs[0]["targetKind"] == "community-board"
     assert "backoffCategory=transient-error" in client.recorded_runs[0]["errorMessage"]

@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import {
-  fetchRealEstateReactionRanking,
+  fetchRealEstateReactionRankingWithFallback,
   type RealEstateReactionRankingItem
 } from './lib/realestate-reactions';
 
@@ -36,7 +36,7 @@ const activeNewsroomFeed = computed(() => {
 const loadShellSignals = async () => {
   shellReactionState.value = 'loading';
   try {
-    const ranking = await fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 1440, limit: 6 });
+    const ranking = await fetchRealEstateReactionRankingWithFallback({ type: 'region', windowMinutes: 10080, limit: 6 });
     shellRankingItems.value = ranking.items;
     shellReactionState.value = ranking.items.length ? 'live' : 'empty';
   } catch {
@@ -50,10 +50,10 @@ onMounted(() => {
 });
 
 const shellStatusLabel = computed(() => {
-  if (shellReactionState.value === 'live') return 'reaction API 반영';
-  if (shellReactionState.value === 'loading') return 'reaction API 확인 중';
-  if (shellReactionState.value === 'empty') return '수집 전/insufficient';
-  return 'reaction API 오류';
+  if (shellReactionState.value === 'live') return '시장 흐름 반영';
+  if (shellReactionState.value === 'loading') return '시장 흐름 확인 중';
+  if (shellReactionState.value === 'empty') return '시장 데이터 확인 전';
+  return '시장 흐름 확인 필요';
 });
 
 const liveTopics = computed(() => {
@@ -62,8 +62,8 @@ const liveTopics = computed(() => {
       {
         label: shellReactionState.value === 'loading' ? '확인' : '상태',
         text: shellReactionState.value === 'error'
-          ? '지역 반응 API 오류 · 크롤링/스냅샷 배치 확인 필요'
-          : '지역 반응 TOP10 수집 전 · 크롤링/스냅샷 배치 대기'
+          ? '시장 흐름 데이터 확인 필요 · 지표/실거래 갱신 상태 확인 필요'
+          : '실거래·시장 데이터 확인 전 · 공개 데이터 갱신 대기'
       }
     ];
   }
@@ -120,7 +120,6 @@ const dismissNewsroomMenu = () => {
           <RouterLink class="brand-home" data-testid="app-title" to="/dashboard">
             <h1>너나사 <span>YouBuyFirst</span></h1>
           </RouterLink>
-          <strong>BETA</strong>
         </div>
 
         <nav class="main-nav" aria-label="주요 화면">
@@ -144,16 +143,15 @@ const dismissNewsroomMenu = () => {
               </RouterLink>
             </span>
           </span>
-          <RouterLink data-testid="nav-map" to="/realestate/map">지도</RouterLink>
-          <RouterLink data-testid="nav-region-reactions" to="/realestate/reactions">지역 반응</RouterLink>
-          <RouterLink data-testid="nav-indicators" to="/indicators">주요 지표</RouterLink>
-          <RouterLink data-testid="nav-watchlist" to="/realestate/watchlist">관심 지역</RouterLink>
+          <RouterLink data-testid="nav-map" to="/realestate/map">지역 분석</RouterLink>
+          <RouterLink data-testid="nav-transactions" to="/realestate/transactions">실거래</RouterLink>
+          <RouterLink data-testid="nav-indicators" to="/indicators">주요 일정</RouterLink>
+          <RouterLink data-testid="nav-watchlist" to="/realestate/mypage">마이페이지</RouterLink>
         </nav>
 
         <div class="topbar-status topbar-actions" aria-label="서비스 상태와 계정">
           <span>KST</span>
           <button class="login-button" type="button">로그인</button>
-          <span>참고용</span>
         </div>
       </div>
 
@@ -181,28 +179,28 @@ const dismissNewsroomMenu = () => {
           <section class="site-footer-brand">
             <h2 id="site-footer-title">너나사<span>YouBuyFirst</span></h2>
             <p>
-              커뮤니티 반응, 지역·단지 언급량, 실거래·전세·매물 상태, 에이전트 근거 로그를 함께 보는 부동산 관찰형 분석 서비스입니다.
-              실제 매수·매도 지시나 개인화 부동산 자문을 제공하지 않습니다.
+              실거래·전세 흐름, 지도 기반 지역 변화, 주요 일정, 뉴스·리포트 이슈를 함께 보는 부동산 인사이트 서비스입니다.
+              실제 매수·매도·청약 판단을 대신하지 않습니다.
             </p>
             <a href="mailto:yh99cho1@gmail.com">문의 yh99cho1@gmail.com</a>
           </section>
 
           <section class="footer-column" aria-labelledby="footer-features-title">
             <h3 id="footer-features-title">서비스 특징</h3>
-            <span>관심 지역·단지 반응 변화 브리핑</span>
-            <span>정책·교통·전세·매물 이벤트 연결</span>
-            <span>지역별 상승률과 유사 과거 상황</span>
-            <span>AI 에이전트 근거 로그</span>
+            <span>Today 3줄 브리핑</span>
+            <span>실거래·전세 흐름 확인</span>
+            <span>전국·지역 지도 탐색</span>
+            <span>주요 일정·뉴스·리포트 정리</span>
           </section>
 
           <section class="footer-column footer-legal" aria-labelledby="footer-notice-title">
             <h3 id="footer-notice-title">유의사항</h3>
             <p>
-              모든 가격, 변동률, 반응 지표는 참고용 추정치이며 공공데이터 공개 시점과 다를 수 있습니다.
-              본 사이트는 정보 제공과 모의 실험 목적으로만 운영됩니다.
+              가격, 거래, 일정 정보는 공개 지연이나 신고 보정으로 달라질 수 있습니다.
+              본 사이트는 시장 정보를 정리해 보여주는 관찰용 서비스입니다.
             </p>
             <p>
-              어떠한 부동산 매수·매도·청약·대출 행동도 권유하지 않으며, 이용으로 발생한 직·간접 손실에 대해 책임지지 않습니다.
+              매수·매도·청약·대출 행동을 권유하지 않으며, 지도 색상과 요약은 확정 전망이 아닙니다.
             </p>
           </section>
 
@@ -210,14 +208,14 @@ const dismissNewsroomMenu = () => {
             <h3 id="footer-source-title">데이터 출처</h3>
             <span>국토교통부 공공데이터</span>
             <span>한국부동산원 통계</span>
-            <span>공개 커뮤니티·뉴스·컬럼</span>
-            <span>비공개·유료 데이터 미사용</span>
+            <span>국토교통부 실거래가 공개시스템</span>
+            <span>한국은행·청약Home 등 공식 출처</span>
           </section>
         </div>
 
         <div class="site-footer-bottom">
           <span>© 2026 YouBuyFirst · 모든 부동산 지표는 참고용이며 실시간이 아닐 수 있습니다.</span>
-          <span>BETA · 관찰형 부동산 인사이트 · 2026.06</span>
+          <span>관찰형 부동산 인사이트 · 2026.06</span>
         </div>
       </div>
     </footer>
@@ -234,8 +232,8 @@ const dismissNewsroomMenu = () => {
 
         <div v-if="activeRailItem === 'watch'" class="edge-watch-list">
           <div v-if="!watchTargets.length" class="edge-empty-state">
-            <strong>관심 후보 수집 전</strong>
-            <p>{{ shellStatusLabel }} · reaction ranking이 쌓이면 이 영역에 TOP 후보가 표시됩니다.</p>
+            <strong>저장 지역 준비 중</strong>
+            <p>{{ shellStatusLabel }} · 저장 기능이 연결되면 이 영역에 저장 지역이 표시됩니다.</p>
           </div>
           <article v-for="target in watchTargets" :key="target.targetId" class="edge-watch-row">
             <span class="edge-initial">{{ target.name.slice(0, 1) }}</span>
@@ -252,8 +250,8 @@ const dismissNewsroomMenu = () => {
 
         <div v-else-if="activeRailItem === 'pulse'" class="edge-live-list">
           <div v-if="!shellRankingItems.length" class="edge-empty-state">
-            <strong>반응 수집 전</strong>
-            <p>{{ shellStatusLabel }} · 커뮤니티 snapshot이 생성되면 쟁점 변화가 표시됩니다.</p>
+            <strong>시장 데이터 확인 전</strong>
+            <p>{{ shellStatusLabel }} · 시장 데이터가 갱신되면 주요 변화가 표시됩니다.</p>
           </div>
           <article v-for="item in shellRankingItems.slice(0, 3)" :key="item.targetId">
             <span>{{ issueLabel(item) }}</span>

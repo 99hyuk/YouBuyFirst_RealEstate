@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from urllib.parse import parse_qs, urljoin, urlparse
+from dataclasses import replace
+from urllib.parse import parse_qs, urlencode, urljoin, urlparse, urlunparse
 
 from bs4 import BeautifulSoup
 
@@ -18,6 +19,8 @@ class PpomppuAdapter:
         fetcher: BrowserCapableFetcher,
         target: CrawlTarget,
         stream_crawler: BoardStreamCrawler | None = None,
+        detail_content_max_posts: int = 0,
+        detail_content_max_chars: int = 1000,
     ) -> None:
         if not target.url:
             raise ValueError(f"{target.target_id} is missing url")
@@ -26,13 +29,18 @@ class PpomppuAdapter:
         self.board_id = target.board_id or "house"
         self.url = target.url
         self.stream_crawler = stream_crawler or BoardStreamCrawler()
+        self.detail_content_max_posts = max(0, detail_content_max_posts)
+        self.detail_content_max_chars = max(1, detail_content_max_chars)
 
     async def fetch_posts(self) -> list[RawPost]:
         result = await self.fetcher.fetch_html(self.url)
-        return self.parse_list_html(result.html, board_id=self.board_id, base_url=self.url)
+        posts = self.parse_list_html(result.html, board_id=self.board_id, base_url=self.url)
+        return await self._with_detail_content(posts)
 
     async def fetch_stream(self, watermark: BoardWatermark | None = None) -> BoardStreamResult:
-        return await self.stream_crawler.collect(self._fetch_page, watermark)
+        result = await self.stream_crawler.collect(self._fetch_page, watermark)
+        posts = await self._with_detail_content(result.posts)
+        return BoardStreamResult(posts=posts, coverage=result.coverage, diffusion_events=result.diffusion_events)
 
     async def _fetch_page(self, cursor: str | None) -> BoardPage:
         result = await self.fetcher.fetch_html(_page_url(self.url, cursor))
@@ -40,6 +48,23 @@ class PpomppuAdapter:
         current_page = cursor or "1"
         next_cursor = str(int(current_page) + 1) if posts else None
         return BoardPage(cursor=current_page, posts=posts, next_cursor=next_cursor)
+
+    async def _with_detail_content(self, posts: list[RawPost]) -> list[RawPost]:
+        if self.detail_content_max_posts <= 0 or not posts:
+            return posts
+        enriched: list[RawPost] = []
+        for index, post in enumerate(posts):
+            if index >= self.detail_content_max_posts:
+                enriched.append(post)
+                continue
+            try:
+                result = await self.fetcher.fetch_html(post.url, allow_browser_fallback=False)
+            except Exception:
+                enriched.append(post)
+                continue
+            snippet = _content_snippet_from_detail_html(result.html, max_chars=self.detail_content_max_chars)
+            enriched.append(replace(post, content=snippet or post.content))
+        return enriched
 
     @staticmethod
     def parse_list_html(html: str, board_id: str, base_url: str) -> list[RawPost]:
@@ -179,6 +204,43 @@ def _mobile_post_from_list_item(
     )
 
 
+def _content_snippet_from_detail_html(html: str, *, max_chars: int) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+    for noisy in soup.select("script, style, noscript, iframe"):
+        noisy.decompose()
+    for selector in (
+        "#KH_Content",
+        ".viAr",
+        ".board-contents",
+        ".bbs_view_content",
+        ".view_content",
+        "#bbs_contents",
+        "#bbs_content",
+        "article",
+    ):
+        node = soup.select_one(selector)
+        if not node:
+            continue
+        snippet = _normalize_detail_text(node.get_text(" ", strip=True))
+        if snippet:
+            return _truncate_detail_text(snippet, max_chars=max_chars)
+    return ""
+
+
+def _normalize_detail_text(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _truncate_detail_text(value: str, *, max_chars: int) -> str:
+    if len(value) <= max_chars:
+        return value
+    clipped = value[:max_chars].strip()
+    boundary = clipped.rfind(" ")
+    if boundary > 0:
+        return clipped[:boundary].strip()
+    return clipped
+
+
 def _parse_embedded_count(value: str | None) -> int | None:
     if not value:
         return None
@@ -189,5 +251,8 @@ def _parse_embedded_count(value: str | None) -> int | None:
 def _page_url(base_url: str, cursor: str | None) -> str:
     if cursor is None or cursor == "1":
         return base_url
-    separator = "&" if "?" in base_url else "?"
-    return f"{base_url}{separator}page={cursor}"
+    parsed = urlparse(base_url)
+    query_pairs = parse_qs(parsed.query, keep_blank_values=True)
+    query_pairs["page"] = [cursor]
+    query = urlencode(query_pairs, doseq=True)
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, query, parsed.fragment))

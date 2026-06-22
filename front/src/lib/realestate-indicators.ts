@@ -1,3 +1,7 @@
+import type { PeriodKey, RealEstateMapLayerPeriod, RealEstateMapLayerResponse } from './realestate-map';
+import type { RealEstateReactionRanking, RealEstateReactionRankingItem } from './realestate-reactions';
+import { repairMojibake } from './text-encoding';
+
 export type IndicatorTone = 'up' | 'down' | 'neutral';
 
 export type RealEstateIndicatorMetric = {
@@ -40,6 +44,26 @@ export type RealEstateIndicatorOverview = {
   asOf?: string | null;
   groups: RealEstateIndicatorGroup[];
   freshnessRows: RealEstateIndicatorFreshnessRow[];
+};
+
+export type IndicatorRegionTile = {
+  name: string;
+  targetId: string;
+  direction: 'up' | 'down';
+  change: string;
+  heat: number;
+  keyword: string;
+  statusLabel: string;
+};
+
+export type IndicatorAnomalyRow = {
+  target: string;
+  targetId: string;
+  type: string;
+  price: string;
+  reaction: string;
+  reason: string;
+  tone: 'up' | 'down' | 'neutral';
 };
 
 export async function fetchRealEstateIndicatorOverview(
@@ -86,11 +110,11 @@ export function mergeIndicatorGroups(
 
     return {
       ...fallback,
-      dataStatus: 'mock',
+      dataStatus: 'planned',
       stale: true,
-      provider: 'fixture',
+      provider: null,
       asOf: null,
-      statusLabel: 'mock fallback'
+      statusLabel: '연동 대기'
     };
   });
 
@@ -109,7 +133,13 @@ export function mergeIndicatorFreshnessRows(
   apiRows: RealEstateIndicatorFreshnessRow[],
   fallbackRows: RealEstateIndicatorFreshnessRow[]
 ): RealEstateIndicatorFreshnessRow[] {
-  return apiRows.length > 0 ? apiRows.map(normalizeFreshnessRow) : fallbackRows;
+  return apiRows.length > 0
+    ? apiRows.map(normalizeFreshnessRow)
+    : fallbackRows.map((row) => ({
+      source: row.source,
+      state: '수집 전/insufficient',
+      used: row.used
+    }));
 }
 
 export function indicatorStatusLabel(group: Pick<RealEstateIndicatorGroup, 'dataStatus' | 'stale'>): string {
@@ -117,43 +147,196 @@ export function indicatorStatusLabel(group: Pick<RealEstateIndicatorGroup, 'data
   const status = (group.dataStatus ?? '').toLowerCase();
   if (status === 'ok') return '공공데이터 반영';
   if (status === 'stale') return '지연 가능';
+  if (status === 'partial') return '부분 반영';
+  if (status === 'insufficient') return '수집 전/insufficient';
   if (status === 'empty') return '데이터 없음';
-  if (status === 'mock') return 'mock fallback';
+  if (status === 'mock') return '수집 전/insufficient';
+  if (status === 'planned') return '연동 대기';
   if (status === 'error') return '확인 필요';
   return 'unknown';
 }
 
+export function buildIndicatorRegionTiles(
+  layer: RealEstateMapLayerResponse | null,
+  period: PeriodKey = 'month',
+  limit = 6
+): IndicatorRegionTile[] {
+  if (!layer?.targets?.length) return [];
+
+  return layer.targets
+    .map((target) => {
+      const selectedPeriod = selectMapPeriod(target.periods, period);
+      if (!isUsableMapPeriod(selectedPeriod)) return null;
+
+      const changePct = selectedPeriod.changePct;
+      return {
+        name: target.displayName,
+        targetId: target.targetId,
+        direction: changePct >= 0 ? 'up' as const : 'down' as const,
+        change: formatSignedPct(changePct),
+        heat: heatFromChange(changePct, selectedPeriod.confidence),
+        keyword: mapPeriodKeyword(selectedPeriod),
+        statusLabel: indicatorStatusLabel({
+          dataStatus: selectedPeriod.dataStatus,
+          stale: selectedPeriod.stale
+        })
+      };
+    })
+    .filter((tile): tile is IndicatorRegionTile => tile !== null)
+    .sort((a, b) => Math.abs(parseChange(b.change)) - Math.abs(parseChange(a.change)))
+    .slice(0, limit);
+}
+
+export function buildIndicatorAnomalyRows(
+  layer: RealEstateMapLayerResponse | null,
+  ranking: RealEstateReactionRanking | null,
+  period: PeriodKey = 'month',
+  limit = 4
+): IndicatorAnomalyRow[] {
+  if (!ranking?.items?.length) return [];
+
+  const mapTargets = new Map((layer?.targets ?? []).map((target) => [target.targetId, target]));
+
+  return ranking.items
+    .map((item) => {
+      const mapTarget = mapTargets.get(item.targetId);
+      const selectedPeriod = mapTarget ? selectMapPeriod(mapTarget.periods, period) : null;
+      const hasMarketPeriod = isUsableMapPeriod(selectedPeriod);
+      const reactionTone = reactionToneForItem(item);
+      const marketTone = hasMarketPeriod
+        ? selectedPeriod.changePct >= 0 ? 'up' as const : 'down' as const
+        : 'neutral' as const;
+      const isDivergent = hasMarketPeriod ? marketTone !== reactionTone : true;
+      if (!isDivergent) return null;
+
+      return {
+        target: item.displayName,
+        targetId: item.targetId,
+        type: hasMarketPeriod
+          ? `${marketTone === 'up' ? '지표 상승' : '지표 하락'} · ${reactionTone === 'up' ? '기대 우세' : '우려 우세'}`
+          : '시장 사실 대기 · 반응만 관찰',
+        price: hasMarketPeriod ? formatSignedPct(selectedPeriod.changePct) : '시장 사실 수집 전',
+        reaction: reactionLabel(item),
+        reason: anomalyReason(item, hasMarketPeriod ? selectedPeriod : null),
+        tone: hasMarketPeriod ? marketTone : 'neutral'
+      };
+    })
+    .filter((row): row is IndicatorAnomalyRow => row !== null)
+    .slice(0, limit);
+}
+
+function selectMapPeriod(
+  periods: Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>,
+  preferred: PeriodKey
+): RealEstateMapLayerPeriod | null {
+  return periods[preferred] ?? periods.month ?? periods.quarter ?? periods.halfYear ?? null;
+}
+
+function isUsableMapPeriod(period: RealEstateMapLayerPeriod | null | undefined): period is RealEstateMapLayerPeriod {
+  if (!period) return false;
+  const status = (period.dataStatus ?? '').toLowerCase();
+  const provider = (period.provider ?? '').toLowerCase();
+  const sourceLabel = (period.sourceLabel ?? '').toLowerCase();
+  if (status === 'mock' || status === 'empty') return false;
+  if (provider === 'seed' || provider.includes('fixture')) return false;
+  if (provider === 'real_estate_reaction_snapshots' || provider === 'reaction_snapshots') return false;
+  if (sourceLabel.includes('mock') || sourceLabel.includes('fixture')) return false;
+  return Number.isFinite(period.changePct) && Number.isFinite(period.confidence);
+}
+
+function formatSignedPct(value: number): string {
+  const normalized = Object.is(value, -0) ? 0 : value;
+  const sign = normalized > 0 ? '+' : '';
+  return `${sign}${normalized.toLocaleString('ko-KR', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: Math.abs(normalized) < 1 ? 2 : 1
+  })}%`;
+}
+
+function parseChange(value: string): number {
+  const parsed = Number(value.replace(/[+,%]/g, ''));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function heatFromChange(changePct: number, confidence: number): number {
+  const intensity = Math.min(Math.abs(changePct) * 180, 70);
+  const confidenceBoost = Math.max(0, Math.min(confidence, 1)) * 20;
+  return Math.round(Math.min(100, Math.max(18, 18 + intensity + confidenceBoost)));
+}
+
+function mapPeriodKeyword(period: RealEstateMapLayerPeriod): string {
+  if (period.sourceLabel?.trim()) return userFacingSourceLabel(period.sourceLabel);
+  if (period.provider?.trim()) return period.provider;
+  return period.sampleCount > 0 ? `표본 ${period.sampleCount}건` : '표본 확인 필요';
+}
+
+function reactionToneForItem(item: RealEstateReactionRankingItem): 'up' | 'down' {
+  return item.reactionDirectionRatio.expectation >= item.reactionDirectionRatio.concern ? 'up' : 'down';
+}
+
+function reactionLabel(item: RealEstateReactionRankingItem): string {
+  const expectation = Math.round(item.reactionDirectionRatio.expectation * 100);
+  const concern = Math.round(item.reactionDirectionRatio.concern * 100);
+  if (expectation === 0 && concern === 0) return '반응 비율 확인 필요';
+  return expectation >= concern ? `기대 ${expectation}%` : `우려 ${concern}%`;
+}
+
+function anomalyReason(item: RealEstateReactionRankingItem, period: RealEstateMapLayerPeriod | null): string {
+  const issue = item.issueMix?.[0]?.label;
+  const quality = statusLabel(period?.dataStatus ?? item.coverageStatus);
+  return [issue, quality].filter(Boolean).join(' · ');
+}
+
+function userFacingSourceLabel(label: string): string {
+  return label
+    .replace(/market fact/gi, '시장 사실')
+    .replace(/heat/gi, '히트맵')
+    .replace(/mock/gi, '수집 전')
+    .replace(/fixture/gi, '수집 전');
+}
+
+function statusLabel(status?: string | null): string {
+  const normalized = (status ?? '').toLowerCase();
+  if (normalized === 'low_sample') return '표본 부족';
+  if (normalized === 'partial') return '부분 반영';
+  if (normalized === 'insufficient') return '수집 전';
+  if (normalized === 'empty') return '데이터 없음';
+  if (normalized === 'stale') return '갱신 지연';
+  if (normalized === 'ok') return '공공데이터 반영';
+  return status || '수집 상태 확인 필요';
+}
+
 function normalizeGroup(group: Partial<RealEstateIndicatorGroup>): RealEstateIndicatorGroup {
   return {
-    id: group.id ?? 'unknown',
-    label: group.label ?? 'indicator',
-    title: group.title ?? '확인 필요',
-    headline: group.headline ?? '데이터 확인이 필요합니다',
-    change: group.change ?? 'unknown',
+    id: repairMojibake(group.id) || 'unknown',
+    label: repairMojibake(group.label) || 'indicator',
+    title: repairMojibake(group.title) || '확인 필요',
+    headline: repairMojibake(group.headline) || '데이터 확인이 필요합니다',
+    change: repairMojibake(group.change) || '확인 필요',
     tone: normalizeTone(group.tone),
-    summary: group.summary ?? 'provider/asOf 확인이 필요합니다.',
-    chips: Array.isArray(group.chips) ? group.chips : [],
+    summary: repairMojibake(group.summary) || '출처와 기준 시각 확인이 필요합니다.',
+    chips: Array.isArray(group.chips) ? group.chips.map(repairMojibake) : [],
     metrics: Array.isArray(group.metrics) ? group.metrics.map(normalizeMetric) : [],
-    dataStatus: group.dataStatus ?? 'unknown',
+    dataStatus: repairMojibake(group.dataStatus) || '확인 필요',
     stale: Boolean(group.stale),
-    provider: group.provider ?? null,
-    asOf: group.asOf ?? null
+    provider: repairMojibake(group.provider) || null,
+    asOf: repairMojibake(group.asOf) || null
   };
 }
 
 function normalizeMetric(metric: Partial<RealEstateIndicatorMetric>): RealEstateIndicatorMetric {
   return {
-    name: metric.name ?? '확인 필요',
-    value: metric.value ?? 'unknown',
+    name: repairMojibake(metric.name) || '확인 필요',
+    value: repairMojibake(metric.value) || '확인 필요',
     tone: normalizeTone(metric.tone)
   };
 }
 
 function normalizeFreshnessRow(row: Partial<RealEstateIndicatorFreshnessRow>): RealEstateIndicatorFreshnessRow {
   return {
-    source: row.source ?? 'provider unknown',
-    state: row.state ?? 'unknown',
-    used: row.used ?? 'unknown'
+    source: repairMojibake(row.source) || '출처 확인 필요',
+    state: repairMojibake(row.state) || '상태 확인 필요',
+    used: repairMojibake(row.used) || '사용처 확인 필요'
   };
 }
 

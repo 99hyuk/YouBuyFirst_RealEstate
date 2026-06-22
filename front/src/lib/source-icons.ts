@@ -6,6 +6,12 @@ const iconSvg = (body: string) =>
   );
 
 const sourceIcons: Record<string, string> = {
+  'v.daum.net': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="6" fill="#f59e0b"/><path d="M10 12h12M10 17h9M10 22h6" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>'
+  ),
+  'www.google.co.kr': iconSvg(
+    '<circle cx="16" cy="16" r="10" fill="none" stroke="#4285f4" stroke-width="4"/><path d="M17 16h8" stroke="#34a853" stroke-width="4" stroke-linecap="round"/><path d="M9 23a10 10 0 0 1 0-14" stroke="#fbbc05" stroke-width="4" stroke-linecap="round"/><path d="M9 9a10 10 0 0 1 14 0" stroke="#ea4335" stroke-width="4" stroke-linecap="round"/>'
+  ),
   'www.youtube.com': iconSvg(
     '<rect x="4" y="9" width="24" height="14" rx="4.5" fill="#ff0033"/><path d="M14 13v6l6-3z" fill="#fff"/>'
   ),
@@ -35,6 +41,51 @@ const sourceIcons: Record<string, string> = {
   ),
   'www.applyhome.co.kr': iconSvg(
     '<path d="M6 17 16 7l10 10v10H6z" fill="#ea580c"/><path d="m12 18 3 3 6-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  'www.hankyung.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#1f4f8f"/><path d="M10 12h12M10 17h9M10 22h12" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>'
+  ),
+  'magazine.hankyung.com': iconSvg(
+    '<rect x="5" y="5" width="22" height="22" rx="5" fill="#1f4f8f"/><path d="M10 11h12M10 16h10M10 21h7" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>'
+  ),
+  'www.mk.co.kr': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#0f172a"/><path d="M10 22V11l6 5 6-5v11" fill="none" stroke="#fbbf24" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  'www.sedaily.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#ef4444"/><path d="M11 12h10M11 17h8M11 22h11" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>'
+  ),
+  'biz.chosun.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#334155"/><path d="M10 12h12M10 17h12M10 22h7" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>'
+  ),
+  'realty.chosun.com': iconSvg(
+    '<path d="M6 18 16 8l10 10v9H6z" fill="#f97316"/><path d="M11 27v-7h4v7M18 27v-9h4v9" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  'www.yna.co.kr': iconSvg(
+    '<circle cx="16" cy="16" r="11" fill="#2563eb"/><path d="M10 17c4-8 8-8 12 0M10 17c4 7 8 7 12 0" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>'
+  ),
+  'news.kbs.co.kr': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#1d4ed8"/><path d="M10 12h12M10 17h12M10 22h8" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>'
+  ),
+  'www.kbfg.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#facc15"/><path d="M10 21V11M15 21v-6l6 6M16 15l5-4" stroke="#44330b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  'www.kbstar.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#facc15"/><path d="M10 21V11M15 21v-6l6 6M16 15l5-4" stroke="#44330b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  'www.hanaif.re.kr': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#009178"/><path d="M10 21V11M22 11v10M10 16h12" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>'
+  ),
+  'www.shinhan.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#2563eb"/><path d="M12 12h9l-5 4 5 4h-9" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  'www.woorifg.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#0ea5e9"/><path d="M10 14c3-4 9-4 12 0M10 19c3 4 9 4 12 0" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>'
+  ),
+  'www.nhwm.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#16a34a"/><path d="M10 21V11l12 10V11" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  'www.miraeasset.com': iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#0f3b8f"/><path d="M10 21l6-10 6 10M13 17h6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
   )
 };
 

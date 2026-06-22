@@ -2,7 +2,7 @@
 
 이 파일은 너나사 부동산 프로젝트 전체의 얇은 라우터입니다. 세부 규칙은 담당 도메인/layer `AGENTS.md`, `README.md`, contract 문서에서 확인합니다.
 
-너나사 부동산은 지역과 단지에 대한 실제 사람들의 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 같은 시장 사실 데이터를 함께 보여주는 관찰형 분석 서비스입니다. 이 repo의 active runtime과 문서는 부동산 target, 반응 지표, 시장 사실, 유사 과거 비교, 근거 로그 구조를 중심으로 운영합니다.
+너나사 부동산은 실거래, 전세, 매물, 공급, 정책, 뉴스/리포트 이슈를 지역과 생활권 기준으로 엮어 보여주는 부동산 인사이트 탐색 서비스입니다. 이 repo의 active runtime과 문서는 부동산 target, 시장 사실, 실거래 탐색, 지도 기반 지역 흐름, 주요 일정, 근거 로그 구조를 중심으로 운영합니다. 커뮤니티 반응과 공개 원문 수집은 핵심 정체성이 아니라 보조 관찰 근거로만 다룹니다.
 
 ## 읽는 순서
 
@@ -18,17 +18,17 @@
 | 요청/작업 영역 | 먼저 볼 곳 | 주 작업 위치 |
 | --- | --- | --- |
 | `realestate` | `docs/domains/realestate/AGENTS.md` | 지역/단지 모델, 실거래/전세/매물/정책 이벤트, 부동산 데이터 contract |
-| `community` (`crawl`) | `docs/domains/community/AGENTS.md` | 공개 수집, 제한 원문 저장, source registry |
-| `indicator` | `docs/domains/indicator/AGENTS.md` | 지역/단지 반응 지표, window snapshot, 쟁점 비율 |
+| `community` (`crawl`) | `docs/domains/community/AGENTS.md` | 공개 이슈 후보 수집, 제한 원문 저장, source registry |
+| `indicator` | `docs/domains/indicator/AGENTS.md` | 보조 반응 지표, window snapshot, 쟁점 비율 |
 | `agent` | `docs/domains/agent/AGENTS.md` | 지역/단지 평가, 근거 로그, 유사 과거 비교 설명 |
 | `ui` (`front`) | `docs/layers/ui/AGENTS.md` | `front/`, 화면별 Screen Brief, fixture/API 후보 |
 | `ops` | `docs/layers/ops/AGENTS.md` | 문서 구조, Git/PR, Notion, 브랜치/worktree, 컨텍스트 예산 |
 
 ## 공통 게이트
 
-- 사용자 화면의 기본 언어는 `관찰`, `분석`, `반응 지표`, `쟁점 비율`, `표본 신뢰도`, `근거 로그`입니다.
+- 사용자 화면의 기본 언어는 `실거래`, `전세`, `공급`, `정책`, `시장 사실`, `공개 지연`, `인사이트`, `근거 로그`입니다.
 - 특정 매수, 매도, 청약, 대출 행동을 권유하거나 가격 상승을 단정하는 표현은 서비스 판단, CTA, 제목, 요약 문구에 쓰지 않습니다.
-- 커뮤니티 반응은 시장 관찰 데이터로만 표현합니다. 서비스 결론이나 확정 판단처럼 보이게 만들지 않습니다.
+- 커뮤니티 반응은 보조 관찰 데이터로만 표현합니다. 서비스 결론, 핵심 순위, 확정 판단처럼 보이게 만들지 않습니다.
 - CAPTCHA 우회, 로그인 세션 크롤링, 프록시 회전, fingerprint 위장은 하지 않습니다. 공개 HTTP 수집을 우선하고 Playwright는 렌더링 fallback으로만 씁니다.
 - 저장 원문은 제목, 일부 snippet, URL, 작성자 해시, 작성 시각, 원문 해시처럼 필요한 범위로 제한합니다.
 - 실거래/전세/매물/정책 데이터는 provider, `asOf`, `stale`, 지연 여부를 분리해서 다룹니다. 확인되지 않은 데이터를 실시간처럼 말하지 않습니다.

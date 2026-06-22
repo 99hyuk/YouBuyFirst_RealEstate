@@ -111,7 +111,7 @@ public class RealEstateTargetGraphService {
     ) {
         targetRepository.findById(targetId)
                 .orElseThrow(() -> new IllegalArgumentException("real-estate target not found: " + targetId));
-        return search(targetId, direction, edgeType, "approved", limit);
+        return search(targetId, direction, edgeType, "approved", limit, 0);
     }
 
     @Transactional(readOnly = true)
@@ -120,9 +120,10 @@ public class RealEstateTargetGraphService {
             String direction,
             String edgeType,
             String reviewState,
-            int limit
+            int limit,
+            int page
     ) {
-        return search(targetId, direction, edgeType, reviewState, limit);
+        return search(targetId, direction, edgeType, reviewState, limit, page);
     }
 
     private List<RealEstateTargetEdgeResponse> search(
@@ -130,15 +131,17 @@ public class RealEstateTargetGraphService {
             String direction,
             String edgeType,
             String reviewState,
-            int limit
+            int limit,
+            int page
     ) {
         int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int boundedPage = Math.max(0, page);
         return edgeRepository.searchEdges(
                         trimToNull(targetId),
                         normalizeDirection(direction),
                         normalizeNullable(edgeType),
                         normalizeNullable(reviewState),
-                        PageRequest.of(0, boundedLimit)
+                        PageRequest.of(boundedPage, boundedLimit)
                 )
                 .stream()
                 .map(this::toResponse)

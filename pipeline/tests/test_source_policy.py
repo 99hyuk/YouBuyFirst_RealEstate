@@ -23,9 +23,13 @@ def test_default_registry_marks_current_mvp_sources_local_research_only():
     registry = default_source_policy_registry()
 
     naver = registry.policy_for("NAVER")
+    naver_cafe = registry.policy_for("NAVER_CAFE")
+    daum_cafe = registry.policy_for("DAUM_CAFE")
     fmkorea = registry.policy_for("FMKOREA")
 
     assert naver.status == SourceStatus.LOCAL_RESEARCH_ONLY
+    assert naver_cafe.status == SourceStatus.LOCAL_RESEARCH_ONLY
+    assert daum_cafe.status == SourceStatus.LOCAL_RESEARCH_ONLY
     assert fmkorea.status == SourceStatus.LOCAL_RESEARCH_ONLY
 
 

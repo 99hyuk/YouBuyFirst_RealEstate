@@ -5,8 +5,24 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from youbuyfirst_pipeline.crawl_targets import (
+    BOBAEDREAM_FREEBOARD_URL,
+    CLIEN_PARK_BOARD_URL,
+    COOK82_FREEBOARD_URL,
     DCINSIDE_REALESTATE_BOARD_URL,
+    DEALAGORA_COMMUNITY_BOARD_URL,
+    DAUM_CAFE_PUBLIC_SEARCH_URL,
+    FMKOREA_REALESTATE_BOARD_URL,
+    INSTIZ_NAME_BOARD_URL,
+    INVEN_WEBZINE_BOARD_URL,
+    MLBPARK_BULLPEN_BOARD_URL,
+    NATEPANN_TALK_BOARD_URL,
+    NAVER_CAFE_PUBLIC_SEARCH_URL,
     PPOMPPU_REALESTATE_BOARD_URL,
+    RULIWEB_COMMUNITY_BOARD_URL,
+    SLRCLUB_FREE_BOARD_URL,
+    THEQOO_SQUARE_BOARD_URL,
+    TODAYHUMOR_ECONOMY_BOARD_URL,
+    TODAYHUMOR_FREEBOARD_URL,
     CrawlTarget,
 )
 from youbuyfirst_pipeline.source_policy import (
@@ -16,7 +32,25 @@ from youbuyfirst_pipeline.source_policy import (
 )
 
 
-_SUPPORTED_BOARD_SOURCES = {"DCINSIDE", "PPOMPPU"}
+_SUPPORTED_BOARD_SOURCES = {
+    "DCINSIDE",
+    "PPOMPPU",
+    "FMKOREA",
+    "NAVER_CAFE",
+    "DAUM_CAFE",
+    "CLIEN",
+    "COOK82",
+    "DEALAGORA",
+    "THEQOO",
+    "MLBPARK",
+    "NATEPANN",
+    "TODAYHUMOR",
+    "RULIWEB",
+    "BOBAEDREAM",
+    "INSTIZ",
+    "SLRCLUB",
+    "INVEN",
+}
 _CRAWLABLE_CANDIDATE_POLICIES = {"enabled", "local-research-only", "public-http-candidate"}
 _DEFAULT_ALLOWED_STORAGE = ["title", "contentSnippet", "url", "authorHash", "publishedAt", "contentHash"]
 _KNOWN_SOURCE_TARGETS = {
@@ -31,6 +65,102 @@ _KNOWN_SOURCE_TARGETS = {
         "boardId": "immovables",
         "url": DCINSIDE_REALESTATE_BOARD_URL,
         "priority": 210,
+    },
+    "fmkorea_realestate": {
+        "source": "FMKOREA",
+        "boardId": "realestate",
+        "url": FMKOREA_REALESTATE_BOARD_URL,
+        "priority": 220,
+    },
+    "naver_cafe_public_search": {
+        "source": "NAVER_CAFE",
+        "boardId": "public_search",
+        "url": NAVER_CAFE_PUBLIC_SEARCH_URL,
+        "priority": 230,
+    },
+    "daum_cafe_public_search": {
+        "source": "DAUM_CAFE",
+        "boardId": "public_search",
+        "url": DAUM_CAFE_PUBLIC_SEARCH_URL,
+        "priority": 231,
+    },
+    "clien_park_realestate": {
+        "source": "CLIEN",
+        "boardId": "park",
+        "url": CLIEN_PARK_BOARD_URL,
+        "priority": 300,
+    },
+    "cook82_freeboard_realestate": {
+        "source": "COOK82",
+        "boardId": "freeboard",
+        "url": COOK82_FREEBOARD_URL,
+        "priority": 300,
+    },
+    "dealagora_community": {
+        "source": "DEALAGORA",
+        "boardId": "community",
+        "url": DEALAGORA_COMMUNITY_BOARD_URL,
+        "priority": 240,
+    },
+    "theqoo_square_realestate": {
+        "source": "THEQOO",
+        "boardId": "square",
+        "url": THEQOO_SQUARE_BOARD_URL,
+        "priority": 310,
+    },
+    "mlbpark_bullpen_realestate": {
+        "source": "MLBPARK",
+        "boardId": "bullpen",
+        "url": MLBPARK_BULLPEN_BOARD_URL,
+        "priority": 320,
+    },
+    "natepann_talk_realestate": {
+        "source": "NATEPANN",
+        "boardId": "talk",
+        "url": NATEPANN_TALK_BOARD_URL,
+        "priority": 330,
+    },
+    "todayhumor_economy_realestate": {
+        "source": "TODAYHUMOR",
+        "boardId": "economy",
+        "url": TODAYHUMOR_ECONOMY_BOARD_URL,
+        "priority": 340,
+    },
+    "todayhumor_freeboard_realestate": {
+        "source": "TODAYHUMOR",
+        "boardId": "freeboard",
+        "url": TODAYHUMOR_FREEBOARD_URL,
+        "priority": 341,
+    },
+    "ruliweb_community_realestate": {
+        "source": "RULIWEB",
+        "boardId": "community",
+        "url": RULIWEB_COMMUNITY_BOARD_URL,
+        "priority": 350,
+    },
+    "bobaedream_freeb_realestate": {
+        "source": "BOBAEDREAM",
+        "boardId": "freeb",
+        "url": BOBAEDREAM_FREEBOARD_URL,
+        "priority": 360,
+    },
+    "instiz_name_realestate": {
+        "source": "INSTIZ",
+        "boardId": "name",
+        "url": INSTIZ_NAME_BOARD_URL,
+        "priority": 370,
+    },
+    "slrclub_free_realestate": {
+        "source": "SLRCLUB",
+        "boardId": "free",
+        "url": SLRCLUB_FREE_BOARD_URL,
+        "priority": 380,
+    },
+    "inven_webzine_realestate": {
+        "source": "INVEN",
+        "boardId": "webzine2097",
+        "url": INVEN_WEBZINE_BOARD_URL,
+        "priority": 390,
     },
 }
 

@@ -11,9 +11,23 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "realestate"
 class _FakeSpringClient:
     def __init__(self) -> None:
         self.region_batches = []
+        self.alias_batches = []
+        self.regions = []
 
     def publish_real_estate_regions(self, regions) -> None:
         self.region_batches.append([region.to_import_dict() for region in regions])
+
+    def list_real_estate_regions(self, *, region_level=None, limit=500):
+        if region_level is None:
+            return self.regions
+        return [
+            region
+            for region in self.regions
+            if region.get("regionLevel") == region_level
+        ]
+
+    def publish_real_estate_aliases(self, aliases) -> None:
+        self.alias_batches.append(list(aliases))
 
 
 def test_realestate_regions_import_command_reads_csv_and_publishes(monkeypatch, tmp_path):
@@ -66,6 +80,52 @@ def test_realestate_regions_import_command_reads_csv_and_publishes(monkeypatch, 
             },
         ]
     ]
+
+
+def test_realestate_region_aliases_push_command_reads_backend_regions_and_publishes(monkeypatch, capsys):
+    fake_client = _FakeSpringClient()
+    fake_client.regions = [
+        {
+            "targetId": "region-gyeonggi-paju",
+            "displayName": "경기도 파주시",
+            "regionLevel": "sigungu",
+        },
+        {
+            "targetId": "region-seoul-jung",
+            "displayName": "서울특별시 중구",
+            "regionLevel": "sigungu",
+        },
+        {
+            "targetId": "region-busan-jung",
+            "displayName": "부산광역시 중구",
+            "regionLevel": "sigungu",
+        },
+    ]
+
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-region-aliases-push",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    aliases = {
+        (alias["targetId"], alias["alias"]): alias
+        for alias in fake_client.alias_batches[0]
+    }
+    assert payload["regionCount"] == 3
+    assert payload["publishedAliases"] == len(fake_client.alias_batches[0])
+    assert aliases[("region-gyeonggi-paju", "파주시")]["reviewState"] == "approved"
+    assert aliases[("region-gyeonggi-paju", "파주")]["reviewState"] == "approved"
+    assert aliases[("region-seoul-jung", "중구")]["reviewState"] == "candidate"
+    assert aliases[("region-busan-jung", "중구")]["ambiguous"] is True
+    assert aliases[("region-seoul-jung", "서울 중구")]["reviewState"] == "approved"
 
 
 def test_realestate_regions_inspect_command_writes_backfill_manifest(monkeypatch, capsys, tmp_path):

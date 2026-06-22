@@ -2,57 +2,34 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue';
 import {
   buildNewsroomFeedItems,
+  ensureNewsroomCategoryCoverage,
   fetchRealEstateNewsroom,
   type NewsroomCategory,
   type NewsroomFeedItem
 } from '../lib/realestate-content';
 import {
-  buildDashboardSpeculationHeat,
-  buildRegionalMomentumRows,
-  dashboardReturnModeLabel,
-  dashboardReturnModes,
-  type DashboardRegionalMomentumRow,
-  type DashboardReturnMode
+  dashboardReturnModes
 } from '../lib/realestate-dashboard';
-import { fetchRealEstateMapLayer, type RealEstateMapLayerResponse } from '../lib/realestate-map';
 import {
-  fetchRealEstateReactionRanking,
-  type RealEstateReactionIssue,
-  type RealEstateReactionRankingItem
+  fetchRealEstateReactionRankingWithFallback,
+  type RealEstateReactionRanking,
+  type RealEstateReactionRankingItem,
+  type RealEstateReactionIssue
 } from '../lib/realestate-reactions';
 import {
-  buildMarketFactRows,
   buildMarketSummaryIndicators,
-  fetchRealEstateMarketFacts,
   fetchRealEstateMarketSummary,
-  type RealEstateMarketIndicatorCard,
-  type RealEstateMarketFactRow
+  realEstateMarketIndicatorFallbacks,
+  type RealEstateMarketIndicatorCard
 } from '../lib/realestate-market-facts';
 import { sourceIconUrl } from '../lib/source-icons';
 
-const marketFilters = ['전체', '언급 증가', '정책 변화', '공공데이터 stale'];
 const returnTimeModes = dashboardReturnModes;
-const confirmationNeeded = [
-  '지역별 시장 fact coverage 확대',
-  '카페/커뮤니티 공개 source 수집 범위 확정',
-  '전국·시도·시군구 map layer daily refresh 점검',
-  'SerpApi 후보 링크와 EvidenceLog 검수 흐름 확인'
-];
-const drawerTabs = [
-  { id: 'reaction', label: '반응' },
-  { id: 'metrics', label: '지표' },
-  { id: 'watch', label: '관심' }
-];
-const activeDrawerTab = ref('reaction');
-const activeReturnMode = ref<DashboardReturnMode>('month');
 const marketIndicators = ref<RealEstateMarketIndicatorCard[]>([]);
-const marketFactRows = ref<RealEstateMarketFactRow[]>(buildMarketFactRows([]));
-const marketIndicatorLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
-const marketFactLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
-const dashboardMapLayer = ref<RealEstateMapLayerResponse | null>(null);
-const mapLayerLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const dashboardContentItems = ref<NewsroomFeedItem[]>([]);
 const dashboardContentLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+const dashboardContentFeeds: NewsroomCategory[] = ['news', 'reports', 'videos', 'links'];
+const dashboardContentPageSize = 100;
 type ReactionKeyword = { word: string; weight: number };
 type ReactionDriver = { type: string; label: string };
 type DashboardReactionItem = {
@@ -80,18 +57,16 @@ type DashboardReactionItem = {
   movementReasons: string[];
 };
 const dashboardReactionItems = ref<DashboardReactionItem[]>([]);
-const rawReactionRankingItems = ref<RealEstateReactionRankingItem[]>([]);
+const dashboardReactionRanking = ref<RealEstateReactionRanking | null>(null);
 const reactionRankingLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 type ReactionMetric = 'bullish' | 'bearish';
+type DailyBriefingItem = {
+  id: string;
+  text: string;
+  tone: string;
+};
 
-const totalMentions = computed(() => dashboardReactionItems.value.reduce((sum, item) => sum + item.mentionCount, 0));
 const topRiser = computed(() => dashboardReactionItems.value[0] ?? null);
-const risingStars = computed(() => dashboardReactionItems.value.slice(0, 4));
-const speculationHeatIndex = computed(() => buildDashboardSpeculationHeat(rawReactionRankingItems.value));
-const regionalMomentumRows = computed(() =>
-  buildRegionalMomentumRows(dashboardMapLayer.value, activeReturnMode.value, 6)
-);
-const activeReturnModeLabel = computed(() => dashboardReturnModeLabel(activeReturnMode.value));
 const reactionSignalScore = (item: DashboardReactionItem, metric: ReactionMetric) =>
   Math.round(item.mentionCount * item.reactionDirectionRatio[metric]);
 const buildReactionGroup = (id: 'positive' | 'negative', label: string, caption: string, metric: ReactionMetric) => ({
@@ -108,6 +83,65 @@ const reactionSignalGroups = computed(() => [
   buildReactionGroup('positive', '언급+기대 TOP 3', '언급량 x 기대', 'bullish'),
   buildReactionGroup('negative', '언급+우려 TOP 3', '언급량 x 우려', 'bearish')
 ]);
+const topBriefingIssues = computed(() => {
+  const scores = new Map<string, number>();
+  dashboardReactionItems.value.slice(0, 6).forEach((item) => {
+    item.issueMix.forEach((issue) => {
+      scores.set(issue.label, (scores.get(issue.label) ?? 0) + item.mentionCount * Math.max(issue.share, 0.05));
+    });
+  });
+
+  return [...scores.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 3)
+    .map(([label]) => label);
+});
+
+const objectParticle = (word: string) => {
+  const lastChar = word.trim().at(-1);
+  if (!lastChar) return '을';
+  const code = lastChar.charCodeAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return '을';
+  return (code - 0xac00) % 28 === 0 ? '를' : '을';
+};
+
+const dailyBriefingItems = computed<DailyBriefingItem[]>(() => {
+  const issues = topBriefingIssues.value;
+  const topTarget = topRiser.value;
+  const issuePhrase = issues.length ? `${issues.join('·')} 쟁점의 ` : '';
+  const newsCount = dashboardNewsItems.value.length;
+  const reportCount = dashboardReportItems.value.length;
+  const videoCount = dashboardVideoItems.value.length;
+  const contentSummary = dashboardContentLoadState.value === 'loading'
+    ? '최근 뉴스와 리포트 후보를 불러오는 중입니다.'
+    : dashboardContentLoadState.value === 'error'
+      ? '뉴스룸 수집 상태 확인이 필요합니다.'
+      : newsCount + reportCount + videoCount
+        ? `뉴스 ${newsCount}건, 리포트 ${reportCount}건, 영상 ${videoCount}건을 우선 확인합니다.`
+        : '최근 이슈 후보가 아직 충분히 분리되지 않았습니다.';
+
+  return [
+    {
+      id: 'reaction',
+      text: topTarget
+        ? `${topTarget.name}${objectParticle(topTarget.name)} 중심으로 ${issuePhrase}반응이 모이고 있습니다.`
+        : '지역 반응 데이터가 아직 충분하지 않아 오늘의 쟁점 후보를 더 모아야 합니다.',
+      tone: 'reaction'
+    },
+    {
+      id: 'indicator',
+      text: marketIndicators.value.length
+        ? `공식 지표는 ${marketIndicators.value.slice(0, 2).map((indicator) => `${indicator.label} ${indicator.value}`).join(', ')} 흐름을 함께 봐야 합니다.`
+        : '공식 지표 수집이 아직 대기 중이라 가격 흐름 판단은 보류해야 합니다.',
+      tone: 'indicator'
+    },
+    {
+      id: 'issue',
+      text: contentSummary,
+      tone: 'issue'
+    }
+  ];
+});
 
 const currentSlide = ref(0);
 const isPaused = ref(false);
@@ -118,25 +152,12 @@ const startTimer = () => {
   if (autoSlideTimer) clearInterval(autoSlideTimer);
   autoSlideTimer = setInterval(() => { currentSlide.value = (currentSlide.value + 1) % totalSlides.value; }, 4500);
 };
-const refreshMarketFacts = async () => {
-  try {
-    const facts = await fetchRealEstateMarketFacts();
-    marketFactRows.value = buildMarketFactRows(facts);
-    marketFactLoadState.value = facts.length ? 'live' : 'fallback';
-  } catch {
-    marketFactRows.value = buildMarketFactRows([]);
-    marketFactLoadState.value = 'fallback';
-  }
-};
 const refreshMarketSummary = async () => {
-  marketIndicatorLoadState.value = 'loading';
   try {
     const summary = await fetchRealEstateMarketSummary();
-    marketIndicators.value = buildMarketSummaryIndicators(summary);
-    marketIndicatorLoadState.value = summary.items.length ? 'live' : 'empty';
+    marketIndicators.value = buildMarketSummaryIndicators(summary, realEstateMarketIndicatorFallbacks);
   } catch {
     marketIndicators.value = [];
-    marketIndicatorLoadState.value = 'error';
   }
 };
 const reactionKeywordFromIssue = (issue: RealEstateReactionIssue, index: number): ReactionKeyword => ({
@@ -161,7 +182,7 @@ const movementReasons = (item: RealEstateReactionRankingItem) => {
   if (!issues.length) {
     return [
       '지역 언급량은 집계됐지만 쟁점 분류 표본은 아직 충분하지 않습니다.',
-      '실거래·전세 흐름과 연결하려면 다음 배치의 market fact 확인이 필요합니다.'
+      '실거래·전세 흐름과 연결하려면 다음 배치의 시장 사실 확인이 필요합니다.'
     ];
   }
 
@@ -199,15 +220,15 @@ const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): Dash
       .slice(0, 5)
       .map(reactionKeywordFromIssue),
     positiveLinks: [
-      { title: `기대 쟁점: ${(expectationIssues[0] ?? topIssues[0]).label}`, source: 'reaction snapshot' },
-      { title: `표본 신뢰도 ${Math.round(item.confidence * 100)}%`, source: item.coverageStatus }
+      { title: `기대 쟁점: ${(expectationIssues[0] ?? topIssues[0]).label}`, source: '반응 스냅샷' },
+      { title: `표본 신뢰도 ${Math.round(item.confidence * 100)}%`, source: coverageStatusLabel(item.coverageStatus) }
     ],
     negativeLinks: [
-      { title: `우려 쟁점: ${(concernIssues[0] ?? topIssues[0]).label}`, source: 'reaction snapshot' },
-      { title: item.stale ? '수집 지연 가능' : `출처 ${item.sourceCount}곳`, source: item.stale ? 'stale' : 'source coverage' }
+      { title: `우려 쟁점: ${(concernIssues[0] ?? topIssues[0]).label}`, source: '반응 스냅샷' },
+      { title: item.stale ? '수집 지연 가능' : `출처 ${item.sourceCount}곳`, source: item.stale ? '갱신 지연' : '출처 범위' }
     ],
-    priceStatus: item.stale ? 'reaction snapshot stale' : 'market fact separate',
-    dataStatus: item.stale ? 'stale' : item.coverageStatus,
+    priceStatus: item.stale ? '반응 스냅샷 갱신 지연' : '시장 사실 별도 확인',
+    dataStatus: item.stale ? '갱신 지연' : coverageStatusLabel(item.coverageStatus),
     reactionDrivers: topIssues.slice(0, 4).map((issue) => ({
       type: reactionDriverType(issue.direction),
       label: issue.label
@@ -219,37 +240,32 @@ const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): Dash
 const refreshDashboardReactions = async () => {
   reactionRankingLoadState.value = 'loading';
   dashboardReactionItems.value = [];
-  rawReactionRankingItems.value = [];
+  dashboardReactionRanking.value = null;
   currentSlide.value = 0;
   try {
-    const ranking = await fetchRealEstateReactionRanking({ type: 'region', windowMinutes: 1440, limit: 10 });
-    rawReactionRankingItems.value = ranking.items;
+    const ranking = await fetchRealEstateReactionRankingWithFallback({ type: 'region', windowMinutes: 10080, limit: 10 });
+    dashboardReactionRanking.value = ranking;
     dashboardReactionItems.value = ranking.items.map(dashboardReactionItemFromApi);
     reactionRankingLoadState.value = dashboardReactionItems.value.length ? 'live' : 'empty';
   } catch {
-    rawReactionRankingItems.value = [];
     dashboardReactionItems.value = [];
+    dashboardReactionRanking.value = null;
     reactionRankingLoadState.value = 'error';
-  }
-};
-const refreshDashboardMapLayer = async () => {
-  mapLayerLoadState.value = 'loading';
-  dashboardMapLayer.value = null;
-  try {
-    const layer = await fetchRealEstateMapLayer({ layerType: 'sido' });
-    dashboardMapLayer.value = layer;
-    mapLayerLoadState.value = layer.targets.length ? 'live' : 'empty';
-  } catch {
-    dashboardMapLayer.value = null;
-    mapLayerLoadState.value = 'error';
   }
 };
 const refreshDashboardContent = async () => {
   dashboardContentLoadState.value = 'loading';
   dashboardContentItems.value = [];
   try {
-    const contentItems = await fetchRealEstateNewsroom({ feed: 'all', page: 1, pageSize: 40 });
-    const mappedItems = buildNewsroomFeedItems(contentItems);
+    const groupedItems = await Promise.all(
+      dashboardContentFeeds.map(async (feed) => {
+        const contentItems = await fetchRealEstateNewsroom({ feed, page: 1, pageSize: dashboardContentPageSize });
+        return buildNewsroomFeedItems(contentItems)
+          .filter((item) => item.category === feed)
+          .slice(0, 5);
+      })
+    );
+    const mappedItems = ensureNewsroomCategoryCoverage(groupedItems.flat());
     dashboardContentItems.value = mappedItems;
     dashboardContentLoadState.value = mappedItems.length ? 'live' : 'empty';
   } catch {
@@ -325,72 +341,25 @@ const kwWordStyles = computed(() => Object.fromEntries(
 onMounted(() => {
   startTimer();
   void refreshDashboardReactions();
-  void refreshDashboardMapLayer();
   void refreshMarketSummary();
-  void refreshMarketFacts();
   void refreshDashboardContent();
 });
 onUnmounted(() => clearInterval(autoSlideTimer));
 
 const formatPct = (value: number | null) => value === null ? '최신' : `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
-const trendClass = (trend: string) => (trend === 'down' ? 'down' : 'up');
-const marketIndicatorStatusLabel = () => {
-  if (marketIndicatorLoadState.value === 'live') return 'API 반영';
-  if (marketIndicatorLoadState.value === 'loading') return '불러오는 중';
-  if (marketIndicatorLoadState.value === 'empty') return '수집 전/insufficient';
-  return 'market summary API 오류';
+const coverageStatusLabel = (status: string) => {
+  if (status === 'source_skewed') return '출처 편중';
+  if (status === 'partial') return '부분 반영';
+  if (status === 'low_sample') return '표본 부족';
+  if (status === 'ok') return '수집 확인';
+  if (status === 'empty' || status === 'insufficient' || status === 'mock') return '수집 전';
+  if (status === 'stale') return '갱신 지연';
+  return status || '확인 필요';
 };
-const dashboardHeadline = computed(() => {
-  if (reactionRankingLoadState.value === 'loading') return '지역 반응과 시장 지표를 불러오는 중입니다';
-  if (reactionRankingLoadState.value === 'error') return '지역 반응 API 확인이 필요합니다';
-  if (!topRiser.value) return '수집 전 상태입니다. 지역 반응 배치가 생성되면 이곳에 최신 관심 지역이 표시됩니다';
-  return `${topRiser.value.name}에 최근 24시간 반응이 가장 많이 몰렸습니다`;
-});
-const regionalMomentumStatusLabel = computed(() => {
-  if (activeReturnMode.value === 'year') return '연간 수집 전';
-  if (mapLayerLoadState.value === 'live' && regionalMomentumRows.value.length) return 'map layer API 반영';
-  if (mapLayerLoadState.value === 'loading') return 'map layer 확인 중';
-  if (mapLayerLoadState.value === 'error') return 'map layer API 오류';
-  return '수집 전/insufficient';
-});
-const regionalMomentumEmptyText = computed(() => {
-  if (activeReturnMode.value === 'year') return '연간 지역 상승률 snapshot은 아직 수집 전입니다.';
-  if (mapLayerLoadState.value === 'loading') return '지역별 상승률 snapshot을 불러오는 중입니다.';
-  if (mapLayerLoadState.value === 'error') return '지도 레이어 API를 불러오지 못했습니다. map layer refresh 상태 확인이 필요합니다.';
-  return '표시할 지역별 상승률 snapshot이 아직 없습니다. 수집 전/insufficient 상태입니다.';
-});
-const regionalMomentumNote = computed(() => {
-  if (!regionalMomentumRows.value.length) return regionalMomentumEmptyText.value;
-  const staleCount = regionalMomentumRows.value.filter((row) => row.stale).length;
-  const source = dashboardMapLayer.value?.sourceLabel ?? 'map_layer_snapshots';
-  const asOf = dashboardMapLayer.value?.asOf ?? regionalMomentumRows.value[0]?.asOf ?? '기준 시각 확인 필요';
-  return `${activeReturnModeLabel.value} · ${source} · 기준 ${asOf} · stale ${staleCount}곳 · 부동산 자문 아님`;
-});
-const regionalMomentumStatusClass = (row: DashboardRegionalMomentumRow) =>
-  row.stale || row.dataStatus === 'mock' ? 'warning' : '';
-const regionalMomentumStatusText = (row: DashboardRegionalMomentumRow) => {
-  if (row.stale) return 'stale';
-  if (row.dataStatus === 'ok') return '공공데이터 반영';
-  if (row.dataStatus === 'mock') return 'mock';
-  if (row.dataStatus === 'empty') return '수집 전';
-  return row.dataStatus;
-};
-const dashboardContentStatusLabel = computed(() => {
-  if (dashboardContentLoadState.value === 'live') return 'content API 반영';
-  if (dashboardContentLoadState.value === 'loading') return 'content API 확인 중';
-  if (dashboardContentLoadState.value === 'empty') return '수집 전/insufficient';
-  return 'content API 오류';
-});
-const reactionStatusLabel = computed(() => {
-  if (reactionRankingLoadState.value === 'live') return 'reaction API 반영';
-  if (reactionRankingLoadState.value === 'loading') return 'reaction API 확인 중';
-  if (reactionRankingLoadState.value === 'empty') return '수집 전/insufficient';
-  return 'reaction API 오류';
-});
 const dashboardReactionEmptyText = computed(() => {
   if (reactionRankingLoadState.value === 'loading') return '지역 반응 TOP10을 불러오는 중입니다.';
-  if (reactionRankingLoadState.value === 'error') return '지역 반응 API를 불러오지 못했습니다. 크롤링/스냅샷 배치 상태 확인이 필요합니다.';
+  if (reactionRankingLoadState.value === 'error') return '지역 반응 데이터를 불러오지 못했습니다. 크롤링/반응 집계 배치 상태 확인이 필요합니다.';
   return '수집된 지역 반응 TOP10이 아직 없습니다. 수집 전/insufficient 상태입니다.';
 });
 const contentItemsByCategory = (category: NewsroomCategory) =>
@@ -401,163 +370,71 @@ const dashboardVideoItems = contentItemsByCategory('videos');
 const dashboardLinkItems = contentItemsByCategory('links');
 const dashboardContentEmptyText = computed(() => {
   if (dashboardContentLoadState.value === 'loading') return '콘텐츠를 불러오는 중입니다.';
-  if (dashboardContentLoadState.value === 'error') return '콘텐츠 API를 불러오지 못했습니다. provider/asOf 확인이 필요합니다.';
+  if (dashboardContentLoadState.value === 'error') return '콘텐츠를 불러오지 못했습니다. 출처와 기준 시각 확인이 필요합니다.';
   return '수집된 항목이 아직 없습니다. 수집 전/insufficient 상태입니다.';
 });
+const dashboardFeedEmptyText = (feedLabel: string) => {
+  if (dashboardContentLoadState.value === 'loading') return '콘텐츠를 불러오는 중입니다.';
+  if (dashboardContentLoadState.value === 'error') return '콘텐츠를 불러오지 못했습니다. 출처와 기준 시각 확인이 필요합니다.';
+  if (feedLabel === '영상') {
+    return '이번 갱신에서는 검증된 부동산 분석 채널 영상 후보가 없습니다. 매물 홍보형 영상은 제외했습니다.';
+  }
+  if (dashboardContentItems.value.length) {
+    return `이번 갱신에서는 ${feedLabel} 유형이 아직 분리되지 않았습니다. 뉴스룸의 최근 이슈 후보에서 확인할 수 있습니다.`;
+  }
+  return dashboardContentEmptyText.value;
+};
 const hideBrokenIcon = (event: Event) => {
   const image = event.target as HTMLImageElement;
   image.hidden = true;
   image.closest('.site-icon')?.classList.remove('real-icon');
 };
-const gaugeCenter = { x: 92, y: 92 };
-const gaugeRadius = 70;
-const gaugePoint = (value: number, radius = gaugeRadius) => {
-  const angle = (180 - value * 1.8) * (Math.PI / 180);
-
-  return {
-    x: Math.round((gaugeCenter.x + Math.cos(angle) * radius) * 10) / 10,
-    y: Math.round((gaugeCenter.y - Math.sin(angle) * radius) * 10) / 10
-  };
-};
-const gaugeArcPath = (start: number, end: number) => {
-  const startPoint = gaugePoint(start);
-  const endPoint = gaugePoint(end);
-  const largeArcFlag = end - start > 50 ? 1 : 0;
-
-  return `M ${startPoint.x} ${startPoint.y} A ${gaugeRadius} ${gaugeRadius} 0 ${largeArcFlag} 1 ${endPoint.x} ${endPoint.y}`;
-};
-const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56));
 </script>
 
 <template>
   <section class="dashboard-page">
     <section class="standalone-search" aria-label="대시보드 검색과 필터">
-      <p class="eyebrow">최근 24시간 · {{ reactionStatusLabel }}</p>
+      <div class="dashboard-brand-hero" aria-label="너나사 YouBuyFirst 당신을 위한 부동산 인사이트">
+        <h2><em>너나사</em> YouBuyFirst</h2>
+        <p class="dashboard-brand-tagline">당신을 위한 부동산 인사이트, <strong>너나사</strong></p>
+      </div>
       <div class="search-line">
         <div class="search-primary-row">
-          <aside class="speculation-heat-gauge-card" aria-label="부동산 투기 과열 지표">
-            <div class="speculation-heat-copy">
-              <span>{{ speculationHeatIndex.label }}</span>
-              <strong>{{ speculationHeatIndex.value }}<small>{{ speculationHeatIndex.unit }}</small></strong>
-              <em>{{ speculationHeatIndex.status }} · {{ speculationHeatIndex.changeLabel }} {{ formatPct(speculationHeatIndex.changePct) }}</em>
-              <div class="speculation-heat-keywords" aria-label="대표 반응 키워드">
-                <span v-for="keyword in speculationHeatIndex.keywords.slice(0, 2)" :key="keyword">{{ keyword }}</span>
-              </div>
-            </div>
-            <div class="speculation-gauge-wrap">
-              <svg class="speculation-gauge" viewBox="0 0 184 104" role="img" :aria-label="`${speculationHeatIndex.label} ${speculationHeatIndex.value}${speculationHeatIndex.unit}`">
-                <path class="gauge-base" :d="gaugeArcPath(0, 100)" />
-                <path
-                  v-for="segment in speculationHeatIndex.segments"
-                  :key="segment.label"
-                  class="gauge-segment"
-                  :d="gaugeArcPath(segment.start, segment.end)"
-                  :stroke="segment.color"
-                />
-                <line class="gauge-needle" :x1="gaugeCenter.x" :y1="gaugeCenter.y" :x2="needleEnd.x" :y2="needleEnd.y" />
-                <circle class="gauge-hub" :cx="gaugeCenter.x" :cy="gaugeCenter.y" r="4.6" />
-              </svg>
-              <div class="speculation-gauge-scale" aria-hidden="true">
-                <span>냉각</span>
-                <span>주의</span>
-                <span>과열</span>
-              </div>
-            </div>
-          </aside>
           <button class="dashboard-search-control" type="button" disabled>
             <span class="search-icon" aria-hidden="true"></span>
             <strong>/</strong>
             <span>지역이나 단지 검색</span>
           </button>
         </div>
-        <p>{{ dashboardHeadline }}</p>
-      </div>
-      <div class="market-filter-row" aria-label="지금 뜨는 반응 필터">
-        <span class="market-title">지금 뜨는 반응</span>
-        <button
-          v-for="filter in marketFilters"
-          :key="filter"
-          type="button"
-          :class="{ active: filter === '전체' }"
-        >
-          {{ filter }}
-        </button>
-        <span class="status-pill warning">실시간 아님</span>
-      </div>
-      <div class="dashboard-meta-strip" aria-label="대시보드 집계 메타">
-        <span>언급 합계 <strong>{{ totalMentions }}</strong></span>
-        <span>지연 지표 <strong>{{ marketFactRows.filter((row) => row.stale).length }}건</strong></span>
-        <span>관찰 <strong>{{ dashboardReactionItems.length }}곳</strong></span>
-        <span>부동산 자문 아님</span>
       </div>
     </section>
 
     <section class="dashboard-main-layout">
       <div class="dashboard-content-flow">
         <section class="insight-grid">
-          <article class="return-chart" aria-labelledby="return-title">
-            <div class="panel-header">
+          <article class="daily-briefing-card" aria-labelledby="daily-briefing-title">
+            <div class="daily-briefing-header">
               <div>
-                <p class="label">regional momentum</p>
-                <h3 id="return-title">핵심 지역별 상승률</h3>
+                <p class="label">AI briefing</p>
+                <h3 id="daily-briefing-title">
+                  <span class="briefing-title-accent">Today</span> 3줄 브리핑
+                </h3>
               </div>
-              <div class="section-actions">
-                <span :class="['status-pill', mapLayerLoadState === 'live' && regionalMomentumRows.length ? '' : 'warning']">
-                  {{ regionalMomentumStatusLabel }}
-                </span>
-                <RouterLink class="detail-link" to="/realestate/map">지도에서 보기 →</RouterLink>
-              </div>
+              <RouterLink class="daily-briefing-cta" to="/newsroom">자세한 분석 보러가기 →</RouterLink>
             </div>
 
-            <div class="community-graph regional-graph" aria-label="핵심 지역별 상승률 그래프">
-              <div class="community-graph-topline">
-                <div class="return-range-tabs in-graph-tabs" aria-label="지역 상승률 기간">
-                  <button
-                    v-for="mode in returnTimeModes"
-                    :key="mode.id"
-                    type="button"
-                    :class="{ active: mode.id === activeReturnMode }"
-                    @click="activeReturnMode = mode.id"
-                  >
-                    {{ mode.label }}
-                  </button>
-                </div>
-                <div class="graph-legend in-graph" aria-label="지역별 색상 범례">
-                  <div class="legend-item">
-                    <span class="legend-swatch return-up"></span>
-                    <strong>상승</strong>
-                  </div>
-                  <div class="legend-item">
-                    <span class="legend-swatch return-down"></span>
-                    <strong>하락</strong>
-                  </div>
-                </div>
-              </div>
-              <div v-if="!regionalMomentumRows.length" class="newsroom-empty-state dashboard-chart-empty">
-                {{ regionalMomentumEmptyText }}
-              </div>
-              <div v-else class="regional-momentum-list">
-                <article
-                  v-for="row in regionalMomentumRows"
-                  :key="`${row.targetId}-${activeReturnMode}`"
-                  :class="['regional-momentum-row', row.tone]"
+            <div class="daily-briefing-body" aria-label="오늘의 핵심 부동산 상황 요약">
+              <ol class="daily-briefing-list">
+                <li
+                  v-for="item in dailyBriefingItems"
+                  :key="item.id"
+                  :class="['daily-briefing-item', item.tone]"
                 >
-                  <div class="regional-momentum-copy">
-                    <strong>{{ row.name }}</strong>
-                    <span>{{ row.provider }} · 표본 {{ row.sampleCount.toLocaleString('ko-KR') }}건 · 신뢰 {{ Math.round(row.confidence) }}%</span>
-                  </div>
-                  <div class="regional-momentum-bar-track" aria-hidden="true">
-                    <i :style="`--bar-pct: ${row.barPct}%`"></i>
-                  </div>
-                  <strong class="regional-momentum-value">{{ formatPct(row.changePct) }}</strong>
-                  <span :class="['status-pill', regionalMomentumStatusClass(row)]">
-                    {{ regionalMomentumStatusText(row) }}
-                  </span>
-                </article>
-              </div>
+                  <strong>{{ item.text }}</strong>
+                </li>
+              </ol>
             </div>
 
-            <p class="chart-note">{{ regionalMomentumNote }}</p>
           </article>
 
           <section class="mood-board region-bubble-section reaction-panel" aria-labelledby="mood-title">
@@ -579,38 +456,6 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
                 </div>
                 <RouterLink class="detail-link" to="/realestate/targets/region-seoul-mapo">자세히 보기 →</RouterLink>
               </div>
-            </div>
-
-            <div class="reaction-legend" aria-label="반응 아이콘 설명">
-              <span>
-                <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
-                  <circle class="face-bg positive-bg" cx="10" cy="10" r="9.5"/>
-                  <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
-                  <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
-                  <path d="M 6.5 12 Q 10 15.5 13.5 12" class="face-mouth"/>
-                </svg>
-                기대 반응
-              </span>
-              <span>
-                <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
-                  <circle class="face-bg negative-bg" cx="10" cy="10" r="9.5"/>
-                  <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
-                  <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
-                  <path d="M 5.5 6.8 Q 7 5.5 8.5 6.8" class="face-brow"/>
-                  <path d="M 11.5 6.8 Q 13 5.5 14.5 6.8" class="face-brow"/>
-                  <path d="M 6.5 14 Q 10 11 13.5 14" class="face-mouth"/>
-                </svg>
-                우려 반응
-              </span>
-              <span>
-                <svg class="reaction-icon" viewBox="0 0 20 20" aria-hidden="true">
-                  <circle class="face-bg neutral-bg" cx="10" cy="10" r="9.5"/>
-                  <circle cx="7.2" cy="8.2" r="1.3" class="face-feature"/>
-                  <circle cx="12.8" cy="8.2" r="1.3" class="face-feature"/>
-                  <line x1="7" y1="13" x2="13" y2="13" class="face-mouth face-neutral-mouth"/>
-                </svg>
-                중립·기타
-              </span>
             </div>
 
             <div class="reaction-carousel" aria-label="지역별 반응 슬라이드">
@@ -766,69 +611,19 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
           </section>
         </section>
 
-        <section class="indicator-section" aria-labelledby="indicator-title">
-          <div class="section-title-row">
-            <div>
-              <p class="label">real estate pulse</p>
-              <h3 id="indicator-title">주요 부동산 지표</h3>
-            </div>
-            <div class="section-actions">
-              <div class="period-tabs indicator-period-tabs" aria-label="주요 부동산 지표 기간">
-                <button
-                  v-for="mode in returnTimeModes"
-                  :key="`indicator-${mode.id}`"
-                  type="button"
-                  :class="{ active: mode.id === 'month' }"
-                >
-                  {{ mode.label }}
-                </button>
-              </div>
-              <span :class="['status-pill', marketIndicatorLoadState === 'live' ? '' : 'warning']">
-                {{ marketIndicatorStatusLabel() }}
-              </span>
-              <RouterLink class="detail-link" to="/indicators">자세히 보기 →</RouterLink>
-            </div>
-          </div>
-
-          <div class="indicator-grid">
-            <p v-if="!marketIndicators.length" class="newsroom-empty-state dashboard-indicator-empty">
-              {{
-                marketIndicatorLoadState === 'loading'
-                  ? '주요 지표를 불러오는 중입니다.'
-                  : marketIndicatorLoadState === 'error'
-                    ? '시장 요약 API를 불러오지 못했습니다. provider/asOf 확인이 필요합니다.'
-                    : '수집된 주요 지표가 아직 없습니다. 수집 전/insufficient 상태입니다.'
-              }}
-            </p>
-            <article
-              v-for="indicator in marketIndicators"
-              :key="indicator.label"
-              :class="['indicator-card', trendClass(indicator.trend)]"
-            >
-              <div class="indicator-copy">
-                <span>{{ indicator.label }}</span>
-                <strong>{{ indicator.value }}</strong>
-                <em>{{ formatPct(indicator.changePct) }}</em>
-              </div>
-              <small>{{ indicator.updatedLabel }}</small>
-            </article>
-          </div>
-        </section>
-
         <section class="news-macro-grid">
           <article class="panel news-feed content-feed-card live-feed-card" aria-labelledby="news-title">
             <div class="panel-header">
-              <div>
-                <p class="label">live feed</p>
-                <h3 id="news-title">실시간 뉴스</h3>
+              <div class="feed-title-wrap">
+                <span class="feed-title-dot" aria-hidden="true"></span>
+                <h3 id="news-title" class="feed-panel-title">실시간 뉴스</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'news' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
-              <p v-if="!dashboardNewsItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
+              <p v-if="!dashboardNewsItems.length" class="newsroom-empty-state">{{ dashboardFeedEmptyText('뉴스') }}</p>
               <a
                 v-for="news in dashboardNewsItems"
                 :key="news.id"
@@ -854,17 +649,16 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
 
           <article class="panel news-feed analyst-feed content-feed-card report-feed-card" aria-labelledby="analyst-title">
             <div class="panel-header">
-              <div>
-                <p class="label">research feed</p>
-                <h3 id="analyst-title">정책·통계 리포트</h3>
+              <div class="feed-title-wrap">
+                <span class="feed-title-dot" aria-hidden="true"></span>
+                <h3 id="analyst-title" class="feed-panel-title">정책·통계 리포트</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'reports' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
-              <p v-if="!dashboardReportItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
+              <p v-if="!dashboardReportItems.length" class="newsroom-empty-state">{{ dashboardFeedEmptyText('리포트') }}</p>
               <a
                 v-for="report in dashboardReportItems"
                 :key="report.id"
@@ -890,26 +684,24 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
 
           <article class="panel external-content-panel content-feed-card video-feed-card" aria-labelledby="external-video-title">
             <div class="panel-header">
-              <div>
-                <p class="label">outside links</p>
-                <h3 id="external-video-title">부동산 영상 새 글</h3>
+              <div class="feed-title-wrap">
+                <span class="feed-title-dot" aria-hidden="true"></span>
+                <h3 id="external-video-title" class="feed-panel-title">부동산 영상</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'videos' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
-              <p v-if="!dashboardVideoItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
+              <p v-if="!dashboardVideoItems.length" class="newsroom-empty-state">{{ dashboardFeedEmptyText('영상') }}</p>
               <a
-                v-for="(video, index) in dashboardVideoItems"
+                v-for="video in dashboardVideoItems"
                 :key="video.id"
-                class="feed-row ranked-feed-row"
+                class="feed-row"
                 :href="video.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                <span class="feed-rank">{{ video.rankLabel ?? `${index + 1}위` }}</span>
                 <span
                   :class="['site-icon', 'real-icon', 'source-badge', video.iconClass]"
                   :aria-label="`${video.source} ${video.category}`"
@@ -927,26 +719,24 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
 
           <article class="panel external-content-panel content-feed-card link-feed-card" aria-labelledby="external-link-title">
             <div class="panel-header">
-              <div>
-                <p class="label">columns · community</p>
-                <h3 id="external-link-title">블로그와 커뮤니티 링크</h3>
+              <div class="feed-title-wrap">
+                <span class="feed-title-dot" aria-hidden="true"></span>
+                <h3 id="external-link-title" class="feed-panel-title">블로그·커뮤니티</h3>
               </div>
               <div class="section-actions">
-                <span class="status-pill subtle">{{ dashboardContentStatusLabel }}</span>
                 <RouterLink class="detail-link" :to="{ path: '/newsroom', query: { feed: 'links' } }">자세히 보기 →</RouterLink>
               </div>
             </div>
             <div class="feed-list">
-              <p v-if="!dashboardLinkItems.length" class="newsroom-empty-state">{{ dashboardContentEmptyText }}</p>
+              <p v-if="!dashboardLinkItems.length" class="newsroom-empty-state">{{ dashboardFeedEmptyText('블로그·커뮤니티') }}</p>
               <a
-                v-for="(link, index) in dashboardLinkItems"
+                v-for="link in dashboardLinkItems"
                 :key="link.id"
-                class="feed-row ranked-feed-row"
+                class="feed-row"
                 :href="link.url"
                 target="_blank"
                 rel="noreferrer noopener"
               >
-                <span class="feed-rank">{{ link.rankLabel ?? `${index + 1}위` }}</span>
                 <span
                   :class="['site-icon', 'real-icon', 'source-badge', link.iconClass]"
                   :aria-label="`${link.source} ${link.category}`"
@@ -963,60 +753,10 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
           </article>
         </section>
 
-        <section class="page-grid">
-          <article class="panel" aria-labelledby="market-facts-title">
-            <div class="panel-header">
-              <div>
-                <p class="label">market facts</p>
-                <h3 id="market-facts-title">실거래·지표 상태</h3>
-              </div>
-              <div class="section-actions">
-                <span :class="['status-pill', marketFactLoadState === 'live' ? '' : 'warning']">
-                  {{ marketFactLoadState === 'live' ? 'API 반영' : '공공데이터 대기' }}
-                </span>
-                <RouterLink class="detail-link" to="/indicators">자세히 보기 →</RouterLink>
-              </div>
-            </div>
-            <div class="compact-list">
-              <div v-for="row in marketFactRows" :key="row.id" class="compact-row market-fact-row">
-                <strong>{{ row.name }}</strong>
-                <span>{{ row.value }}</span>
-                <em>{{ row.meta }}</em>
-                <span :class="['status-pill', row.stale ? 'warning' : '']">
-                  {{ row.statusLabel }}
-                </span>
-              </div>
-            </div>
-          </article>
-
-          <article class="panel planning-boundary compact-boundary" aria-labelledby="confirm-title">
-            <div>
-              <p class="label">planning</p>
-              <h3 id="confirm-title">확인 필요</h3>
-            </div>
-            <ul class="check-list compact-check-list">
-              <li v-for="item in confirmationNeeded" :key="item">{{ item }}</li>
-            </ul>
-          </article>
-        </section>
       </div>
 
       <aside class="side-drawer" aria-label="오른쪽 빠른 패널">
-        <div class="drawer-tabs" aria-label="라이브 패널 탭" role="tablist">
-          <button
-            v-for="tab in drawerTabs"
-            :key="tab.id"
-            :class="['drawer-tab', { active: activeDrawerTab === tab.id }]"
-            type="button"
-            role="tab"
-            :aria-selected="activeDrawerTab === tab.id"
-            @click="activeDrawerTab = tab.id"
-          >
-            {{ tab.label }}
-          </button>
-        </div>
-
-        <section v-show="activeDrawerTab === 'reaction'" class="drawer-tab-screen drawer-reaction-screen">
+        <section class="drawer-tab-screen drawer-reaction-screen">
           <div v-if="topRiser" class="drawer-card hot-region-panel" aria-labelledby="hot-region-title">
             <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
             <h3 id="hot-region-title">{{ topRiser.name }}</h3>
@@ -1050,75 +790,6 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
             <h3 id="hot-region-title-empty">수집 전</h3>
             <strong>insufficient</strong>
             <span>{{ dashboardReactionEmptyText }}</span>
-          </div>
-          <div class="drawer-card drawer-rising-stars" aria-labelledby="drawer-rising-title">
-            <div class="drawer-section-title">
-              <p class="label">early signal</p>
-              <h3 id="drawer-rising-title">라이징 스타</h3>
-              <RouterLink class="detail-link" to="/realestate/targets/region-seoul-mapo">자세히 보기 →</RouterLink>
-            </div>
-            <div class="drawer-rising-list">
-              <p v-if="!risingStars.length" class="newsroom-empty-state">
-                {{ dashboardReactionEmptyText }}
-              </p>
-              <article v-for="item in risingStars" :key="item.targetId">
-                <strong>{{ item.name }}</strong>
-                <span>{{ item.targetId }} · 언급 {{ item.previousMentionCount }} → {{ item.mentionCount }}</span>
-                <em>{{ formatPct(item.mentionDeltaPct) }}</em>
-              </article>
-            </div>
-          </div>
-          <div class="drawer-feed">
-            <p v-if="!marketIndicators.length" class="newsroom-empty-state">
-              {{ marketIndicatorStatusLabel() }}
-            </p>
-            <div v-for="indicator in marketIndicators.slice(0, 3)" :key="indicator.label">
-              <span>{{ indicator.label }}</span>
-              <strong>{{ indicator.value }}</strong>
-              <em :class="trendClass(indicator.trend)">{{ formatPct(indicator.changePct) }}</em>
-            </div>
-          </div>
-        </section>
-
-        <section
-          v-show="activeDrawerTab === 'metrics'"
-          class="drawer-tab-panel drawer-metric-panel"
-          aria-label="지표 탭 미리보기"
-        >
-          <div class="drawer-section-title compact">
-            <p class="label">indices</p>
-            <h3>지표</h3>
-          </div>
-          <div class="drawer-mini-bars">
-            <p v-if="!marketIndicators.length" class="newsroom-empty-state">
-              {{ marketIndicatorStatusLabel() }}
-            </p>
-            <div v-for="indicator in marketIndicators.slice(0, 4)" :key="`${indicator.label}-bar`">
-              <span>{{ indicator.label }}</span>
-              <i :class="trendClass(indicator.trend)"></i>
-              <strong>{{ formatPct(indicator.changePct) }}</strong>
-            </div>
-          </div>
-        </section>
-
-        <section
-          v-show="activeDrawerTab === 'watch'"
-          class="drawer-tab-panel drawer-watch-panel"
-          aria-label="관심 탭 미리보기"
-        >
-          <div class="drawer-section-title compact">
-            <p class="label">watch</p>
-            <h3>관심</h3>
-          </div>
-          <div class="drawer-watch-list">
-            <p v-if="!dashboardReactionItems.length" class="newsroom-empty-state">
-              {{ dashboardReactionEmptyText }}
-            </p>
-            <article v-for="item in dashboardReactionItems.slice(0, 4)" :key="`${item.targetId}-watch`">
-              <strong>{{ item.name }}</strong>
-              <span>{{ item.targetId }}</span>
-              <em>{{ formatPct(item.mentionDeltaPct) }}</em>
-            </article>
           </div>
         </section>
       </aside>

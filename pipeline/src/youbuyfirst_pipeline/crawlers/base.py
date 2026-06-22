@@ -120,6 +120,11 @@ def parse_datetime(value: str | None) -> datetime:
             return datetime.strptime(normalized, fmt).replace(tzinfo=kst).astimezone(timezone.utc)
         except ValueError:
             pass
+    for fmt in ("%y-%m-%d", "%y-%m-%d."):
+        try:
+            return datetime.strptime(normalized, fmt).replace(tzinfo=kst).astimezone(timezone.utc)
+        except ValueError:
+            pass
     for fmt in ("%H:%M:%S", "%H:%M"):
         try:
             parsed = datetime.strptime(normalized, fmt)

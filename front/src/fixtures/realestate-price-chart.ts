@@ -124,7 +124,7 @@ export const realEstatePriceChartFixtures: RealEstatePriceChartFixture[] = [
     priceUnit: '억원',
     volumeUnit: '건',
     flowUnit: '건',
-    chartSource: 'molit_apt_trade mock · 실시간 갱신 없음 · market fact API 연결 후보'
+    chartSource: '국토부 실거래 수집 전 · 실시간 갱신 없음 · 시장 사실 API 연결 후보'
   }),
   buildPricePoints({
     targetId: 'living-area-gyeonggi-dongtan-station',
@@ -140,6 +140,6 @@ export const realEstatePriceChartFixtures: RealEstatePriceChartFixture[] = [
     priceUnit: '억원',
     volumeUnit: '건',
     flowUnit: '건',
-    chartSource: 'molit_apt_trade mock · 실시간 갱신 없음 · market fact API 연결 후보'
+    chartSource: '국토부 실거래 수집 전 · 실시간 갱신 없음 · 시장 사실 API 연결 후보'
   })
 ];

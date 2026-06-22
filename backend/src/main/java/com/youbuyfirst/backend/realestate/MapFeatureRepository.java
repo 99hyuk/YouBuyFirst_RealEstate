@@ -42,12 +42,20 @@ public interface MapFeatureRepository extends JpaRepository<MapFeature, String> 
                 and (:parentRegionCode is null or feature.parentRegionCode = :parentRegionCode)
                 and snapshot.asOf = coalesce(
                     (
-                        select max(preferred.asOf)
-                        from MapLayerSnapshot preferred
-                        where preferred.targetId = feature.targetId
-                            and preferred.layerType = feature.layerType
-                            and preferred.periodKey = snapshot.periodKey
-                            and preferred.dataStatus <> 'mock'
+                        select max(okSnapshot.asOf)
+                        from MapLayerSnapshot okSnapshot
+                        where okSnapshot.targetId = feature.targetId
+                            and okSnapshot.layerType = feature.layerType
+                            and okSnapshot.periodKey = snapshot.periodKey
+                            and okSnapshot.dataStatus = 'ok'
+                    ),
+                    (
+                        select max(partialSnapshot.asOf)
+                        from MapLayerSnapshot partialSnapshot
+                        where partialSnapshot.targetId = feature.targetId
+                            and partialSnapshot.layerType = feature.layerType
+                            and partialSnapshot.periodKey = snapshot.periodKey
+                            and partialSnapshot.dataStatus <> 'mock'
                     ),
                     (
                         select max(latest.asOf)

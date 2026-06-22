@@ -75,6 +75,53 @@ class _FakeSpringClient:
         _FakeSpringClient.published_alias_candidates = candidates
 
 
+class _FakeBackendPostSpringClient:
+    def __init__(self) -> None:
+        self.post_requests = []
+
+    def list_real_estate_aliases(self, **_kwargs):
+        return [
+            {
+                "targetType": "complex",
+                "targetId": "complex-mrp",
+                "alias": "Mapo Raemian Prugio",
+                "aliasType": "official",
+                "reviewState": "approved",
+                "confidence": 0.96,
+                "ambiguous": False,
+                "source": "backend:test",
+            }
+        ]
+
+    def list_community_posts_for_reaction_refresh(self, *, source, published_from, published_to, limit):
+        self.post_requests.append(
+            {
+                "source": source,
+                "publishedFrom": published_from,
+                "publishedTo": published_to,
+                "limit": limit,
+            }
+        )
+        return [
+            {
+                "source": "PPOMPPU:house",
+                "externalId": "post-mrp-1",
+                "publishedAt": "2026-06-16T01:00:00Z",
+                "title": "Mapo Raemian Prugio rent anxiety",
+                "contentSnippet": "MRP is mentioned again",
+                "url": "https://example.test/post-mrp-1",
+            },
+            {
+                "source": "PPOMPPU:house",
+                "externalId": "post-unknown-1",
+                "publishedAt": "2026-06-16T01:05:00Z",
+                "title": "Unknown local issue",
+                "contentSnippet": "missing alias",
+                "url": "https://example.test/post-unknown-1",
+            },
+        ]
+
+
 def test_realestate_target_matches_command_can_read_approved_aliases_from_backend(monkeypatch, tmp_path, capsys):
     posts_path = tmp_path / "posts.jsonl"
     posts_path.write_text(
@@ -99,6 +146,32 @@ def test_realestate_target_matches_command_can_read_approved_aliases_from_backen
     payload = json.loads(capsys.readouterr().out)
     assert payload["items"][0]["matched"] is True
     assert payload["items"][0]["mentions"][0]["targetId"] == "region-daejeon"
+
+
+def test_realestate_target_matches_command_can_read_backend_posts(monkeypatch, capsys):
+    fake_client = _FakeBackendPostSpringClient()
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-target-matches",
+            "--realestate-use-backend-aliases",
+            "--realestate-use-backend-community-posts",
+            "--realestate-community-posts-limit",
+            "7",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert fake_client.post_requests[0]["limit"] == 7
+    assert [item["externalId"] for item in payload["items"]] == ["post-mrp-1", "post-unknown-1"]
+    assert payload["items"][0]["matched"] is True
+    assert payload["items"][0]["mentions"][0]["targetId"] == "complex-mrp"
+    assert payload["items"][1]["matched"] is False
 
 
 def test_realestate_alias_candidates_command_prints_candidate_aliases(monkeypatch, tmp_path, capsys):
@@ -210,3 +283,29 @@ def test_realestate_alias_coverage_command_prints_source_level_report(monkeypatc
     ]
     assert payload["sources"][0]["candidateAliases"][0]["alias"] == "MRP"
     assert payload["sources"][1]["unmatchedExamples"][0]["externalId"] == "post-2"
+
+
+def test_realestate_alias_coverage_command_can_read_backend_posts(monkeypatch, capsys):
+    fake_client = _FakeBackendPostSpringClient()
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-alias-coverage",
+            "--realestate-use-backend-aliases",
+            "--realestate-use-backend-community-posts",
+            "--realestate-community-posts-limit",
+            "7",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert fake_client.post_requests[0]["limit"] == 7
+    assert payload["totals"]["postCount"] == 2
+    assert payload["totals"]["matchedPostCount"] == 1
+    assert payload["totals"]["targetCount"] == 1
+    assert payload["sources"][0]["topTargets"][0]["targetId"] == "complex-mrp"

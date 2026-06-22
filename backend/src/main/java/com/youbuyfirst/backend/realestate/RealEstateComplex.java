@@ -35,6 +35,24 @@ public class RealEstateComplex {
     @Column(name = "jibun_address", length = 300)
     private String jibunAddress;
 
+    @Column(name = "normalized_address", length = 300)
+    private String normalizedAddress;
+
+    @Column(name = "built_year")
+    private Integer builtYear;
+
+    @Column(name = "household_count")
+    private Integer householdCount;
+
+    @Column(name = "source", nullable = false, length = 120)
+    private String source;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
     @Column(name = "latitude", precision = 10, scale = 7)
     private BigDecimal latitude;
 
@@ -74,6 +92,115 @@ public class RealEstateComplex {
     protected RealEstateComplex() {
     }
 
+    public RealEstateComplex(
+            String targetId,
+            String regionTargetId,
+            String legalDongCode,
+            String roadAddress,
+            String jibunAddress,
+            String normalizedAddress,
+            Integer builtYear,
+            Integer householdCount,
+            String source,
+            Instant now
+    ) {
+        this.targetId = targetId;
+        this.createdAt = now;
+        update(
+                regionTargetId,
+                legalDongCode,
+                roadAddress,
+                jibunAddress,
+                normalizedAddress,
+                builtYear,
+                householdCount,
+                source,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                "unknown",
+                true,
+                now
+        );
+    }
+
+    public void update(
+            String regionTargetId,
+            String legalDongCode,
+            String roadAddress,
+            String jibunAddress,
+            String normalizedAddress,
+            Integer builtYear,
+            Integer householdCount,
+            String source,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            String coordinateProvider,
+            Instant coordinateAsOf,
+            String coordinateStatus,
+            String markerTone,
+            String priceSummary,
+            String changeLabel,
+            String reactionSummary,
+            String markerNote,
+            String markerDataStatus,
+            Boolean markerStale,
+            Instant now
+    ) {
+        this.regionTargetId = regionTargetId;
+        this.legalDongCode = legalDongCode;
+        this.roadAddress = roadAddress;
+        this.jibunAddress = jibunAddress;
+        this.normalizedAddress = normalizedAddress;
+        this.builtYear = builtYear;
+        this.householdCount = householdCount;
+        this.source = source;
+        if (latitude != null && longitude != null) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
+        if (coordinateProvider != null && !coordinateProvider.isBlank()) {
+            this.coordinateProvider = coordinateProvider;
+        }
+        if (coordinateAsOf != null) {
+            this.coordinateAsOf = coordinateAsOf;
+        }
+        if (coordinateStatus != null && !coordinateStatus.isBlank()) {
+            this.coordinateStatus = coordinateStatus;
+        }
+        if (markerTone != null && !markerTone.isBlank()) {
+            this.markerTone = markerTone;
+        }
+        if (priceSummary != null && !priceSummary.isBlank()) {
+            this.priceSummary = priceSummary;
+        }
+        if (changeLabel != null && !changeLabel.isBlank()) {
+            this.changeLabel = changeLabel;
+        }
+        if (reactionSummary != null && !reactionSummary.isBlank()) {
+            this.reactionSummary = reactionSummary;
+        }
+        if (markerNote != null && !markerNote.isBlank()) {
+            this.markerNote = markerNote;
+        }
+        this.markerDataStatus = markerDataStatus;
+        this.markerStale = markerStale == null || markerStale;
+        this.updatedAt = now;
+        if (this.coordinateStatus == null) {
+            this.coordinateStatus = "unknown";
+        }
+        if (this.markerTone == null) {
+            this.markerTone = "flat";
+        }
+    }
+
     public String getTargetId() {
         return targetId;
     }
@@ -96,6 +223,22 @@ public class RealEstateComplex {
 
     public String getJibunAddress() {
         return jibunAddress;
+    }
+
+    public String getNormalizedAddress() {
+        return normalizedAddress;
+    }
+
+    public Integer getBuiltYear() {
+        return builtYear;
+    }
+
+    public Integer getHouseholdCount() {
+        return householdCount;
+    }
+
+    public String getSource() {
+        return source;
     }
 
     public BigDecimal getLatitude() {

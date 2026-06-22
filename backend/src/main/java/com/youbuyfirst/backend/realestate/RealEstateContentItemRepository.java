@@ -16,7 +16,14 @@ public interface RealEstateContentItemRepository extends JpaRepository<RealEstat
             select item
             from RealEstateContentItem item
             where (:contentType is null or item.contentType = :contentType)
-            order by item.publishedAt desc nulls last, item.ingestedAt desc, item.id asc
+            order by case
+                when item.dataStatus in ('curated', 'ok') then 0
+                when item.dataStatus = 'candidate' then 2
+                else 1
+            end,
+            item.publishedAt desc nulls last,
+            item.ingestedAt desc,
+            item.id asc
             """)
     List<RealEstateContentItem> searchNewsroom(
             @Param("contentType") String contentType,

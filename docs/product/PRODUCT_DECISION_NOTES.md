@@ -13,26 +13,26 @@
 
 ## 현재 고민 목록
 
-### 2026-06-12. 제품 정체성은 수요자 반응 기반 부동산 시장 해석 서비스다
+### 2026-06-22. 제품 정체성은 공식 데이터 기반 부동산 인사이트 탐색 서비스다
 
-- 배경: 초기 참고 구조는 사람들의 반응을 시장 해석에 연결하는 방식이었습니다. 부동산 프로젝트는 이를 지역/단지 수요자 반응 중심으로 재정의합니다.
-- 현재 판단: 너나사 부동산은 `수요자 반응 기반 부동산 시장 해석 서비스`입니다. 커뮤니티/댓글/뉴스/컬럼에서 남는 관심, 기대, 불안, 의심을 지역/단지 지표로 만들고, 시장 사실, 유사 과거, 최근 이슈를 함께 비교해 근거가 남는 평가를 제공합니다.
+- 배경: 초기 참고 구조는 사람들의 반응을 시장 해석에 연결하는 방식이었습니다. 그러나 부동산은 실거래, 전세, 공급, 정책, 청약 일정처럼 드러나는 시장 사실이 더 중요한 탐색 축입니다.
+- 현재 판단: 너나사 부동산은 `공식 데이터 기반 부동산 인사이트 탐색 서비스`입니다. 실거래/전세/매물/공급/정책 흐름과 주요 일정을 지역/생활권 기준으로 묶고, 시장 사실, 유사 과거, 최근 이슈를 함께 비교해 근거가 남는 평가를 제공합니다. 공개 커뮤니티 반응은 핵심 정체성이 아니라 보조 관찰 신호로만 사용합니다.
 - 설계 기준: 벡터DB는 과거 유사 상황 검색용이며 target 식별이나 가격 계산의 정본이 아닙니다. SerpApi 같은 검색 API는 최근 이슈 후보와 근거 링크 보강용이며 검색 결과 수를 관심도 지표로 쓰지 않습니다. Langfuse는 LLM 호출 관측 도구이고 판단 정본은 DB의 evidence log와 snapshot입니다.
-- 남은 확인: `realestate-eval-v1` 입력/출력 schema, 최근 이슈 후보 저장 모델, 유사 과거 검색 단위, Langfuse trace와 DB evidence log 연결 key를 정합니다.
+- 남은 확인: 실거래 탐색 API shape, 주요 일정 저장 모델, `realestate-eval-v1` 입력/출력 schema, 유사 과거 검색 단위, Langfuse trace와 DB evidence log 연결 key를 정합니다.
 
 ### 2026-06-01. 이 repo는 부동산 서비스만 담당한다
 
 - 배경: 새 프로젝트의 active 문서와 코드가 부동산 전용 모델로 정리되어야 했습니다.
-- 현재 판단: 부동산은 후순위 버티컬이 아니라 이 repo의 주 도메인입니다. 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 근거 로그 구조는 부동산 target 기준으로만 운영합니다.
+- 현재 판단: 부동산은 후순위 버티컬이 아니라 이 repo의 주 도메인입니다. 실거래 탐색, 시장 fact, 주요 일정, 유사 과거 비교, 근거 로그 구조는 부동산 target 기준으로만 운영합니다. 공개 반응 분석은 보조 신호로만 유지합니다.
 - 설계 기준: root `AGENTS.md`, `docs/current/*`, `docs/product/*`, `docs/layers/ops/*`, `docs/domains/realestate/*`는 부동산 중심으로 정렬합니다. 부동산에 맞지 않는 구현은 active runtime에 보존하지 않고 git history로만 확인합니다.
 - 남은 확인: code package와 front route는 부동산 기준으로 옮기고, 공통 패턴만 유지합니다.
 
 ### 2026-06-01. 부동산 반응 지표를 어떻게 만들지
 
 - 배경: 반응 지표를 점수 하나로 표현하면 부동산에서 행동 지시나 투자 판단처럼 보일 수 있습니다.
-- 현재 판단: 부동산 화면의 대표값은 `지역/단지 반응 지표`, `기대/우려`, `쟁점 비율`, `표본 신뢰도`로 둡니다. 점수 하나로 행동을 유도하지 않고, 반응과 시장 사실을 함께 관찰하게 만듭니다.
-- 설계 기준: `RealEstateReactionSnapshot`은 target/window 단위 mention count, expectation score, concern score, issueMix, sourceCount, sourceSkew, confidence를 가집니다.
-- 남은 확인: expectation/concern 산식, 낮은 표본 수 숨김 기준, source skew 경고 기준, 1일/1주/1개월 window를 정합니다.
+- 현재 판단: 이 항목은 2026-06-22 방향 전환으로 보조 신호 기준이 되었습니다. 부동산 화면의 대표값은 실거래, 전세, 공급, 정책 일정, 근거 로그이며, 반응 지표는 상세 리포트나 EvidenceLog의 보조 관찰 데이터로만 둡니다.
+- 설계 기준: `RealEstateReactionSnapshot`은 필요할 때 target/window 단위 mention count, expectation score, concern score, issueMix, sourceCount, sourceSkew, confidence를 가질 수 있지만 핵심 화면 정본은 아닙니다.
+- 남은 확인: 보조 반응을 어느 상세 섹션에 노출할지, 낮은 표본 수 숨김 기준과 source skew 경고 기준을 정합니다.
 
 ### 2026-06-01. 실거래/전세/매물 데이터 freshness를 어떻게 표현할지
 
@@ -44,14 +44,14 @@
 ### 2026-06-01. 부동산 source는 30개 내외 후보 registry로 먼저 관리한다
 
 - 배경: 부동산 정보는 일반 금융 커뮤니티보다 흩어져 있고, 네이버 카페/다음 카페 같은 커뮤니티에도 지역/단지 반응이 많을 가능성이 큽니다.
-- 현재 판단: adapter를 바로 30개 만드는 것이 아니라 `crawl_sources` registry에 후보를 먼저 쌓고, 공개 접근성/robots/약관/로그인 필요 여부/신호 품질을 검토합니다.
+- 현재 판단: adapter를 바로 30개 만드는 것이 아니라 공식 데이터 provider와 근거 링크 source registry를 우선 관리합니다. 공개 원문 source는 보조 근거 후보로만 검토하고, 공개 접근성/robots/약관/로그인 필요 여부/신호 품질을 확인합니다.
 - 설계 기준: source 상태는 `disabled`, `local-research-only`, `public-demo-only`, `enabled`로 관리합니다. 로그인, CAPTCHA, 프록시, fingerprint 우회가 필요한 source는 구현하지 않습니다.
 - 남은 확인: 30개 내외 후보 목록, source별 게시판 id, 예상 글 빈도, parser 난이도, alias matcher에 필요한 별칭 seed를 정합니다.
 
-### 2026-06-01. 별칭 DB는 크롤링의 1차 필수 요소다
+### 2026-06-01. 별칭 DB는 검색과 원문 연결의 보조 입력이다
 
 - 배경: 커뮤니티에서는 공식 지역명/단지명보다 줄임말, 별칭, 오타, 생활권 표현이 자주 쓰일 수 있습니다.
-- 현재 판단: `real_estate_aliases`는 부가 기능이 아니라 수집/매칭의 기본 입력입니다. 후보 alias는 자동 생성 가능하지만 `approved` 전에는 ranking과 정식 지표에 섞지 않습니다.
+- 현재 판단: `real_estate_aliases`는 검색, 공식 단지 매칭, 뉴스/원문 연결의 보조 입력입니다. 후보 alias는 자동 생성 가능하지만 `approved` 전에는 정식 target 연결이나 사용자-facing 요약에 섞지 않습니다.
 - 설계 기준: aliasType은 `official`, `short_name`, `nickname`, `typo`, `nearby_area`, `community_slang`로 시작합니다. reviewState는 `candidate`, `approved`, `rejected`, `ambiguous`를 씁니다.
 - 남은 확인: 초기 alias seed를 공공데이터 공식명, 수동 입력, 커뮤니티 후보에서 어떻게 모을지 정합니다.
 

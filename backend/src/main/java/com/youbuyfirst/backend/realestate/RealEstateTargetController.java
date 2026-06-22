@@ -32,9 +32,19 @@ public class RealEstateTargetController {
     @GetMapping("/internal/realestate/market-data-targets")
     public RealEstateMarketDataTargetListResponse marketDataTargets(
             @RequestParam(required = false) Boolean enabled,
-            @RequestParam(defaultValue = "100") int limit
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = "0") int page
     ) {
-        return new RealEstateMarketDataTargetListResponse(service.marketDataTargets(enabled, limit));
+        return new RealEstateMarketDataTargetListResponse(service.marketDataTargets(enabled, limit, page));
+    }
+
+    @GetMapping("/internal/realestate/regions")
+    public RealEstateTargetListResponse regions(
+            @RequestParam(required = false) String regionLevel,
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = "0") int page
+    ) {
+        return new RealEstateTargetListResponse(service.regions(regionLevel, limit, page));
     }
 
     @PostMapping("/internal/realestate/targets")

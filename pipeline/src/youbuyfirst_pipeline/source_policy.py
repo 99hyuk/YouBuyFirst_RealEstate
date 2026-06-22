@@ -85,6 +85,16 @@ def default_source_policy_registry() -> SourcePolicyRegistry:
                 status=SourceStatus.LOCAL_RESEARCH_ONLY,
                 reason="MVP source allowed only for local research before public review",
             ),
+            "NAVER_CAFE": SourcePolicy(
+                source="NAVER_CAFE",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public search discovery only; direct cafe crawling requires separate review",
+            ),
+            "DAUM_CAFE": SourcePolicy(
+                source="DAUM_CAFE",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public search discovery only; direct cafe crawling requires separate review",
+            ),
             "DCINSIDE": SourcePolicy(
                 source="DCINSIDE",
                 status=SourceStatus.LOCAL_RESEARCH_ONLY,
@@ -94,6 +104,66 @@ def default_source_policy_registry() -> SourcePolicyRegistry:
                 source="PPOMPPU",
                 status=SourceStatus.LOCAL_RESEARCH_ONLY,
                 reason="MVP source allowed only for local research before public review",
+            ),
+            "CLIEN": SourcePolicy(
+                source="CLIEN",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="MVP keyword-board source allowed only for local research before public review",
+            ),
+            "COOK82": SourcePolicy(
+                source="COOK82",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="MVP keyword-board source allowed only for local research before public review",
+            ),
+            "DEALAGORA": SourcePolicy(
+                source="DEALAGORA",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="real-estate community source allowed only for local research before public review",
+            ),
+            "THEQOO": SourcePolicy(
+                source="THEQOO",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "MLBPARK": SourcePolicy(
+                source="MLBPARK",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "NATEPANN": SourcePolicy(
+                source="NATEPANN",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "TODAYHUMOR": SourcePolicy(
+                source="TODAYHUMOR",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "RULIWEB": SourcePolicy(
+                source="RULIWEB",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "BOBAEDREAM": SourcePolicy(
+                source="BOBAEDREAM",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "INSTIZ": SourcePolicy(
+                source="INSTIZ",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "SLRCLUB": SourcePolicy(
+                source="SLRCLUB",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
+            ),
+            "INVEN": SourcePolicy(
+                source="INVEN",
+                status=SourceStatus.LOCAL_RESEARCH_ONLY,
+                reason="public keyword-board source allowed only for local research before public review",
             ),
         }
     )

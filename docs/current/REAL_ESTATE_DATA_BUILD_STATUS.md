@@ -1,4 +1,4 @@
-﻿# 부동산 데이터 구축 진행 상태
+# 부동산 데이터 구축 진행 상태
 
 작성일: 2026-06-13
 
@@ -17,6 +17,9 @@
 - pipeline에 승격 API를 호출하는 `realestate-market-facts-promote-staging` 명령을 추가했습니다.
 - `realestate-market-facts-raw-push`가 단일 법정동/월뿐 아니라 법정동 목록과 기간 범위 백필을 실행할 수 있게 했고, `--realestate-promote-after-raw-push`로 저장 직후 승격까지 이어갈 수 있습니다.
 - MOLIT 실거래/전월세 API 수집은 `pageNo`/`numOfRows` 기반 페이지 반복 수집을 지원합니다. 기본은 페이지당 100건, 최대 1000페이지이며, `--realestate-public-data-page-size`, `--realestate-public-data-max-pages`로 조절합니다.
+- promoted `apt_trade`/`apt_rent` market fact를 단지 정본으로 다시 읽을 때도 `GET /api/realestate/market-facts?factType=&limit=&page=`를 page 단위로 반복 조회합니다. 한 페이지가 꽉 차면 다음 page를 읽고, 마지막 페이지가 page size보다 적으면 중단하므로 500건을 넘는 실거래/전월세 fact에서도 단지 target/alias/contains edge 생성이 첫 페이지에 묶이지 않습니다.
+- backend market-data-target, alias, target edge export도 `limit/page`를 지원합니다. 단지 정본 refresh가 backend 수집 대상 전체를 page 단위로 읽어 법정동 코드와 region target 매핑을 만들고, reaction snapshot refresh도 backend alias registry와 `contains` edge를 반복 조회합니다. 따라서 동·구급 지역 alias와 실제 아파트 단지 alias/edge가 1000건을 넘어도 크롤링 매칭과 상위 지역 roll-up이 첫 페이지 데이터에만 묶이지 않습니다.
+- 단지명이 `마포 래미안 푸르지오`처럼 지역 접두어와 브랜드/단지명이 섞인 경우, registry가 `아현동 래미안 푸르지오` 같은 법정동 scoped core alias를 함께 만듭니다. 전역 core alias는 과매칭 위험이 있어 바로 승인하지 않고, 동 문맥이 붙은 alias만 matcher 입력으로 보냅니다.
 - 공공데이터 API 결과가 0건이어도 import run을 저장하도록 했습니다. 이로써 실제로 거래가 없던 월과 수집 실패를 구분할 수 있습니다.
 - `realestate-market-facts-raw-push`가 실행 후 `taskCount`, `publishedRuns`, `publishedItems`, `emptyRuns`, `promotedRuns`, run별 `rawItems`를 JSON manifest로 출력하도록 했습니다.
 - `realestate-public-data-preflight` 명령을 추가했습니다. 실제 공공데이터 API를 호출하기 전에 백필 run 수, 완료 run 제외 결과, 서비스키 준비 여부, page/max page, 승격 옵션을 secret 값 없이 JSON으로 점검합니다.
@@ -28,7 +31,7 @@
 - 공시가격 대용량 CSV를 실제 적재하기 전에 row 수, 유효/오류 row, batch 수, 첫/마지막 runKey를 확인하는 `realestate-official-apartment-prices-inspect` 명령을 추가했습니다.
 - 한국부동산원 지수, 미분양, 인허가처럼 지역/기간/지표값으로 구성되는 통계 CSV를 위한 `realestate-regional-stat-csv-inspect` / `realestate-regional-stat-csv-raw-push` 공통 adapter를 추가했습니다.
 - backend 통합 테스트에서 `지역 import -> market-data-target 생성 -> raw/staging 적재 -> promote -> target별 market fact 조회` 관통 흐름을 검증했습니다.
-- 관심 지역 화면의 정본 route를 `/realestate/watchlist`로 고정하고, `/communities`, `/agents` 레거시 호환 route도 active route에서 제거했습니다.
+- 마이페이지 화면의 정본 route를 `/realestate/mypage`로 전환하고, 기존 `/realestate/watchlist`는 북마크 호환용 redirect로만 유지합니다. `/communities`, `/agents` 레거시 호환 route는 active route에서 제거했습니다.
 - 지역/단지 상세 route param과 반응 랭킹 링크 식별자를 부동산 대상 `targetId` 기준으로 전환했습니다.
 - `RealEstatePriceChart`/`realestate-price-chart` 테스트·fixture·컴포넌트를 부동산 가격 포인트 기준으로 전환하고, 기존 금융 차트식 막대 표현 대신 가격선과 `trade/rent/supply` 보조 흐름으로 바꿨습니다.
 - 이전 프로젝트 상세 참고 이미지 자산 폴더를 active docs 자산에서 제거하고, 재유입을 막는 frontend cleanup 테스트를 추가했습니다.
@@ -43,6 +46,8 @@
 - backend migration에 시연 MVP용 기본 지역 alias seed를 추가했습니다. `서울`, `경기`, `대전`, `마포구`처럼 공식명/축약명으로 자주 쓰이는 표현은 별도 JSONL 없이 backend matcher export에서 바로 조회됩니다.
 - 커뮤니티 게시글에서 승인 alias 바로 뒤의 괄호형 은어를 찾아 `community_slang` alias 후보로 만들고, `realestate-alias-candidates` / `realestate-alias-candidates-push` 명령으로 출력 또는 백엔드 후보 API에 전송할 수 있게 했습니다. 후보는 `reviewState=candidate` 상태이며 운영자 승인 전에는 matcher 정본, ranking, reaction snapshot 입력에 섞지 않습니다.
 - `realestate-alias-coverage` 명령을 추가했습니다. 제한 게시글 JSONL과 alias 정본을 기준으로 source별 `matchRate`, `topTargets`, `unmatchedExamples`, `candidateAliases`를 뽑아 네이버/다음 카페처럼 출처가 많은 크롤링 운영에서 alias DB가 비어 있는 구간을 확인할 수 있습니다.
+- 공개 게시글에 포함된 구조화 실거래 표 형태의 snippet에서 실제 아파트 단지 후보를 추출합니다. 승인된 지역 alias로 지역 문맥을 확인한 뒤 `community_observed` complex target, alias, `contains` edge를 후보로 만들며, `푸르지오`, `자이`, `1단지`처럼 단독 브랜드명이나 범용 표현은 단지 후보로 올리지 않습니다.
+- reaction snapshot refresh는 기본적으로 승인 alias/edge만 사용합니다. 예외적으로 `community:structured-trade-table` 출처의 complex 후보 alias/edge만 allow-list로 받아 단지 TOP10과 상위 지역 roll-up에 포함할 수 있습니다. 따라서 사용자가 말한 실제 아파트 언급은 단지 지표로 집계되고, 동시에 해당 동·구·생활권 지역 지표에도 파생 관측치로 반영됩니다.
 - `realestate-crawl-target-manifest` 명령을 추가했습니다. source 후보 JSONL을 읽어 P0 공개 게시판형 후보만 실행 가능한 crawl target manifest로 만들고, 네이버 카페/로그인 필요/공개 목록 미확인/adapter 미지원 source는 `skipped` 사유로 분리합니다.
 - SerpApi Google News 검색 결과를 최근 이슈 후보 content item으로 변환하는 `realestate-recent-issues` / `realestate-recent-issues-push` 명령을 추가했습니다. 검색 결과 수나 순위는 지표로 쓰지 않고, `content_items`와 `content_target_links`에 `candidate` 근거 링크로만 저장합니다.
 - `realestate-evidence-logs` / `realestate-evidence-logs-push` 명령을 추가했습니다. reaction snapshot, market fact, timeline event, 최근 이슈 후보, 유사 과거 window 후보를 `POST /internal/realestate/evidence-logs` 요청 shape로 조립하거나 바로 전송합니다.
@@ -58,7 +63,7 @@
 - 지도/반응/상세 화면에서 쓰는 대표 fixture `targetId`를 화면 전용 대문자 임시 ID가 아니라 `real_estate_targets.id` 형식으로 통일했습니다. 예: `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`.
 - 프론트 상세 화면의 화면용 ID와 API용 ID 분리를 제거하고, route `targetId`를 그대로 content/timeline/evidence 계열 API에 넘기는 기준으로 정리했습니다.
 - `/realestate/targets/:targetId`의 시간대별 변화 섹션은 `GET /api/realestate/targets/{targetId}/timeline?limit=6`을 우선 조회하고, 실패하거나 빈 응답이면 기존 fixture timeline으로 fallback합니다.
-- `/realestate/targets/:targetId`의 AI 근거 로그 섹션은 `GET /api/realestate/targets/{targetId}/evidence-logs?limit=3`을 우선 조회하고, 평가 요약, 버전, confidence, caveat, evidence item을 표시합니다. 저장된 로그가 없으면 근거 로그 대기 상태로 둡니다.
+- `/realestate/targets/:targetId`의 AI 근거 로그 섹션은 `GET /api/realestate/targets/{targetId}/evidence-logs?limit=1`을 우선 조회하고, 평가 요약, 버전, confidence, 주의 사항, evidence item을 표시합니다. 저장된 로그가 없으면 근거 로그 대기 상태로 둡니다.
 - EvidenceLog 응답은 `refType=content` 근거 항목에 대해 `content_items`의 URL/source/asOf/status를 보강합니다. 상세 화면은 이 값을 AI 근거 로그 안의 외부 링크 칩으로 표시하므로 SerpApi 후보가 `candidate` 상태인지 숨기지 않고 확인할 수 있습니다.
 - EvidenceLog 배치는 public content API가 아니라 `GET /internal/realestate/targets/{targetId}/content?reviewState=candidate&linkType=search_candidate`를 사용합니다. 따라서 SerpApi 후보가 아직 공개 timeline 승인 전이어도 AI 근거 로그 입력으로 붙일 수 있고, 공개 `/api/realestate/targets/{targetId}/content`는 계속 approved content만 반환합니다.
 - 대표 화면 target을 backend registry seed에 추가했습니다. 마포구는 `real_estate_regions`와 MOLIT `market_data_targets`까지 연결했고, 생활권/단지 후보는 `mock` 또는 `candidate` 상태로 target 정본만 먼저 확보했습니다.
@@ -69,18 +74,20 @@
 - `serve --enable-realestate-daily-refresh --enable-realestate-map-layer-refresh`로 지도 레이어 snapshot 갱신을 일일 refresh step에 포함할 수 있게 했습니다.
 - `/realestate/map`과 `/realestate/map/:regionId`는 지도 route에서 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용합니다. 기존 화면용 slug 진입은 호환만 유지합니다.
 - `/realestate/targets/:targetId`에 카카오맵 SDK 내장 지도 prototype을 추가했습니다. `region-seoul-mapo`, `living-area-gyeonggi-dongtan-station`, `complex-mapo-raemian-prugio`는 단지 marker와 선택 패널을 보여주며, 테스트/key missing/SDK 비활성화 상태에서는 도식화 fallback을 표시합니다.
-- `real_estate_complexes`에 단지 marker용 좌표, 좌표 provider/asOf/status, marker summary/status 필드를 추가하고 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 연결했습니다. 상세 화면은 이 API를 우선 사용하고 실패하거나 빈 응답이면 기존 fixture로 fallback합니다.
+- `real_estate_complexes`에 단지 marker용 좌표, 좌표 provider/asOf/status, marker summary/status 필드를 추가하고 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 연결했습니다. 상세 화면은 이 API를 우선 사용하되, 실패하거나 빈 응답이면 기존 fixture marker를 채우지 않고 `단지 좌표 수집 전/insufficient` 상태로 둡니다. `community:observed-complex-seed` 경로의 관측 단지는 여전히 후보 좌표이지만, SSAFY HOME dump에서 들어온 단지는 `provider=ssafy_home`, `coordinateProvider=ssafy_home_dump` 기준으로 별도 source/provenance를 남깁니다.
 - `serve --enable-realestate-daily-refresh` scheduler job을 추가했습니다. 현재는 market fact refresh, reaction snapshot refresh, SerpApi 최근 이슈 후보 refresh, EvidenceLog refresh를 하루 단위 step으로 묶을 수 있으며, 각 step은 `OK`, `EMPTY`, `*_ERROR`, `PARTIAL` 상태를 남깁니다. 최근 이슈 refresh는 `--realestate-search-targets-jsonl`이 없으면 최신 backend reaction ranking TOP target을 읽어 SerpApi 검색 대상으로 사용합니다. EvidenceLog refresh는 최신 backend reaction ranking을 읽고 target별 market fact/content 후보를 붙여 `POST /internal/realestate/evidence-logs`로 전송합니다.
 - `realestate-daily-refresh` one-shot 명령을 추가했습니다. `serve`처럼 계속 떠 있지 않고 `market_facts -> community_crawl -> reaction_snapshots -> recent_issues -> evidence_logs -> map_layers`를 한 번 실행한 뒤 summary JSON을 출력하므로, 발표 전 수동 갱신이나 GitHub Actions/로컬 스케줄러에서 쓰기 좋습니다.
+- MOLIT 공공데이터 API 호출 timeout/retry 설정을 `.env`에서 `REALESTATE_PUBLIC_DATA_TIMEOUT_SECONDS`, `REALESTATE_PUBLIC_DATA_MAX_RETRIES`, `REALESTATE_PUBLIC_DATA_RETRY_BACKOFF_SECONDS`로 조정할 수 있습니다. `realestate-market-facts-raw-push`는 특정 법정동/월 run이 timeout 또는 502 같은 provider 오류를 반환해도 전체 실행을 중단하지 않고 해당 import run을 `provider_error`와 `errorMessage`로 저장한 뒤 다음 run을 계속 처리합니다. 따라서 시연 화면은 market fact가 비어 있을 때 실제값을 꾸며 넣지 않고 `수집 전`, `insufficient`, `partial` 상태를 보여야 합니다.
 - `realestate-daily-refresh`에서 `SERPAPI_API_KEY`가 비어 있으면 전체 배치를 중단하지 않고 `recent_issues` step을 `CONFIG_MISSING`으로 남긴 뒤 EvidenceLog와 map layer refresh를 계속 진행합니다. 이 경우 전체 summary는 `PARTIAL`로 표시되어 최근 이슈 갱신이 완전 성공처럼 보이지 않습니다. EvidenceLog는 최근 이슈 후보가 없는 target에 `search_candidate_missing` caveat을 남깁니다. 단독 `realestate-recent-issues` 명령은 실제 후보 수집용이므로 여전히 key를 요구합니다.
 - `GET /internal/ingestions/community-posts/export`를 추가했습니다. 크롤러가 `community_posts`에 저장한 게시글을 source/시간 window/limit 기준으로 다시 꺼내 reaction snapshot refresh 입력으로 쓸 수 있습니다.
 - `serve --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-community-posts`를 켜면 JSONL 파일 없이 backend `community_posts` export를 읽어 alias 매칭, reaction observation, snapshot 생성까지 이어갑니다.
 - `serve`와 `realestate-daily-refresh`의 reaction snapshot refresh가 `--realestate-use-backend-aliases`를 함께 받으면 JSONL alias 파일 없이 backend alias registry를 matcher 입력으로 사용합니다. 시연/배치 기본 경로는 backend community post export + backend alias registry 조합입니다.
-- `GET /api/realestate/reactions/rankings`는 `parentTargetId`를 받을 수 있습니다. 예를 들어 `parentTargetId=region-seoul`이면 서울 target과 직접 하위 region snapshot만 ranking합니다.
-- `/realestate/reactions`는 지역/단지 랭킹을 `limit=10`으로 요청하고, 전체 TOP10과 서울/경기/대전/인천 시도별 TOP10 필터를 제공합니다. 시도 필터를 누르면 지역 ranking과 단지군 ranking 모두 `parentTargetId`로 재조회합니다. API 요청이 성공했지만 특정 그룹이 비어 있으면 mock 행을 섞지 않고 수집 전/insufficient 빈 상태를 표시하며, API 실패 때만 fixture fallback을 씁니다.
-- 2026-06-15 로컬 smoke에서 공개 source 2곳 기준 게시글 849건을 수집했고, backend community post export와 backend alias registry로 24시간 reaction refresh를 실행해 observation 33건, snapshot 10건을 생성했습니다. `GET /api/realestate/reactions/rankings?windowMinutes=1440&limit=10`은 실제 DB snapshot 기준 TOP10 지역 행을 반환합니다.
+- `GET /api/realestate/reactions/rankings`는 `parentTargetId`를 받을 수 있습니다. 예를 들어 `parentTargetId=region-seoul`이면 서울 자체는 scope로만 쓰고, 지역 ranking 행에는 하위 region snapshot만 반환합니다.
+- `/realestate/reactions`는 지역/아파트 단지 랭킹을 `limit=10`으로 요청하고, 전체 TOP10과 서울/경기/대전/인천 시도별 TOP10 필터를 제공합니다. 시도 필터를 누르면 지역 ranking과 아파트 단지 ranking 모두 `parentTargetId`로 재조회합니다. API 요청이 성공했지만 특정 그룹이 비어 있으면 mock 행을 섞지 않고 수집 전/insufficient 빈 상태를 표시하며, API 실패 때만 fixture fallback을 씁니다.
+- 2026-06-15 로컬 smoke에서 공개 source 2곳 기준 게시글 849건을 수집했고, backend community post export와 backend alias registry로 24시간 reaction refresh를 실행해 observation 33건, snapshot 10건을 생성했습니다. `GET /api/realestate/reactions/rankings?windowMinutes=10080&limit=10`은 실제 DB snapshot 기준 TOP10 지역 행을 반환합니다.
 - 최신 reaction ranking 조회는 요청한 `windowMinutes`와 같은 window만 고르도록 보정했습니다. 60분 snapshot과 24시간 snapshot이 함께 있어도 24시간 화면이 더 짧은 최신 window를 섞어 읽지 않습니다.
-- 현재 seed marker 좌표는 DB/API로 내려오지만 검증 좌표가 아니므로 `provider=front_fixture`, `dataStatus=mock`, `stale=true`로 노출합니다. 실제 단지 좌표, 법정동 코드, provider key 검증은 계속 남아 있습니다.
+- 로컬 Vite dev server는 `VITE_BACKEND_PROXY_TARGET`로 `/api` proxy backend를 바꿀 수 있습니다. 예를 들어 최신 Spring Boot를 8081에 띄운 시연 환경에서는 `VITE_BACKEND_PROXY_TARGET=http://127.0.0.1:8081 npm run dev -- --port 5173`처럼 맞춰야 프론트 TOP10 화면과 pipeline readiness가 같은 DB를 봅니다.
+- 현재 seed marker 좌표는 DB/API로 내려올 수 있지만 검증 좌표가 아니므로 프론트 어댑터에서 `provider=front_fixture` 또는 `dataStatus=mock` 행을 지도 marker로 표시하지 않습니다. SSAFY HOME dump 기반 단지 좌표는 `ssafy_home:houseinfos` source와 `real_estate_complex_provider_keys.apt_seq`로 출처를 남기며, 공공데이터/건축물대장/공시가격 provider와의 추가 교차 검증은 계속 남아 있습니다.
 - GMS OpenAI-compatible chat endpoint를 쓰는 EvidenceLog summary 보강 client를 추가했습니다. `realestate-evidence-logs(-push) --evidence-use-gms-llm`을 켜면 기존 룰 기반 EvidenceLog를 만든 뒤 LLM이 `summary`, `subtitle`, `tone`만 보강합니다. 금지 문구가 포함되면 LLM 문구를 폐기하고 `skipReason=forbidden_copy_detected`와 caveat을 남깁니다.
 - 2026-06-15 로컬 smoke에서 최신 24시간 reaction TOP10을 대상으로 GMS `gpt-5-mini` EvidenceLog refresh를 실행해 10건을 저장했습니다. 저장 API 응답은 `modelName`, `promptVersion`, `evaluationVersion`, `evaluatedAt`을 기준으로 확인합니다.
 - 일일 EvidenceLog refresh는 `--evidence-similar-windows-jsonl`을 함께 받으면 target/window가 맞는 유사 과거 후보를 EvidenceLog `similar_window` 근거로 자동 병합합니다.
@@ -91,9 +98,42 @@
 - 2026-06-15 pipeline `realestate-recent-issues` smoke에서 `region-seoul-mapo` 1개 target과 `정책` 1개 keyword 기준으로 `sourceId=serpapi:google_news`, `linkType=search_candidate`, `reviewState=candidate` 후보 content item 출력까지 확인했습니다.
 - 2026-06-15 최신 24시간 reaction TOP10 기반 `realestate-daily-refresh --enable-realestate-recent-issues-refresh`를 실행해 target 10개, 후보 content item 196건을 backend에 저장했습니다. 검색 결과 수나 순위는 관심도 지표로 쓰지 않고 EvidenceLog 근거 후보로만 연결합니다.
 - 2026-06-15 TOP10 region target에 대해 SerpApi candidate content 196건을 붙인 뒤 GMS `gpt-5-mini` EvidenceLog refresh를 다시 실행했습니다. 결과는 target 10개, log 10건, content evidence 196건이며 market fact와 similar window가 부족한 target은 `market_fact_missing`, `similar_window_missing` caveat을 남깁니다.
-- 시도별 TOP10 필터는 지역 랭킹과 단지군 랭킹 모두 `parentTargetId`를 전달합니다. backend는 parent 지역과 하위 지역 target뿐 아니라 `real_estate_complexes.region_target_id`가 scope 안에 있는 단지 snapshot도 포함해, 서울 TOP10 같은 필터에서 마포 하위 단지군을 서버 응답으로 조회할 수 있습니다.
+- 2026-06-15 MVP live 보강에서 최신 24시간 reaction ranking 범위를 20으로 올려 실제 snapshot이 있는 15개 지역을 대상으로 SerpApi 후보 190건과 GMS `gpt-5-mini` EvidenceLog 15건을 저장했습니다. 반응 snapshot이 없는 seed/mock 지역은 근거 없는 AI 보고서를 생성하지 않고 프론트에서 근거 로그 대기 상태로 표시합니다.
+- 2026-06-15 뉴스룸과 대시보드 feed UI는 content API에 후보가 있는데 리포트/영상/커뮤니티 유형이 비어 있는 경우, mock feed를 섞지 않고 "이번 갱신에서는 해당 유형이 아직 분리되지 않았습니다"로 표시하도록 보정했습니다.
+- 2026-06-15 map layer의 reaction-only partial snapshot은 reaction snapshot의 `stale` 값을 그대로 사용하도록 보정했습니다. 따라서 market fact가 없더라도 최신 reaction snapshot 기반 지도 색상이 무조건 stale로 보이지 않습니다.
+- 시도별 TOP10 필터는 지역 랭킹과 아파트 단지 랭킹 모두 `parentTargetId`를 전달합니다. backend는 지역 ranking에서는 parent 자체를 제외한 하위 지역 target을 반환하고, 단지 ranking에서는 parent와 모든 하위 지역 scope 안에 있는 `real_estate_complexes.region_target_id` 단지 snapshot을 포함해 서울 TOP10 같은 필터에서 마포·동 단위 하위 단지를 서버 응답으로 조회할 수 있습니다.
 - 지도 layer 응답은 실제 refresh snapshot과 seed/mock snapshot이 섞인 경우 top-level `dataStatus=partial`, `stale=true`로 표시합니다. 따라서 일부 지역만 실제 데이터가 붙은 MVP 상태가 전체 `ok`처럼 보이지 않습니다.
 - 지역 상세 지도 footer는 시군구 snapshot이 live로 붙었을 때 `provider · dataStatus · fresh/stale · asOf`를 표시합니다. 그래서 실제 API 값이 들어와도 `DB snapshot` 같은 축약 문구만 보여 출처와 기준 시각이 가려지지 않습니다.
+- 2026-06-15 MVP mock-like UI 보정으로 뉴스룸/지역 반응/지도 하위 리포트/상세 리포트는 API 실패 시 정적 fallback 행을 표시하지 않습니다. 특히 상세 리포트는 EvidenceLog, content, timeline, nearby-complex API가 비어 있으면 로컬 fixture 대신 `수집 전/insufficient`를 표시합니다.
+- 2026-06-15 상세 단지 지도 어댑터는 검증되지 않은 seed marker(`dataStatus=mock`, `provider=front_fixture`)를 필터링합니다. `/realestate/targets/region-seoul-mapo` 브라우저 확인 기준으로 `mock`, `fixture`, `front_fixture` 문구가 화면에 노출되지 않습니다.
+- 2026-06-15 daily refresh의 MVP 기본 반응 window를 7일(`REALESTATE_DAILY_REACTION_WINDOW_MINUTES=10080`)로 고정했습니다. 따라서 `realestate-daily-refresh`에서 별도 `--realestate-daily-reaction-window-minutes`를 주지 않아도 `reaction_snapshots`, `recent_issues`, `evidence_logs`가 같은 7일 TOP ranking 기준을 사용합니다. 짧은 60분 실험은 일반 reaction 명령의 `REALESTATE_REACTION_WINDOW_MINUTES`로 분리합니다.
+- 2026-06-15 24시간 daily smoke에서 `community_crawl -> reaction_snapshots -> recent_issues -> evidence_logs -> map_layers`를 실행했습니다. 결과는 SerpApi 후보 140건, GMS `gpt-5-mini` EvidenceLog 10건, 지도 layer snapshot 45건입니다. EvidenceLog는 TOP10 전부 생성됐지만 market fact와 similar window가 아직 없어 전체 상태는 `PARTIAL`이며 caveat(`market_fact_missing`, `similar_window_missing`)을 숨기지 않습니다.
+- 2026-06-15 API 확인 기준 `GET /api/realestate/reactions/rankings?windowMinutes=10080&limit=10`의 TOP10 target 모두 `GET /api/realestate/targets/{targetId}/evidence-logs?limit=1`에서 EvidenceLog 1건을 반환합니다. 현재 브라우저 확인 기준은 `/dashboard`, `/newsroom`, `/realestate/map`, `/realestate/transactions`, `/realestate/targets/region-seoul`, `/realestate/targets/region-daegu`, `/indicators`, `/realestate/mypage`이며, 사용자 화면에 `mock`, `fixture`, `fallback`, `demo`, `front_fixture` 텍스트가 노출되지 않아야 합니다.
+- 2026-06-16 MVP live 보강에서 한국부동산원 R-ONE 전국 주요 지표 3건(`매매가격지수 변동률`, `전세가격지수 변동률`, `아파트 매매거래호수`)을 `legalDongCode=00000` market fact로 적재했습니다. `/api/realestate/dashboard/market-summary`와 `/indicators`는 이 공식 지표를 우선 표시합니다.
+- 2026-06-16 최신 24시간 reaction TOP10에 대해 `official_stats -> evidence_logs`를 다시 실행했습니다. 결과는 target 10개, EvidenceLog 10건, market fact evidence 30건이며, 지역별 market fact가 없는 target은 `market_fact_missing` 대신 `national_market_fact_only` 주의 사항을 남깁니다. 즉 MVP 화면은 전국 공식 지표를 배경 근거로 붙이되, 지역별 가격/전세/거래 fact가 완성된 것처럼 표현하지 않습니다.
+- 2026-06-16 `/realestate/map/:regionId`는 시도 상세 route에 들어가면 하위 시군구를 클릭하기 전에도 해당 시도 target의 최신 EvidenceLog 기반 오른쪽 리포트를 표시합니다. 하위 지역을 클릭하면 같은 패널이 선택 시군구 기준으로 교체되고, 닫기 동작은 하위 선택 해제 또는 전국 지도 복귀로 구분합니다.
+- 2026-06-16 프론트는 최신 EvidenceLog 1건만 조회하도록 맞추고, 사용자 화면의 raw caveat code(`market_fact_missing`, `national_market_fact_only`, `similar_window_missing`)는 `시장 사실 미연결`, `전국 지표만 반영`, `유사 과거 미연결` 같은 한국어 주의 사항으로 변환합니다. 최신 브라우저 확인 기준 `/dashboard`, `/newsroom`, `/realestate/map/gyeonggi`, `/realestate/reactions`, `/realestate/targets/region-seoul`, `/indicators`에서 raw code와 mock/fixture/fallback 문구는 노출되지 않았습니다.
+- 2026-06-16 `/indicators` 허브의 `지역별 지표 방향`을 `GET /api/realestate/map/layers?layerType=sido` 기반으로, `지표와 반응이 엇갈린 지역`을 `GET /api/realestate/reactions/rankings?type=region&windowMinutes=10080&limit=10` 기반으로 전환했습니다. 기존 정적 마포/동탄/송도/분당 예시 행은 화면에서 제거했고, seed/mock period나 raw code는 사용자 화면에 쓰지 않습니다.
+- 2026-06-16 MVP 재확인에서 local runtime 기준 공개 source 2곳 크롤링을 실행했습니다. 결과는 source 2개, 확인 게시글 34건, 저장 게시글 20건, observation 2건, snapshot 1건입니다. 이는 네이버/다음 카페를 포함한 30개 source 운영 크롤링이 아니라 P0 공개 게시판형 smoke 기준입니다.
+- 2026-06-16 최신 24시간 reaction TOP10에 대해 SerpApi 후보와 GMS `gpt-5-mini` EvidenceLog를 다시 연결했습니다. 짧은 15초 제한에서는 GMS가 timeout되어 rule fallback 로그가 저장됐고, timeout을 개별 로그 단위로 처리하도록 보정했습니다. 이후 90초 제한으로 TOP10 EvidenceLog를 재실행해 10개 target 모두 `modelName=gpt-5-mini`, `promptVersion=gms-evidence-v1`, `llm_evaluation_failed=false` 상태를 API에서 확인했습니다.
+- 2026-06-16 GMS key-info smoke는 성공했습니다. 작은 chat 요청도 httpx 기준 성공했으므로 key/endpoint 자체는 정상이며, EvidenceLog 보강은 입력량과 모델 응답 시간에 맞춰 timeout을 90초 이상으로 두는 것이 안전합니다.
+- 2026-06-16 지도 색상용 공식 지표를 한국부동산원 R-ONE 지역 현황 지도 데이터로 연결했습니다. `realestate-reb-rone-regional-map` / `realestate-reb-rone-regional-map-push` 명령은 월간 아파트 매매가격지수 변동률을 `factType=sale_price_index_change_pct`, `provider=reb`, `providerDataset=reb_rone_regional_price_change` market fact로 정규화합니다.
+- 2026-06-16 `POST /internal/realestate/map/layer-snapshots/refresh`는 `period=month` 지도 snapshot을 만들 때 R-ONE 공식 변동률을 reaction-only partial snapshot보다 우선 사용합니다. 로컬 확인 기준 전국 17개 시도는 `provider=reb`, `dataStatus=ok`, `asOf=2026-05-01` 값으로 `/api/realestate/map/layers?layerType=sido`에서 조회됩니다.
+- 2026-06-16 전국 시군구 `map_features`를 KOSTAT 2018 TopoJSON 기준 250개로 확장했습니다. 이때 `region_code`는 프론트 도형 매칭용 KOSTAT code, `legal_dong_code`는 R-ONE/MOLIT 현재 code로 분리했습니다.
+- 2026-06-16 R-ONE 지역 현황 지도 row와 시군구 도형을 parent region+지역명 기준으로 매칭해 174개 시군구 월간 변동률 snapshot을 생성했습니다. 로컬 확인 기준 `/api/realestate/map/layers?layerType=sigungu&parentTargetId=region-gyeonggi`는 `region-gyeonggi-paju`를 `경기도 파주시`, `regionCode=31200`, `legalDongCode=41480`, `changePct=-0.15`, `provider=reb`, `dataStatus=ok`로 반환합니다.
+- 2026-06-16 프론트 상세 지도에서 시군구 live snapshot이 없을 때 부모 지역 값으로 임의 파생 색상을 만드는 fallback을 제거했습니다. 따라서 시군구 색상은 실제 API snapshot이 있을 때만 상승/하락으로 칠하고, 없으면 표본 부족/수집 전 상태로 남깁니다.
+- 2026-06-16 R-ONE 월별 아파트 매매가격지수 원표(`A_2024_00045`)를 추가 수집해 `month`, `quarter`, `halfYear` 지도 snapshot을 공식 지수 기반으로 생성하도록 보강했습니다. `quarter`와 `halfYear`는 최근 3개월/6개월의 월간 변동률을 누적 곱으로 계산하며, `reaction-only` 값은 가격지도 색상에 섞지 않습니다.
+- 2026-06-16 로컬 확인 기준 `/api/realestate/map/layers?layerType=sido`는 17개 시도 모두 `month`, `quarter`, `halfYear` 값을 `provider=reb`, `dataStatus=ok`로 반환합니다. 강원/전북은 R-ONE 현재 코드(`51`, `52`)를 추가 매핑해 누락을 보정했습니다.
+- 2026-06-16 시군구 refresh는 R-ONE 월별 원표와 매칭되는 174개 시군구에 대해 3개 기간, 총 522개 snapshot을 생성했습니다. `서천군`처럼 R-ONE 월간/주간 지역별 아파트 매매가격지수 원표에 행이 없는 군 단위는 임의값을 만들지 않고 `공식 지수 미공표`/`자료 없음`으로 다루는 것이 현재 기준입니다.
+- 2026-06-16 MVP 5개 공개 source 기준 daily refresh를 실행했습니다. 대상은 `PPOMPPU:house`, `DCINSIDE:immovables`, `FMKOREA:realestate`, `CLIEN:park`, `COOK82:freeboard`이며, 로컬 실행 결과 source 5개, 확인 게시글 39건, 신규 저장 9건, reaction observation 127건, reaction snapshot 2건을 생성했습니다.
+- 2026-06-16 발표/시연용 1주일 백필 모드로 `CRAWLER_IGNORE_WATERMARK=true`, `CRAWLER_LATEST_LOOKBACK_HOURS=168`, `CRAWLER_MAX_PAGES_PER_RUN=30`을 적용해 5개 공개 source를 다시 실행했습니다. 결과는 확인 게시글 1,980건, 신규 수용 915건입니다. `PPOMPPU`와 `DCINSIDE`는 30페이지 한도까지 도달해 아직 더 읽을 수 있고, `FMKOREA`는 430 rate-limit/block 신호로 backoff 처리됐습니다.
+- 같은 백필 데이터로 `REALESTATE_DAILY_REACTION_WINDOW_MINUTES=10080` 기준 7일 반응 snapshot을 재계산했습니다. 결과는 observation 85건, snapshot 14건이며, `GET /api/realestate/reactions/rankings?type=region&windowMinutes=10080&limit=20` 기준 서울 35건, 대구 14건, 부산 10건, 경기 5건, 인천 5건 등 14개 시도 target이 순수 커뮤니티 반응으로 잡힙니다.
+- 프론트 기본 보조 반응 window를 24시간에서 7일(`windowMinutes=10080`)로 전환했습니다. 현재 정본 화면은 `/dashboard`, `/realestate/map`, `/realestate/transactions`, `/indicators`, `/realestate/mypage`이며, `/realestate/reactions`는 실거래 route로 redirect됩니다. 반응 랭킹은 사용자 화면의 핵심 메뉴가 아니라 근거 브리핑과 내부 보조 신호로만 사용합니다.
+- 최신 24시간 커뮤니티 직접 반응이 서울/경기 2개 target에만 몰리는 경우에도 SerpApi/GMS 리포트가 비지 않도록, 최근 이슈 refresh와 EvidenceLog refresh는 reaction TOP 부족분을 `/api/realestate/map/layers?layerType=sido`의 공식 지도 지표 target으로 보강합니다. 보강 target은 `coverageStatus=market_data_only`, `dataQuality=market_data_only`/`PARTIAL`로 남겨 커뮤니티 반응 기반 보고서와 구분합니다.
+- 같은 실행에서 SerpApi 최근 이슈 후보는 target 10개, content item 166건을 저장했고, GMS `gpt-5-mini` EvidenceLog는 17개 지역에 대해 생성됐습니다. API 확인 기준 `region-seoul`, `region-gyeonggi`, `region-busan`, `region-daegu`, `region-incheon`, `region-daejeon`, `region-gwangju`, `region-ulsan`, `region-sejong`, `region-gangwon` 모두 `GET /api/realestate/targets/{targetId}/evidence-logs?limit=1`에서 `modelName=gpt-5-mini` 로그 1건을 반환합니다.
+- 프론트 `fetchRealEstateReactionRankingWithFallback`은 지역 랭킹이 요청 limit보다 적으면 지도 레이어 target으로 부족분을 채웁니다. 화면에서는 해당 행을 `시장 지표 보강 · 반응 부족`으로 표시해 TOP10 레이아웃은 유지하되, 실제 커뮤니티 직접 언급이 충분한 것처럼 보이지 않게 합니다.
+- 2026-06-17 SerpApi Free Plan 월간 quota가 250/250으로 소진되어 자동 검색 갱신이 중단됐습니다. 발표용 공백을 줄이기 위해 `tools/manual_curated_realestate_content_2026_06_17.json`에 공개 출처 뉴스 5건, 정책·통계 리포트 5건, 영상 5건, 블로그/컬럼 링크 5건을 `manual_curated:*`, `dataStatus=curated`로 정리하고 `POST /internal/realestate/content-items`에 반영했습니다. 승인 target link 41건이 생성되어 target timeline에도 연결됩니다.
+- 같은 보정에서 뉴스룸 backend 정렬은 `curated`/`ok` 콘텐츠를 `candidate`보다 우선 표시하도록 변경했습니다. `/newsroom` 종합 화면도 `feed=all` 1회 호출 대신 `news`, `report`, `video`, `link`를 각각 조회해 영상/블로그 카드가 검색 후보 뉴스에 밀리지 않도록 조정했습니다.
 
 ## 1차 provider
 
@@ -103,6 +143,8 @@
 | `molit_apt_rent` | 아파트 전월세 실거래가 | 백필 대상 |
 | `molit_official_apartment_price_csv` | 공동주택 호별 공시가격 대용량 CSV | 백필 대상 |
 | `reb_real_estate_statistics` | 한국부동산원 가격지수/거래현황 | 백필 대상 |
+| `reb_rone_regional_price_change` | 한국부동산원 R-ONE 지역별 아파트 매매가격지수 변동률 | 지도 색상 월간 지표 연결 |
+| `reb_rone_monthly_apt_sale_price_index` | 한국부동산원 R-ONE 월별 아파트 매매가격지수 원표 | 지도 색상 1/3/6개월 공식 지표 연결 |
 | `molit_unsold_housing_stat` | 미분양/준공 후 미분양 | 백필 대상 |
 | `molit_housing_permit_stat` | 주택 인허가 실적 | 백필 대상 |
 | `molit_buildinghub_housing_approval` | 주택건설사업계획승인/공급 이벤트 후보 | 보조/검증 대상 |
@@ -132,6 +174,31 @@ real_estate_targets
 -> real_estate_complex_provider_keys
 ```
 
+- 2026-06-16 실거래/전월세 market fact JSONL에서 아파트 단지명을 읽어 `complex` target, `real_estate_complexes`, 공식/동명 alias, `contains` edge를 만드는 `realestate-complex-registry` / `realestate-complex-registry-push` 명령을 추가했습니다. 현재 1차 중복 기준은 `legalDongCode + legalDongName + jibun + apartmentName`이며, 도로명·전용면적·provider별 단지 외부키를 이용한 추가 병합 검수는 남아 있습니다.
+- 2026-06-16 SSAFY HOME SQL dump를 source schema로 import한 뒤 `real_estate_*` 정규화 테이블로 bootstrap하는 `tools/realestate/ssafy_home_bootstrap.sql`과 거래 이력 chunk importer `tools/realestate/ssafy_home_housedeals_chunk.sql`을 추가했습니다. 로컬 MySQL 기준 원본은 `dongcodes=20,551`, `houseinfos=41,055`, `housedeals=6,988,921`이고, 정규화 결과는 `ssafy_home` source 지역 20,390개, 단지 41,055개, 좌표 보유 단지 40,163개, provider key 41,055개, alias 81,924개, `apt_trade` market fact 6,423,931건입니다. 거래 fact 기간은 2011-11-01부터 2024-12-31까지입니다.
+- 2026-06-16 SSAFY HOME 단지는 동 target에 우선 연결하고, 상위 시군구/시도 target에도 `contains` edge를 보강했습니다. 따라서 `GET /api/realestate/targets/region-seoul-mapo/nearby-complexes?limit=2`는 `ssafy_home_dump` provider의 실제 단지 marker를 반환하고, `GET /api/realestate/targets/complex-ssafy-home-11440-4/market-facts?limit=1`은 `공덕1삼성래미안`의 실거래 fact를 반환합니다.
+- 2026-06-16 backend에 `POST /internal/realestate/complexes` upsert API를 추가해 pipeline이 만든 단지 정본을 DB에 저장하고, `/api/realestate/targets/{targetId}/nearby-complexes`에서 provider/source와 stale 상태를 숨기지 않고 내려주도록 했습니다.
+- 2026-06-17 target 검색을 region 전용 조회에서 `real_estate_targets` 전체 조회로 바꾸어 SSAFY HOME 단지까지 검색에 걸리도록 연결했습니다. 로컬 확인 기준 `GET /api/realestate/targets/search?q=래미안&limit=5`와 Vite proxy `http://127.0.0.1:5173/api/realestate/targets/search?q=래미안&limit=3` 모두 `complex-ssafy-home-*` 단지 target을 반환합니다.
+- 2026-06-17 `nearby-complexes` 응답은 좌표가 있고 `markerDataStatus=ok`인 단지를 우선 정렬하도록 보정했습니다. 따라서 마포 상세 지도 marker 목록은 `(91-511)`처럼 이름 품질이 낮거나 좌표가 부족한 행보다 `DMC마포청구아파트`, `DMC상암센트럴파크1단지` 같은 검증 좌표 단지를 먼저 내려줍니다.
+- 2026-06-16 `/realestate/reactions` 아파트 관심 후보 TOP10은 지역 row를 가짜 아파트 후보로 변환하지 않고, `type=complex` ranking API 응답에 실제 `complex` target이 있을 때만 표시합니다. 단지 ranking이 비어 있으면 수집 전/insufficient 상태로 둡니다.
+- 2026-06-16 `realestate-daily-refresh`에 `complex_registry` step을 추가했습니다. `--enable-realestate-complex-registry-refresh`를 켜면 backend market fact를 읽어 단지 target/alias/edge를 먼저 갱신하고, 이후 reaction snapshot step은 별도 alias/edge 파일 없이 backend alias와 `contains` edge를 자동으로 읽어 새 아파트 단지 snapshot과 상위 지역 roll-up snapshot을 함께 생성합니다.
+- 2026-06-16 지역 반응 ranking의 `parentTargetId` scope는 직계 하위 지역뿐 아니라 모든 하위 region을 재귀적으로 포함합니다. 따라서 `서울 -> 종로구 -> 사직동 -> 아파트 단지`처럼 단지가 읍면동 target에 등록되어도 서울 단지 TOP10 필터에서 누락되지 않습니다.
+- 2026-06-16 daily refresh summary는 개별 step의 `EMPTY`를 전체 `OK`로 숨기지 않고 `PARTIAL`로 올립니다. 실거래/전월세 fact가 없어 `complex_registry`가 비거나, 크롤링 후 `reaction_snapshots`가 비면 발표/시연 전에 단지 TOP10 데이터가 아직 부족하다는 신호를 summary에서 바로 볼 수 있습니다.
+- 2026-06-16 reaction snapshot refresh result에 `snapshotCountsByType`을 추가했습니다. 배치 summary에서 `complex` count는 아파트 단지 TOP10 원천 snapshot 수, `region` count는 상위 지역 roll-up 포함 snapshot 수로 확인합니다.
+- 2026-06-16 daily refresh top-level summary에 `top10Readiness`를 추가했습니다. `complexRegistry.complexCount/aliasCount/edgeCount`와 `reactionSnapshots.complex/region`을 합쳐 `READY` 또는 `PARTIAL`을 표시하므로, 실제 실행 후 단지 정본 → alias → 단지 snapshot → 지역 roll-up → 프론트 TOP10 준비 상태를 한 필드로 확인할 수 있습니다.
+- `top10Readiness`는 step 순서도 봅니다. `reaction_snapshots`가 `complex_registry`보다 먼저 실행된 summary는 count가 채워져 있어도 `complex_registry_order_invalid`로 `PARTIAL` 처리합니다. 최신 실거래/전월세 기반 단지 alias가 snapshot 집계 전에 반영됐는지를 확인하기 위한 가드입니다.
+- 2026-06-16 커뮤니티 7일 게시글에서 실제로 관측된 단지명만 `community_observed` complex target으로 등록하는 `realestate-community-complex-seeds` / `realestate-community-complex-seeds-push` 명령을 추가했습니다. 이 경로는 공공데이터 검증 완료 단지가 아니라 `source=community:observed-complex-seed`인 시연/운영 후보이며, 좌표와 실거래 fact는 `unknown`/`확인 필요`로 유지합니다.
+- 2026-06-16 live backend에 관측 단지 8개, alias 13개, `contains` edge 8개를 push한 뒤 7일 reaction snapshot을 재계산했습니다. 결과는 `snapshotCountsByType={"complex": 8, "region": 96}`이며, `GET /api/realestate/reactions/rankings?type=complex&windowMinutes=10080&limit=10`은 동탄역 롯데캐슬, 반포 트리니원, 이문아이파크자이, 래미안라그란데, 헬리오시티, 올림픽파크포레온, 리센츠, 트리마제를 반환합니다. 이후 공식 `complex_registry`와 `community_complex_seed`를 함께 둔 daily refresh 경로로 재검증해 `top10Readiness=READY` 기준을 만족했습니다.
+- 2026-06-16 복합 한글 단지명은 보수적인 축약 alias seed를 함께 만듭니다. 예를 들어 `마포 래미안 푸르지오`는 공식명, `아현동 마포 래미안 푸르지오`, `마래푸`, `아현동 마래푸` alias를 생성합니다. 공공데이터 단지명이 `마포래미안푸르지오`처럼 붙어 들어와도 알려진 브랜드 토큰을 분리해 같은 `마래푸` alias를 생성합니다. 축약 alias는 한글 토큰 3개 이상 또는 지역 접두어+브랜드 토큰 조합에서만 생성해 과도한 오탐을 줄입니다.
+- 2026-06-16 matcher는 같은 게시글에서 같은 target이 공식명과 축약명으로 함께 잡혀도 1개 target mention으로만 집계합니다. 따라서 `마래푸` 제목과 `마포 래미안 푸르지오` 본문이 같은 글에 같이 있어도 단지 snapshot mention이 부풀려지지 않고, `contains` edge를 통해 상위 지역 roll-up만 1회 생성됩니다.
+- 2026-06-16 backend에 `GET /internal/realestate/regions?regionLevel=&limit=&page=` export를 추가하고, complex registry refresh가 `eupmyeondong` region 목록을 읽어 `시군구코드 + 법정동명`으로 단지를 동 target에 우선 연결하도록 보강했습니다. 예를 들어 실거래 fact가 `legalDongCode=11440`, `legalDongName=아현동`만 제공해도 backend에 `서울특별시 마포구 아현동` region이 있으면 `region-seoul-mapo`가 아니라 동 target의 `contains` edge가 만들어집니다.
+- 2026-06-16 같은 게시글에서 `마래푸` 같은 단지 alias와 `아현동` 같은 지역 alias가 동시에 잡혀도 마포구/서울 같은 상위 지역 roll-up mention이 2건으로 부풀지 않도록 보정했습니다. 상위 target 파생 관측치는 `target + externalId + source` 기준 1건만 남기며, 중복 후보가 있으면 더 높은 confidence를 사용합니다.
+- 2026-06-16 local backend 기준 promoted `apt_trade`/`apt_rent` fact 193건에서 공식 `molit:market-fact` complex target 58개, alias 116개, 지역-단지 edge 58개를 생성했습니다. 이후 커뮤니티 7일 snapshot을 재계산한 결과 기본 단지 TOP은 실제 아파트 후보 8개로 나오고, 기본 지역 TOP은 `서울특별시`, `경기도`, `대전광역시` 같은 시도 roll-up을 제외한 시군구/동/생활권 후보만 반환하도록 backend ranking을 보정했습니다. 확인 예시는 `region-seoul-gangnam`, `region-gyeonggi-seongnamsibundanggu`, `region-gangwon-jeongseon`, `region-gyeonggi-pyeongtaek`, `region-jeonbuk-muju`입니다.
+- 2026-06-16 `realestate-target-matches`와 `realestate-alias-coverage` 명령이 `--realestate-use-backend-community-posts`를 지원하도록 보강했습니다. local backend 7일치 기준 5개 source, 2,076글 중 378글이 alias에 매칭되며(matchRate 0.1821), complex 매칭 예시는 `동탄역 롯데캐슬`, `이문아이파크자이`, `래미안라그란데`, `반포 트리니원`, `헬리오시티`, `리센츠`, `트리마제`, `둔촌주공`입니다.
+- 2026-06-16 `realestate-community-complex-seeds`가 backend alias registry를 함께 읽으면 이미 공식 단지 alias가 있는 관측 단지를 `complex-community-*`로 중복 생성하지 않고 기존 `complex` target에 누락 alias만 추가하도록 보강했습니다. live backend 기준 관측 단지 8개는 이미 등록되어 있어 신규 발행 target/alias/edge는 0건으로 표시됩니다.
+- 2026-06-16 daily refresh에 `community_complex_seed` step을 추가했습니다. `complex_registry -> community_complex_seed -> reaction_snapshots` 순서로 실행하면 실거래/전월세 기반 공식 단지 정본을 먼저 갱신하고, 커뮤니티에서 관측된 단지 후보를 공식 alias 우선으로 흡수한 뒤 단지 snapshot과 상위 지역 roll-up을 만듭니다. local backend 검증 기준 `complexRegistry={complexCount:58, aliasCount:116, edgeCount:58}`, `reactionSnapshots={complex:8, region:96}`, `top10Readiness=READY`입니다.
+- 2026-06-16 `realestate-top10-readiness` 읽기 전용 진단 명령을 추가했습니다. 이 명령은 backend의 complex alias, `contains` edge, `type=complex`/`type=region` ranking을 조회해 단지 정본 → alias → 단지 snapshot → 지역 roll-up → 프론트 TOP10 체인이 READY인지 확인합니다. local backend 기준 `complexCount=66`, `marketFactBackedComplexCount=58`, `communityObservedComplexCount=8`, `aliasCount=124`, `edgeCount=66`, `reactionSnapshots={complex:8, region:10}`, `complexOnly=true`, `broadRegionRows=[]`로 READY입니다.
+
 ## 아직 안 한 것
 
 - 실제 공공데이터 대용량 CSV 다운로드/백필 실행
@@ -143,6 +210,8 @@ real_estate_targets
 - SerpApi 후보 링크 운영 검수와 승인 workflow
 - LLM provider 기반 평가의 재시도/품질평가/Langfuse 관측 고도화
 - 실제 단지 좌표/주소/법정동 코드 provider 검증과 단지 marker API의 market fact/reaction snapshot 요약 연결
+- 단지 좌표 보강은 `실거래/전월세/공시가격 CSV 또는 API로 만든 공식 complex target -> 주소/관리건축물대장PK/provider key 정제 -> geocoding/provider 좌표 저장 -> coordinateStatus=verified` 순서로 진행해야 합니다.
+- R-ONE 미공표 시군구의 대체 provider 검토와 화면의 `공식 지수 미공표` 상태 표시 고도화
 
 ## 다음 작업
 
@@ -431,17 +500,27 @@ cd C:\agents\YouBuyFirst_RealEstate\pipeline
 $env:CRAWL_RUNTIME_ENV="local"
 $env:SERPAPI_API_KEY="..."
 $env:GMS_KEY="..."
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-daily-refresh --enable-realestate-market-facts-refresh --realestate-deal-ym 202606 --enable-realestate-daily-crawl-refresh --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-community-posts --realestate-use-backend-aliases --enable-realestate-recent-issues-refresh --realestate-recent-issues-ranking-limit 10 --enable-realestate-evidence-logs-refresh --evidence-use-gms-llm --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods week month halfYear
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-daily-refresh --enable-realestate-market-facts-refresh --realestate-deal-ym 202606 --enable-realestate-complex-registry-refresh --enable-realestate-daily-crawl-refresh --enable-realestate-community-complex-seed-refresh --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-community-posts --enable-realestate-recent-issues-refresh --realestate-recent-issues-ranking-limit 10 --enable-realestate-evidence-logs-refresh --evidence-use-gms-llm --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods month quarter halfYear
 ```
 
-이 명령은 `market_facts -> community_crawl -> reaction_snapshots -> recent_issues -> evidence_logs -> map_layers` 순서로 한 번 실행하고 summary JSON을 출력한 뒤 종료합니다. `CRAWL_RUNTIME_ENV=local`은 정책 검토 전 공개 게시판 source를 로컬 연구/시연 범위에서만 실행하기 위한 값입니다. public runtime에서는 해당 source가 skip될 수 있습니다. 서버처럼 계속 켜 둘 때만 같은 옵션에 `serve --enable-realestate-daily-refresh`를 사용합니다.
+이 명령은 `market_facts -> complex_registry -> community_crawl -> community_complex_seed -> reaction_snapshots -> recent_issues -> evidence_logs -> map_layers` 순서로 한 번 실행하고 summary JSON을 출력한 뒤 종료합니다. `complex_registry`가 켜져 있으면 reaction snapshot step은 방금 갱신된 backend 단지 alias와 target edge를 자동으로 사용합니다. `community_complex_seed`가 켜져 있으면 커뮤니티에서 관측된 아파트명을 backend alias registry와 비교해 공식 target을 우선 재사용합니다. `CRAWL_RUNTIME_ENV=local`은 정책 검토 전 공개 게시판 source를 로컬 연구/시연 범위에서만 실행하기 위한 값입니다. public runtime에서는 해당 source가 skip될 수 있습니다. 서버처럼 계속 켜 둘 때만 같은 옵션에 `serve --enable-realestate-daily-refresh`를 사용합니다.
+
+단지 TOP10 체인 readiness만 읽기 전용으로 확인:
+
+```powershell
+cd C:\agents\YouBuyFirst_RealEstate\pipeline
+$env:SPRING_BASE_URL="http://127.0.0.1:8081"
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-top10-readiness --realestate-daily-reaction-window-minutes 10080 --realestate-top10-readiness-limit 10
+```
+
+이 명령은 DB를 변경하지 않습니다. complex alias, region->complex `contains` edge, complex ranking, 세부 region ranking을 읽어 `marketFactBackedComplexCount`, `communityObservedComplexCount`, `reactionSnapshots`, `complexOnly`, `broadRegionRows`를 한 번에 점검합니다.
 
 최신 backend reaction ranking TOP10 기반 SerpApi 최근 이슈 후보 일일 refresh:
 
 ```powershell
 cd C:\agents\YouBuyFirst_RealEstate\pipeline
 $env:SERPAPI_API_KEY="..."
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-recent-issues-refresh --reaction-window-minutes 1440 --realestate-recent-issues-target-type region --realestate-recent-issues-ranking-limit 10 --serpapi-result-limit 5
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-recent-issues-refresh --realestate-daily-reaction-window-minutes 10080 --realestate-recent-issues-target-type region --realestate-recent-issues-ranking-limit 10 --serpapi-result-limit 5
 ```
 
 이 daily step은 `GET /api/realestate/reactions/rankings`의 최신 TOP target을 읽어 target display name과 `issueMix` label로 검색 query를 만들고, 결과를 `content_items` 후보로 전송합니다. 검색 결과 수나 순위는 관심도 지표로 쓰지 않고, 이후 EvidenceLog가 참고할 근거 후보 링크로만 저장합니다. `--realestate-search-targets-jsonl`을 함께 주면 ranking 대신 파일에 정의된 검색 대상을 사용합니다.
@@ -466,7 +545,7 @@ C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\pyt
 
 ```powershell
 cd C:\agents\YouBuyFirst_RealEstate\pipeline
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh --reaction-window-minutes 1440 --realestate-evidence-ranking-limit 20 --realestate-evidence-market-fact-limit 20 --realestate-evidence-timeline-limit 20 --realestate-evidence-content-limit 20
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-evidence-logs-refresh --realestate-daily-reaction-window-minutes 10080 --realestate-evidence-ranking-limit 20 --realestate-evidence-market-fact-limit 20 --realestate-evidence-timeline-limit 20 --realestate-evidence-content-limit 20
 ```
 
 이 step은 `GET /api/realestate/reactions/rankings`, `GET /api/realestate/targets/{targetId}/market-facts`, `GET /api/realestate/targets/{targetId}/timeline`, `GET /api/realestate/targets/{targetId}/content`를 읽어 룰 기반 EvidenceLog를 만들고, 결과를 `POST /internal/realestate/evidence-logs`에 저장합니다. 최신 ranking이 비어 있으면 target별 market/timeline/content 조회나 추가 provider 호출 없이 `EMPTY` 상태로 끝납니다.
@@ -487,7 +566,13 @@ GMS LLM으로 일일 EvidenceLog summary를 보강하려면 같은 명령에 `--
 
 ```powershell
 cd C:\agents\YouBuyFirst_RealEstate\pipeline
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods week month halfYear
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods month quarter halfYear
 ```
 
-이 step은 backend의 `POST /internal/realestate/map/layer-snapshots/refresh`를 호출합니다. backend는 `map_features`에 연결된 target별 `apt_trade` market fact를 기간 안에서 첫 관측일/마지막 관측일 평균으로 비교하고, 최신 reaction snapshot의 confidence를 함께 넣어 `map_layer_snapshots`를 생성합니다. 거래 표본이 부족한 target/기간은 새 snapshot을 만들지 않으므로 기존 seed/mock fallback이 명시적으로 남습니다.
+이 step은 backend의 `POST /internal/realestate/map/layer-snapshots/refresh`를 호출합니다. 지도 기간은 부동산 공시/지수 주기에 맞춰 `month`, `quarter`, `halfYear`를 사용합니다. `sale_price_index_change_pct` R-ONE 월간 지표가 있으면 `month`는 최신 월, `quarter`와 `halfYear`는 각각 최근 3개월/6개월 월간 변동률을 누적해 생성합니다. 해당 기간의 월간 history가 부족하면 실거래 fact fallback까지만 시도하고, 그래도 부족하면 새 가격지도 snapshot을 만들지 않습니다. `seed/mock`과 `reaction snapshot`은 가격지도 색상 API에서 제외되므로 화면에서는 `자료 없음`/`표본 부족`으로 드러납니다.
+## 2026-06-17 아파트 후보-지도 연결 보정
+
+- 아파트 관심 후보와 실제 단지 지도 marker 연결을 보강했습니다. `GET /api/realestate/targets/search?q=`는 이제 승인된 `real_estate_aliases`도 함께 검색하므로 `마래푸` 같은 커뮤니티식 별칭이 단지 target으로 연결됩니다.
+- `GET /api/realestate/targets/{targetId}/nearby-complexes`는 `community_observed` 단지 후보가 좌표가 없거나 후보 좌표만 가진 경우 같은 이름/alias의 승인된 정본 단지 marker를 먼저 반환합니다.
+- 로컬 확인 기준 `complex-community-observed-4e7a039a1468`은 `complex-ssafy-home-11650-4439` 래미안신반포팰리스 verified marker를 반환하고, `complex-community-raemian-lagrande`는 `complex-ssafy-home-11230-3384` 래미안라그란데 verified marker를 반환합니다.
+- `V36__real_estate_complex_alias_bridge_seed.sql`을 추가해 대표 시연 alias `마래푸`, `아현동 마래푸`, `마포 래미안 푸르지오`를 backend alias registry에 seed하고, 같은 normalized name을 가진 `community_observed` complex와 승인된 canonical complex 사이에 `same_living_area` edge를 보강합니다. 이 migration은 기존 커뮤니티 후보 target을 삭제하지 않고, 지도/실거래/전월세 조회 시 정본 단지로 이어지는 다리 역할만 합니다.

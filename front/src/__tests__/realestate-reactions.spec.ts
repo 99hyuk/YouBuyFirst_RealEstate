@@ -1,12 +1,11 @@
-import { flushPromises, mount } from '@vue/test-utils';
-import { createMemoryHistory, createRouter } from 'vue-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   buildRegionRankingRows,
-  fetchRealEstateReactionRanking
+  fetchRealEstateReactionRanking,
+  fetchRealEstateReactionRankingWithFallback,
+  reactionRankingWindowLabel
 } from '../lib/realestate-reactions';
-import RegionReactionPage from '../pages/RegionReactionPage.vue';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -18,11 +17,163 @@ describe('real-estate reaction ranking adapter', () => {
 
     await fetchRealEstateReactionRanking({
       type: 'region',
-      limit: 10,
-      parentTargetId: 'region-seoul'
+      limit: 10
     }, fetcher);
 
-    expect(fetcher).toHaveBeenCalledWith('/api/realestate/reactions/rankings?type=region&windowMinutes=1440&limit=10&parentTargetId=region-seoul');
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/reactions/rankings?type=region&windowMinutes=10080&limit=10');
+  });
+
+  it('falls back to the latest 60 minute ranking when the daily ranking is empty', async () => {
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('windowMinutes=10080')) {
+        return new Response(JSON.stringify({ window: '10080m', items: [] }));
+      }
+
+      return new Response(JSON.stringify({
+        window: '60m',
+        items: [
+          {
+            rank: 1,
+            targetId: 'region-seoul-mapo',
+            targetType: 'region',
+            displayName: '마포구',
+            mentionCount: 2,
+            mentionDeltaPct: 100,
+            reactionDirectionRatio: { expectation: 0, concern: 0.5, neutral: 0.5 },
+            heatScore: 40,
+            confidence: 0.36,
+            sourceCount: 1,
+            sourceSkew: 1,
+            coverageStatus: 'low_sample',
+            stale: false,
+            issueMix: []
+          }
+        ]
+      }));
+    });
+
+    const ranking = await fetchRealEstateReactionRankingWithFallback({ type: 'region', windowMinutes: 10080, limit: 10 }, fetcher);
+
+    expect(fetcher).toHaveBeenNthCalledWith(1, '/api/realestate/reactions/rankings?type=region&windowMinutes=10080&limit=10');
+    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/realestate/reactions/rankings?type=region&windowMinutes=60&limit=10');
+    expect(ranking.items).toHaveLength(1);
+    expect(ranking.usedFallbackWindow).toBe(true);
+    expect(reactionRankingWindowLabel(ranking)).toBe('1시간 · 7일 부족분 보정');
+  });
+
+  it('keeps region rankings focused on child regions instead of broad city/province rollups', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+      window: '10080m',
+      items: [
+        {
+          rank: 1,
+          targetId: 'region-seoul',
+          targetType: 'region',
+          displayName: '서울특별시',
+          mentionCount: 80,
+          mentionDeltaPct: 50,
+          reactionDirectionRatio: { expectation: 0.4, concern: 0.3, neutral: 0.3 },
+          heatScore: 90,
+          confidence: 0.8,
+          sourceCount: 4,
+          sourceSkew: 0.3,
+          coverageStatus: 'partial',
+          stale: false,
+          issueMix: []
+        },
+        {
+          rank: 2,
+          targetId: 'region-seoul-mapo',
+          targetType: 'region',
+          displayName: '마포구',
+          mentionCount: 42,
+          mentionDeltaPct: 35,
+          reactionDirectionRatio: { expectation: 0.55, concern: 0.2, neutral: 0.25 },
+          heatScore: 76,
+          confidence: 0.74,
+          sourceCount: 3,
+          sourceSkew: 0.44,
+          coverageStatus: 'partial',
+          stale: false,
+          issueMix: []
+        },
+        {
+          rank: 3,
+          targetId: 'region-seoul-mapo-ahyeon',
+          targetType: 'region',
+          displayName: '아현동',
+          mentionCount: 27,
+          mentionDeltaPct: 22,
+          reactionDirectionRatio: { expectation: 0.5, concern: 0.25, neutral: 0.25 },
+          heatScore: 64,
+          confidence: 0.66,
+          sourceCount: 2,
+          sourceSkew: 0.5,
+          coverageStatus: 'partial',
+          stale: false,
+          issueMix: []
+        }
+      ]
+    })));
+
+    const ranking = await fetchRealEstateReactionRankingWithFallback({
+      type: 'region',
+      windowMinutes: 10080,
+      limit: 10
+    }, fetcher);
+
+    expect(ranking.items.map((item) => item.targetId)).toEqual([
+      'region-seoul-mapo',
+      'region-seoul-mapo-ahyeon'
+    ]);
+    expect(ranking.items.map((item) => item.rank)).toEqual([1, 2]);
+  });
+
+  it('keeps complex rankings limited to actual apartment complex targets', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+      window: '10080m',
+      items: [
+        {
+          rank: 1,
+          targetId: 'region-seoul-mapo',
+          targetType: 'region',
+          displayName: '마포구',
+          mentionCount: 50,
+          mentionDeltaPct: 30,
+          reactionDirectionRatio: { expectation: 0.4, concern: 0.3, neutral: 0.3 },
+          heatScore: 70,
+          confidence: 0.7,
+          sourceCount: 2,
+          sourceSkew: 0.5,
+          coverageStatus: 'partial',
+          stale: false,
+          issueMix: []
+        },
+        {
+          rank: 2,
+          targetId: 'complex-molit-1111011500-sajik-palace',
+          targetType: 'complex',
+          displayName: '사직팰리스',
+          mentionCount: 16,
+          mentionDeltaPct: 120,
+          reactionDirectionRatio: { expectation: 0.6, concern: 0.18, neutral: 0.22 },
+          heatScore: 82,
+          confidence: 0.72,
+          sourceCount: 3,
+          sourceSkew: 0.42,
+          coverageStatus: 'partial',
+          stale: false,
+          issueMix: []
+        }
+      ]
+    })));
+
+    const ranking = await fetchRealEstateReactionRankingWithFallback({ type: 'complex', windowMinutes: 10080, limit: 10 }, fetcher);
+
+    expect(ranking.items.map((item) => item.targetId)).toEqual([
+      'complex-molit-1111011500-sajik-palace'
+    ]);
+    expect(ranking.items[0].rank).toBe(1);
   });
 
   it('maps backend reaction rows to the region reaction table shape', () => {
@@ -77,91 +228,5 @@ describe('real-estate reaction ranking adapter', () => {
         tone: 'up'
       }
     ]);
-  });
-
-  it('uses live region ranking rows for the community pulse cards', async () => {
-    const fetcher = vi.fn(async (input: string) => {
-      if (input.includes('type=region')) {
-        return new Response(JSON.stringify({
-          items: [
-            {
-              rank: 1,
-              targetId: 'region-seoul',
-              targetType: 'region',
-              displayName: '서울특별시',
-              mentionCount: 18,
-              mentionDeltaPct: 100,
-              reactionDirectionRatio: { expectation: 0.06, concern: 0.06, neutral: 0.88 },
-              heatScore: 100,
-              confidence: 0.87,
-              sourceCount: 1,
-              sourceSkew: 1,
-              coverageStatus: 'source_skewed',
-              stale: false,
-              issueMix: [
-                { issueKey: 'jeonse', label: '전세', share: 0.06, direction: 'concern', summary: '전세 우려', confidence: 0.78 }
-              ]
-            }
-          ]
-        }));
-      }
-
-      return new Response(JSON.stringify({ items: [] }));
-    });
-    vi.stubGlobal('fetch', fetcher);
-
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [
-        { path: '/realestate/reactions', component: RegionReactionPage },
-        { path: '/realestate/targets/:targetId', component: { template: '<div />' } }
-      ]
-    });
-    router.push('/realestate/reactions');
-    await router.isReady();
-
-    const wrapper = mount(RegionReactionPage, {
-      global: {
-        plugins: [router]
-      }
-    });
-    await flushPromises();
-
-    const signalBoardText = wrapper.find('.region-signal-overview-board').text();
-    expect(signalBoardText).toContain('서울특별시');
-    expect(signalBoardText).toContain('+100%');
-    expect(signalBoardText).not.toContain('성수동 생활권');
-    expect(wrapper.text()).toContain('단지군 관심 TOP 10');
-    expect(wrapper.text()).toContain('수집된 TOP10 데이터가 아직 없습니다');
-    expect(wrapper.text()).not.toContain('래미안 원베일리');
-  });
-
-  it('keeps all-empty API results distinct from fixture fallback rows', async () => {
-    const fetcher = vi.fn(async () => new Response(JSON.stringify({ items: [] })));
-    vi.stubGlobal('fetch', fetcher);
-
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [
-        { path: '/realestate/reactions', component: RegionReactionPage },
-        { path: '/realestate/targets/:targetId', component: { template: '<div />' } }
-      ]
-    });
-    router.push('/realestate/reactions');
-    await router.isReady();
-
-    const wrapper = mount(RegionReactionPage, {
-      global: {
-        plugins: [router]
-      }
-    });
-    await flushPromises();
-
-    const signalBoardText = wrapper.find('.region-signal-overview-board').text();
-    expect(signalBoardText).toContain('수집된 지역 급증 신호가 아직 없습니다');
-    expect(signalBoardText).not.toContain('성수동 생활권');
-    expect(wrapper.findAll('.region-ranking-row')).toHaveLength(0);
-    expect(wrapper.text()).toContain('지역 표시0곳수집 전');
-    expect(wrapper.text()).toContain('단지 표시0곳수집 전');
   });
 });

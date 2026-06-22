@@ -31,18 +31,20 @@ public class RealEstateMarketFactController {
             @RequestParam(required = false) String targetId,
             @RequestParam(required = false) String legalDongCode,
             @RequestParam(required = false) String factType,
-            @RequestParam(defaultValue = "100") int limit
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = "0") int page
     ) {
-        return new RealEstateMarketFactListResponse(service.list(targetId, legalDongCode, factType, limit));
+        return new RealEstateMarketFactListResponse(service.list(targetId, legalDongCode, factType, limit, page));
     }
 
     @GetMapping("/api/realestate/targets/{targetId}/market-facts")
     public RealEstateMarketFactListResponse listForTarget(
             @PathVariable String targetId,
             @RequestParam(required = false) String factType,
-            @RequestParam(defaultValue = "100") int limit
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = "false") boolean officialOnly
     ) {
-        return new RealEstateMarketFactListResponse(service.listForTarget(targetId, factType, limit));
+        return new RealEstateMarketFactListResponse(service.listForTarget(targetId, factType, limit, officialOnly));
     }
 
     @GetMapping("/api/realestate/dashboard/market-summary")

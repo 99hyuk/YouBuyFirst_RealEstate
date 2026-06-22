@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -17,6 +18,8 @@ class RuleBasedRealEstateReactionClassifier:
     model = "rule-realestate-reaction-v1"
 
     def classify_post(self, post: RealEstateMatchedPost) -> list[RealEstateReactionObservation]:
+        if _is_structured_trade_search_post(post):
+            return []
         text = f"{post.title}\n{post.content_snippet}"
         direction, confidence = _classify_direction(text)
         issues = _classify_issues(text)
@@ -113,6 +116,27 @@ def _classify_issues(text: str) -> list[dict[str, Any]]:
             }
         )
     return issues
+
+
+def _is_structured_trade_search_post(post: RealEstateMatchedPost) -> bool:
+    source = str(post.source or "").strip().upper()
+    external_id = str(post.external_id or "")
+    if source not in {"NAVER_CAFE", "DAUM_CAFE"} or "public_search" not in external_id:
+        return False
+    text = f"{post.title}\n{post.content_snippet}"
+    if "실거래가" not in text:
+        return False
+    structured_markers = (
+        "매매 시세",
+        "신고가",
+        "전지역",
+        "주간 실거래가",
+        "오늘 실거래가",
+        "단지별 최고가",
+    )
+    if any(marker in text for marker in structured_markers):
+        return True
+    return bool(re.search(r"\d[\d,]*\s*건", text) and re.search(r"\d+(?:\.\d+)?\s*억", text))
 
 
 def _matched_post_from_mapping(record: dict[str, Any]) -> RealEstateMatchedPost:

@@ -1,4 +1,10 @@
+from datetime import datetime, timezone
+
 from youbuyfirst_pipeline.client import SpringIngestionClient
+
+
+def _dt(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(timezone.utc)
 
 
 class _Response:
@@ -149,6 +155,21 @@ class _FakeHttpxClient:
                             "providerObjectId": "molit_apt_trade:30110:202606:1",
                             "observedAt": "2026-06-03",
                             "valueJson": {"dealAmountManwon": 42000},
+                        }
+                    ]
+                }
+            )
+        if url.endswith("/api/realestate/market-facts"):
+            return _Response(
+                {
+                    "items": [
+                        {
+                            "targetId": None,
+                            "legalDongCode": "00000",
+                            "factType": "sale_price_index_change_pct",
+                            "providerObjectId": "reb_rone_main_snapshot:A202:202606",
+                            "observedAt": "2026-06-01",
+                            "valueJson": {"value": 0.12, "unit": "%"},
                         }
                     ]
                 }
@@ -331,6 +352,110 @@ def test_spring_client_defaults_to_longer_timeout_for_ingestion_batches():
     assert SpringIngestionClient("http://backend:8080").timeout_seconds == 60.0
 
 
+def test_spring_client_records_crawl_run_with_target_context(monkeypatch):
+    _FakeHttpxClient.posts = []
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    client.record_crawl_run(
+        "NAVER_CAFE",
+        "naver-cafe-run-1",
+        _dt("2026-06-17T06:00:00Z"),
+        _dt("2026-06-17T06:01:00Z"),
+        "PARTIAL_FAILURE",
+        0,
+        0,
+        "SerpApi cafe discovery failed: status=429",
+        target_id="NAVER_CAFE:public_search",
+        target_kind="community-board",
+    )
+
+    assert _FakeHttpxClient.posts == [
+        {
+            "url": "http://backend:8080/internal/ingestions/crawl-runs",
+            "json": {
+                "source": "NAVER_CAFE",
+                "runId": "naver-cafe-run-1",
+                "batchStartedAt": "2026-06-17T06:00:00Z",
+                "batchFinishedAt": "2026-06-17T06:01:00Z",
+                "status": "PARTIAL_FAILURE",
+                "postsSeen": 0,
+                "postsAccepted": 0,
+                "errorMessage": "SerpApi cafe discovery failed: status=429",
+                "targetId": "NAVER_CAFE:public_search",
+                "targetKind": "community-board",
+            },
+            "timeout": 45,
+        }
+    ]
+
+
+def test_spring_client_omits_local_only_filter_counts_from_backend_coverage_payload(monkeypatch):
+    _FakeHttpxClient.posts = []
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    client.record_crawl_run(
+        "THEQOO",
+        "theqoo-run-1",
+        _dt("2026-06-17T06:00:00Z"),
+        _dt("2026-06-17T06:01:00Z"),
+        "SUCCESS",
+        10,
+        2,
+        coverage={
+            "pagesFetched": 1,
+            "rowsSeen": 10,
+            "ignoredPinnedCount": 0,
+            "duplicateStop": False,
+            "cutoffStop": False,
+            "coverageStatus": "complete",
+            "filteredOutCount": 8,
+            "excludedTitleCount": 2,
+            "keywordMissCount": 6,
+            "duplicateLinkCount": 1,
+        },
+    )
+
+    payload = _FakeHttpxClient.posts[0]["json"]
+    assert payload["rowsSeen"] == 10
+    assert "filteredOutCount" not in payload
+    assert "excludedTitleCount" not in payload
+    assert "keywordMissCount" not in payload
+    assert "duplicateLinkCount" not in payload
+
+
+def test_spring_client_paginates_community_posts_export_when_limit_exceeds_backend_page_size(monkeypatch):
+    _FakeHttpxClient.gets = []
+    _FakeHttpxClient.get_responses = [
+        {"items": [{"externalId": f"post-{index}"} for index in range(5000)]},
+        {"items": [{"externalId": "post-5000"}]},
+    ]
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    items = client.list_community_posts_for_reaction_refresh(
+        source=None,
+        published_from="2026-06-10T00:00:00Z",
+        published_to="2026-06-17T00:00:00Z",
+        limit=5001,
+    )
+
+    assert len(items) == 5001
+    assert _FakeHttpxClient.gets[0]["params"] == {
+        "publishedFrom": "2026-06-10T00:00:00Z",
+        "publishedTo": "2026-06-17T00:00:00Z",
+        "limit": 5000,
+        "page": 0,
+    }
+    assert _FakeHttpxClient.gets[1]["params"] == {
+        "publishedFrom": "2026-06-10T00:00:00Z",
+        "publishedTo": "2026-06-17T00:00:00Z",
+        "limit": 5000,
+        "page": 1,
+    }
+
+
 def test_spring_client_publishes_real_estate_market_facts(monkeypatch):
     _FakeHttpxClient.posts = []
     monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
@@ -487,6 +612,131 @@ def test_spring_client_lists_real_estate_market_data_targets(monkeypatch):
             "enabled": True,
         }
     ]
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/internal/realestate/market-data-targets",
+            "params": {
+                "enabled": "true",
+                "limit": "500",
+                "page": "0",
+            },
+            "timeout": 45,
+        }
+    ]
+
+
+def test_spring_client_pages_real_estate_market_data_targets_until_short_page(monkeypatch):
+    _FakeHttpxClient.gets = []
+    _FakeHttpxClient.get_responses = [
+        {
+            "items": [
+                {"targetId": "region-a", "providerDataset": "molit_apt_trade", "lawdCode": "11110"},
+                {"targetId": "region-b", "providerDataset": "molit_apt_trade", "lawdCode": "11200"},
+            ]
+        },
+        {
+            "items": [
+                {"targetId": "region-c", "providerDataset": "molit_apt_trade", "lawdCode": "11300"},
+            ]
+        },
+    ]
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    targets = client.list_real_estate_market_data_targets(enabled=True, limit=2)
+
+    assert [target["targetId"] for target in targets] == ["region-a", "region-b", "region-c"]
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/internal/realestate/market-data-targets",
+            "params": {
+                "enabled": "true",
+                "limit": "2",
+                "page": "0",
+            },
+            "timeout": 45,
+        },
+        {
+            "url": "http://backend:8080/internal/realestate/market-data-targets",
+            "params": {
+                "enabled": "true",
+                "limit": "2",
+                "page": "1",
+            },
+            "timeout": 45,
+        },
+    ]
+
+
+def test_spring_client_pages_real_estate_regions_for_complex_registry(monkeypatch):
+    _FakeHttpxClient.gets = []
+    _FakeHttpxClient.get_responses = [
+        {
+            "items": [
+                {
+                    "targetId": "region-1144010100",
+                    "targetType": "region",
+                    "displayName": "서울특별시 마포구 아현동",
+                    "regionLevel": "eupmyeondong",
+                    "parentTargetId": "region-seoul-mapo",
+                    "legalDongCode": "1144010100",
+                    "regionCode": "1144010100",
+                },
+                {
+                    "targetId": "region-1144010200",
+                    "targetType": "region",
+                    "displayName": "서울특별시 마포구 공덕동",
+                    "regionLevel": "eupmyeondong",
+                    "parentTargetId": "region-seoul-mapo",
+                    "legalDongCode": "1144010200",
+                    "regionCode": "1144010200",
+                },
+            ]
+        },
+        {
+            "items": [
+                {
+                    "targetId": "region-1144010300",
+                    "targetType": "region",
+                    "displayName": "서울특별시 마포구 도화동",
+                    "regionLevel": "eupmyeondong",
+                    "parentTargetId": "region-seoul-mapo",
+                    "legalDongCode": "1144010300",
+                    "regionCode": "1144010300",
+                },
+            ]
+        },
+    ]
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    regions = client.list_real_estate_regions(region_level="eupmyeondong", limit=2)
+
+    assert [region["targetId"] for region in regions] == [
+        "region-1144010100",
+        "region-1144010200",
+        "region-1144010300",
+    ]
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/internal/realestate/regions",
+            "params": {
+                "regionLevel": "eupmyeondong",
+                "limit": "2",
+                "page": "0",
+            },
+            "timeout": 45,
+        },
+        {
+            "url": "http://backend:8080/internal/realestate/regions",
+            "params": {
+                "regionLevel": "eupmyeondong",
+                "limit": "2",
+                "page": "1",
+            },
+            "timeout": 45,
+        },
+    ]
 
 
 def test_spring_client_gets_real_estate_reaction_ranking(monkeypatch):
@@ -545,6 +795,27 @@ def test_spring_client_lists_target_market_facts_and_content(monkeypatch):
     ]
 
 
+def test_spring_client_lists_general_market_facts(monkeypatch):
+    _FakeHttpxClient.gets = []
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    facts = client.list_real_estate_market_facts(legal_dong_code="00000", limit=3, page=2)
+
+    assert facts[0]["providerObjectId"] == "reb_rone_main_snapshot:A202:202606"
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/api/realestate/market-facts",
+            "params": {
+                "limit": "3",
+                "page": "2",
+                "legalDongCode": "00000",
+            },
+            "timeout": 45,
+        }
+    ]
+
+
 def test_spring_client_lists_real_estate_aliases_for_matcher(monkeypatch):
     _FakeHttpxClient.gets = []
     monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
@@ -575,9 +846,63 @@ def test_spring_client_lists_real_estate_aliases_for_matcher(monkeypatch):
                 "reviewState": "approved",
                 "ambiguous": "false",
                 "targetType": "region",
+                "limit": "500",
+                "page": "0",
             },
             "timeout": 45,
         }
+    ]
+
+
+def test_spring_client_pages_real_estate_aliases_until_short_page(monkeypatch):
+    _FakeHttpxClient.gets = []
+    _FakeHttpxClient.get_responses = [
+        {
+            "items": [
+                {"targetType": "complex", "targetId": "complex-a", "alias": "alpha-palace"},
+                {"targetType": "complex", "targetId": "complex-b", "alias": "beta-palace"},
+            ]
+        },
+        {
+            "items": [
+                {"targetType": "complex", "targetId": "complex-c", "alias": "gamma-palace"},
+            ]
+        },
+    ]
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    aliases = client.list_real_estate_aliases(
+        review_state="approved",
+        ambiguous=False,
+        target_type="complex",
+        limit=2,
+    )
+
+    assert [alias["targetId"] for alias in aliases] == ["complex-a", "complex-b", "complex-c"]
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/internal/realestate/aliases",
+            "params": {
+                "reviewState": "approved",
+                "ambiguous": "false",
+                "targetType": "complex",
+                "limit": "2",
+                "page": "0",
+            },
+            "timeout": 45,
+        },
+        {
+            "url": "http://backend:8080/internal/realestate/aliases",
+            "params": {
+                "reviewState": "approved",
+                "ambiguous": "false",
+                "targetType": "complex",
+                "limit": "2",
+                "page": "1",
+            },
+            "timeout": 45,
+        },
     ]
 
 
@@ -642,9 +967,63 @@ def test_spring_client_lists_real_estate_target_edges_for_rollup(monkeypatch):
                 "reviewState": "approved",
                 "edgeType": "contains",
                 "direction": "both",
+                "limit": "500",
+                "page": "0",
             },
             "timeout": 45,
         }
+    ]
+
+
+def test_spring_client_pages_real_estate_target_edges_until_short_page(monkeypatch):
+    _FakeHttpxClient.gets = []
+    _FakeHttpxClient.get_responses = [
+        {
+            "items": [
+                {"fromTargetId": "region-seoul-mapo", "toTargetId": "complex-a", "edgeType": "contains"},
+                {"fromTargetId": "region-seoul-mapo", "toTargetId": "complex-b", "edgeType": "contains"},
+            ]
+        },
+        {
+            "items": [
+                {"fromTargetId": "region-seoul-mapo", "toTargetId": "complex-c", "edgeType": "contains"},
+            ]
+        },
+    ]
+    monkeypatch.setattr("youbuyfirst_pipeline.client.httpx.Client", _FakeHttpxClient)
+    client = SpringIngestionClient("http://backend:8080", timeout_seconds=45)
+
+    edges = client.list_real_estate_target_edges(
+        review_state="approved",
+        edge_type="contains",
+        direction="both",
+        limit=2,
+    )
+
+    assert [edge["toTargetId"] for edge in edges] == ["complex-a", "complex-b", "complex-c"]
+    assert _FakeHttpxClient.gets == [
+        {
+            "url": "http://backend:8080/internal/realestate/target-edges",
+            "params": {
+                "reviewState": "approved",
+                "edgeType": "contains",
+                "direction": "both",
+                "limit": "2",
+                "page": "0",
+            },
+            "timeout": 45,
+        },
+        {
+            "url": "http://backend:8080/internal/realestate/target-edges",
+            "params": {
+                "reviewState": "approved",
+                "edgeType": "contains",
+                "direction": "both",
+                "limit": "2",
+                "page": "1",
+            },
+            "timeout": 45,
+        },
     ]
 
 
@@ -746,12 +1125,13 @@ def test_spring_client_exports_community_posts_for_reaction_refresh(monkeypatch)
     ]
     assert _FakeHttpxClient.gets[-1] == {
         "url": "http://backend:8080/internal/ingestions/community-posts/export",
-        "params": {
-            "source": "PPOMPPU",
-            "publishedFrom": "2026-06-14T00:00:00Z",
-            "publishedTo": "2026-06-14T01:00:00Z",
-            "limit": 10,
-        },
+            "params": {
+                "source": "PPOMPPU",
+                "publishedFrom": "2026-06-14T00:00:00Z",
+                "publishedTo": "2026-06-14T01:00:00Z",
+                "limit": 10,
+                "page": 0,
+            },
         "timeout": 60.0,
     }
 

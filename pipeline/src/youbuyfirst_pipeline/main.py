@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -19,19 +19,28 @@ from youbuyfirst_pipeline.crawl_targets import (
     real_estate_seed_crawl_targets,
 )
 from youbuyfirst_pipeline.crawlers.base import BrowserCapableFetcher
+from youbuyfirst_pipeline.crawlers.cafe_search import CAFE_SEARCH_SOURCES, CafeSearchAdapter
 from youbuyfirst_pipeline.crawlers.dcinside import DcinsideAdapter
 from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
+from youbuyfirst_pipeline.crawlers.generic_board import GenericLinkBoardAdapter, SUPPORTED_GENERIC_BOARD_SOURCES
 from youbuyfirst_pipeline.crawlers.ppomppu import PpomppuAdapter
 from youbuyfirst_pipeline.pipeline import CommunityPipeline
 from youbuyfirst_pipeline.realestate_public_data import (
     DATA_GO_SERVICE_KEY_ENV,
+    PublicDataProviderError,
     RealEstatePublicDataRawIngestion,
+    build_reb_rone_monthly_price_index_client_from_env,
+    build_reb_rone_regional_map_client_from_env,
+    build_reb_rone_main_snapshot_client_from_env,
     build_official_apartment_price_raw_ingestions,
     build_regional_stat_raw_ingestions,
     build_molit_raw_ingestions,
     build_molit_public_data_client_from_env,
     collect_molit_real_estate_market_facts,
     collect_molit_real_estate_market_facts_from_data_targets,
+    collect_reb_rone_main_snapshot_facts,
+    collect_reb_rone_monthly_price_index_change_facts,
+    collect_reb_rone_regional_map_facts,
     inspect_official_apartment_price_csv,
     inspect_regional_stat_csv,
     iter_official_apartment_price_market_facts,
@@ -43,6 +52,14 @@ from youbuyfirst_pipeline.realestate_backfill_plan import (
     chunk_molit_backfill_plan,
     load_molit_backfill_plan_manifest,
 )
+from youbuyfirst_pipeline.realestate_complex_registry import (
+    build_real_estate_complex_registry_from_market_facts,
+    load_real_estate_complex_registry_market_facts,
+)
+from youbuyfirst_pipeline.realestate_community_complex_seed import (
+    COMMUNITY_TRADE_TABLE_SOURCE,
+    build_observed_community_complex_seed_registry,
+)
 from youbuyfirst_pipeline.realestate_provider_catalog import (
     public_data_catalog_payload,
     public_data_catalog_seed_sql,
@@ -53,6 +70,7 @@ from youbuyfirst_pipeline.realestate_matcher import (
     load_real_estate_alias_rules,
     load_real_estate_posts_for_matching,
     match_real_estate_posts,
+    real_estate_posts_for_matching_from_records,
     suggest_real_estate_alias_candidates,
 )
 from youbuyfirst_pipeline.realestate_reaction_classifier import (
@@ -67,10 +85,13 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
 )
 from youbuyfirst_pipeline.realestate_daily_scheduler import (
     RealEstateCommunityCrawlRefreshJob,
+    RealEstateCommunityComplexSeedRefreshJob,
+    RealEstateComplexRegistryRefreshJob,
     RealEstateConfigMissingRefreshJob,
     RealEstateDailyRefreshJob,
     RealEstateEvidenceLogRefreshJob,
     RealEstateMapLayerRefreshJob,
+    RealEstateOfficialStatsRefreshJob,
     RealEstateRecentIssuesRefreshJob,
 )
 from youbuyfirst_pipeline.realestate_evidence import (
@@ -122,6 +143,7 @@ from youbuyfirst_pipeline.realestate_source_registry import (
 )
 from youbuyfirst_pipeline.realestate_reaction_scheduler import build_real_estate_reaction_snapshot_refresh_job
 from youbuyfirst_pipeline.realestate_regions import (
+    build_real_estate_region_alias_requests,
     build_molit_region_market_data_targets,
     parse_molit_legal_dong_code_csv,
 )
@@ -131,6 +153,7 @@ from youbuyfirst_pipeline.realestate_target_graph import (
     load_real_estate_target_edge_rules,
     roll_up_real_estate_reaction_observations,
 )
+from youbuyfirst_pipeline.realestate_top10_readiness import build_real_estate_top10_readiness
 from youbuyfirst_pipeline.scheduler import serve
 from youbuyfirst_pipeline.source_policy import default_source_policy_registry, runtime_environment_from_env
 
@@ -143,6 +166,12 @@ ACTIVE_COMMANDS = [
     "serve",
     "realestate-market-facts",
     "realestate-market-facts-push",
+    "realestate-reb-rone-main-snapshot",
+    "realestate-reb-rone-main-snapshot-push",
+    "realestate-reb-rone-monthly-price-index",
+    "realestate-reb-rone-monthly-price-index-push",
+    "realestate-reb-rone-regional-map",
+    "realestate-reb-rone-regional-map-push",
     "realestate-market-facts-raw-push",
     "realestate-regional-stat-csv-inspect",
     "realestate-regional-stat-csv-raw-push",
@@ -150,10 +179,17 @@ ACTIVE_COMMANDS = [
     "realestate-official-apartment-prices-raw-push",
     "realestate-market-facts-promote-staging",
     "realestate-market-facts-backfill-plan",
+    "realestate-complex-registry",
+    "realestate-complex-registry-push",
+    "realestate-community-complex-seeds",
+    "realestate-community-complex-seeds-push",
+    "realestate-top10-readiness",
     "realestate-public-data-preflight",
     "realestate-public-data-providers",
     "realestate-regions-inspect",
     "realestate-regions-import",
+    "realestate-region-aliases",
+    "realestate-region-aliases-push",
     "realestate-aliases-fetch",
     "realestate-alias-coverage",
     "realestate-alias-candidates",
@@ -212,6 +248,7 @@ def build_pipeline() -> CommunityPipeline:
         comment_trigger_min_views=int(os.getenv("CRAWLER_COMMENT_TRIGGER_MIN_VIEWS", "5000")),
         high_engagement_max_comments=int(os.getenv("CRAWLER_HIGH_ENGAGEMENT_MAX_COMMENTS", "30")),
         diffusion_max_comments=int(os.getenv("CRAWLER_DIFFUSION_MAX_COMMENTS", "50")),
+        ignore_board_watermark=_env_flag("CRAWLER_IGNORE_WATERMARK", default=False),
     )
 
 
@@ -231,6 +268,13 @@ def _stream_crawler_from_env() -> BoardStreamCrawler:
     )
 
 
+def _env_flag(name: str, *, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 def _adapters_from_targets(
     targets: list[CrawlTarget],
     fetcher: BrowserCapableFetcher,
@@ -248,6 +292,7 @@ def _adapters_from_targets(
                     url=target.url,
                     target=target,
                     stream_crawler=stream_crawler,
+                    use_local_browser_fetch=_env_flag("CRAWLER_FMKOREA_USE_BROWSER_FETCH", default=False),
                 )
             )
             continue
@@ -261,7 +306,24 @@ def _adapters_from_targets(
             CrawlTargetKind.COMMUNITY_BOARD,
             CrawlTargetKind.GENERAL_BOARD_DIFFUSION,
         }:
-            adapters.append(PpomppuAdapter(fetcher, target=target, stream_crawler=stream_crawler))
+            adapters.append(
+                PpomppuAdapter(
+                    fetcher,
+                    target=target,
+                    stream_crawler=stream_crawler,
+                    detail_content_max_posts=int(os.getenv("CRAWLER_DETAIL_CONTENT_MAX_POSTS_PER_SOURCE", "40")),
+                    detail_content_max_chars=int(os.getenv("CRAWLER_DETAIL_CONTENT_MAX_CHARS", "1000")),
+                )
+            )
+            continue
+        if target.source in CAFE_SEARCH_SOURCES and target.kind == CrawlTargetKind.COMMUNITY_BOARD:
+            adapters.append(CafeSearchAdapter(target=target))
+            continue
+        if target.source in SUPPORTED_GENERIC_BOARD_SOURCES and target.kind in {
+            CrawlTargetKind.COMMUNITY_BOARD,
+            CrawlTargetKind.GENERAL_BOARD_DIFFUSION,
+        }:
+            adapters.append(GenericLinkBoardAdapter(fetcher, target=target, stream_crawler=stream_crawler))
             continue
         raise ValueError(f"unsupported crawl target: {target.target_id}")
     return adapters
@@ -324,6 +386,10 @@ async def async_main() -> None:
         default=int(os.getenv("REALESTATE_PROMOTE_LIMIT", "1000")),
     )
     parser.add_argument(
+        "--realestate-market-facts-jsonl",
+        default=os.getenv("REALESTATE_MARKET_FACTS_JSONL"),
+    )
+    parser.add_argument(
         "--realestate-promote-after-raw-push",
         action="store_true",
         default=os.getenv("REALESTATE_PROMOTE_AFTER_RAW_PUSH", "false").lower() in {"1", "true", "yes"},
@@ -357,6 +423,11 @@ async def async_main() -> None:
         "--realestate-public-data-max-pages",
         type=int,
         default=int(os.getenv("REALESTATE_PUBLIC_DATA_MAX_PAGES", "1000")),
+    )
+    parser.add_argument(
+        "--realestate-rone-geo-code",
+        default=os.getenv("REALESTATE_RONE_GEO_CODE", "10"),
+        help="REB R-ONE regional map geoCd. Use 10 for nationwide sido rows.",
     )
     parser.add_argument(
         "--realestate-official-apartment-price-csv",
@@ -403,6 +474,11 @@ async def async_main() -> None:
         default=int(os.getenv("REALESTATE_REACTION_SNAPSHOT_REFRESH_INTERVAL_MINUTES", "30")),
     )
     parser.add_argument(
+        "--realestate-reaction-use-current-window",
+        action="store_true",
+        default=os.getenv("REALESTATE_REACTION_USE_CURRENT_WINDOW", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
         "--enable-realestate-daily-refresh",
         action="store_true",
         default=os.getenv("REALESTATE_DAILY_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
@@ -413,9 +489,39 @@ async def async_main() -> None:
         default=int(os.getenv("REALESTATE_DAILY_REFRESH_INTERVAL_MINUTES", "1440")),
     )
     parser.add_argument(
+        "--realestate-daily-reaction-window-minutes",
+        type=int,
+        default=int(os.getenv("REALESTATE_DAILY_REACTION_WINDOW_MINUTES", "10080")),
+    )
+    parser.add_argument(
         "--enable-realestate-daily-crawl-refresh",
         action="store_true",
         default=os.getenv("REALESTATE_DAILY_CRAWL_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--enable-realestate-community-complex-seed-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_COMMUNITY_COMPLEX_SEED_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--enable-realestate-official-stats-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_OFFICIAL_STATS_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--enable-realestate-complex-registry-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_COMPLEX_REGISTRY_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-complex-registry-market-fact-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_COMPLEX_REGISTRY_MARKET_FACT_LIMIT", "1000")),
+    )
+    parser.add_argument(
+        "--realestate-top10-readiness-limit",
+        type=int,
+        default=int(os.getenv("REALESTATE_TOP10_READINESS_LIMIT", "10")),
     )
     parser.add_argument(
         "--enable-realestate-recent-issues-refresh",
@@ -449,7 +555,7 @@ async def async_main() -> None:
     parser.add_argument(
         "--realestate-map-layer-periods",
         nargs="+",
-        default=_configured_csv_values(os.getenv("REALESTATE_MAP_LAYER_PERIODS"), ["week", "month", "halfYear"]),
+        default=_configured_csv_values(os.getenv("REALESTATE_MAP_LAYER_PERIODS"), ["month", "quarter", "halfYear"]),
     )
     parser.add_argument(
         "--realestate-evidence-target-type",
@@ -711,6 +817,66 @@ async def async_main() -> None:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
 
+    if args.command in {"realestate-complex-registry", "realestate-complex-registry-push"}:
+        if not args.realestate_market_facts_jsonl:
+            raise SystemExit("--realestate-market-facts-jsonl is required")
+        registry = _realestate_complex_registry_payload_from_args(args)
+        if args.command == "realestate-complex-registry":
+            print(json.dumps(registry.to_dict(), ensure_ascii=False, indent=2))
+            return
+        client = _spring_client()
+        client.publish_real_estate_targets(registry.targets)
+        client.publish_real_estate_complexes(registry.complexes)
+        client.publish_real_estate_aliases(registry.aliases)
+        client.publish_real_estate_target_edges(registry.edges)
+        print(
+            json.dumps(
+                {
+                    "publishedTargets": len(registry.targets),
+                    "publishedComplexes": len(registry.complexes),
+                    "publishedAliases": len(registry.aliases),
+                    "publishedEdges": len(registry.edges),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+
+    if args.command in {"realestate-community-complex-seeds", "realestate-community-complex-seeds-push"}:
+        registry = _realestate_community_complex_seed_registry_from_args(args)
+        observed_complex_target_ids = set(registry.observed_target_ids)
+        if not observed_complex_target_ids:
+            observed_complex_target_ids = {
+                str(target.get("targetId") or target.get("target_id") or "").strip()
+                for target in registry.targets
+            }
+            observed_complex_target_ids.update(
+                str(alias.get("targetId") or alias.get("target_id") or "").strip()
+                for alias in registry.aliases
+            )
+            observed_complex_target_ids = {target_id for target_id in observed_complex_target_ids if target_id}
+        if args.command == "realestate-community-complex-seeds-push":
+            client = _spring_client()
+            client.publish_real_estate_targets(registry.targets)
+            client.publish_real_estate_complexes(registry.complexes)
+            client.publish_real_estate_aliases(registry.aliases)
+            client.publish_real_estate_target_edges(registry.edges)
+        print(
+                json.dumps(
+                    {
+                        "observedComplexTargets": len(observed_complex_target_ids),
+                        "publishedTargets": len(registry.targets) if args.command.endswith("-push") else 0,
+                        "publishedComplexes": len(registry.complexes) if args.command.endswith("-push") else 0,
+                        "publishedAliases": len(registry.aliases) if args.command.endswith("-push") else 0,
+                        "publishedEdges": len(registry.edges) if args.command.endswith("-push") else 0,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+
     if args.command == "realestate-aliases-fetch":
         aliases = _load_real_estate_alias_rules_from_args(args, force_backend=True)
         print(json.dumps({"items": [_real_estate_alias_rule_to_dict(alias) for alias in aliases]}, ensure_ascii=False, indent=2))
@@ -719,6 +885,15 @@ async def async_main() -> None:
     if args.command == "realestate-target-edges-fetch":
         edges = _load_real_estate_target_edge_rules_from_args(args, force_backend=True)
         print(json.dumps({"items": [_real_estate_target_edge_rule_to_dict(edge) for edge in edges]}, ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "realestate-top10-readiness":
+        payload = build_real_estate_top10_readiness(
+            _spring_client(),
+            window_minutes=args.realestate_daily_reaction_window_minutes,
+            limit=args.realestate_top10_readiness_limit,
+        )
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
 
     if args.command == "realestate-regions-inspect":
@@ -737,20 +912,37 @@ async def async_main() -> None:
         client.publish_real_estate_regions(regions)
         return
 
+    if args.command in {"realestate-region-aliases", "realestate-region-aliases-push"}:
+        client = _spring_client()
+        regions = client.list_real_estate_regions(limit=1000)
+        aliases = build_real_estate_region_alias_requests(regions)
+        if args.command == "realestate-region-aliases-push":
+            client.publish_real_estate_aliases(aliases)
+        print(
+            json.dumps(
+                {
+                    "regionCount": len(regions),
+                    "aliasCount": len(aliases),
+                    "publishedAliases": len(aliases) if args.command == "realestate-region-aliases-push" else 0,
+                    "approvedAliases": sum(1 for alias in aliases if alias["reviewState"] == "approved"),
+                    "candidateAliases": sum(1 for alias in aliases if alias["reviewState"] != "approved"),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return
+
     if args.command == "realestate-target-matches":
-        if not args.community_posts_jsonl:
-            raise SystemExit("--community-posts-jsonl is required")
         aliases = _load_real_estate_alias_rules_from_args(args)
-        posts = load_real_estate_posts_for_matching(args.community_posts_jsonl)
+        posts = _realestate_posts_for_matching_from_args(args)
         matched_posts = match_real_estate_posts(posts, aliases)
         print(json.dumps({"items": [post.to_dict() for post in matched_posts]}, ensure_ascii=False, indent=2))
         return
 
     if args.command == "realestate-alias-coverage":
-        if not args.community_posts_jsonl:
-            raise SystemExit("--community-posts-jsonl is required")
         aliases = _load_real_estate_alias_rules_from_args(args)
-        posts = load_real_estate_posts_for_matching(args.community_posts_jsonl)
+        posts = _realestate_posts_for_matching_from_args(args)
         report = build_real_estate_alias_coverage_report(posts, aliases)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return
@@ -1092,6 +1284,33 @@ async def async_main() -> None:
         spring_client.publish_real_estate_market_facts(facts)
         return
 
+    if args.command in {"realestate-reb-rone-main-snapshot", "realestate-reb-rone-main-snapshot-push"}:
+        provider = build_reb_rone_main_snapshot_client_from_env()
+        facts = collect_reb_rone_main_snapshot_facts(provider)
+        if args.command == "realestate-reb-rone-main-snapshot":
+            print(json.dumps({"items": [fact.to_ingestion_dict() for fact in facts]}, ensure_ascii=False, indent=2))
+            return
+        _spring_client().publish_real_estate_market_facts(facts)
+        return
+
+    if args.command in {"realestate-reb-rone-regional-map", "realestate-reb-rone-regional-map-push"}:
+        provider = build_reb_rone_regional_map_client_from_env()
+        facts = collect_reb_rone_regional_map_facts(provider, geo_cd=args.realestate_rone_geo_code)
+        if args.command == "realestate-reb-rone-regional-map":
+            print(json.dumps({"items": [fact.to_ingestion_dict() for fact in facts]}, ensure_ascii=False, indent=2))
+            return
+        _spring_client().publish_real_estate_market_facts(facts)
+        return
+
+    if args.command in {"realestate-reb-rone-monthly-price-index", "realestate-reb-rone-monthly-price-index-push"}:
+        provider = build_reb_rone_monthly_price_index_client_from_env()
+        facts = collect_reb_rone_monthly_price_index_change_facts(provider)
+        if args.command == "realestate-reb-rone-monthly-price-index":
+            print(json.dumps({"items": [fact.to_ingestion_dict() for fact in facts]}, ensure_ascii=False, indent=2))
+            return
+        _spring_client().publish_real_estate_market_facts(facts)
+        return
+
     if args.command == "realestate-market-facts-raw-push":
         spring_client = _spring_client()
         tasks, skipped_completed_run_keys, planned_run_count = _realestate_raw_push_task_selection(
@@ -1103,23 +1322,39 @@ async def async_main() -> None:
         run_summaries = []
         for task in tasks:
             started_at = datetime.now(timezone.utc)
-            facts = collect_molit_real_estate_market_facts(
-                provider,
-                lawd_code=task.lawd_code,
-                deal_ym=task.deal_ym,
-                datasets=[_dataset_alias_from_fact_type(task.fact_type)],
-                page_size=args.realestate_public_data_page_size,
-                max_pages=args.realestate_public_data_max_pages,
-                now=started_at,
-            )
-            ingestions = build_molit_raw_ingestions(
-                facts,
-                lawd_code=task.lawd_code,
-                deal_ym=task.deal_ym,
-                started_at=started_at,
-                finished_at=datetime.now(timezone.utc),
-            )
-            if not ingestions:
+            facts = []
+            provider_error = None
+            try:
+                facts = collect_molit_real_estate_market_facts(
+                    provider,
+                    lawd_code=task.lawd_code,
+                    deal_ym=task.deal_ym,
+                    datasets=[_dataset_alias_from_fact_type(task.fact_type)],
+                    page_size=args.realestate_public_data_page_size,
+                    max_pages=args.realestate_public_data_max_pages,
+                    now=started_at,
+                )
+                ingestions = build_molit_raw_ingestions(
+                    facts,
+                    lawd_code=task.lawd_code,
+                    deal_ym=task.deal_ym,
+                    started_at=started_at,
+                    finished_at=datetime.now(timezone.utc),
+                )
+                if not ingestions:
+                    ingestions = [
+                        RealEstatePublicDataRawIngestion(
+                            run_key=task.run_key,
+                            provider_dataset=task.provider_dataset,
+                            lawd_code=task.lawd_code,
+                            deal_ym=task.deal_ym,
+                            started_at=started_at,
+                            finished_at=datetime.now(timezone.utc),
+                            facts=tuple(),
+                        )
+                    ]
+            except PublicDataProviderError as exc:
+                provider_error = str(exc)[:500]
                 ingestions = [
                     RealEstatePublicDataRawIngestion(
                         run_key=task.run_key,
@@ -1129,13 +1364,15 @@ async def async_main() -> None:
                         started_at=started_at,
                         finished_at=datetime.now(timezone.utc),
                         facts=tuple(),
+                        status="provider_error",
+                        error_message=provider_error,
                     )
                 ]
             for ingestion in ingestions:
                 promoted = False
                 promoted_facts = None
                 spring_client.publish_real_estate_public_data_raw_ingestion(ingestion)
-                if args.realestate_promote_after_raw_push:
+                if args.realestate_promote_after_raw_push and ingestion.status == "completed":
                     promote_result = spring_client.promote_real_estate_public_data_staging(
                         provider_dataset=ingestion.provider_dataset,
                         run_key=ingestion.run_key,
@@ -1154,6 +1391,8 @@ async def async_main() -> None:
                         "fetchedFacts": len(facts),
                         "rawItems": raw_items,
                         "empty": raw_items == 0,
+                        "status": ingestion.status,
+                        "providerError": provider_error,
                         "promoted": promoted,
                         "promotedFacts": promoted_facts,
                     }
@@ -1163,6 +1402,7 @@ async def async_main() -> None:
             "publishedRuns": len(run_summaries),
             "publishedItems": sum(item["rawItems"] for item in run_summaries),
             "emptyRuns": sum(1 for item in run_summaries if item["empty"]),
+            "failedRuns": sum(1 for item in run_summaries if item["status"] != "completed"),
             "promotedRuns": sum(1 for item in run_summaries if item["promoted"]),
             "items": run_summaries,
         }
@@ -1332,7 +1572,7 @@ async def async_main() -> None:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return
 
-    pipeline = build_pipeline()
+    pipeline = _build_pipeline_from_args(args)
     if args.command == "run-once":
         results = await pipeline.run_once()
         for result in results:
@@ -1376,49 +1616,120 @@ def _build_real_estate_market_facts_refresh_job_from_args(args, market_client):
     )
 
 
-def _build_real_estate_reaction_snapshot_refresh_job_from_args(args, market_client):
+def _build_real_estate_reaction_snapshot_refresh_job_from_args(args, market_client, *, window_minutes: int | None = None):
     if not args.enable_realestate_reaction_snapshots_refresh:
         return None
     aliases_jsonl = args.realestate_aliases_jsonl
     alias_loader = None
-    if args.realestate_use_backend_aliases:
+    use_backend_registry_from_complex_refresh = args.enable_realestate_complex_registry_refresh
+    candidate_sources = (COMMUNITY_TRADE_TABLE_SOURCE,) if args.enable_realestate_community_complex_seed_refresh else ()
+    if args.realestate_use_backend_aliases or use_backend_registry_from_complex_refresh:
         aliases_jsonl = None
 
         def load_backend_aliases() -> list[RealEstateAliasRule]:
-            return [
-                _real_estate_alias_rule_from_mapping(item)
-                for item in market_client.list_real_estate_aliases(
+            alias_items = list(
+                market_client.list_real_estate_aliases(
                     review_state="approved",
                     ambiguous=False,
                 )
-            ]
+            )
+            if candidate_sources:
+                alias_items.extend(
+                    item
+                    for item in market_client.list_real_estate_aliases(
+                        review_state="candidate",
+                        ambiguous=False,
+                        target_type="complex",
+                    )
+                    if str(item.get("source") or "").strip() in candidate_sources
+                )
+            return [_real_estate_alias_rule_from_mapping(item) for item in alias_items]
 
         alias_loader = load_backend_aliases
     elif not aliases_jsonl:
         raise SystemExit("--realestate-aliases-jsonl is required when real-estate reaction snapshot refresh is enabled")
     if not args.community_posts_jsonl and not args.realestate_use_backend_community_posts:
         raise SystemExit("--community-posts-jsonl is required when real-estate reaction snapshot refresh is enabled")
+    target_edges_jsonl = args.realestate_target_edges_jsonl
+    target_edge_loader = None
+    if args.realestate_use_backend_target_edges or use_backend_registry_from_complex_refresh:
+        target_edges_jsonl = None
+
+        def load_backend_target_edges() -> list[RealEstateTargetEdgeRule]:
+            edge_items = list(
+                market_client.list_real_estate_target_edges(
+                    review_state="approved",
+                    edge_type="contains",
+                    direction="both",
+                )
+            )
+            if candidate_sources:
+                edge_items.extend(
+                    item
+                    for item in market_client.list_real_estate_target_edges(
+                        review_state="candidate",
+                        edge_type="contains",
+                        direction="both",
+                    )
+                    if str(item.get("source") or "").strip() in candidate_sources
+                )
+            return [_real_estate_target_edge_rule_from_mapping(item) for item in edge_items]
+
+        target_edge_loader = load_backend_target_edges
     return build_real_estate_reaction_snapshot_refresh_job(
         client=market_client,
         aliases_jsonl=aliases_jsonl,
         alias_loader=alias_loader,
         community_posts_jsonl=None if args.realestate_use_backend_community_posts else args.community_posts_jsonl,
-        window_minutes=args.reaction_window_minutes,
-        target_edges_jsonl=args.realestate_target_edges_jsonl,
+        window_minutes=window_minutes or args.reaction_window_minutes,
+        target_edges_jsonl=target_edges_jsonl,
+        target_edge_loader=target_edge_loader,
         backend_posts_source=args.realestate_community_posts_source if args.realestate_use_backend_community_posts else None,
         backend_posts_limit=args.realestate_community_posts_limit,
         stale_after_minutes=args.reaction_stale_after_minutes,
+        use_current_window=args.realestate_reaction_use_current_window,
+        candidate_alias_sources=candidate_sources,
+        candidate_edge_sources=candidate_sources,
     )
 
 
 def _build_real_estate_daily_refresh_job(args, pipeline, market_client) -> RealEstateDailyRefreshJob:
     daily_steps = []
+    daily_reaction_window_minutes = args.realestate_daily_reaction_window_minutes
     market_facts_job = _build_real_estate_market_facts_refresh_job_from_args(args, market_client)
-    reaction_snapshot_job = _build_real_estate_reaction_snapshot_refresh_job_from_args(args, market_client)
+    reaction_snapshot_job = _build_real_estate_reaction_snapshot_refresh_job_from_args(
+        args,
+        market_client,
+        window_minutes=daily_reaction_window_minutes,
+    )
     if market_facts_job is not None:
         daily_steps.append(("market_facts", market_facts_job))
+    if args.enable_realestate_official_stats_refresh:
+        daily_steps.append(("official_stats", RealEstateOfficialStatsRefreshJob(client=market_client)))
+    if args.enable_realestate_complex_registry_refresh:
+        daily_steps.append(
+            (
+                "complex_registry",
+                RealEstateComplexRegistryRefreshJob(
+                    client=market_client,
+                    market_fact_limit=args.realestate_complex_registry_market_fact_limit,
+                ),
+            )
+        )
     if args.enable_realestate_daily_crawl_refresh:
         daily_steps.append(("community_crawl", RealEstateCommunityCrawlRefreshJob(pipeline=pipeline)))
+    if args.enable_realestate_community_complex_seed_refresh:
+        daily_steps.append(
+            (
+                "community_complex_seed",
+                RealEstateCommunityComplexSeedRefreshJob(
+                    client=market_client,
+                    window_minutes=daily_reaction_window_minutes,
+                    posts_source=args.realestate_community_posts_source,
+                    posts_limit=args.realestate_community_posts_limit,
+                ),
+            )
+        )
     if reaction_snapshot_job is not None:
         daily_steps.append(("reaction_snapshots", reaction_snapshot_job))
     if args.enable_realestate_recent_issues_refresh:
@@ -1443,7 +1754,7 @@ def _build_real_estate_daily_refresh_job(args, pipeline, market_client) -> RealE
                         search_targets_jsonl=args.realestate_search_targets_jsonl,
                         issue_keywords=args.realestate_issue_keywords,
                         target_type=args.realestate_recent_issues_target_type,
-                        window_minutes=args.reaction_window_minutes,
+                        window_minutes=daily_reaction_window_minutes,
                         ranking_limit=args.realestate_recent_issues_ranking_limit,
                         result_limit=args.serpapi_result_limit,
                     ),
@@ -1456,7 +1767,7 @@ def _build_real_estate_daily_refresh_job(args, pipeline, market_client) -> RealE
                 RealEstateEvidenceLogRefreshJob(
                     client=market_client,
                     target_type=args.realestate_evidence_target_type,
-                    window_minutes=args.reaction_window_minutes,
+                    window_minutes=daily_reaction_window_minutes,
                     ranking_limit=args.realestate_evidence_ranking_limit,
                     market_fact_limit=args.realestate_evidence_market_fact_limit,
                     timeline_limit=args.realestate_evidence_timeline_limit,
@@ -1480,9 +1791,16 @@ def _build_real_estate_daily_refresh_job(args, pipeline, market_client) -> RealE
     if not daily_steps:
         raise SystemExit(
             "real-estate daily refresh requires at least one refresh step "
-            "(market facts, community crawl, reaction snapshots, recent issues, evidence logs, or map layers)"
+            "(market facts, official stats, complex registry, community crawl, community complex seed, reaction snapshots, recent issues, evidence logs, or map layers)"
         )
     return RealEstateDailyRefreshJob(daily_steps)
+
+
+def _build_pipeline_from_args(args) -> CommunityPipeline:
+    pipeline = build_pipeline()
+    if hasattr(pipeline, "runtime_environment"):
+        pipeline.runtime_environment = runtime_environment_from_env(args.crawl_runtime_environment)
+    return pipeline
 
 
 def _real_estate_evidence_llm_evaluator_from_args(args):
@@ -1505,6 +1823,12 @@ def _real_estate_evidence_llm_evaluator_from_args(args):
 
 
 def _validate_real_estate_serve_refresh_flags(args) -> None:
+    if args.enable_realestate_official_stats_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-official-stats-refresh requires --enable-realestate-daily-refresh")
+    if args.enable_realestate_complex_registry_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-complex-registry-refresh requires --enable-realestate-daily-refresh")
+    if args.enable_realestate_community_complex_seed_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-community-complex-seed-refresh requires --enable-realestate-daily-refresh")
     if args.enable_realestate_recent_issues_refresh and not args.enable_realestate_daily_refresh:
         raise SystemExit("--enable-realestate-recent-issues-refresh requires --enable-realestate-daily-refresh")
     if args.enable_realestate_daily_crawl_refresh and not args.enable_realestate_daily_refresh:
@@ -1923,6 +2247,103 @@ def _unique_in_order(values: list[str]) -> list[str]:
     return unique_values
 
 
+def _realestate_complex_registry_payload_from_args(args):
+    facts = load_real_estate_complex_registry_market_facts(args.realestate_market_facts_jsonl)
+    return build_real_estate_complex_registry_from_market_facts(
+        facts,
+        region_targets_by_lawd_code=_realestate_region_targets_by_lawd_code_from_args(args),
+    )
+
+
+def _realestate_community_complex_seed_registry_from_args(args):
+    existing_aliases = _load_real_estate_alias_rules_from_args(args) if args.realestate_use_backend_aliases else []
+    if args.realestate_use_backend_community_posts:
+        now = datetime.now(timezone.utc)
+        window_start = now - timedelta(minutes=args.realestate_daily_reaction_window_minutes)
+        posts = _spring_client().list_community_posts_for_reaction_refresh(
+            source=args.realestate_community_posts_source,
+            published_from=_iso_z(window_start),
+            published_to=_iso_z(now),
+            limit=args.realestate_community_posts_limit,
+        )
+        return build_observed_community_complex_seed_registry(posts, existing_aliases=existing_aliases)
+    if not args.community_posts_jsonl:
+        raise SystemExit("--community-posts-jsonl is required unless --realestate-use-backend-community-posts is set")
+    return build_observed_community_complex_seed_registry(
+        load_real_estate_posts_for_matching(args.community_posts_jsonl),
+        existing_aliases=existing_aliases,
+    )
+
+
+def _realestate_posts_for_matching_from_args(args):
+    if args.realestate_use_backend_community_posts:
+        now = datetime.now(timezone.utc)
+        window_start = now - timedelta(minutes=args.realestate_daily_reaction_window_minutes)
+        posts = _spring_client().list_community_posts_for_reaction_refresh(
+            source=args.realestate_community_posts_source,
+            published_from=_iso_z(window_start),
+            published_to=_iso_z(now),
+            limit=args.realestate_community_posts_limit,
+        )
+        return real_estate_posts_for_matching_from_records(posts)
+    if not args.community_posts_jsonl:
+        raise SystemExit("--community-posts-jsonl is required unless --realestate-use-backend-community-posts is set")
+    return load_real_estate_posts_for_matching(args.community_posts_jsonl)
+
+
+def _realestate_region_targets_by_lawd_code_from_args(args) -> dict[str, str]:
+    if not args.realestate_use_backend_targets:
+        return {}
+    client = _spring_client()
+    mapping: dict[str, str] = {}
+    for item in client.list_real_estate_market_data_targets(enabled=True):
+        lawd_code = str(item.get("lawdCode") or item.get("lawd_code") or "").strip()
+        target_id = str(item.get("targetId") or item.get("target_id") or "").strip()
+        if not lawd_code or not target_id:
+            continue
+        mapping.setdefault(lawd_code, target_id)
+    list_regions = getattr(client, "list_real_estate_regions", None)
+    if callable(list_regions):
+        for item in list_regions(region_level="eupmyeondong"):
+            legal_dong_code = str(item.get("legalDongCode") or item.get("legal_dong_code") or "").strip()
+            target_id = str(item.get("targetId") or item.get("target_id") or "").strip()
+            if not legal_dong_code or not target_id:
+                continue
+            mapping.setdefault(legal_dong_code, target_id)
+            sigungu_code = legal_dong_code[:5]
+            for dong_name in _realestate_region_display_name_candidates(item):
+                normalized_dong_name = _realestate_match_key(dong_name)
+                if normalized_dong_name:
+                    mapping.setdefault(f"{sigungu_code}:{normalized_dong_name}", target_id)
+    return mapping
+
+
+def _realestate_region_display_name_candidates(item: dict) -> list[str]:
+    values = [
+        item.get("displayName"),
+        item.get("display_name"),
+        item.get("slug"),
+    ]
+    candidates: list[str] = []
+    for value in values:
+        text = str(value or "").strip()
+        if not text:
+            continue
+        candidates.append(text)
+        candidates.extend(text.replace("/", " ").replace("-", " ").split()[-1:])
+    return candidates
+
+
+def _realestate_match_key(value: object) -> str:
+    if value is None:
+        return ""
+    return "".join(char for char in str(value) if char.isalnum())
+
+
+def _iso_z(value: datetime) -> str:
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 def _realestate_requested_lawd_codes(args) -> list[str]:
     if args.realestate_lawd_codes:
         return args.realestate_lawd_codes
@@ -1941,7 +2362,7 @@ def _dataset_alias_from_fact_type(fact_type: str) -> str:
 
 def _real_estate_reaction_observations_from_posts(args) -> list:
     aliases = _load_real_estate_alias_rules_from_args(args)
-    posts = load_real_estate_posts_for_matching(args.community_posts_jsonl)
+    posts = _realestate_posts_for_matching_from_args(args)
     matched_posts = match_real_estate_posts(posts, aliases)
     observations = classify_real_estate_reaction_observations(
         matched_posts,
@@ -1951,10 +2372,8 @@ def _real_estate_reaction_observations_from_posts(args) -> list:
 
 
 def _real_estate_alias_candidates_from_args(args) -> list:
-    if not args.community_posts_jsonl:
-        raise SystemExit("--community-posts-jsonl is required")
     aliases = _load_real_estate_alias_rules_from_args(args)
-    posts = load_real_estate_posts_for_matching(args.community_posts_jsonl)
+    posts = _realestate_posts_for_matching_from_args(args)
     return suggest_real_estate_alias_candidates(posts, aliases)
 
 

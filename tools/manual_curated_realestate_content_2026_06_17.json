@@ -1,0 +1,365 @@
+{
+  "items": [
+    {
+      "contentId": "manual-curated-20260617-news-sbs-jeonse",
+      "sourceId": "manual_curated:news",
+      "contentType": "news",
+      "title": "서울 전셋값 상승률 10년 8개월 만에 최고",
+      "snippet": "서울 아파트 전세 상승률이 장기 고점 수준으로 확대됐다는 보도입니다. 전세 공급 축소와 대단지 수요 집중을 지역 리포트의 최근 이슈 후보로 봅니다.",
+      "url": "https://news.sbs.co.kr/news/endPage.do?news_id=N1008606336",
+      "domain": "news.sbs.co.kr",
+      "publishedAt": "2026-06-11T00:00:00Z",
+      "metricLabel": "전세 · 서울 · 임대차",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "recent_issue", "confidence": 0.86, "reviewState": "approved" },
+        { "targetId": "region-seoul-songpa", "linkType": "recent_issue", "confidence": 0.72, "reviewState": "approved" },
+        { "targetId": "region-seoul-seongdong", "linkType": "recent_issue", "confidence": 0.72, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-news-newsis-price-jeonse",
+      "sourceId": "manual_curated:news",
+      "contentType": "news",
+      "title": "서울 집값 오름폭 확대, 전셋값도 고점 수준",
+      "snippet": "서울과 경기 일부 지역의 매매·전세 상승 흐름을 함께 다룬 기사입니다. 분당, 동탄, 평택 등 수도권 확산 여부를 보는 근거 후보로 연결했습니다.",
+      "url": "https://www.newsis.com/view/NISX20260611_0003664707",
+      "domain": "www.newsis.com",
+      "publishedAt": "2026-06-11T00:00:00Z",
+      "metricLabel": "매매 · 전세 · 수도권",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "recent_issue", "confidence": 0.82, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi-seongnamsibundanggu", "linkType": "recent_issue", "confidence": 0.76, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi-pyeongtaek", "linkType": "recent_issue", "confidence": 0.72, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi-hwaseongsi", "linkType": "recent_issue", "confidence": 0.72, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-news-mk-outer-gyeonggi",
+      "sourceId": "manual_curated:news",
+      "contentType": "news",
+      "title": "서울 외곽·경기 아파트값 상승 흐름 점검",
+      "snippet": "강남권과 서울 외곽·경기의 온도 차이를 다룬 기사입니다. 핵심지와 주변부가 서로 다른 속도로 움직이는지를 보는 후보로 둡니다.",
+      "url": "https://www.mk.co.kr/news/realestate/12076176",
+      "domain": "www.mk.co.kr",
+      "publishedAt": "2026-06-17T00:00:00Z",
+      "metricLabel": "가격 확산 · 서울 외곽 · 경기",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "recent_issue", "confidence": 0.78, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "recent_issue", "confidence": 0.78, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-news-weekly-trade-index",
+      "sourceId": "manual_curated:news",
+      "contentType": "news",
+      "title": "6월 둘째 주 전국 아파트 매매가격 동향",
+      "snippet": "한국부동산원 주간 동향을 바탕으로 서울, 경기, 지방의 매매가격 변화를 요약한 기사입니다. 지도 색상과 시계열 해석의 보조 근거로 둡니다.",
+      "url": "https://www.kueherald.co.kr/news/articleView.html?idxno=58667",
+      "domain": "www.kueherald.co.kr",
+      "publishedAt": "2026-06-15T00:00:00Z",
+      "metricLabel": "주간 매매가격 · 한국부동산원",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "recent_issue", "confidence": 0.78, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi-hwaseongsi", "linkType": "recent_issue", "confidence": 0.76, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-news-weekly-rent-index",
+      "sourceId": "manual_curated:news",
+      "contentType": "news",
+      "title": "6월 둘째 주 전국 아파트 전세가격 동향",
+      "snippet": "전세가격 상승 흐름을 전국·수도권·서울로 나눠 요약한 기사입니다. 전세 불안 쟁점과 지역 반응의 우려 방향을 보강하는 후보입니다.",
+      "url": "https://www.kueherald.co.kr/news/articleView.html?idxno=58668",
+      "domain": "www.kueherald.co.kr",
+      "publishedAt": "2026-06-15T00:00:00Z",
+      "metricLabel": "주간 전세가격 · 한국부동산원",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "recent_issue", "confidence": 0.84, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "recent_issue", "confidence": 0.76, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-report-kb-review-june",
+      "sourceId": "manual_curated:report",
+      "contentType": "report",
+      "title": "KB주택시장리뷰 2026년 6월호",
+      "snippet": "KB금융 경영연구소의 월간 주택시장 리뷰입니다. 매매, 전월세, 분양, 주택금융 흐름을 함께 보는 정책·통계 리포트 후보입니다.",
+      "url": "https://www.kbfg.com/kbresearch/report/reportList.do",
+      "domain": "www.kbfg.com",
+      "publishedAt": "2026-06-16T00:00:00Z",
+      "metricLabel": "월간 리포트 · KB금융",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.72, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.72, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-report-reb-rone-main",
+      "sourceId": "manual_curated:report",
+      "contentType": "report",
+      "title": "한국부동산원 R-ONE 주요 부동산 통계",
+      "snippet": "전국주택가격동향, 실거래가격지수, 거래현황 등 핵심 지표를 한 화면에서 확인하는 통계 출처입니다. 주요 지표와 지도 색상 기준의 정본 후보입니다.",
+      "url": "https://www.reb.or.kr/r-one/portal/main/indexPage.do",
+      "domain": "www.reb.or.kr",
+      "publishedAt": "2026-06-15T00:00:00Z",
+      "metricLabel": "가격지수 · 거래현황 · 한국부동산원",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.88, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.88, "reviewState": "approved" },
+        { "targetId": "region-incheon", "linkType": "reference", "confidence": 0.82, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-report-krihs-spring",
+      "sourceId": "manual_curated:report",
+      "contentType": "report",
+      "title": "국토연구원 부동산시장 조사분석 2026년 봄호",
+      "snippet": "국토연구원 부동산시장정책연구센터의 정기간행물입니다. 시장 조사, 정책 이슈, 지역 흐름을 함께 볼 수 있는 리포트 후보입니다.",
+      "url": "https://www.krihs.re.kr/menu.es?mid=a10103040000",
+      "domain": "www.krihs.re.kr",
+      "publishedAt": "2026-04-30T00:00:00Z",
+      "metricLabel": "정기간행물 · 국토연구원",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.7, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.7, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-report-ricon-housing-outlook",
+      "sourceId": "manual_curated:report",
+      "contentType": "report",
+      "title": "2026년 건설·부동산 경기전망 및 정책 이슈",
+      "snippet": "대한건설정책연구원의 2026년 주택시장·상업용부동산 전망 자료입니다. 공급, 경기, 정책 리스크를 보는 리포트 후보입니다.",
+      "url": "https://www.ricon.re.kr/board/view.php?cate=1&group=journal&no=68&page=policy_journal",
+      "domain": "www.ricon.re.kr",
+      "publishedAt": "2026-01-01T00:00:00Z",
+      "metricLabel": "주택시장 전망 · 공급 · 정책",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.68, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.68, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-report-index-house-price",
+      "sourceId": "manual_curated:report",
+      "contentType": "report",
+      "title": "e-나라지표 주택매매가격 동향",
+      "snippet": "국토교통부·한국부동산원 기반 월간 주택매매가격 동향 지표입니다. 지표 페이지의 출처·갱신 기준을 보강하는 참고 링크입니다.",
+      "url": "https://www.index.go.kr/unity/potal/main/EachDtlPageDetail.do?idx_cd=1240",
+      "domain": "www.index.go.kr",
+      "publishedAt": "2026-06-15T00:00:00Z",
+      "metricLabel": "주택매매가격변동률 · e-나라지표",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.78, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.78, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-video-kbs-rebuild-rent",
+      "sourceId": "manual_curated:youtube",
+      "contentType": "video",
+      "title": "KBS 이슈: 서울 재건축 속도전과 전월세 매물 변화",
+      "snippet": "정비사업 속도와 임대차 매물 감소가 같이 언급된 영상입니다. 서울 정비사업 기대와 전월세 우려를 함께 보는 영상 근거 후보입니다.",
+      "url": "https://www.youtube.com/watch?v=pUOio4gaxFc",
+      "domain": "www.youtube.com",
+      "publishedAt": "2026-06-17T00:00:00Z",
+      "metricLabel": "영상 · 재건축 · 전월세",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "recent_issue", "confidence": 0.82, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-video-sbs-jeonse",
+      "sourceId": "manual_curated:youtube",
+      "contentType": "video",
+      "title": "SBS 이슈: 서울 전셋값 상승률과 임대차 공급 우려",
+      "snippet": "서울 전셋값 상승률 확대를 다룬 뉴스 영상입니다. 전세 불안 쟁점의 영상 근거 후보로 둡니다.",
+      "url": "https://www.youtube.com/watch?v=yiJT0mnUobo",
+      "domain": "www.youtube.com",
+      "publishedAt": "2026-06-14T00:00:00Z",
+      "metricLabel": "영상 · 전세 · 서울",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "recent_issue", "confidence": 0.8, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-video-kbs-dongtan",
+      "sourceId": "manual_curated:youtube",
+      "contentType": "video",
+      "title": "KBS 잇슈머니: 동탄 아파트값과 토허제 가능성",
+      "snippet": "동탄 가격 상승과 규제 가능성을 다룬 영상입니다. 경기 남부와 동탄 생활권 리포트에서 정책 민감도를 보는 후보입니다.",
+      "url": "https://www.youtube.com/watch?v=sumfs9P9ths",
+      "domain": "www.youtube.com",
+      "publishedAt": "2026-06-15T00:00:00Z",
+      "metricLabel": "영상 · 동탄 · 정책 민감도",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-gyeonggi-hwaseongsi", "linkType": "recent_issue", "confidence": 0.82, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "recent_issue", "confidence": 0.72, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-video-maeburi-jeonse",
+      "sourceId": "manual_curated:youtube",
+      "contentType": "video",
+      "title": "매부리TV: 장기전세와 전세 시장 쟁점",
+      "snippet": "매부리TV의 전세 관련 설명 영상입니다. 전세 제도, 임대차 수요, 서울 아파트 시장 반응을 보는 영상 후보입니다.",
+      "url": "https://www.youtube.com/watch?v=vMrOHW0SoCY",
+      "domain": "www.youtube.com",
+      "publishedAt": "2026-06-03T00:00:00Z",
+      "metricLabel": "영상 · 매부리TV · 전세",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.72, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-video-r114-policy",
+      "sourceId": "manual_curated:youtube",
+      "contentType": "video",
+      "title": "부동산R114: 2026년 달라지는 부동산 제도 정리",
+      "snippet": "부동산R114 채널의 제도 변화 정리 영상입니다. 정책·대출·청약 관련 이슈 후보를 설명하는 영상으로 연결했습니다.",
+      "url": "https://www.youtube.com/watch?v=jkl3YWRj_E4",
+      "domain": "www.youtube.com",
+      "publishedAt": "2026-01-01T00:00:00Z",
+      "metricLabel": "영상 · 부동산R114 · 제도",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.68, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.68, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-link-tistory-week2",
+      "sourceId": "manual_curated:blog",
+      "contentType": "link",
+      "title": "2026년 6월 2주차 전국 아파트 가격 동향 분석",
+      "snippet": "6월 2주차 매매·전세 흐름을 정리한 블로그 글입니다. 공식 통계 기반의 2차 해석 후보로 쓰되, 서비스 지표 원천은 공공데이터와 분리합니다.",
+      "url": "https://news8253.tistory.com/entry/2026%EB%85%84-6%EC%9B%94-2%EC%A3%BC%EC%B0%A8-%EC%A0%84%EA%B5%AD-%EB%B6%80%EB%8F%99%EC%82%B0-%EC%95%84%ED%8C%8C%ED%8A%B8-%EA%B0%80%EA%B2%A9-%EB%8F%99%ED%96%A5-%EB%B6%84%EC%84%9D%EB%A7%A4%EB%A7%A4-%EC%A0%84%EC%84%B8",
+      "domain": "news8253.tistory.com",
+      "publishedAt": "2026-06-12T00:00:00Z",
+      "metricLabel": "블로그 · 주간 가격 동향",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.62, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.62, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-link-tistory-week1",
+      "sourceId": "manual_curated:blog",
+      "contentType": "link",
+      "title": "2026년 6월 1주차 부동산 아파트 가격 동향 분석",
+      "snippet": "6월 1주차 가격지수 변동을 지역별로 요약한 글입니다. 서울·경기·인천 등 지역별 변화 후보를 사람이 읽는 보조 링크로 둡니다.",
+      "url": "https://news8253.tistory.com/entry/2026%EB%85%84-6%EC%9B%94-1%EC%A3%BC%EC%B0%A8-%EB%B6%80%EB%8F%99%EC%82%B0-%EC%95%84%ED%8C%8C%ED%8A%B8-%EA%B0%80%EA%B2%A9-%EB%8F%99%ED%96%A5-%EB%B6%84%EC%84%9D%EB%A7%A4%EB%A7%A4-%EC%A0%84%EC%84%B8",
+      "domain": "news8253.tistory.com",
+      "publishedAt": "2026-06-09T00:00:00Z",
+      "metricLabel": "블로그 · 지역별 가격 변동",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.62, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.62, "reviewState": "approved" },
+        { "targetId": "region-incheon", "linkType": "reference", "confidence": 0.58, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-link-brunch-scenario",
+      "sourceId": "manual_curated:blog",
+      "contentType": "link",
+      "title": "부동산 시장 흐름과 하반기 3가지 시나리오",
+      "snippet": "전세난과 지역별 차별화 장세를 중심으로 하반기 시나리오를 정리한 브런치 글입니다. 사람들의 해석 프레임 후보로만 사용합니다.",
+      "url": "https://brunch.co.kr/%40sjmsg/174",
+      "domain": "brunch.co.kr",
+      "publishedAt": "2026-06-07T00:00:00Z",
+      "metricLabel": "컬럼 · 하반기 시나리오",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.58, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.58, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-link-brunch-outlook",
+      "sourceId": "manual_curated:blog",
+      "contentType": "link",
+      "title": "2026년 부동산 전망: 수도권 상승과 지방 정체",
+      "snippet": "수도권과 지방의 차별화, 임대차 시장 압력을 다룬 컬럼입니다. 지역 간 양극화 쟁점을 설명하는 보조 링크로 둡니다.",
+      "url": "https://brunch.co.kr/%402002cta/4210",
+      "domain": "brunch.co.kr",
+      "publishedAt": "2026-01-17T00:00:00Z",
+      "metricLabel": "컬럼 · 수도권/지방 양극화",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.56, "reviewState": "approved" },
+        { "targetId": "region-gyeonggi", "linkType": "reference", "confidence": 0.56, "reviewState": "approved" }
+      ]
+    },
+    {
+      "contentId": "manual-curated-20260617-link-brunch-jeonse-structure",
+      "sourceId": "manual_curated:blog",
+      "contentType": "link",
+      "title": "전세 주택과 매매·월세 시장의 연결 구조",
+      "snippet": "전세 제도와 매매·월세의 관계를 설명한 글입니다. 전세 우려 쟁점의 배경 설명 링크로만 사용합니다.",
+      "url": "https://brunch.co.kr/%4047fe28812a8a4dd/1",
+      "domain": "brunch.co.kr",
+      "publishedAt": "2026-06-12T00:00:00Z",
+      "metricLabel": "컬럼 · 전세 구조",
+      "statusLabel": "수동 큐레이션",
+      "ingestedAt": "2026-06-17T06:00:00Z",
+      "dataStatus": "curated",
+      "targets": [
+        { "targetId": "region-seoul", "linkType": "reference", "confidence": 0.56, "reviewState": "approved" }
+      ]
+    }
+  ]
+}

@@ -1,16 +1,18 @@
 # 너나사 부동산 작업 지도
 
+> 2026-06-22 기준 긴급 우선순위는 [REGIONAL_ISSUE_BRIEFING_MVP.md](../product/REGIONAL_ISSUE_BRIEFING_MVP.md)와 [FRONT_PLANNING_FIRST_URGENT_TASKS.md](./FRONT_PLANNING_FIRST_URGENT_TASKS.md)를 우선 기준으로 본다. 지금은 개별 아파트 전체 커버리지보다 지역 이슈 브리핑, 프론트 상태, 화면 정의, 데이터 신뢰도 표현을 먼저 정리한다.
+
 이 문서는 다음 작업을 고르기 위한 현재 기준입니다. 완료 상세 이력은 PR, Notion 작업 로그, `docs/archive/work-units/items/`에서 찾습니다.
 
 ## 기준
 
-너나사 부동산은 수요자 반응 기반 부동산 시장 해석 서비스입니다. 지역과 단지에 대한 실제 사람들의 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 같은 시장 사실 데이터를 함께 보여주는 관찰형 분석 서비스이며, 완제품 기준은 `docs/product/FINAL_PRODUCT_PLAN.md`, 전환 원칙은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`입니다.
+너나사 부동산은 수요자 반응과 시장 데이터를 엮어 요즘 부동산 관심이 어느 지역으로 몰리는지 설명하는 AI 지역 이슈 브리핑 서비스입니다. 지역에 대한 실제 사람들의 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 같은 시장 사실 데이터를 함께 보여주는 관찰형 분석 서비스이며, MVP 기준은 `docs/product/REGIONAL_ISSUE_BRIEFING_MVP.md`, 완제품 기준은 `docs/product/FINAL_PRODUCT_PLAN.md`, 전환 원칙은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`입니다.
 
 최종 사용 루프는 다음 순서입니다.
 
-1. 대시보드에서 요즘 언급 많은 지역과 단지를 확인합니다.
-2. 지역/단지 상세에서 기대/우려, 쟁점 비율, 표본 신뢰도를 봅니다.
-3. 뉴스/컬럼, 정책/개발/교통 이벤트, 실거래/전세/매물 흐름을 같은 시간축에서 봅니다.
+1. 대시보드에서 오늘의 부동산 지역 이슈와 핵심 뉴스/리포트를 확인합니다.
+2. 지역 분석 지도에서 시군구, 읍면동, 생활권 단위 흐름을 확인하고, 실거래 화면에서 실제 거래 row를 확인합니다.
+3. 지역 상세에서 시장 사실, 뉴스/컬럼, 정책/개발/교통 이벤트, 실거래/전세/매물 흐름을 같은 시간축에서 봅니다.
 4. 비슷한 과거 반응 상황과 이후 시장 흐름을 비교합니다.
 5. 에이전트 평가와 근거 로그로 어떤 데이터가 판단에 쓰였는지 확인합니다.
 
@@ -26,14 +28,14 @@
 
 ## 다음 실행 순서
 
-1. 공공데이터 원천 확정: 공공데이터 API/CSV별 응답 필드, 갱신 주기, provider/asOf/stale 기준을 실제 샘플로 확인합니다.
-2. 대량 DB 백필: 실거래가, 전월세, 공시가격 CSV, 미분양, 공급/인허가, 정책 이벤트를 raw -> staging -> market fact 흐름으로 적재합니다.
-3. 지역/단지 매핑 보강: 법정동 코드, 지역 target, 단지 provider key를 연결하고 누락/중복 target을 검수합니다.
-4. 지도 연결: 전국~동 단위 자체 heatmap API를 실제 region target 데이터로 연결하고, 동/단지 상세부터는 카카오맵 SDK 내장 prototype을 붙입니다.
-5. 레거시 정리: backend, pipeline, front의 active runtime을 부동산 target/region/complex 기준으로 정리합니다.
-6. 크롤링과 alias 고도화: 네이버/다음 카페를 포함한 공개 source 후보를 승인하고, 별칭/은어/생활권 표현을 matcher 입력으로 보강합니다.
-7. SerpApi 최근 이슈 보강: 검색 결과는 관심도 점수가 아니라 뉴스/정책/개발/교통/금리 이슈 후보와 근거 링크 저장용으로 연결합니다.
-8. AI 평가 로그와 유사 과거 검색: reaction snapshot, market fact, timeline event, 검색 후보, 유사 과거를 묶어 EvidenceLog와 평가 출력 schema를 확정합니다.
+1. 프론트 시연 완성: 대시보드, 뉴스룸, 지역 분석, 실거래, 주요 일정, 마이페이지, 상세 화면에서 빈 섹션과 내부용 문구를 제거하고 지역 이슈 브리핑 중심으로 보이게 정리합니다.
+2. 지역 이슈 feed 보강: SerpApi, 수동 큐레이션, 뉴스/리포트/영상/블로그 후보를 유형별로 채우고 content target link를 연결합니다.
+3. 지역 TOP10과 AI 브리핑 연결: 전체 TOP10 지역을 기준으로 최근 이슈, market fact, EvidenceLog가 생성되고 상세 화면에서 조회되게 합니다.
+4. 지도 연결: 전국~동 단위 자체 heatmap API를 실제 region target 데이터로 연결하고, 데이터 없음 지역은 별도 색과 disabled 상태로 구분합니다.
+5. 공공데이터 보강: 지역별 가격지수, 실거래가, 전월세, 미분양, 공급/인허가를 raw -> staging -> market fact 흐름으로 넓힙니다.
+6. 커뮤니티와 alias 보강: 공개 source 표본을 늘리되, MVP 핵심 화면이 커뮤니티 수집량 하나에만 의존하지 않게 합니다.
+7. 단지/아파트 상세 보강: 공식 실거래, 좌표, alias, 언급이 연결된 complex만 상세 품질을 올립니다.
+8. 유사 과거 검색 고도화: reaction snapshot, market fact, timeline event, 검색 후보, 유사 과거를 묶어 EvidenceLog 품질을 개선합니다.
 
 ## 지금 우선순위
 
@@ -62,6 +64,7 @@
 - [x] 확정 provider catalog를 JSON/SQL seed 출력으로 검수할 수 있게 하고 Windows CLI 한글 출력 깨짐 방지
 - [x] 공시가격 대용량 CSV의 적재 전 manifest inspect 명령 구현
 - [x] 한국부동산원/미분양/인허가용 공통 지역 통계 CSV adapter 구현
+- [x] SSAFY HOME SQL dump를 source schema로 import하고 `real_estate_regions`, `real_estate_complexes`, provider key, alias, `apt_trade` market fact로 bootstrap
 - [x] `serve` 모드에서 부동산 market fact 주기 갱신 job 옵션 추가
 - [x] 대시보드 주요 지표 카드가 공공데이터 market fact 요약 API를 우선 사용하도록 연결
 - [x] `/indicators` 주요 지표 화면이 `GET /api/realestate/indicators?period=month`를 우선 조회하고 가격·거래량 그룹의 provider/asOf/mock fallback 상태를 표시
@@ -103,8 +106,11 @@
 
 - [ ] region/complex 기본 정보와 alias 표시 기준 정리
 - [x] 동/단지 상세 카카오맵 SDK prototype 구현
-- [x] 실제 단지 좌표/주소 DB 필드와 `nearby-complexes` API 응답으로 내장 지도 marker 1차 승격
-- [ ] 법정동 코드/provider key 검증과 실제 단지 좌표 보강
+- [x] 단지 좌표/주소 DB 필드와 `nearby-complexes` API 응답으로 내장 지도 marker 1차 연결
+- [x] SSAFY HOME `houseinfos.apt_seq` provider key와 좌표를 단지 marker API에 연결
+- [x] target 검색 API를 region 전용에서 region/complex 공통 검색으로 확장해 `래미안` 같은 단지 검색이 SSAFY HOME 정본을 반환하도록 연결
+- [ ] SSAFY HOME 단지와 기존 candidate/mock 단지의 중복 merge 규칙 정리
+- [ ] 공공데이터/건축물대장/공시가격 provider와 SSAFY HOME 좌표/법정동 코드 교차 검증
 - [x] 상위 지역/생활권/정책 영향권과 하위 대상 연결용 target graph API 작성
 - [x] `approved contains` target graph를 반응 snapshot 상위 roll-up 산식에 반영
 - [x] target graph 기반 drill-down/관련 target snapshot 응답 API 구현
@@ -134,6 +140,12 @@
 - [x] source별 `matchRate`, `topTargets`, `unmatchedExamples`, `candidateAliases`를 확인하는 alias coverage 리포트 구현
 - [x] source 후보 JSONL을 실행 가능한 crawl target manifest와 skip 사유로 분리하는 `realestate-crawl-target-manifest` 명령 구현
 - [x] `contains` edge 기반 지역 단위 언급 roll-up 규칙 구현
+- [x] 지역 분석 보조 랭킹을 광역 시도에서 시군구·읍면동·생활권 단위로 좁히고, 시도는 필터/요약/roll-up scope로만 사용
+- [x] 단지 후보는 지역 row를 바꿔 쓰지 않고 실제 아파트 `complex` target 기준으로 생성
+- [x] MOLIT 실거래/전월세 row의 단지명·법정동·지번 기반으로 `real_estate_complexes` 정본과 complex alias seed 1차 생성
+- [x] 복합 한글 아파트 단지명에서 커뮤니티 축약 alias seed를 생성하고 동일 게시글 내 같은 target 중복 집계를 방지
+- [x] 공개 게시글의 구조화된 실거래 표 snippet에서 실제 아파트 후보를 추출해 `community_observed` complex target/alias/contains edge로 생성
+- [x] 단지 mention snapshot을 만들고 `contains` edge로 동·구·생활권·시도에 roll-up하되 직접 언급과 파생 언급을 구분하는 1차 흐름 구현
 - [ ] 단지 단위 drill-down과 정책/생활권 edge 적용 규칙 정의
 - [x] matched=false, confidence, reviewState 1차 기준 정리
 
@@ -238,6 +250,7 @@
 - [x] SerpApi 후보를 붙인 TOP10 GMS EvidenceLog refresh smoke 검증
 - [x] `/realestate/reactions` 상단 커뮤니티 pulse 카드를 live region ranking 기반으로 전환
 - [x] 상세 fixture가 없는 TOP10 region target을 unsupported 대신 실시간 근거 리포트 상태로 표시
+- [x] 지역 분석 보조 TOP10에서 광역 시도 roll-up row를 제외하고 실제 하위 지역/아파트 단지 기준으로 표시
 - [ ] 행동 지시처럼 보이는 평가 문구 금지 기준 정리
 - [x] evaluationVersion과 skipReason 관리 기준 정리
 
@@ -266,7 +279,7 @@
 
 - [ ] 유사 과거 상황 검색용 벡터 저장소
 - [ ] 질문형 분석
-- [ ] 사용자 관심 지역/단지 알림
+- [ ] 마이페이지 저장 지역/단지 알림
 - [ ] 인증/인가
 - [ ] 운영 배포와 모니터링
 

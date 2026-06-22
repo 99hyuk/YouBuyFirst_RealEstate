@@ -1,77 +1,74 @@
-# 주요 지표 화면
+# 주요 일정 화면
 
 ## Route
 
 - Parent: root
 - Overview route: `/indicators`
-- Detail routes:
+- Legacy detail routes:
   - `/indicators/price-transaction`
   - `/indicators/supply-demand`
   - `/indicators/demand-mood`
   - `/indicators/macro-finance`
 
+상단 내비게이션 노출명은 `주요 일정`입니다. 기존 지표 상세 route는 외부 링크나 과거 북마크가 깨지지 않도록 같은 일정 화면을 렌더링합니다.
+
 ## 화면 목적
 
-부동산 시장을 하나의 등락률로 단순화하지 않고, 가격·거래량, 공급·수급, 수요·심리, 거시·금융 지표를 분리해 보여줍니다. 사용자는 어떤 지표가 지역 반응과 함께 움직이는지, 어떤 지표는 반응과 엇갈리는지 확인합니다.
+기존의 가격·거래량/공급·수급/심리/금융 지표 허브는 폐기합니다. 이 화면은 부동산 시장을 볼 때 반복적으로 확인해야 하는 공식 발표, 통계 공개, 정책·금리·청약 일정을 캘린더 형태로 보여줍니다. 사용자는 일정을 눌러 공식 출처로 이동하고, 어떤 데이터를 언제 확인해야 하는지 빠르게 판단합니다.
 
 ## 현재 섹션
 
-- 지표 hub hero: 데이터 기준 시각, 공개 지연 안내, API/mock fallback 상태
-- 핵심 지표 카테고리 카드: 네 가지 지표 묶음과 대표 수치. 현재 `가격 및 거래량`은 `GET /api/realestate/indicators?period=month` 응답을 우선 사용하고, 나머지 지표 묶음은 정식 통계 테이블 구축 전까지 `mock fallback`으로 표시합니다.
-- 지역별 지표 방향: 상승/하락 지역군과 핵심 키워드
-- 지표 묶음별 관찰 포인트: 가격, 공급, 심리, 금융의 해석 포인트
-- 지표와 반응이 엇갈린 지역: 공식 지표와 커뮤니티 반응 괴리 후보
-- 지표별 반응 히트맵: 핵심 수치 chip
-- 데이터 신선도: 한국부동산원, 국토부, 한국은행, 통계청 기준
-- 주요 일정: 가격동향, 실거래, 미분양, 금리 발표 후보
+- 일정 히어로: 지역 분석/마이페이지 화면의 공통 헤더 타이포와 간격을 따르는 화면 제목, 공식 통계 바로가기, 페이지 용도 설명
+- 월간 캘린더: 오른쪽 upcoming 패널 없이 화면 폭을 넓게 사용하며, 가격지수, 실거래, 미분양·공급, 금리, 청약, 정책 일정을 날짜별 chip으로 표시
+- 공식 출처: 화면 하단의 보조 링크 줄로만 제공하며, 설명문 없이 출처명과 분류만 표시
 
-## 상세 route 섹션
+## 일정 항목 기준
 
-- 상세 hero: 지표 묶음명, 요약, 방향성
-- 상세 KPI grid: 개별 지표의 값과 해석
-- 지표와 지역 반응 동시 변화 chart shell
-- 지표별 데이터 신선도
-- 연결 키워드 chip
-- 지표와 반응이 엇갈린 지역 table
+- 일정은 투자 행동을 지시하지 않고 `확인`, `점검`, `공개`, `발표`처럼 관찰형 동사로 표현합니다.
+- 정확한 공표일이 provider별로 달라질 수 있으므로, 화면의 정적 일정은 `확정 발표일`이 아니라 `월간 점검 일정`으로 다룹니다.
+- 실제 API가 붙으면 각 일정은 `provider`, `asOf`, `sourceUrl`, `scheduleDate`, `stale`, `lastCheckedAt`를 함께 가져야 합니다.
 
-## 지표 정의
+## 공식 출처
 
-- 가격 및 거래량: 매매가격지수, 전세가격지수, 실거래가 지수, 매매·전월세 거래량
-- 공급 및 수급: 미분양 주택 현황, 준공 후 미분양, 인허가·착공·준공 실적, 전세가율
-- 수요 및 심리: 매매수급지수, 전세수급지수, 부동산시장 소비심리지수
-- 거시경제 및 금융: 주택구입부담지수(K-HAI), 기준금리, 통화량(M2), 물가상승률
+- 한국부동산원 R-ONE: 가격지수, 주간·월간 통계
+- 국토교통부 실거래가 공개시스템: 매매·전월세 실거래
+- 국토교통 통계누리: 미분양, 인허가, 착공, 준공 등 공급 통계
+- 한국은행: 기준금리, 통화정책방향 결정회의
+- 청약Home: 청약 접수, 당첨자 발표, 경쟁률
+- 국토교통부: 정책, 공급, 교통, 정비사업 보도자료
 
 ## 상태와 빈 화면
 
-- loading: 카테고리 카드와 상세 KPI skeleton을 먼저 보여줍니다.
-- empty: 지표 값이 없으면 해당 출처와 다음 갱신 예정일을 보여줍니다.
-- error: 지표 묶음별로 실패 상태를 분리합니다.
-- stale/mock: 지표 공개 주기와 mock 여부를 같은 위치에 표시합니다.
+- loading: 캘린더 frame과 skeleton 일정 chip을 먼저 보여줍니다.
+- empty: 해당 월 일정이 없으면 공식 출처 링크를 유지하고 `일정 수집 전/insufficient`를 표시합니다.
+- stale: 일정은 노출하되 마지막 확인 시각과 provider를 함께 표시합니다.
+- error: 캘린더는 유지하고 출처별 오류를 분리합니다.
 
 ## API 후보
 
 | 필드 | 소유 도메인/layer | 설명 |
 | --- | --- | --- |
-| `marketGroups` | market/realestate | 네 가지 핵심 지표 묶음 |
-| `detailRows` | market/realestate | 상세 route별 지표 목록 |
-| `regionTiles` | market/indicator | 지역군별 방향과 heat |
-| `anomalyRows` | indicator/community | 지표와 반응이 엇갈린 지역 |
-| `freshnessRows` | backend | 지표 출처별 공개 주기와 stale 상태 |
-| `schedules` | backend/content | 주요 발표 일정 |
+| `scheduleEvents` | content/realestate | 캘린더에 표시할 공식 일정 |
+| `sourceLinks` | content/realestate | 공식 출처 링크 |
+| `lastCheckedAt` | backend | provider별 마지막 확인 시각 |
+| `stale` | backend | 일정 갱신 지연 여부 |
 
-현재 구현 endpoint:
+예상 endpoint:
 
-- `GET /api/realestate/indicators?legalDongCode=&period=`: `real_estate_market_facts`를 요약해 `가격 및 거래량` 그룹과 `freshnessRows`를 반환합니다.
-- 응답의 `groups[].dataStatus`, `groups[].stale`, `groups[].provider`, `groups[].asOf`는 화면 카드의 `공공데이터 반영`, `지연 가능`, `mock fallback` 표시에 사용합니다.
-- API가 비어 있거나 실패하면 기존 fixture 카드를 유지하되 같은 위치에 `mock fallback`을 보여줍니다.
+- `GET /api/realestate/market-data-schedules?month=YYYY-MM`
+- `GET /api/realestate/market-data-sources`
+
+기존 `/api/realestate/indicators`, `/api/realestate/indicators/:category`, `/api/realestate/indicators/anomalies`는 이 화면의 필수 입력이 아닙니다. 지표 값 자체는 대시보드 오른쪽 지표 탭이나 대상 상세 화면에서 다룹니다.
 
 ## 기획 확인 필요
 
-- 실거래가 지수는 전국/시도/시군구 중 어떤 단위까지 1차로 제공할지.
-- 수급지수와 소비심리지수의 기준선 100을 카드에서 얼마나 명확히 설명할지.
-- K-HAI, M2, 물가상승률은 전국 지표이므로 지역 화면에서 어떻게 가중치를 줄지.
+- 일정 데이터를 DB에 저장할 때 반복 일정 규칙을 둘지, 월별 materialized schedule로 둘지 결정해야 합니다.
+- 공식 공표일이 지연될 때 `예정`, `지연`, `확인 완료` 상태를 어떤 badge로 표현할지 정해야 합니다.
+- 정책·보도자료는 전체를 가져오면 노이즈가 커서, 부동산/공급/교통/대출 키워드 필터 기준이 필요합니다.
 
 ## 변경 로그
 
-- 2026-06-14: `/indicators`가 `GET /api/realestate/indicators?period=month`를 호출해 가격·거래량 그룹과 데이터 신선도 행을 API 우선으로 표시하도록 갱신.
-- 2026-06-01: 금융시장 지표 묶음을 부동산 핵심 지표 네 그룹으로 교체.
+- 2026-06-22: 오른쪽 `이번 달 체크할 일정` 패널을 제거하고 월간 캘린더를 단일 컬럼 중심 화면으로 확대.
+- 2026-06-22: 공식 출처 링크 영역을 설명문 없는 낮은 보조 링크 줄로 축소.
+- 2026-06-22: 일정 히어로의 제목 굵기, 크기, 설명 텍스트를 지역 분석/마이페이지 공통 헤더 스타일과 통일.
+- 2026-06-22: 기존 주요 지표 허브와 카테고리 상세 화면을 폐기하고, `/indicators`를 공식 일정 캘린더와 출처 링크 화면으로 전환.

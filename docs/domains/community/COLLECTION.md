@@ -38,16 +38,19 @@
 ## 현재 우선순위
 
 1. `REAL_ESTATE_SOURCE_CANDIDATES.md`의 30개 내외 seed 후보를 source registry seed로 옮기기
-2. 다음 카페 공개 `bbs_list` 후보 1곳 source-specific 확인
-3. P0 후보의 source별 약관/게시판 단위 최종 정책 승인
-4. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
-5. 지역/단지 alias matcher가 필요한 입력 필드 정리
-6. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
-7. pipeline이 backend readiness를 기다리도록 개선
+2. 네이버/다음 카페는 직접 로그인 크롤링 없이 공개 검색 discovery target으로 우선 반영
+3. 다음 카페 공개 `bbs_list` 후보 1곳 source-specific 확인
+4. P0 후보의 source별 약관/게시판 단위 최종 정책 승인
+5. 공개 HTTP 우선, Playwright fallback, 금지 행위 기준을 source policy에 반영
+6. 지역/단지 alias matcher가 필요한 입력 필드 정리
+7. 인기글/댓글/조회수 상위글을 최신 글 수집의 대체가 아니라 확산 확인 레이어로 분리
+8. pipeline이 backend readiness를 기다리도록 개선
 
 source policy는 `CrawlTarget`보다 상위 게이트이고, `CrawlTarget`은 허용된 소스 안에서 어느 게시판/target을 언제 다시 수집할지 정하는 실행 단위입니다.
 
 추가 커뮤니티 후보는 바로 adapter를 만들지 않습니다. 먼저 `disabled` source 후보로 두고 robots/약관, 공개 목록 접근성, 글 빈도, 조회/댓글 필드, 광고성/홍보성 노이즈, 지역/단지 인식 난이도를 검토한 뒤 `local-research-only` 또는 구현 후보로 올립니다.
+
+네이버/다음 카페는 부동산 반응의 핵심 표본이지만 가입형/비공개 게시판이 많습니다. MVP에서는 카페 내부 목록을 직접 긁지 않고 `NAVER_CAFE:public_search`, `DAUM_CAFE:public_search` target으로 공개 검색 노출 결과를 발견합니다. 저장 범위는 제목, 제한 snippet, URL, 검색 관측 시각이며, 검색 결과 수나 검색 순위는 관심도 점수로 쓰지 않습니다.
 
 현재 pipeline은 source 후보 JSONL을 바로 크롤링하지 않고 먼저 실행 manifest로 검수합니다.
 
@@ -134,6 +137,19 @@ watermark는 run이 성공적으로 끝났거나 partial이라도 저장된 새 
 
 `source + boardId + externalId`를 게시글의 natural key 후보로 둡니다. 같은 글이 최신글 목록과 확산 목록에서 모두 발견되면 게시글은 하나로 합치고, 확산 정보는 별도로 붙입니다.
 
+## 필터링 coverage
+
+게시판형 crawler는 저장된 글 수만 보지 않고, 분석 후보에서 제외된 게시글 링크 후보도 source별로 기록합니다. 이 값은 원문 전문을 저장하지 않고도 source 품질을 판단하기 위한 운영 진단 값입니다.
+
+| 필드 | 의미 |
+| --- | --- |
+| `filteredOutCount` | 게시글 링크 후보였지만 분석 후보에서 제외된 수 |
+| `excludedTitleCount` | 광고, 구인, 홍보, 도박 등 제외 제목 패턴에 걸린 수 |
+| `keywordMissCount` | 게시글 링크 후보지만 부동산 관련 키워드가 없어 제외된 수 |
+| `duplicateLinkCount` | 같은 목록 페이지 안에서 중복 노출된 게시글 링크 수 |
+
+`rowsSeen`은 현재 저장 후보로 파싱된 글 수에 가깝고, 전체 노출 링크 수가 아닙니다. 따라서 source 품질 리포트에서는 `acceptedPosts`, `filteredOutCount`, `keywordMissCount`, `excludedTitleCount`, `duplicateLinkCount`를 함께 봅니다.
+
 ## 지역/단지 매칭
 
 일반 게시판형 글은 지역명, 단지명, 별칭 매칭을 수행합니다. 매칭 대상은 제목과 `contentSnippet`이며, 댓글은 제한 댓글 수집 대상일 때만 보조 근거로 씁니다.
@@ -143,6 +159,7 @@ watermark는 run이 성공적으로 끝났거나 partial이라도 저장된 새 
 - 매칭 후보가 있으면 `targetType`, `targetId`, `matchedText`, `matchSource`, `confidence`를 남깁니다.
 - 애매한 별칭은 LLM 보정이나 룰 보정을 거칠 수 있지만, embedding/clustering을 지역/단지 식별의 정본으로 쓰지 않습니다.
 - target이 확인된 글만 `reactionDirection` 분류 입력으로 넘깁니다.
+- 같은 게시글에서 같은 target이 공식명과 축약명으로 동시에 잡히면 한 번만 집계합니다. 예를 들어 제목의 `마래푸`와 본문의 `마포 래미안 푸르지오`가 같은 아파트를 가리키면 단지 mention은 1건으로 보고, 상위 지역 roll-up도 1회만 생성합니다.
 
 별칭 DB는 크롤링의 필수 입력입니다. 공식 단지명, 줄임말, 커뮤니티식 별칭, 오타, 인근 생활권 표현을 모두 후보로 받을 수 있지만, `approved` 전에는 ranking과 정식 snapshot에 섞지 않습니다.
 
@@ -211,3 +228,15 @@ indicator 입력:
 - 사용자 대시보드 UI
 - 매수, 매도, 청약, 대출 행동 판단
 - 로그인, CAPTCHA, 프록시, fingerprint 우회
+
+## 2026-06-17 카페 공개 검색 운영 메모
+
+네이버/다음 카페는 부동산 반응의 핵심 표본이지만 MVP에서는 비공개/가입형 카페 내부 목록을 직접 긁지 않습니다. `NAVER_CAFE:public_search`, `DAUM_CAFE:public_search`는 공개 검색 노출 결과를 발견하는 target입니다.
+
+카페 adapter는 단일 검색어가 아니라 여러 query basket을 순회합니다. 기본 basket은 부동산 일반, 광역 지역, 핵심 생활권, 재건축/청약, 전세/공급, 대출/정책 축입니다. 호출량은 `CAFE_SEARCH_QUERY_LIMIT`, `CAFE_SEARCH_RESULT_LIMIT`로 조절합니다.
+
+`DAUM_CAFE`는 `KAKAO_REST_API_KEY`가 있으면 Kakao 공식 Daum Search Cafe API를 우선 사용합니다. Kakao Developers 문서 기준 endpoint는 `GET https://dapi.kakao.com/v2/search/cafe`이며, REST API key를 `Authorization: KakaoAK ...` header로 보냅니다.
+
+`NAVER_CAFE`는 `NAVER_SEARCH_CLIENT_ID`, `NAVER_SEARCH_CLIENT_SECRET`이 있으면 Naver 공식 Search API의 CafeArticle endpoint를 우선 사용합니다. Naver Developers 문서 기준 endpoint는 `GET https://openapi.naver.com/v1/search/cafearticle.json`이며, client id/secret을 `X-Naver-Client-Id`, `X-Naver-Client-Secret` header로 보냅니다. Naver CafeArticle 응답은 공개 카페글 검색 결과지만 게시글 작성일을 제공하지 않으므로 `publishedAt`은 관측 시각 fallback으로 남깁니다.
+
+공식 key가 없거나 검색 quota/provider 차단이 발생하면 `crawl_runs`에 `CONFIG_MISSING` 또는 `PARTIAL_FAILURE`와 provider error를 남기고, 카페 표본이 실제 수집된 것처럼 표시하지 않습니다.

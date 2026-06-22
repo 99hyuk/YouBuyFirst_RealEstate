@@ -1,7 +1,35 @@
 from youbuyfirst_pipeline.realestate_source_registry import (
     build_real_estate_crawl_target_manifest,
 )
+from youbuyfirst_pipeline.crawl_targets import real_estate_seed_crawl_targets
 from youbuyfirst_pipeline.source_policy import CrawlRuntimeEnvironment
+
+
+def test_real_estate_seed_crawl_targets_include_expanded_mvp_board_sources():
+    targets = real_estate_seed_crawl_targets()
+
+    assert [target.target_id for target in targets] == [
+        "PPOMPPU:house",
+        "DCINSIDE:immovables",
+        "FMKOREA:realestate",
+        "NAVER_CAFE:public_search",
+        "DAUM_CAFE:public_search",
+        "CLIEN:park",
+        "COOK82:freeboard",
+        "DEALAGORA:community",
+        "THEQOO:square",
+        "MLBPARK:bullpen",
+        "NATEPANN:talk",
+        "TODAYHUMOR:economy",
+        "TODAYHUMOR:freeboard",
+        "RULIWEB:community",
+        "BOBAEDREAM:freeb",
+        "INSTIZ:name",
+        "SLRCLUB:free",
+        "INVEN:webzine2097",
+    ]
+    assert len(targets) >= 17
+    assert all(target.url for target in targets)
 
 
 def test_build_crawl_target_manifest_keeps_only_local_public_board_candidates():
@@ -31,6 +59,36 @@ def test_build_crawl_target_manifest_keeps_only_local_public_board_candidates():
             "priority": "P0",
         },
         {
+            "sourceId": "fmkorea_realestate",
+            "displayName": "에펨코리아 부동산 게시판",
+            "sourceType": "general_board",
+            "primaryUrl": "https://www.fmkorea.com/realestate",
+            "crawlPolicy": "local-research-only",
+            "requiresLogin": False,
+            "publicListObserved": True,
+            "priority": "P0",
+        },
+        {
+            "sourceId": "clien_park_realestate",
+            "displayName": "클리앙 모두의공원 부동산 키워드",
+            "sourceType": "general_board",
+            "primaryUrl": "https://m.clien.net/service/board/park",
+            "crawlPolicy": "local-research-only",
+            "requiresLogin": False,
+            "publicListObserved": True,
+            "priority": "P1",
+        },
+        {
+            "sourceId": "cook82_freeboard_realestate",
+            "displayName": "82쿡 자유게시판 부동산 키워드",
+            "sourceType": "general_board",
+            "primaryUrl": "https://www.82cook.com/entiz/enti.php?bn=15",
+            "crawlPolicy": "local-research-only",
+            "requiresLogin": False,
+            "publicListObserved": True,
+            "priority": "P1",
+        },
+        {
             "sourceId": "naver_boodongsan_study",
             "displayName": "부동산스터디",
             "sourceType": "national_investment",
@@ -47,8 +105,14 @@ def test_build_crawl_target_manifest_keeps_only_local_public_board_candidates():
         runtime_environment=CrawlRuntimeEnvironment.LOCAL,
     )
 
-    assert [item["targetId"] for item in manifest["items"]] == ["PPOMPPU:house", "DCINSIDE:immovables"]
-    assert [item["priority"] for item in manifest["items"]] == [200, 210]
+    assert [item["targetId"] for item in manifest["items"]] == [
+        "PPOMPPU:house",
+        "DCINSIDE:immovables",
+        "FMKOREA:realestate",
+        "CLIEN:park",
+        "COOK82:freeboard",
+    ]
+    assert [item["priority"] for item in manifest["items"]] == [200, 210, 220, 300, 300]
     assert manifest["items"][0] == {
         "targetId": "PPOMPPU:house",
         "sourceId": "ppomppu_house",
@@ -65,7 +129,7 @@ def test_build_crawl_target_manifest_keeps_only_local_public_board_candidates():
         "crawlIntervalSeconds": 3600,
         "allowedStorage": ["title", "contentSnippet", "url", "authorHash"],
     }
-    assert manifest["counts"] == {"accepted": 2, "skipped": 1}
+    assert manifest["counts"] == {"accepted": 5, "skipped": 1}
     assert manifest["skipped"] == [
         {
             "sourceId": "naver_boodongsan_study",

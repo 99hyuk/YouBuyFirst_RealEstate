@@ -30,6 +30,7 @@ def roll_up_real_estate_reaction_observations(
     edges: Iterable[RealEstateTargetEdgeRule],
     *,
     edge_types: set[str] | None = None,
+    include_candidate_sources: set[str] | None = None,
 ) -> list[RealEstateReactionObservation]:
     original_observations = list(observations)
     direct_observation_keys = {
@@ -41,8 +42,12 @@ def roll_up_real_estate_reaction_observations(
         )
         for observation in original_observations
     }
-    parent_edges_by_child = _parent_edges_by_child(edges, edge_types=edge_types or {"contains"})
-    derived: dict[tuple[str, str, str | None, str, str], RealEstateReactionObservation] = {}
+    parent_edges_by_child = _parent_edges_by_child(
+        edges,
+        edge_types=edge_types or {"contains"},
+        include_candidate_sources=include_candidate_sources or set(),
+    )
+    derived: dict[tuple[str, str, str | None, str], RealEstateReactionObservation] = {}
 
     for observation in original_observations:
         child_key = (observation.target_type.strip(), observation.target_id.strip())
@@ -60,11 +65,8 @@ def roll_up_real_estate_reaction_observations(
                 ancestor_edge.from_target_id,
                 observation.external_id,
                 observation.source,
-                source_key[1],
             )
-            if key in derived:
-                continue
-            derived[key] = RealEstateReactionObservation(
+            derived_observation = RealEstateReactionObservation(
                 target_type=ancestor_edge.from_target_type,
                 target_id=ancestor_edge.from_target_id,
                 published_at=observation.published_at,
@@ -76,6 +78,10 @@ def roll_up_real_estate_reaction_observations(
                 match_source=f"target_graph:{ancestor_edge.edge_type}",
                 confidence=_rollup_confidence(observation.confidence, confidence_factor),
             )
+            existing = derived.get(key)
+            if existing is not None and _confidence_rank(existing.confidence) >= _confidence_rank(derived_observation.confidence):
+                continue
+            derived[key] = derived_observation
 
     return sorted([*derived.values(), *original_observations], key=lambda item: (item.target_id, item.source))
 
@@ -84,11 +90,12 @@ def _parent_edges_by_child(
     edges: Iterable[RealEstateTargetEdgeRule],
     *,
     edge_types: set[str],
+    include_candidate_sources: set[str],
 ) -> dict[tuple[str, str], list[RealEstateTargetEdgeRule]]:
     result: dict[tuple[str, str], list[RealEstateTargetEdgeRule]] = {}
     for edge in edges:
         normalized = _normalize_edge(edge)
-        if normalized.review_state != "approved":
+        if not _is_confirmed_edge(normalized, include_candidate_sources=include_candidate_sources):
             continue
         if normalized.edge_type not in edge_types:
             continue
@@ -97,6 +104,13 @@ def _parent_edges_by_child(
     for entries in result.values():
         entries.sort(key=lambda entry: (entry.from_target_type, entry.from_target_id, entry.edge_type))
     return result
+
+
+def _is_confirmed_edge(edge: RealEstateTargetEdgeRule, *, include_candidate_sources: set[str]) -> bool:
+    if edge.review_state == "approved":
+        return True
+    source = (edge.source or "").strip()
+    return edge.review_state == "candidate" and bool(source) and source in include_candidate_sources
 
 
 def _ancestor_edges(
@@ -173,6 +187,12 @@ def _rollup_confidence(value: float | None, factor: float) -> float | None:
     if value is None:
         return None
     return round(max(0.0, min(1.0, value * factor)), 2)
+
+
+def _confidence_rank(value: float | None) -> float:
+    if value is None:
+        return -1.0
+    return value
 
 
 def _float(value: object, *, default: float) -> float:

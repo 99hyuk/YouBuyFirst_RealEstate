@@ -2,41 +2,43 @@
 
 ## 제품 방향
 
-너나사 부동산은 지역과 단지에 대한 실제 사람들의 반응, 뉴스/컬럼 이슈, 실거래/전세/매물 같은 시장 사실 데이터를 함께 보여주는 관찰형 분석 서비스입니다. 완제품 기준은 `docs/product/FINAL_PRODUCT_PLAN.md`이고, 핵심 구현 범위는 `docs/product/CORE_IMPLEMENTATION_SCOPE.md`와 `docs/product/real-estate-one-page-plan.html`입니다. 부동산 전환의 핵심 원칙은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`입니다.
+너나사 부동산은 실거래, 전세, 매물, 공급, 정책, 뉴스/리포트 이슈를 지역 기준으로 묶어 보여주는 관찰형 AI 부동산 인사이트 서비스입니다. MVP 기준은 `docs/product/REGIONAL_ISSUE_BRIEFING_MVP.md`, 완제품 기준은 `docs/product/FINAL_PRODUCT_PLAN.md`이고, 핵심 구현 범위는 `docs/product/CORE_IMPLEMENTATION_SCOPE.md`와 `docs/product/real-estate-one-page-plan.html`입니다. 부동산 전환의 핵심 원칙은 `docs/product/REAL_ESTATE_PRODUCT_DIRECTION.md`입니다.
 
-이 프로젝트는 커뮤니티 수집, 반응 분석, 지표화, 유사 과거 비교, 에이전트 근거 로그 구조를 부동산 target 기준으로 구현합니다. 부동산이 이 repo의 주 도메인입니다.
+이 프로젝트는 공식 시장 데이터 탐색, 지도 기반 지역 흐름, 주요 데이터 공개 일정, 최근 이슈 근거, 에이전트 근거 로그 구조를 부동산 target 기준으로 구현합니다. 공개 커뮤니티 반응은 필요할 때만 보조 관찰 신호로 사용하며, 부동산이 이 repo의 주 도메인입니다.
 
-부동산은 대상이 지역, 단지, 생활권, 정책 영향권으로 잘게 나뉘고 지역 단위 상승과 정책 이벤트에 민감합니다. 그래서 target graph, 별칭 DB, policy timeline, source registry를 1차 구현 범위에 포함합니다.
+부동산은 대상이 지역, 생활권, 정책 영향권, 검증된 단지 후보로 잘게 나뉘고 지역 단위 상승과 정책 이벤트에 민감합니다. 시간 제한이 있는 MVP에서는 지도와 실거래 탐색을 먼저 완성하고, 단지는 공식 좌표와 실거래가 확인된 경우에만 보조 상세로 확장합니다. 그래서 target graph, market fact, policy timeline, market data schedule, source registry를 1차 구현 범위에 포함합니다.
 
 ## 현재 구현 기반
 
 - Spring Boot가 중심 시스템이며 저장, 검증, 중복 제거, admin/public API를 담당합니다.
-- Python pipeline은 공개 수집, Playwright fallback, LLM 분석, provider adapter를 담당합니다.
-- MySQL은 커뮤니티 글, 지역/단지 mention, reaction snapshot, market fact, evidence log를 저장하는 방향으로 정리합니다.
+- Python pipeline은 공공데이터 provider adapter, 공식 일정/콘텐츠 수집, 제한적 공개 source 보조 수집, LLM 분석을 담당합니다.
+- MySQL은 지역/단지 target, market fact, market data schedule, content item, evidence log를 저장하는 방향으로 정리합니다.
 - Vue 3 + Vite + TypeScript front는 mock 화면과 API 후보를 먼저 세우고, backend/pipeline 계약을 역으로 도출합니다.
 - 기존 금융 서비스 전용 구현은 active runtime에서 제거하고, 부동산 구현에 필요한 공통 패턴만 남깁니다.
 
 ## 완제품 사용 루프
 
-1. 사용자는 요즘 언급이 늘어난 지역과 단지를 봅니다.
-2. 지역/단지 상세에서 기대와 우려, 주요 쟁점, 표본 신뢰도를 확인합니다.
-3. 뉴스/컬럼, 정책/개발/교통 이벤트, 실거래/전세/매물 흐름을 같은 시간축에서 봅니다.
-4. 비슷한 과거 반응 상황과 이후 시장 흐름을 비교합니다.
-5. 에이전트 평가와 근거 로그로 어떤 데이터가 판단에 쓰였는지 확인합니다.
+1. 사용자는 대시보드에서 오늘의 부동산 지역 이슈와 핵심 뉴스/리포트를 봅니다.
+2. 지도에서 전국과 시군구 단위 흐름을 확인합니다.
+3. 실거래 탐색에서 지역, 기간, 가격, 면적, 거래유형 조건으로 공식 거래 데이터를 필터링합니다.
+4. 뉴스/컬럼, 정책/개발/교통 이벤트, 실거래/전세/매물 흐름을 같은 시간축에서 봅니다.
+5. 주요 일정에서 가격지수, 실거래, 미분양, 금리, 청약, 정책 발표 시점을 확인합니다.
+6. 에이전트 평가와 근거 로그로 어떤 데이터가 판단에 쓰였는지 확인합니다.
 
 ## 우선 완성할 세로 Slice
 
-- 부동산 대시보드: 요즘 언급 많은 지역/단지, 실시간 이슈, 주요 쟁점, 데이터 상태를 보여줍니다.
-- 지역/단지 상세: reaction snapshot, market fact timeline, 뉴스/컬럼 링크, 유사 과거 상황을 연결합니다.
-- 지역/단지 matcher: 글 제목과 제한 snippet에서 지역/단지 별칭을 찾고 confidence를 남깁니다.
+- 부동산 대시보드: 오늘의 지역 이슈, 핵심 지역별 흐름, 실시간 이슈, 주요 쟁점, 데이터 상태를 보여줍니다.
+- 실거래 탐색: 공식 매매/전월세 거래를 지역, 기간, 가격, 면적 조건으로 조회하고 공개 지연 상태를 표시합니다.
+- 지역 상세: market fact timeline, 뉴스/컬럼 링크, 정책/공급 이벤트, 근거 로그를 연결합니다.
+- 지역/단지 matcher: 공공데이터의 법정동/단지명과 서비스 target을 우선 연결하고, 공개 원문 별칭은 보조 confidence로 남깁니다.
 - target graph: 지역, 생활권, 정책 영향권, 단지의 roll-up/drill-down 관계를 관리합니다.
-- 반응 지표: 기대/우려/중립, 쟁점 비율, 표본 신뢰도, 소스 편중 주의를 계산합니다.
-- 에이전트 근거 로그: 지역/단지 평가, 근거, caveat, provider/asOf/stale 상태를 기록합니다.
+- 주요 일정: 공식 통계, 실거래 공개, 미분양·공급, 금리, 청약, 정책 발표 일정을 관리합니다.
+- 에이전트 근거 로그: 지역 평가, 단지 보조 근거, caveat, provider/asOf/stale 상태를 기록합니다.
 
 ## 데이터 전략
 
-- 커뮤니티는 일반 게시판형, 부동산 게시판형, 뉴스/컬럼 링크형으로 나눕니다.
-- 공개 HTTP 수집을 우선하고, Playwright는 렌더링 fallback으로만 사용합니다.
+- 공식 데이터는 실거래, 전월세, 가격지수, 공급, 정책, 청약, 금리 일정으로 나눕니다.
+- 공개 HTTP 수집은 뉴스/리포트/보조 반응 후보에만 사용하고, Playwright는 렌더링 fallback으로만 사용합니다.
 - 로그인, CAPTCHA, 프록시 회전, fingerprint 위장은 하지 않습니다.
 - 원문은 제목, 일부 snippet, URL, 작성자 해시, 작성 시각, 원문 해시 정도로 제한 저장합니다.
 - 실거래/전세/매물/정책 데이터는 provider, `asOf`, `stale`, 지연 여부를 반드시 분리합니다.
@@ -46,7 +48,7 @@
 
 - 특정 매수, 매도, 청약, 대출 행동을 권유하지 않습니다.
 - 특정 단지나 지역의 가격 상승을 단정하지 않습니다.
-- 커뮤니티 반응은 시장 관찰 데이터이며 서비스 결론처럼 표현하지 않습니다.
+- 커뮤니티 반응은 보조 관찰 데이터이며 서비스 결론이나 핵심 순위처럼 표현하지 않습니다.
 - 뉴스/컬럼은 원문 전문이 아니라 제목, 출처, 링크, 키워드 중심으로 표시합니다.
 - AI는 내부 추론 전문을 노출하지 않고 사용자용 짧은 근거와 caveat만 남깁니다.
 
@@ -56,4 +58,4 @@
 - 정책/개발/교통 이벤트 provider 확장
 - 유사 과거 상황 검색용 임베딩/벡터 저장소
 - 질문형 분석
-- 사용자 관심 지역/단지 알림
+- 마이페이지 저장 지역/단지 알림

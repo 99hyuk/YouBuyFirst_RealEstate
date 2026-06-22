@@ -53,6 +53,26 @@ class RealEstateAliasIntegrationTest {
     }
 
     @Test
+    void pagesMatcherAliasExportsForLargeRegionAndComplexRegistries() throws Exception {
+        ResponseEntity<String> firstPage = restTemplate.getForEntity(
+                "/internal/realestate/aliases?reviewState=approved&ambiguous=false&targetType=region&limit=1&page=0",
+                String.class
+        );
+        ResponseEntity<String> secondPage = restTemplate.getForEntity(
+                "/internal/realestate/aliases?reviewState=approved&ambiguous=false&targetType=region&limit=1&page=1",
+                String.class
+        );
+
+        assertThat(firstPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(secondPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode firstItem = objectMapper.readTree(firstPage.getBody()).path("items").path(0);
+        JsonNode secondItem = objectMapper.readTree(secondPage.getBody()).path("items").path(0);
+        assertThat(firstItem.path("targetId").asText() + ":" + firstItem.path("alias").asText())
+                .isNotEqualTo(secondItem.path("targetId").asText() + ":" + secondItem.path("alias").asText());
+    }
+
+    @Test
     void upsertsAliasesAndExposesOnlyApprovedNonAmbiguousAliasesForMatcher() throws Exception {
         Map<String, Object> request = Map.of(
                 "items",

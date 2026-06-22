@@ -67,10 +67,10 @@ public class RealEstateIndicatorService {
                 "price-transaction",
                 "price & volume",
                 "가격 및 거래량",
-                "실거래와 전월세 공개 데이터로 가격 흐름의 최신 관측값을 확인합니다",
+                "공식 공표 지표로 최신 가격 흐름을 확인합니다",
                 changeLabel(items),
                 stale ? "down" : "up",
-                "매매 실거래와 전월세 실거래를 우선 연결하고, 지수·거래량 통계는 별도 지표 테이블 구축 뒤 보강합니다.",
+                "한국부동산원과 국토교통부 원천을 provider/asOf 기준으로 구분해 매매, 전세, 거래량 흐름을 우선 표시합니다.",
                 chips,
                 metrics,
                 dataStatus,
@@ -92,9 +92,24 @@ public class RealEstateIndicatorService {
                         items.stream().anyMatch(item -> provider.equals(item.provider()) && item.stale())
                                 ? "지연 가능"
                                 : "공공데이터 반영",
-                        "매매/전월세 실거래"
+                        usedMetricNames(items, provider)
                 ))
                 .toList();
+    }
+
+    private static String usedMetricNames(List<RealEstateMarketSummaryItemResponse> items, String provider) {
+        List<String> labels = items.stream()
+                .filter(item -> provider.equals(item.provider()))
+                .map(RealEstateMarketSummaryItemResponse::label)
+                .distinct()
+                .toList();
+        if ("molit".equals(provider) && labels.contains("매매 실거래") && labels.contains("전월세 실거래")) {
+            return "매매/전월세 실거래";
+        }
+        return String.join(
+                ", ",
+                labels
+        );
     }
 
     private static String changeLabel(List<RealEstateMarketSummaryItemResponse> items) {

@@ -182,6 +182,56 @@ class RealEstateTargetGraphIntegrationTest {
     }
 
     @Test
+    void pagesInternalTargetEdgesForLargeRollupExports() throws Exception {
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/target-edges",
+                Map.of(
+                        "items",
+                        List.of(
+                                Map.ofEntries(
+                                        Map.entry("fromTargetType", "region"),
+                                        Map.entry("fromTargetId", "region-seoul"),
+                                        Map.entry("toTargetType", "region"),
+                                        Map.entry("toTargetId", "region-seoul-jongno"),
+                                        Map.entry("edgeType", "contains"),
+                                        Map.entry("confidence", 0.98),
+                                        Map.entry("source", "test:pagination"),
+                                        Map.entry("reviewState", "approved")
+                                ),
+                                Map.ofEntries(
+                                        Map.entry("fromTargetType", "region"),
+                                        Map.entry("fromTargetId", "region-seoul"),
+                                        Map.entry("toTargetType", "region"),
+                                        Map.entry("toTargetId", "region-seoul-mapo"),
+                                        Map.entry("edgeType", "contains"),
+                                        Map.entry("confidence", 0.97),
+                                        Map.entry("source", "test:pagination"),
+                                        Map.entry("reviewState", "approved")
+                                )
+                        )
+                ),
+                String.class
+        );
+        ResponseEntity<String> firstPage = restTemplate.getForEntity(
+                "/internal/realestate/target-edges?targetId=region-seoul&direction=out&reviewState=approved&edgeType=contains&limit=1&page=0",
+                String.class
+        );
+        ResponseEntity<String> secondPage = restTemplate.getForEntity(
+                "/internal/realestate/target-edges?targetId=region-seoul&direction=out&reviewState=approved&edgeType=contains&limit=1&page=1",
+                String.class
+        );
+
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(firstPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(secondPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode firstItem = objectMapper.readTree(firstPage.getBody()).path("items").path(0);
+        JsonNode secondItem = objectMapper.readTree(secondPage.getBody()).path("items").path(0);
+        assertThat(firstItem.path("fromTargetId").asText() + ">" + firstItem.path("toTargetId").asText())
+                .isNotEqualTo(secondItem.path("fromTargetId").asText() + ">" + secondItem.path("toTargetId").asText());
+    }
+
+    @Test
     void importsGenericTargetsSoGraphCanRepresentLivingAreasAndPolicyAreas() throws Exception {
         ResponseEntity<String> targetImport = restTemplate.postForEntity(
                 "/internal/realestate/targets",

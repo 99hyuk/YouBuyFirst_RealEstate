@@ -9,7 +9,7 @@ const mountTargetDetail = async (path = '/realestate/targets/region-seoul-mapo')
     history: createMemoryHistory(),
     routes: [
       { path: '/realestate/targets/:targetId', component: RegionDetailPage },
-      { path: '/realestate/reactions', component: { template: '<div />' } }
+      { path: '/realestate/transactions', component: { template: '<div />' } }
     ]
   });
 
@@ -60,23 +60,22 @@ describe('real-estate target detail content feed', () => {
     const wrapper = await mountTargetDetail();
 
     expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/content?feed=all&limit=6');
-    expect(wrapper.text()).toContain('content API 반영');
+    expect(wrapper.text()).toContain('근거 링크 반영');
     expect(wrapper.text()).toContain('마포 전세 매물 체감 원문 확인');
     expect(wrapper.text()).toContain('땅집고');
     expect(wrapper.text()).toContain('2026-06-12 · 댓글 42');
     expect(wrapper.text()).not.toContain('원문 후보 묶음');
   });
 
-  it('renders the embedded complex map fallback on region targets', async () => {
+  it('keeps missing marker API data as insufficient instead of local fixture markers', async () => {
     const wrapper = await mountTargetDetail();
 
-    expect(wrapper.find('[data-testid="kakao-complex-map"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="kakao-map-fallback"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('마포래미안푸르지오');
-    expect(wrapper.text()).toContain('단지 위치 레이어');
-    expect(wrapper.text()).toContain('mock fallback');
-    expect(wrapper.text()).toContain('fixture fallback');
-    expect(wrapper.text()).toContain('mock 좌표');
+    expect(wrapper.find('[data-testid="kakao-complex-map"]').exists()).toBe(false);
+    expect(wrapper.text()).toContain('단지 좌표 수집 전');
+    expect(wrapper.text()).toContain('단지 좌표 수집 전/insufficient');
+    expect(wrapper.text()).toContain('검증된 단지 좌표가 들어오면');
+    expect(wrapper.text()).not.toContain('좌표 후보/검증 전');
+    expect(wrapper.text()).not.toContain('좌표 검증 전');
   });
 
   it('uses nearby complex API markers before the local fixture markers', async () => {
@@ -112,8 +111,8 @@ describe('real-estate target detail content feed', () => {
 
     expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/nearby-complexes?limit=20');
     expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('API 단지 marker');
-    expect(wrapper.text()).toContain('marker API 반영');
-    expect(wrapper.text()).toContain('candidate · stale');
+    expect(wrapper.text()).toContain('지도 좌표 반영');
+    expect(wrapper.text()).toContain('좌표 후보 · 갱신 지연');
     expect(wrapper.text()).not.toContain('마포래미안푸르지오');
   });
 
@@ -144,10 +143,10 @@ describe('real-estate target detail content feed', () => {
     const wrapper = await mountTargetDetail();
 
     expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/timeline?limit=6');
-    expect(wrapper.text()).toContain('timeline API 반영');
+    expect(wrapper.text()).toContain('일정 반영');
     expect(wrapper.text()).toContain('마포 주거정비 후보지 발표');
     expect(wrapper.text()).toContain('정책 발표 이후 정비사업 기대와 가격 부담 우려');
-    expect(wrapper.text()).toContain('policy · ok');
+    expect(wrapper.text()).toContain('정책 · 반영');
     expect(wrapper.text()).not.toContain('전세 우려 급증');
   });
 
@@ -261,9 +260,9 @@ describe('real-estate target detail content feed', () => {
 
     const wrapper = await mountTargetDetail();
 
-    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/evidence-logs?limit=3');
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul-mapo/evidence-logs?limit=1');
     expect(wrapper.text()).toContain('AI 근거 로그');
-    expect(wrapper.text()).toContain('EvidenceLog API 반영');
+    expect(wrapper.text()).toContain('AI 근거 반영');
     expect(wrapper.text()).toContain('전세 우려와 학군 기대가 함께 관찰됩니다.');
     expect(wrapper.text()).toContain('반응 지표, 실거래, timeline event를 함께 본 룰 기반 평가');
     expect(wrapper.text()).toContain('언급 증가');
@@ -277,7 +276,8 @@ describe('real-estate target detail content feed', () => {
     expect(evidenceLink.attributes('rel')).toContain('noopener');
     expect(wrapper.text()).toContain('serpapi:google_news');
     expect(wrapper.text()).toContain('candidate');
-    expect(wrapper.text()).toContain('timeline_event_missing');
+    expect(wrapper.text()).toContain('타임라인 미연결');
+    expect(wrapper.text()).toContain('시장 사실 일부 반영');
     expect(wrapper.text()).toContain('신뢰도 72%');
     expect(wrapper.text()).toContain('realestate-eval-v1');
   });
@@ -295,9 +295,9 @@ describe('real-estate target detail content feed', () => {
               promptVersion: 'gms-evidence-v1',
               modelName: 'gpt-5-mini',
               tone: 'watch',
-              summary: '서울특별시는 언급량이 빠르게 늘어난 관찰 구간입니다.',
-              subtitle: 'TOP10 반응 snapshot과 시장 사실을 함께 본 EvidenceLog입니다.',
-              caveats: ['source_skewed'],
+              summary: '서울특별시는 national_market_fact_only / similar_window_missing / asOf 상태를 함께 확인해야 하는 관찰 구간입니다.',
+              subtitle: 'TOP10 반응 snapshot 및 시장 사실 기반 EvidenceLog입니다.',
+              caveats: ['source_skewed', 'national_market_fact_only', 'similar_window_missing'],
               dataQuality: 'partial',
               confidence: 0.66,
               skipReason: null,
@@ -324,23 +324,154 @@ describe('real-estate target detail content feed', () => {
 
     const wrapper = await mountTargetDetail('/realestate/targets/region-seoul');
 
-    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul/evidence-logs?limit=3');
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/region-seoul/evidence-logs?limit=1');
     expect(wrapper.find('.unsupported-region-state').exists()).toBe(false);
     expect(wrapper.find('.live-evidence-region-state').exists()).toBe(true);
-    expect(wrapper.text()).toContain('실시간 근거 리포트');
-    expect(wrapper.text()).toContain('EvidenceLog API 반영');
-    expect(wrapper.text()).toContain('서울특별시는 언급량이 빠르게 늘어난 관찰 구간입니다.');
+    expect(wrapper.text()).toContain('연결된 후보 리포트');
+    expect(wrapper.text()).toContain('후보 상세 데이터가 먼저 연결되었습니다');
+    expect(wrapper.text()).toContain('AI 근거 반영');
+    expect(wrapper.text()).toContain('서울특별시는 전국 지표만 반영 / 유사 과거 미연결 / 기준 시각 상태를 함께 확인해야 하는 관찰 구간입니다.');
+    expect(wrapper.text()).toContain('TOP10 반응 집계 자료 및 시장 사실 기반 근거 로그입니다.');
+    expect(wrapper.text()).not.toContain('national_market_fact_only');
+    expect(wrapper.text()).not.toContain('similar_window_missing');
+    expect(wrapper.text()).not.toContain('EvidenceLog');
+    expect(wrapper.text()).not.toContain('snapshot');
+    expect(wrapper.text()).not.toContain('asOf');
     expect(wrapper.text()).toContain('24시간 언급 TOP');
     expect(wrapper.text()).toContain('gms-evidence-v1');
   });
 
-  it('opens a complex target detail with the same map and report frame', async () => {
+  it('opens a complex target detail without filling local fixture report values', async () => {
     const wrapper = await mountTargetDetail('/realestate/targets/complex-mapo-raemian-prugio');
 
     expect(wrapper.find('.unsupported-region-state').exists()).toBe(false);
     expect(wrapper.text()).toContain('마포래미안푸르지오');
-    expect(wrapper.text()).toContain('마래푸');
-    expect(wrapper.text()).toContain('단지 위치 레이어');
-    expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('학군·역세권 언급 증가');
+    expect(wrapper.text()).toContain('AI 근거 리포트 수집 전/insufficient');
+    expect(wrapper.text()).toContain('단지 좌표 수집 전');
+    expect(wrapper.text()).toContain('AI 근거 항목 수집 전/insufficient');
+    expect(wrapper.text()).not.toContain('마래푸');
+    expect(wrapper.find('[data-testid="complex-map-inspector"]').exists()).toBe(false);
+  });
+
+  it('loads map markers for dynamically registered apartment targets', async () => {
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('/nearby-complexes')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              targetId: 'complex-community-imun-ipark-xi',
+              name: '이문아이파크자이',
+              address: '서울 동대문구 이문동 일대',
+              region: '서울 동대문구',
+              latitude: 37.601,
+              longitude: 127.061,
+              tone: 'up',
+              price: '확인 필요',
+              change: '+0.12%',
+              reaction: '커뮤니티 언급 증가',
+              provider: 'community_observed',
+              asOf: '2026-06-16T00:00:00Z',
+              dataStatus: 'candidate',
+              stale: true,
+              note: '커뮤니티 관찰 단지 좌표 후보'
+            }
+          ]
+        }));
+      }
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountTargetDetail('/realestate/targets/complex-community-imun-ipark-xi');
+
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/complex-community-imun-ipark-xi/nearby-complexes?limit=20');
+    expect(wrapper.find('[data-testid="kakao-complex-map"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="complex-map-inspector"]').text()).toContain('이문아이파크자이');
+    expect(wrapper.text()).toContain('지도 좌표 반영');
+    expect(wrapper.text()).not.toContain('아직 상세 리포트가 연결되지 않았습니다');
+  });
+
+  it('shows the latest apartment trades between the embedded map and AI evidence log', async () => {
+    const fetcher = vi.fn(async (input: string) => {
+      if (input.includes('/market-facts')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              factType: 'apt_trade',
+              provider: 'molit',
+              providerDataset: 'molit_apt_trade',
+              legalDongCode: '11680',
+              observedAt: '2026-06-12',
+              asOf: '2026-06-13',
+              valueJson: {
+                apartmentName: '래미안신반포팰리스',
+                dealAmountManwon: 325000,
+                exclusiveAreaM2: 84.93,
+                floor: 12
+              },
+              dataStatus: 'ok',
+              stale: false
+            },
+            {
+              factType: 'apt_trade',
+              provider: 'molit',
+              providerDataset: 'molit_apt_trade',
+              legalDongCode: '11680',
+              observedAt: '2026-06-02',
+              asOf: '2026-06-13',
+              valueJson: {
+                apartmentName: '래미안신반포팰리스',
+                dealAmountManwon: 318000,
+                exclusiveAreaM2: 84.97,
+                floor: 8
+              },
+              dataStatus: 'ok',
+              stale: false
+            }
+          ]
+        }));
+      }
+      if (input.includes('/nearby-complexes')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              targetId: 'complex-ssafy-home-11680-4474',
+              name: '래미안신반포팰리스',
+              address: '서울 서초구 잠원동',
+              region: '서울 서초구',
+              latitude: 37.514,
+              longitude: 127.012,
+              tone: 'up',
+              price: '32.5억원',
+              change: '+0.18%',
+              reaction: '커뮤니티 관심 후보',
+              provider: 'ssafy_home',
+              asOf: '2026-06-13T00:00:00Z',
+              dataStatus: 'verified',
+              stale: false
+            }
+          ]
+        }));
+      }
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountTargetDetail('/realestate/targets/complex-ssafy-home-11680-4474');
+
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/targets/complex-ssafy-home-11680-4474/market-facts?factType=apt_trade&limit=5&officialOnly=true');
+    expect(wrapper.text()).toContain('최근 매매 거래');
+    expect(wrapper.text()).toContain('거래 내역 반영');
+    expect(wrapper.text()).toContain('래미안신반포팰리스');
+    expect(wrapper.text()).toContain('32.50억원');
+    expect(wrapper.text()).toContain('전용 84.93㎡');
+    expect(wrapper.text()).toContain('12층');
+
+    const mapIndex = wrapper.text().indexOf('단지 위치 레이어');
+    const tradeIndex = wrapper.text().indexOf('최근 매매 거래');
+    const evidenceIndex = wrapper.text().indexOf('AI 근거 로그');
+    expect(mapIndex).toBeGreaterThanOrEqual(0);
+    expect(tradeIndex).toBeGreaterThan(mapIndex);
+    expect(evidenceIndex).toBeGreaterThan(tradeIndex);
   });
 });

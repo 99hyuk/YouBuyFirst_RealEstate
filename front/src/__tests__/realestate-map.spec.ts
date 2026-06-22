@@ -11,7 +11,7 @@ describe('real-estate map API adapter', () => {
       mapDataSource: 'KOSTAT 2018',
       dataStatus: 'mock',
       stale: true,
-      periods: ['week', 'month', 'halfYear'],
+      periods: ['month', 'quarter', 'halfYear'],
       targets: [
         {
           targetId: 'region-seoul',
@@ -44,6 +44,7 @@ describe('real-estate map API adapter', () => {
     expect(fetcher).toHaveBeenCalledWith('/api/realestate/map/layers?layerType=sido');
     expect(response.dataStatus).toBe('mock');
     expect(response.stale).toBe(true);
+    expect(response.periods).toEqual(['month', 'quarter', 'halfYear']);
     expect(response.targets[0].targetId).toBe('region-seoul');
     expect(response.targets[0].periods.month?.changePct).toBe(0.62);
     expect(response.targets[0].periods.month?.provider).toBe('seed');

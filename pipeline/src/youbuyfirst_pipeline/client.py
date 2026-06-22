@@ -9,6 +9,21 @@ from youbuyfirst_pipeline.board_stream import BoardCoverage, BoardWatermark
 from youbuyfirst_pipeline.models import CommentCollectionTarget, DiffusionEvent, EnrichedPost
 
 
+_BACKEND_COVERAGE_KEYS = frozenset(
+    {
+        "pagesFetched",
+        "rowsSeen",
+        "ignoredPinnedCount",
+        "duplicateStop",
+        "cutoffStop",
+        "oldestSeenAt",
+        "newestSeenAt",
+        "lastCursor",
+        "coverageStatus",
+    }
+)
+
+
 class SpringIngestionClient:
     def __init__(
         self,
@@ -59,6 +74,8 @@ class SpringIngestionClient:
         posts_accepted: int,
         error_message: str | None = None,
         coverage: dict | BoardCoverage | None = None,
+        target_id: str | None = None,
+        target_kind: str | None = None,
     ) -> None:
         payload = {
             "source": source,
@@ -71,6 +88,10 @@ class SpringIngestionClient:
             "errorMessage": error_message,
             **_coverage_payload(coverage),
         }
+        if target_id is not None:
+            payload["targetId"] = target_id
+        if target_kind is not None:
+            payload["targetKind"] = target_kind
         with httpx.Client(timeout=self.timeout_seconds) as client:
             response = client.post(f"{self.base_url}/internal/ingestions/crawl-runs", json=payload)
             response.raise_for_status()
@@ -102,16 +123,27 @@ class SpringIngestionClient:
         params: dict[str, str | int] = {
             "publishedFrom": published_from,
             "publishedTo": published_to,
-            "limit": limit,
         }
         if source:
             params["source"] = source
+        page_size = max(1, min(limit, 5000))
+        page = 0
+        results: list[dict] = []
         with httpx.Client(timeout=self.timeout_seconds) as client:
-            response = client.get(f"{self.base_url}/internal/ingestions/community-posts/export", params=params)
-            response.raise_for_status()
-            payload = response.json()
-        items = payload.get("items", []) if isinstance(payload, dict) else []
-        return items if isinstance(items, list) else []
+            while len(results) < limit:
+                page_params = dict(params)
+                page_params["limit"] = page_size
+                page_params["page"] = page
+                response = client.get(f"{self.base_url}/internal/ingestions/community-posts/export", params=page_params)
+                response.raise_for_status()
+                payload = response.json()
+                items = payload.get("items", []) if isinstance(payload, dict) else []
+                page_items = [item for item in items if isinstance(item, dict)]
+                results.extend(page_items)
+                if len(page_items) < page_size:
+                    break
+                page += 1
+        return results[:limit]
 
     def publish_real_estate_market_facts(self, facts: Iterable[object]) -> None:
         items = [fact.to_ingestion_dict() for fact in facts]
@@ -167,6 +199,50 @@ class SpringIngestionClient:
         }
         with httpx.Client(timeout=self.timeout_seconds) as client:
             response = client.post(f"{self.base_url}/internal/realestate/regions", json=payload)
+            response.raise_for_status()
+
+    def publish_real_estate_targets(self, targets: Iterable[dict]) -> None:
+        items = [target for target in targets if isinstance(target, dict)]
+        if not items:
+            return
+        payload = {
+            "items": items,
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(f"{self.base_url}/internal/realestate/targets", json=payload)
+            response.raise_for_status()
+
+    def publish_real_estate_complexes(self, complexes: Iterable[dict]) -> None:
+        items = [complex_row for complex_row in complexes if isinstance(complex_row, dict)]
+        if not items:
+            return
+        payload = {
+            "items": items,
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(f"{self.base_url}/internal/realestate/complexes", json=payload)
+            response.raise_for_status()
+
+    def publish_real_estate_aliases(self, aliases: Iterable[dict]) -> None:
+        items = [alias for alias in aliases if isinstance(alias, dict)]
+        if not items:
+            return
+        payload = {
+            "items": items,
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(f"{self.base_url}/internal/realestate/aliases", json=payload)
+            response.raise_for_status()
+
+    def publish_real_estate_target_edges(self, edges: Iterable[dict]) -> None:
+        items = [edge for edge in edges if isinstance(edge, dict)]
+        if not items:
+            return
+        payload = {
+            "items": items,
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(f"{self.base_url}/internal/realestate/target-edges", json=payload)
             response.raise_for_status()
 
     def publish_real_estate_reaction_snapshots(self, snapshots: Iterable[object]) -> None:
@@ -226,6 +302,26 @@ class SpringIngestionClient:
             data = response.json()
         return data if isinstance(data, dict) else {}
 
+    def list_real_estate_map_layer_targets(
+        self,
+        *,
+        layer_type: str = "sido",
+        parent_target_id: str | None = None,
+        period: str = "month",
+        limit: int = 100,
+    ) -> list[dict]:
+        params = {
+            "layerType": layer_type,
+        }
+        if parent_target_id:
+            params["parentTargetId"] = parent_target_id
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(f"{self.base_url}/api/realestate/map/layers", params=params)
+            response.raise_for_status()
+            data = response.json()
+        targets = data.get("targets", []) if isinstance(data, dict) else []
+        return [target for target in targets if isinstance(target, dict)][: max(1, limit)]
+
     def get_real_estate_reaction_ranking(
         self,
         *,
@@ -256,6 +352,35 @@ class SpringIngestionClient:
         with httpx.Client(timeout=self.timeout_seconds) as client:
             response = client.get(
                 f"{self.base_url}/api/realestate/targets/{target_id}/market-facts",
+                params=params,
+            )
+            response.raise_for_status()
+            data = response.json()
+        items = data.get("items", []) if isinstance(data, dict) else []
+        return [item for item in items if isinstance(item, dict)]
+
+    def list_real_estate_market_facts(
+        self,
+        *,
+        target_id: str | None = None,
+        legal_dong_code: str | None = None,
+        fact_type: str | None = None,
+        limit: int = 20,
+        page: int = 0,
+    ) -> list[dict]:
+        params: dict[str, str] = {
+            "limit": str(limit),
+            "page": str(page),
+        }
+        if target_id:
+            params["targetId"] = target_id
+        if legal_dong_code:
+            params["legalDongCode"] = legal_dong_code
+        if fact_type:
+            params["factType"] = fact_type
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(
+                f"{self.base_url}/api/realestate/market-facts",
                 params=params,
             )
             response.raise_for_status()
@@ -342,16 +467,51 @@ class SpringIngestionClient:
         items = data.get("items", []) if isinstance(data, dict) else []
         return [item for item in items if isinstance(item, dict)]
 
-    def list_real_estate_market_data_targets(self, enabled: bool | None = True) -> list[dict]:
-        params = {}
+    def list_real_estate_market_data_targets(self, enabled: bool | None = True, limit: int = 500) -> list[dict]:
+        base_params = {}
         if enabled is not None:
-            params["enabled"] = "true" if enabled else "false"
+            base_params["enabled"] = "true" if enabled else "false"
+        page_size = max(1, min(limit, 1000))
+        page = 0
+        results: list[dict] = []
         with httpx.Client(timeout=self.timeout_seconds) as client:
-            response = client.get(f"{self.base_url}/internal/realestate/market-data-targets", params=params)
-            response.raise_for_status()
-            data = response.json()
-        items = data.get("items", []) if isinstance(data, dict) else []
-        return [item for item in items if isinstance(item, dict)]
+            while True:
+                params = dict(base_params)
+                params["limit"] = str(page_size)
+                params["page"] = str(page)
+                response = client.get(f"{self.base_url}/internal/realestate/market-data-targets", params=params)
+                response.raise_for_status()
+                data = response.json()
+                items = data.get("items", []) if isinstance(data, dict) else []
+                page_items = [item for item in items if isinstance(item, dict)]
+                results.extend(page_items)
+                if len(page_items) < page_size:
+                    break
+                page += 1
+        return results
+
+    def list_real_estate_regions(self, *, region_level: str | None = None, limit: int = 500) -> list[dict]:
+        base_params = {}
+        if region_level is not None:
+            base_params["regionLevel"] = region_level
+        page_size = max(1, min(limit, 1000))
+        page = 0
+        results: list[dict] = []
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            while True:
+                params = dict(base_params)
+                params["limit"] = str(page_size)
+                params["page"] = str(page)
+                response = client.get(f"{self.base_url}/internal/realestate/regions", params=params)
+                response.raise_for_status()
+                data = response.json()
+                items = data.get("items", []) if isinstance(data, dict) else []
+                page_items = [item for item in items if isinstance(item, dict)]
+                results.extend(page_items)
+                if len(page_items) < page_size:
+                    break
+                page += 1
+        return results
 
     def list_real_estate_aliases(
         self,
@@ -359,20 +519,33 @@ class SpringIngestionClient:
         review_state: str | None = "approved",
         ambiguous: bool | None = False,
         target_type: str | None = None,
+        limit: int = 500,
     ) -> list[dict]:
-        params = {}
+        base_params = {}
         if review_state is not None:
-            params["reviewState"] = review_state
+            base_params["reviewState"] = review_state
         if ambiguous is not None:
-            params["ambiguous"] = "true" if ambiguous else "false"
+            base_params["ambiguous"] = "true" if ambiguous else "false"
         if target_type is not None:
-            params["targetType"] = target_type
+            base_params["targetType"] = target_type
+        page_size = max(1, min(limit, 1000))
+        page = 0
+        results: list[dict] = []
         with httpx.Client(timeout=self.timeout_seconds) as client:
-            response = client.get(f"{self.base_url}/internal/realestate/aliases", params=params)
-            response.raise_for_status()
-            data = response.json()
-        items = data.get("items", []) if isinstance(data, dict) else []
-        return [item for item in items if isinstance(item, dict)]
+            while True:
+                params = dict(base_params)
+                params["limit"] = str(page_size)
+                params["page"] = str(page)
+                response = client.get(f"{self.base_url}/internal/realestate/aliases", params=params)
+                response.raise_for_status()
+                data = response.json()
+                items = data.get("items", []) if isinstance(data, dict) else []
+                page_items = [item for item in items if isinstance(item, dict)]
+                results.extend(page_items)
+                if len(page_items) < page_size:
+                    break
+                page += 1
+        return results
 
     def list_real_estate_target_edges(
         self,
@@ -381,22 +554,35 @@ class SpringIngestionClient:
         edge_type: str | None = None,
         target_id: str | None = None,
         direction: str | None = "both",
+        limit: int = 500,
     ) -> list[dict]:
-        params = {}
+        base_params = {}
         if review_state is not None:
-            params["reviewState"] = review_state
+            base_params["reviewState"] = review_state
         if edge_type is not None:
-            params["edgeType"] = edge_type
+            base_params["edgeType"] = edge_type
         if target_id is not None:
-            params["targetId"] = target_id
+            base_params["targetId"] = target_id
         if direction is not None:
-            params["direction"] = direction
+            base_params["direction"] = direction
+        page_size = max(1, min(limit, 1000))
+        page = 0
+        results: list[dict] = []
         with httpx.Client(timeout=self.timeout_seconds) as client:
-            response = client.get(f"{self.base_url}/internal/realestate/target-edges", params=params)
-            response.raise_for_status()
-            data = response.json()
-        items = data.get("items", []) if isinstance(data, dict) else []
-        return [item for item in items if isinstance(item, dict)]
+            while True:
+                params = dict(base_params)
+                params["limit"] = str(page_size)
+                params["page"] = str(page)
+                response = client.get(f"{self.base_url}/internal/realestate/target-edges", params=params)
+                response.raise_for_status()
+                data = response.json()
+                items = data.get("items", []) if isinstance(data, dict) else []
+                page_items = [item for item in items if isinstance(item, dict)]
+                results.extend(page_items)
+                if len(page_items) < page_size:
+                    break
+                page += 1
+        return results
 
     @staticmethod
     def _post_payload(post: EnrichedPost) -> dict:
@@ -461,7 +647,7 @@ def _coverage_payload(coverage: dict | BoardCoverage | None) -> dict:
     if coverage is None:
         return {}
     if isinstance(coverage, dict):
-        return coverage
+        return {key: coverage[key] for key in _BACKEND_COVERAGE_KEYS if key in coverage}
     return {
         "pagesFetched": coverage.pages_fetched,
         "rowsSeen": coverage.rows_seen,

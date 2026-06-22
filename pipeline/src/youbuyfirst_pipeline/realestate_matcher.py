@@ -57,6 +57,47 @@ class RealEstateTargetMention:
         }
 
 
+GENERIC_STANDALONE_COMPLEX_ALIAS_KEYS = {
+    "두산",
+    "삼성",
+    "현대",
+    "서울",
+    "부산",
+    "대구",
+    "인천",
+    "광주",
+    "대전",
+    "울산",
+    "세종",
+    "경기",
+    "강원",
+    "충북",
+    "충남",
+    "전북",
+    "전남",
+    "경북",
+    "경남",
+    "제주",
+    "래미안",
+    "푸르지오",
+    "자이",
+    "힐스테이트",
+    "더샵",
+    "롯데캐슬",
+    "아이파크",
+    "e편한세상",
+    "이편한세상",
+    "편한세상",
+    "포레나",
+    "센트럴힐",
+    "센트럴파크",
+    "한양수자인",
+    "리버파크",
+    "트리마제",
+    "파크리오",
+}
+
+
 @dataclass(frozen=True)
 class RealEstateAliasCandidate:
     target_type: str
@@ -109,16 +150,24 @@ class RealEstateMatchedPost:
 
 
 class RealEstateTargetMatcher:
-    def __init__(self, aliases: list[RealEstateAliasRule]) -> None:
+    def __init__(
+        self,
+        aliases: list[RealEstateAliasRule],
+        *,
+        include_candidate_sources: set[str] | None = None,
+    ) -> None:
         self._entries_by_first_char: dict[str, list[_AliasEntry]] = {}
+        candidate_sources = include_candidate_sources or set()
         for alias in aliases:
-            if not _is_confirmed_alias(alias):
+            if not _is_confirmed_alias(alias, include_candidate_sources=candidate_sources):
                 continue
             normalized_alias = alias.alias.strip()
             if len(normalized_alias) < 2:
                 continue
             match_key = _match_key(normalized_alias)
             if len(match_key) < 2:
+                continue
+            if not _is_matchable_alias(alias, match_key):
                 continue
             normalized_rule = RealEstateAliasRule(
                 target_type=alias.target_type.strip(),
@@ -138,10 +187,10 @@ class RealEstateTargetMatcher:
             entries.sort(key=lambda entry: len(entry.normalized_alias), reverse=True)
 
     def match_post(self, post: RealEstatePostForMatching) -> RealEstateMatchedPost:
-        mentions = self.match_text(post.title, match_source="title")
-        seen_targets = {(mention.target_type, mention.target_id, mention.matched_text) for mention in mentions}
+        mentions = _dedupe_mentions_by_target(self.match_text(post.title, match_source="title"))
+        seen_targets = {(mention.target_type, mention.target_id) for mention in mentions}
         for mention in self.match_text(post.content_snippet, match_source="content_snippet"):
-            key = (mention.target_type, mention.target_id, mention.matched_text)
+            key = (mention.target_type, mention.target_id)
             if key in seen_targets:
                 continue
             seen_targets.add(key)
@@ -189,7 +238,7 @@ class RealEstateTargetMatcher:
                     matched_text=text[span[0]:span[1]],
                     match_source=match_source,
                     confidence=alias.confidence,
-                    review_state="approved",
+                    review_state=alias.review_state,
                     alias_type=alias.alias_type,
                 )
             )
@@ -205,6 +254,18 @@ class RealEstateTargetMatcher:
             entries.extend(self._entries_by_first_char.get(char, []))
         entries.sort(key=lambda entry: len(entry.normalized_alias), reverse=True)
         return entries
+
+
+def _dedupe_mentions_by_target(mentions: list[RealEstateTargetMention]) -> list[RealEstateTargetMention]:
+    result: list[RealEstateTargetMention] = []
+    seen_targets: set[tuple[str, str]] = set()
+    for mention in mentions:
+        key = (mention.target_type, mention.target_id)
+        if key in seen_targets:
+            continue
+        seen_targets.add(key)
+        result.append(mention)
+    return result
 
 
 def load_real_estate_alias_rules(path: str | Path) -> list[RealEstateAliasRule]:
@@ -224,8 +285,10 @@ def real_estate_posts_for_matching_from_records(records: list[dict[str, Any]]) -
 def match_real_estate_posts(
     posts: list[RealEstatePostForMatching],
     aliases: list[RealEstateAliasRule],
+    *,
+    include_candidate_sources: set[str] | None = None,
 ) -> list[RealEstateMatchedPost]:
-    matcher = RealEstateTargetMatcher(aliases)
+    matcher = RealEstateTargetMatcher(aliases, include_candidate_sources=include_candidate_sources)
     return [matcher.match_post(post) for post in posts]
 
 
@@ -397,8 +460,30 @@ def _post_from_mapping(record: dict[str, Any]) -> RealEstatePostForMatching:
     )
 
 
-def _is_confirmed_alias(alias: RealEstateAliasRule) -> bool:
-    return alias.review_state.strip().lower() == "approved" and not alias.ambiguous
+def _is_confirmed_alias(
+    alias: RealEstateAliasRule,
+    *,
+    include_candidate_sources: set[str] | None = None,
+) -> bool:
+    if alias.ambiguous:
+        return False
+    review_state = alias.review_state.strip().lower()
+    if review_state == "approved":
+        return True
+    source = (alias.source or "").strip()
+    return review_state == "candidate" and bool(source) and source in (include_candidate_sources or set())
+
+
+def _is_matchable_alias(alias: RealEstateAliasRule, match_key: str) -> bool:
+    target_type = alias.target_type.strip().lower()
+    alias_type = alias.alias_type.strip().lower()
+    if target_type != "complex":
+        return True
+    if match_key in GENERIC_STANDALONE_COMPLEX_ALIAS_KEYS:
+        return False
+    if alias_type in {"short_name", "community_slang"}:
+        return True
+    return len(match_key) >= 4
 
 
 def _known_alias_keys_by_target(aliases: list[RealEstateAliasRule]) -> dict[tuple[str, str], set[str]]:

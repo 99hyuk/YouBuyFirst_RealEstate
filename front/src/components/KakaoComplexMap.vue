@@ -60,8 +60,8 @@ const mapCenter = computed(() => props.center ?? selectedMarker.value ?? props.m
 const statusLabel = computed(() => {
   if (!hasMarkers.value) return 'marker 없음';
   if (mapState.value === 'ready') return 'kakao sdk';
-  if (mapState.value === 'error') return 'map fallback';
-  if (!kakaoEnabled.value) return 'mock fallback';
+  if (mapState.value === 'error') return '지도 SDK 대체 표시';
+  if (!kakaoEnabled.value) return '지도 SDK 대기';
   if (!kakaoKey.value) return 'key missing';
   return 'loading';
 });

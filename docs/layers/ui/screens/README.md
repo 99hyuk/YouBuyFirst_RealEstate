@@ -16,13 +16,13 @@
 
 | Screen ID | Route 정보 | Brief | 상태 | 비고 |
 | --- | --- | --- | --- | --- |
-| `dashboard` | `/dashboard` | `dashboard.md` | active | 메인 대시보드, 지역 반응, 주요 부동산 지표, 뉴스/리포트 |
+| `dashboard` | `/dashboard` | `dashboard.md` | active | 메인 대시보드, 지역 인사이트, 뉴스/리포트, 일정/거래 탐색 진입 |
 | `realestate-map` | `/realestate/map`, `/realestate/map/:regionId` | `realestate-screen-definition.md` | active | 전국 heat map, 시군구 drill-down, 지역 선택 리포트, 향후 단지 drill-down |
-| `newsroom` | `/newsroom?feed=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그·커뮤니티 링크 |
-| `indicators` | `/indicators`, `/indicators/:category` | `indicators.md` | active | 가격·거래량, 공급·수급, 수요·심리, 거시·금융 지표 |
-| `region-reactions` | `/realestate/reactions?view=` | `region-reactions.md` | active | 지역·단지 순위, 커뮤니티 반응, 근거 로그를 합친 표준 화면 |
+| `newsroom` | `/newsroom?feed=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그·커뮤니티 |
+| `indicators` | `/indicators`, `/indicators/:category` | `indicators.md` | active | 공식 통계·실거래·청약·정책 주요 일정 |
+| `transaction-explorer` | `/realestate/transactions` | `transaction-explorer.md` | active | 실거래·전월세 필터링, 거래 row, 지역 집계 |
 | `region-detail` | `/realestate/targets/:targetId` | `region-detail/README.md` | active | 지역/단지 상세 리포트 |
-| `watchlist` | `/realestate/watchlist` | `watchlist.md` | active | 관심 지역, 알림, alias/source DB 연결 |
+| `mypage` | `/realestate/mypage` (`/realestate/watchlist` redirect) | `watchlist.md` | active | 사용자 저장 지역/단지, 알림 조건, 개인 메모, 저장 지역 비교 |
 
 ## Screen Brief 템플릿
 

@@ -35,6 +35,48 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
     @Query("""
             select fact
             from RealEstateMarketFact fact
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatest(Pageable pageable);
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.legalDongCode = :legalDongCode
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatestByLegalDongCode(
+            @Param("legalDongCode") String legalDongCode,
+            Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.factType = :factType
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatestByFactType(
+            @Param("factType") String factType,
+            Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.legalDongCode = :legalDongCode
+              and fact.factType = :factType
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatestByLegalDongCodeAndFactType(
+            @Param("legalDongCode") String legalDongCode,
+            @Param("factType") String factType,
+            Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
             where fact.targetId = :targetId
               and (:factType is null or fact.factType = :factType)
             order by fact.observedAt desc, fact.providerObjectId asc
@@ -42,6 +84,36 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
     List<RealEstateMarketFact> searchByTargetId(
             @Param("targetId") String targetId,
             @Param("factType") String factType,
+            Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.targetId = :targetId
+              and (:factType is null or fact.factType = :factType)
+              and fact.providerDataset in :providerDatasets
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> searchByTargetIdAndProviderDatasetIn(
+            @Param("targetId") String targetId,
+            @Param("factType") String factType,
+            @Param("providerDatasets") List<String> providerDatasets,
+            Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.legalDongCode = :legalDongCode
+              and fact.factType = :factType
+              and fact.providerDataset in :providerDatasets
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatestByLegalDongCodeAndFactTypeAndProviderDatasetIn(
+            @Param("legalDongCode") String legalDongCode,
+            @Param("factType") String factType,
+            @Param("providerDatasets") List<String> providerDatasets,
             Pageable pageable
     );
 
@@ -59,6 +131,39 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
             @Param("factType") String factType,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.targetId = :targetId
+              and fact.factType = :factType
+              and fact.observedAt <= :endDate
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatestMapLayerFactByTargetId(
+            @Param("targetId") String targetId,
+            @Param("factType") String factType,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where (fact.targetId = :targetId or fact.legalDongCode in :lookupCodes)
+              and fact.factType = :factType
+              and fact.providerDataset in :providerDatasets
+              and fact.observedAt <= :endDate
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatestOfficialMapLayerFacts(
+            @Param("targetId") String targetId,
+            @Param("lookupCodes") List<String> lookupCodes,
+            @Param("factType") String factType,
+            @Param("providerDatasets") List<String> providerDatasets,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable
     );
 
     @Query("""

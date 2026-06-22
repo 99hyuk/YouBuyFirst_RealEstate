@@ -4,7 +4,7 @@ import DashboardPage from '../pages/DashboardPage.vue';
 import IndicatorsPage from '../pages/IndicatorsPage.vue';
 import NewsroomPage from '../pages/NewsroomPage.vue';
 import RegionDetailPage from '../pages/RegionDetailPage.vue';
-import RegionReactionPage from '../pages/RegionReactionPage.vue';
+import TransactionPage from '../pages/TransactionPage.vue';
 import WatchlistPage from '../pages/WatchlistPage.vue';
 
 export const routes: RouteRecordRaw[] = [
@@ -33,9 +33,13 @@ export const routes: RouteRecordRaw[] = [
     component: NewsroomPage
   },
   {
+    path: '/realestate/transactions',
+    name: 'realestate-transactions',
+    component: TransactionPage
+  },
+  {
     path: '/realestate/reactions',
-    name: 'region-reactions',
-    component: RegionReactionPage
+    redirect: '/realestate/transactions'
   },
   {
     path: '/realestate/targets/:targetId',
@@ -53,8 +57,12 @@ export const routes: RouteRecordRaw[] = [
     component: IndicatorsPage
   },
   {
-    path: '/realestate/watchlist',
-    name: 'realestate-watchlist',
+    path: '/realestate/mypage',
+    name: 'realestate-mypage',
     component: WatchlistPage
+  },
+  {
+    path: '/realestate/watchlist',
+    redirect: '/realestate/mypage'
   }
 ];

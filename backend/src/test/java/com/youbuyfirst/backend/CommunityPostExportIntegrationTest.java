@@ -94,4 +94,131 @@ class CommunityPostExportIntegrationTest {
         assertThat(item.path("recommendCount").asInt()).isEqualTo(4);
         assertThat(item.path("commentCount").asInt()).isEqualTo(9);
     }
+
+    @Test
+    void enrichesDuplicateCommunityPostWhenExistingSnippetIsEmpty() throws Exception {
+        Map<String, Object> firstRequest = Map.of(
+                "source", "TEST_REAL_ESTATE_DUPLICATE_ENRICH",
+                "runId", "test-real-estate-duplicate-enrich-1",
+                "batchStartedAt", "2026-06-16T01:00:00Z",
+                "batchFinishedAt", "2026-06-16T01:00:03Z",
+                "posts", List.of(
+                        Map.of(
+                                "externalId", "duplicate-1",
+                                "url", "https://example.com/duplicate-1",
+                                "title", "weekly apartment trade list",
+                                "contentSnippet", "",
+                                "boardId", "house",
+                                "authorDisplayName", "sample-author",
+                                "publishedAt", "2026-06-16T00:31:00Z"
+                        )
+                )
+        );
+        Map<String, Object> secondRequest = Map.of(
+                "source", "TEST_REAL_ESTATE_DUPLICATE_ENRICH",
+                "runId", "test-real-estate-duplicate-enrich-2",
+                "batchStartedAt", "2026-06-16T02:00:00Z",
+                "batchFinishedAt", "2026-06-16T02:00:03Z",
+                "posts", List.of(
+                        Map.of(
+                                "externalId", "duplicate-1",
+                                "url", "https://example.com/duplicate-1",
+                                "title", "weekly apartment trade list",
+                                "contentSnippet", "Mapo Raemian Prugio Ricenz Helio City",
+                                "boardId", "house",
+                                "authorDisplayName", "sample-author",
+                                "publishedAt", "2026-06-16T00:31:00Z"
+                        )
+                )
+        );
+
+        ResponseEntity<String> firstIngest = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                firstRequest,
+                String.class
+        );
+        ResponseEntity<String> secondIngest = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                secondRequest,
+                String.class
+        );
+        ResponseEntity<String> exported = restTemplate.getForEntity(
+                "/internal/ingestions/community-posts/export"
+                        + "?source=TEST_REAL_ESTATE_DUPLICATE_ENRICH"
+                        + "&publishedFrom=2026-06-16T00:00:00Z"
+                        + "&publishedTo=2026-06-16T01:00:00Z"
+                        + "&limit=10",
+                String.class
+        );
+
+        assertThat(firstIngest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(secondIngest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(exported.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode item = objectMapper.readTree(exported.getBody()).path("items").get(0);
+        assertThat(item.path("contentSnippet").asText()).isEqualTo("Mapo Raemian Prugio Ricenz Helio City");
+    }
+
+    @Test
+    void paginatesCommunityPostExportForLargeReactionBackfills() throws Exception {
+        Map<String, Object> request = Map.of(
+                "source", "TEST_REAL_ESTATE_EXPORT_PAGE",
+                "runId", "test-real-estate-export-page-1",
+                "batchStartedAt", "2026-06-17T01:00:00Z",
+                "batchFinishedAt", "2026-06-17T01:00:03Z",
+                "posts", List.of(
+                        Map.of(
+                                "externalId", "page-1",
+                                "url", "https://example.com/page-1",
+                                "title", "Seoul apartment discussion",
+                                "contentSnippet", "first page candidate",
+                                "boardId", "house",
+                                "authorDisplayName", "sample-author",
+                                "publishedAt", "2026-06-17T00:01:00Z"
+                        ),
+                        Map.of(
+                                "externalId", "page-2",
+                                "url", "https://example.com/page-2",
+                                "title", "Mapo apartment discussion",
+                                "contentSnippet", "second page candidate",
+                                "boardId", "house",
+                                "authorDisplayName", "sample-author",
+                                "publishedAt", "2026-06-17T00:02:00Z"
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/ingestions/community-posts",
+                request,
+                String.class
+        );
+        ResponseEntity<String> firstPage = restTemplate.getForEntity(
+                "/internal/ingestions/community-posts/export"
+                        + "?source=TEST_REAL_ESTATE_EXPORT_PAGE"
+                        + "&publishedFrom=2026-06-17T00:00:00Z"
+                        + "&publishedTo=2026-06-17T01:00:00Z"
+                        + "&limit=1&page=0",
+                String.class
+        );
+        ResponseEntity<String> secondPage = restTemplate.getForEntity(
+                "/internal/ingestions/community-posts/export"
+                        + "?source=TEST_REAL_ESTATE_EXPORT_PAGE"
+                        + "&publishedFrom=2026-06-17T00:00:00Z"
+                        + "&publishedTo=2026-06-17T01:00:00Z"
+                        + "&limit=1&page=1",
+                String.class
+        );
+
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(firstPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(secondPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode firstBody = objectMapper.readTree(firstPage.getBody());
+        JsonNode secondBody = objectMapper.readTree(secondPage.getBody());
+        assertThat(firstBody.path("page").asInt()).isZero();
+        assertThat(secondBody.path("page").asInt()).isEqualTo(1);
+        assertThat(firstBody.path("items").get(0).path("externalId").asText()).isEqualTo("page-1");
+        assertThat(secondBody.path("items").get(0).path("externalId").asText()).isEqualTo("page-2");
+    }
 }
