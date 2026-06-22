@@ -1938,6 +1938,8 @@ def _dataset_alias_from_fact_type(fact_type: str) -> str:
         return "rent"
     if fact_type == "offi_trade":
         return "offi-trade"
+    if fact_type == "offi_rent":
+        return "offi-rent"
     if fact_type == "rh_trade":
         return "rh-trade"
     if fact_type == "rh_rent":

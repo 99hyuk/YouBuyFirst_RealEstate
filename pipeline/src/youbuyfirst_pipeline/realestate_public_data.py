@@ -49,6 +49,12 @@ MOLIT_OFFI_TRADE_DATASET = MolitPublicDataDataset(
     endpoint_url="https://apis.data.go.kr/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade",
 )
 
+MOLIT_OFFI_RENT_DATASET = MolitPublicDataDataset(
+    dataset_id="molit_offi_rent",
+    fact_type="offi_rent",
+    endpoint_url="https://apis.data.go.kr/1613000/RTMSDataSvcOffiRent/getRTMSDataSvcOffiRent",
+)
+
 MOLIT_RH_TRADE_DATASET = MolitPublicDataDataset(
     dataset_id="molit_rh_trade",
     fact_type="rh_trade",
@@ -362,6 +368,9 @@ class MolitRealEstatePublicDataClient:
             now=now,
         )
 
+    def fetch_offi_rents(self, lawd_code, deal_ym, page_no=1, num_rows=100, now=None):
+        return self.fetch_dataset(MOLIT_OFFI_RENT_DATASET, lawd_code=lawd_code, deal_ym=deal_ym, page_no=page_no, num_rows=num_rows, now=now)
+
     def fetch_rh_trades(self, lawd_code, deal_ym, page_no=1, num_rows=100, now=None):
         return self.fetch_dataset(MOLIT_RH_TRADE_DATASET, lawd_code=lawd_code, deal_ym=deal_ym, page_no=page_no, num_rows=num_rows, now=now)
 
@@ -459,6 +468,7 @@ _DATASET_FETCH_METHODS: dict[str, str] = {
     "trade": "fetch_apt_trades",
     "rent": "fetch_apt_rents",
     "offi-trade": "fetch_offi_trades",
+    "offi-rent": "fetch_offi_rents",
     "rh-trade": "fetch_rh_trades",
     "rh-rent": "fetch_rh_rents",
     "sh-trade": "fetch_sh_trades",
@@ -1288,6 +1298,8 @@ def _normalize_dataset_name(value: str) -> str:
         return "rent"
     if normalized in {"offi-trade", "offi", "officetel", "officetel-trade", "molit-offi-trade"}:
         return "offi-trade"
+    if normalized in {"offi-rent", "officetel-rent", "molit-offi-rent"}:
+        return "offi-rent"
     if normalized in {"rh-trade", "rh", "rowhouse-trade", "molit-rh-trade", "yeollip-trade"}:
         return "rh-trade"
     if normalized in {"rh-rent", "rowhouse-rent", "molit-rh-rent", "yeollip-rent"}:
