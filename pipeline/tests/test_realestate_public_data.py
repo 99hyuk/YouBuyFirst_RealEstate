@@ -143,6 +143,27 @@ def test_molit_client_fetches_offi_trade_and_maps_offi_name():
     assert payload["valueJson"]["exclusiveAreaM2"] == 40.88
 
 
+def test_molit_offi_rent_maps_offi_name_and_rent_fields():
+    def fetcher(url, params):
+        return (
+            "<response><header><resultCode>000</resultCode></header><body><items>"
+            "<item><offiNm>마르세움</offiNm><deposit>500</deposit><monthlyRent>145</monthlyRent>"
+            "<excluUseAr>34.72</excluUseAr><floor>10</floor><buildYear>2004</buildYear>"
+            "<contractType>신규</contractType><dealYear>2026</dealYear><dealMonth>5</dealMonth><dealDay>26</dealDay>"
+            "<umdNm>논현동</umdNm><sggCd>11680</sggCd></item></items><totalCount>1</totalCount></body></response>"
+        )
+
+    client = MolitRealEstatePublicDataClient(service_key="k", fetcher=fetcher)
+    facts = client.fetch_offi_rents(lawd_code="11680", deal_ym="202605")
+
+    payload = facts[0].to_ingestion_dict()
+    assert payload["factType"] == "offi_rent"
+    assert payload["providerDataset"] == "molit_offi_rent"
+    assert payload["valueJson"]["apartmentName"] == "마르세움"
+    assert payload["valueJson"]["depositAmountManwon"] == 500
+    assert payload["valueJson"]["monthlyRentAmountManwon"] == 145
+
+
 def test_molit_rh_trade_maps_mhouse_name():
     def fetcher(url, params):
         return (FIXTURE_DIR / "molit_rh_trade_sample.xml").read_text(encoding="utf-8")
