@@ -3,6 +3,7 @@ package com.youbuyfirst.backend.indicator;
 import com.youbuyfirst.backend.realestate.RealEstateAlias;
 import com.youbuyfirst.backend.realestate.RealEstateComplex;
 import com.youbuyfirst.backend.realestate.RealEstateComplexRepository;
+import com.youbuyfirst.backend.realestate.RealEstateRegion;
 import com.youbuyfirst.backend.realestate.RealEstateRegionRepository;
 import com.youbuyfirst.backend.realestate.RealEstateTarget;
 import com.youbuyfirst.backend.realestate.RealEstateTargetGraphService;
@@ -105,6 +106,7 @@ public class RealEstateReactionSnapshotService {
     public int upsertAll(Collection<RealEstateReactionSnapshotRequest> requests) {
         Instant now = Instant.now();
         int accepted = 0;
+        Map<SnapshotKey, SnapshotAccumulator> snapshotsByWindow = new LinkedHashMap<>();
         for (RealEstateReactionSnapshotRequest request : requests) {
             RealEstateTarget target = targetRepository.findById(request.targetId())
                     .orElseThrow(() -> new ResponseStatusException(
@@ -113,38 +115,57 @@ public class RealEstateReactionSnapshotService {
                     ));
             String targetType = normalizeLower(request.targetType());
             RealEstateTarget canonicalTarget = canonicalReactionTarget(target, targetType);
+            String canonicalTargetType = normalizeLower(canonicalTarget.getTargetType());
+            SnapshotKey key = new SnapshotKey(
+                    canonicalTarget.getId(),
+                    request.windowStart(),
+                    request.windowEnd()
+            );
+            snapshotsByWindow
+                    .computeIfAbsent(
+                            key,
+                            ignored -> new SnapshotAccumulator(
+                                    canonicalTargetType,
+                                    canonicalTarget,
+                                    request.windowStart(),
+                                    request.windowEnd()
+                            )
+                    )
+                    .add(request, issueEntities(request.issues()));
+            accepted++;
+        }
+        for (SnapshotAccumulator accumulator : snapshotsByWindow.values()) {
             RealEstateReactionSnapshot snapshot = snapshotRepository
                     .findByTargetIdAndWindowStartAndWindowEnd(
-                            canonicalTarget.getId(),
-                            request.windowStart(),
-                            request.windowEnd()
+                            accumulator.target().getId(),
+                            accumulator.windowStart(),
+                            accumulator.windowEnd()
                     )
                     .orElseGet(() -> new RealEstateReactionSnapshot(
-                            canonicalTarget,
-                            request.windowStart(),
-                            request.windowEnd()
+                            accumulator.target(),
+                            accumulator.windowStart(),
+                            accumulator.windowEnd()
                     ));
             snapshot.update(
-                    targetType,
-                    canonicalTarget,
-                    request.asOf(),
-                    request.mentionCount(),
-                    request.previousMentionCount(),
-                    request.expectationScore(),
-                    request.concernScore(),
-                    request.neutralScore(),
-                    request.heatScore(),
-                    request.confidence(),
-                    request.sourceCount(),
-                    request.sourceSkew(),
-                    normalizeLower(request.coverageStatus()),
-                    request.stale(),
-                    issueEntities(request.issues()),
+                    accumulator.targetType(),
+                    accumulator.target(),
+                    accumulator.asOf(),
+                    accumulator.mentionCount(),
+                    accumulator.previousMentionCount(),
+                    accumulator.expectationScore(),
+                    accumulator.concernScore(),
+                    accumulator.neutralScore(),
+                    accumulator.heatScore(),
+                    accumulator.confidence(),
+                    accumulator.sourceCount(),
+                    accumulator.sourceSkew(),
+                    accumulator.coverageStatus(),
+                    accumulator.stale(),
+                    accumulator.issues(),
                     now
             );
             snapshotRepository.save(snapshot);
             materializeTimelineEvent(snapshot, now);
-            accepted++;
         }
         return accepted;
     }
@@ -156,10 +177,21 @@ public class RealEstateReactionSnapshotService {
             int windowMinutes,
             int limit
     ) {
+        return ranking(targetType, windowStart, windowMinutes, limit, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RealEstateReactionRankingResponse ranking(
+            String targetType,
+            Instant windowStart,
+            int windowMinutes,
+            int limit,
+            String parentTargetId
+    ) {
         int boundedLimit = Math.max(1, Math.min(limit, 100));
         Instant windowEnd = windowStart.plus(Duration.ofMinutes(windowMinutes));
         String normalizedTargetType = normalizeLower(targetType);
-        RankingTargetFilter targetFilter = rankingTargetFilter(normalizedTargetType);
+        RankingTargetFilter targetFilter = rankingTargetFilter(normalizedTargetType, parentTargetId);
         int candidateLimit = rankingCandidateLimit(normalizedTargetType, boundedLimit);
         List<RealEstateReactionSnapshot> snapshots;
         if (!targetFilter.enabled()) {
@@ -196,8 +228,18 @@ public class RealEstateReactionSnapshotService {
             int windowMinutes,
             int limit
     ) {
+        return latestRanking(targetType, windowMinutes, limit, null);
+    }
+
+    @Transactional(readOnly = true)
+    public RealEstateReactionRankingResponse latestRanking(
+            String targetType,
+            int windowMinutes,
+            int limit,
+            String parentTargetId
+    ) {
         String normalizedTargetType = normalizeLower(targetType);
-        RankingTargetFilter targetFilter = rankingTargetFilter(normalizedTargetType);
+        RankingTargetFilter targetFilter = rankingTargetFilter(normalizedTargetType, parentTargetId);
         Instant latestWindowStart;
         if (!targetFilter.enabled()) {
             latestWindowStart = latestWindowStartByTargetType(normalizedTargetType, windowMinutes);
@@ -219,17 +261,73 @@ public class RealEstateReactionSnapshotService {
                     List.of()
             );
         }
-        return ranking(normalizedTargetType, latestWindowStart, windowMinutes, limit);
+        return ranking(normalizedTargetType, latestWindowStart, windowMinutes, limit, parentTargetId);
     }
 
     private RankingTargetFilter rankingTargetFilter(String targetType) {
+        return rankingTargetFilter(targetType, null);
+    }
+
+    private RankingTargetFilter rankingTargetFilter(String targetType, String parentTargetId) {
+        String trimmedParentTargetId = trimToNull(parentTargetId);
+        LinkedHashSet<String> scopedTargetIds = trimmedParentTargetId == null
+                ? null
+                : descendantTargetIds(trimmedParentTargetId, targetType);
         if ("region".equals(targetType)) {
-            return new RankingTargetFilter(
-                    true,
-                    new LinkedHashSet<>(regionRepository.findTargetIdsByRegionLevels(DEFAULT_REGION_RANKING_LEVELS))
+            LinkedHashSet<String> regionTargetIds = new LinkedHashSet<>(
+                    regionRepository.findTargetIdsByRegionLevels(DEFAULT_REGION_RANKING_LEVELS)
             );
+            if (scopedTargetIds != null) {
+                regionTargetIds.retainAll(scopedTargetIds);
+            }
+            return new RankingTargetFilter(true, regionTargetIds);
+        }
+        if (scopedTargetIds != null) {
+            return new RankingTargetFilter(true, scopedTargetIds);
         }
         return new RankingTargetFilter(false, Set.of());
+    }
+
+    private LinkedHashSet<String> descendantTargetIds(String parentTargetId, String targetType) {
+        LinkedHashSet<String> result = new LinkedHashSet<>();
+        LinkedHashSet<String> frontier = new LinkedHashSet<>();
+        LinkedHashSet<String> visited = new LinkedHashSet<>();
+        frontier.add(parentTargetId);
+        for (int depth = 0; depth < 6 && !frontier.isEmpty(); depth++) {
+            LinkedHashSet<String> nextFrontier = new LinkedHashSet<>();
+            for (String currentTargetId : frontier) {
+                if (!visited.add(currentTargetId)) {
+                    continue;
+                }
+                List<RealEstateTargetEdgeResponse> edges;
+                try {
+                    edges = targetGraphService.publicGraph(currentTargetId, "out", null, 1000);
+                } catch (IllegalArgumentException exception) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "unknown parentTargetId: " + parentTargetId,
+                            exception
+                    );
+                }
+                for (RealEstateTargetEdgeResponse edge : edges) {
+                    if (targetType.equals(normalizeLower(edge.toTargetType()))) {
+                        result.add(edge.toTargetId());
+                    }
+                    if ("region".equals(normalizeLower(edge.toTargetType()))) {
+                        nextFrontier.add(edge.toTargetId());
+                    }
+                }
+                for (RealEstateRegion childRegion : regionRepository.findByParentRegionId(currentTargetId)) {
+                    String childTargetId = childRegion.getTargetId();
+                    if ("region".equals(targetType)) {
+                        result.add(childTargetId);
+                    }
+                    nextFrontier.add(childTargetId);
+                }
+            }
+            frontier = nextFrontier;
+        }
+        return result;
     }
 
     private record RankingTargetFilter(boolean enabled, Set<String> targetIds) {
@@ -724,6 +822,193 @@ public class RealEstateReactionSnapshotService {
 
     private static String formatSignedPercent(double value) {
         return String.format(Locale.KOREA, "%+.1f%%", value);
+    }
+
+    private record SnapshotKey(String targetId, Instant windowStart, Instant windowEnd) {
+    }
+
+    private static final class SnapshotAccumulator {
+        private final String targetType;
+        private final RealEstateTarget target;
+        private final Instant windowStart;
+        private final Instant windowEnd;
+        private Instant asOf;
+        private int mentionCount;
+        private int previousMentionCount;
+        private double expectationScore;
+        private double concernScore;
+        private double neutralScore;
+        private int heatScore;
+        private double confidence;
+        private int sourceCount;
+        private double weightedSourceSkew;
+        private int sourceSkewWeight;
+        private String coverageStatus;
+        private boolean stale = true;
+        private final Map<String, WeightedIssueAccumulator> issuesByKey = new LinkedHashMap<>();
+
+        private SnapshotAccumulator(
+                String targetType,
+                RealEstateTarget target,
+                Instant windowStart,
+                Instant windowEnd
+        ) {
+            this.targetType = targetType;
+            this.target = target;
+            this.windowStart = windowStart;
+            this.windowEnd = windowEnd;
+        }
+
+        private void add(
+                RealEstateReactionSnapshotRequest request,
+                List<RealEstateReactionSnapshotIssue> issues
+        ) {
+            if (asOf == null || request.asOf().isAfter(asOf)) {
+                asOf = request.asOf();
+            }
+            mentionCount += request.mentionCount();
+            previousMentionCount += request.previousMentionCount();
+            expectationScore += request.expectationScore();
+            concernScore += request.concernScore();
+            neutralScore += request.neutralScore();
+            heatScore = Math.max(heatScore, request.heatScore());
+            confidence = Math.max(confidence, request.confidence());
+            sourceCount += request.sourceCount();
+            int sourceWeight = Math.max(1, request.sourceCount());
+            weightedSourceSkew += request.sourceSkew() * sourceWeight;
+            sourceSkewWeight += sourceWeight;
+            coverageStatus = mergeCoverageStatus(coverageStatus, normalizeLower(request.coverageStatus()));
+            stale = stale && request.stale();
+            int issueWeight = Math.max(1, request.mentionCount());
+            for (RealEstateReactionSnapshotIssue issue : issues) {
+                issuesByKey
+                        .computeIfAbsent(issue.getIssueKey(), WeightedIssueAccumulator::new)
+                        .add(issue, issueWeight);
+            }
+        }
+
+        private String targetType() {
+            return targetType;
+        }
+
+        private RealEstateTarget target() {
+            return target;
+        }
+
+        private Instant windowStart() {
+            return windowStart;
+        }
+
+        private Instant windowEnd() {
+            return windowEnd;
+        }
+
+        private Instant asOf() {
+            return asOf;
+        }
+
+        private int mentionCount() {
+            return mentionCount;
+        }
+
+        private int previousMentionCount() {
+            return previousMentionCount;
+        }
+
+        private double expectationScore() {
+            return expectationScore;
+        }
+
+        private double concernScore() {
+            return concernScore;
+        }
+
+        private double neutralScore() {
+            return neutralScore;
+        }
+
+        private int heatScore() {
+            return heatScore;
+        }
+
+        private double confidence() {
+            return confidence;
+        }
+
+        private int sourceCount() {
+            return sourceCount;
+        }
+
+        private double sourceSkew() {
+            if (sourceSkewWeight <= 0) {
+                return 0.0;
+            }
+            return weightedSourceSkew / sourceSkewWeight;
+        }
+
+        private String coverageStatus() {
+            return coverageStatus == null ? "partial" : coverageStatus;
+        }
+
+        private boolean stale() {
+            return stale;
+        }
+
+        private List<RealEstateReactionSnapshotIssue> issues() {
+            return issuesByKey.values().stream()
+                    .map(WeightedIssueAccumulator::toEntity)
+                    .toList();
+        }
+
+        private static String mergeCoverageStatus(String current, String candidate) {
+            if (current == null || current.isBlank() || "empty".equals(current)) {
+                return candidate;
+            }
+            if ("complete".equals(current) || "complete".equals(candidate)) {
+                return "complete";
+            }
+            if ("partial".equals(current) || "partial".equals(candidate)) {
+                return "partial";
+            }
+            return current;
+        }
+    }
+
+    private static final class WeightedIssueAccumulator {
+        private final String issueKey;
+        private String label;
+        private String direction;
+        private String summary;
+        private double confidence;
+        private double weightedShare;
+        private int weight;
+
+        private WeightedIssueAccumulator(String issueKey) {
+            this.issueKey = issueKey;
+        }
+
+        private void add(RealEstateReactionSnapshotIssue issue, int itemWeight) {
+            int boundedWeight = Math.max(1, itemWeight);
+            weightedShare += issue.getShare() * boundedWeight;
+            weight += boundedWeight;
+            if (label == null || issue.getConfidence() >= confidence) {
+                label = issue.getLabel();
+                direction = issue.getDirection();
+                summary = issue.getSummary();
+            }
+            confidence = Math.max(confidence, issue.getConfidence());
+        }
+
+        private RealEstateReactionSnapshotIssue toEntity() {
+            return new RealEstateReactionSnapshotIssue(
+                    issueKey,
+                    label,
+                    Math.max(0.0, Math.min(1.0, weight <= 0 ? 0.0 : weightedShare / weight)),
+                    direction,
+                    summary,
+                    confidence
+            );
+        }
     }
 
     private List<RealEstateReactionSnapshotIssue> issueEntities(List<RealEstateReactionSnapshotIssueRequest> requests) {

@@ -123,6 +123,7 @@ describe('front dashboard shell', () => {
       '/dashboard',
       '/realestate/map',
       '/realestate/map/:regionId',
+      '/realestate/complexes',
       '/newsroom',
       '/realestate/transactions',
       '/realestate/reactions',

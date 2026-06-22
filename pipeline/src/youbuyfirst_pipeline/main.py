@@ -969,8 +969,8 @@ async def async_main() -> None:
         return
 
     if args.command == "realestate-reaction-observations":
-        if not args.community_posts_jsonl:
-            raise SystemExit("--community-posts-jsonl is required")
+        if not args.community_posts_jsonl and not args.realestate_use_backend_community_posts:
+            raise SystemExit("--community-posts-jsonl is required unless --realestate-use-backend-community-posts is set")
         observations = _real_estate_reaction_observations_from_posts(args)
         print(
             json.dumps(
@@ -985,8 +985,8 @@ async def async_main() -> None:
         "realestate-reaction-snapshots-from-posts",
         "realestate-reaction-snapshots-from-posts-push",
     }:
-        if not args.community_posts_jsonl:
-            raise SystemExit("--community-posts-jsonl is required")
+        if not args.community_posts_jsonl and not args.realestate_use_backend_community_posts:
+            raise SystemExit("--community-posts-jsonl is required unless --realestate-use-backend-community-posts is set")
         if not args.reaction_window_start:
             raise SystemExit("--reaction-window-start is required")
         observations = _real_estate_reaction_observations_from_posts(args)
@@ -2357,6 +2357,20 @@ def _dataset_alias_from_fact_type(fact_type: str) -> str:
         return "trade"
     if fact_type == "apt_rent":
         return "rent"
+    if fact_type == "offi_trade":
+        return "offi-trade"
+    if fact_type == "offi_rent":
+        return "offi-rent"
+    if fact_type == "rh_trade":
+        return "rh-trade"
+    if fact_type == "rh_rent":
+        return "rh-rent"
+    if fact_type == "sh_trade":
+        return "sh-trade"
+    if fact_type == "sh_rent":
+        return "sh-rent"
+    if fact_type == "silv_trade":
+        return "silv-trade"
     raise ValueError(f"unsupported real-estate market fact type: {fact_type}")
 
 

@@ -122,6 +122,7 @@ const targets = reactive<MapTarget[]>(
     targetId: target.targetId
   }))
 );
+const hoveredRegionCode = ref<string | null>(null);
 const mapLayerLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const subregionLayerLoadState = ref<'idle' | 'loading' | 'live' | 'fallback'>('idle');
 const subregionLayerByCode = shallowRef<Map<string, RealEstateMapLayerTarget>>(new Map());
@@ -400,6 +401,7 @@ const mapFeatures = provinceDisplayCollection.features.reduce<MapFeature[]>((ite
 
   return items;
 }, []);
+const samplePins = computed(() => mapFeatures.filter((feature) => feature.target.sampleCount > 0).slice(0, 8));
 const labelNudgeByRegionId: Record<string, { x: number; y: number }> = {
   chungbuk: { x: -8, y: -4 },
   gyeonggi: { x: 0, y: 36 }
@@ -832,6 +834,15 @@ const refreshMapEvidenceLogs = async (targetId: string | null) => {
     mapEvidenceLoadState.value = 'error';
   }
 };
+const mapLayerStatusText = computed(() => {
+  if (mapLayerLoadState.value === 'loading') return `loading · ${mapFixture.asOf}`;
+  if (mapLayerLoadState.value === 'fallback') return `mock fallback · ${mapFixture.asOf}`;
+  const freshness = mapLayerMeta.stale ? 'stale' : 'fresh';
+  return `${mapLayerMeta.dataStatus ?? 'unknown'} · ${freshness} · ${mapLayerMeta.asOf ?? 'asOf unknown'}`;
+});
+const mapDataSourceLabel = computed(() => mapLayerMeta.mapDataSource ?? mapFixture.mapDataSource);
+const dokdoSeodo = computed(() => { const p = nationalProjection([131.8624, 37.2433]); return p ? { x: p[0], y: p[1] } : null; });
+const dokdoDongdo = computed(() => { const p = nationalProjection([131.8684, 37.2417]); return p ? { x: p[0], y: p[1] } : null; });
 const subregionLayerStatusText = computed(() => {
   if (!selectedRegion.value) return '전국';
   if (subregionLayerLoadState.value === 'loading') return '하위 레이어 로딩';
@@ -1352,6 +1363,8 @@ onMounted(() => {
                   :transform="feature.pathTransform"
                   :aria-label="`${feature.target.name} ${mapFeatureChangeLabel(feature.target)}`"
                   @click="navigateToRegion(feature.target)"
+                  @mouseenter="hoveredRegionCode = feature.code"
+                  @mouseleave="hoveredRegionCode = null"
                 />
               </g>
               <g class="region-labels" aria-hidden="true">
@@ -1363,6 +1376,19 @@ onMounted(() => {
                 >
                   {{ feature.target.name }}
                 </text>
+              </g>
+              <g class="complex-preview-pins" aria-label="단지 좌표 샘플 레이어">
+                <circle
+                  v-for="feature in samplePins"
+                  :key="`${feature.target.id}-pin`"
+                  :cx="feature.label.x"
+                  :cy="feature.label.y"
+                  r="4.5"
+                />
+              </g>
+              <g v-if="dokdoSeodo && dokdoDongdo" :class="['dokdo-marker', { glow: hoveredRegionCode === '37' }]" aria-label="독도">
+                <ellipse class="dokdo-dot seodo" :cx="dokdoSeodo.x" :cy="dokdoSeodo.y" rx="2.2" ry="3.4" :transform="`rotate(-20 ${dokdoSeodo.x} ${dokdoSeodo.y})`" />
+                <ellipse class="dokdo-dot dongdo" :cx="dokdoDongdo.x" :cy="dokdoDongdo.y" rx="1.8" ry="2.4" :transform="`rotate(10 ${dokdoDongdo.x} ${dokdoDongdo.y})`" />
               </g>
             </svg>
 

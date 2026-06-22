@@ -138,6 +138,10 @@ class RealEstateReactionSnapshotIntegrationTest {
                 "/api/realestate/reactions/rankings?type=region&windowMinutes=60",
                 String.class
         );
+        ResponseEntity<String> scopedRanking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=region&windowStart=2026-06-13T00:00:00Z&windowMinutes=60&parentTargetId=region-seoul",
+                String.class
+        );
         ResponseEntity<String> targetSnapshot = restTemplate.getForEntity(
                 "/api/realestate/targets/region-seoul-jongno/reaction-snapshot?windowMinutes=60",
                 String.class
@@ -147,6 +151,7 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(ingest.getBody()).contains("\"acceptedSnapshots\":3");
         assertThat(ranking.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(latestRanking.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(scopedRanking.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(targetSnapshot.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         JsonNode root = objectMapper.readTree(ranking.getBody());
@@ -199,6 +204,10 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(targetRoot.path("freshness").path("staleCount").asInt()).isZero();
         assertThat(targetRoot.path("issueMix")).hasSize(2);
         assertThat(targetRoot.path("issueMix").get(0).path("issueKey").asText()).isEqualTo("jeonse");
+
+        JsonNode scopedItems = objectMapper.readTree(scopedRanking.getBody()).path("items");
+        assertThat(scopedItems.findValuesAsText("targetId"))
+                .containsExactly("region-seoul-jongno", "region-seoul-mapo");
     }
 
     @Test
@@ -710,6 +719,154 @@ class RealEstateReactionSnapshotIntegrationTest {
         assertThat(row.path("mentionCount").asInt()).isEqualTo(54);
         assertThat(root.path("items").findValuesAsText("targetId"))
                 .doesNotContain(communityTargetId);
+    }
+
+    @Test
+    void upsertMergesCommunityObservedAndApprovedComplexSnapshotsAfterCanonicalResolution() throws Exception {
+        String communityTargetId = "complex-community-merge-canonical-match";
+        String canonicalTargetId = "complex-test-merge-canonical-match";
+        String displayName = "Canonical Merge Palace Official";
+        Map<String, Object> communityTargetRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", communityTargetId,
+                        "targetType", "complex",
+                        "displayName", displayName,
+                        "slug", "community-merge-canonical-match",
+                        "reviewState", "candidate",
+                        "dataStatus", "community_observed"
+                ))
+        );
+        Map<String, Object> canonicalTargetRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", canonicalTargetId,
+                        "targetType", "complex",
+                        "displayName", displayName,
+                        "slug", "merge-canonical-match",
+                        "reviewState", "approved",
+                        "dataStatus", "ok"
+                ))
+        );
+        Map<String, Object> communityComplexRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetId", communityTargetId),
+                        Map.entry("regionTargetId", "region-seoul-jongno"),
+                        Map.entry("legalDongCode", "1111010100"),
+                        Map.entry("jibunAddress", "community observed address"),
+                        Map.entry("source", "community:observed"),
+                        Map.entry("coordinateStatus", "candidate"),
+                        Map.entry("markerDataStatus", "community_observed"),
+                        Map.entry("markerStale", true)
+                ))
+        );
+        Map<String, Object> canonicalComplexRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetId", canonicalTargetId),
+                        Map.entry("regionTargetId", "region-seoul-jongno"),
+                        Map.entry("legalDongCode", "1111010100"),
+                        Map.entry("jibunAddress", "canonical merge address"),
+                        Map.entry("source", "ssafy_home:test"),
+                        Map.entry("latitude", 37.5712),
+                        Map.entry("longitude", 126.9823),
+                        Map.entry("coordinateProvider", "ssafy_home:test"),
+                        Map.entry("coordinateAsOf", "2026-06-16T00:00:00Z"),
+                        Map.entry("coordinateStatus", "ok"),
+                        Map.entry("markerDataStatus", "ok"),
+                        Map.entry("markerStale", false)
+                ))
+        );
+        Map<String, Object> snapshotRequest = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", communityTargetId),
+                                Map.entry("windowStart", "2026-06-22T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-23T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-23T00:02:00Z"),
+                                Map.entry("mentionCount", 20),
+                                Map.entry("previousMentionCount", 5),
+                                Map.entry("expectationScore", 12),
+                                Map.entry("concernScore", 4),
+                                Map.entry("neutralScore", 4),
+                                Map.entry("heatScore", 71),
+                                Map.entry("confidence", 0.70),
+                                Map.entry("sourceCount", 2),
+                                Map.entry("sourceSkew", 0.30),
+                                Map.entry("coverageStatus", "partial"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of(Map.of(
+                                        "issueKey", "policy",
+                                        "label", "Policy",
+                                        "share", 0.50,
+                                        "direction", "concern",
+                                        "summary", "Policy concern",
+                                        "confidence", 0.70
+                                )))
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", canonicalTargetId),
+                                Map.entry("windowStart", "2026-06-22T00:00:00Z"),
+                                Map.entry("windowEnd", "2026-06-23T00:00:00Z"),
+                                Map.entry("asOf", "2026-06-23T00:03:00Z"),
+                                Map.entry("mentionCount", 30),
+                                Map.entry("previousMentionCount", 7),
+                                Map.entry("expectationScore", 18),
+                                Map.entry("concernScore", 6),
+                                Map.entry("neutralScore", 6),
+                                Map.entry("heatScore", 77),
+                                Map.entry("confidence", 0.80),
+                                Map.entry("sourceCount", 3),
+                                Map.entry("sourceSkew", 0.50),
+                                Map.entry("coverageStatus", "complete"),
+                                Map.entry("stale", false),
+                                Map.entry("issues", List.of(Map.of(
+                                        "issueKey", "transport",
+                                        "label", "Transport",
+                                        "share", 0.30,
+                                        "direction", "expectation",
+                                        "summary", "Transport expectation",
+                                        "confidence", 0.72
+                                )))
+                        )
+                )
+        );
+
+        assertThat(restTemplate.postForEntity("/internal/realestate/targets", canonicalTargetRequest, String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.postForEntity("/internal/realestate/complexes", canonicalComplexRequest, String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.postForEntity("/internal/realestate/targets", communityTargetRequest, String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.postForEntity("/internal/realestate/complexes", communityComplexRequest, String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        ResponseEntity<String> snapshotResponse = restTemplate.postForEntity(
+                "/internal/realestate/reaction-snapshots",
+                snapshotRequest,
+                String.class
+        );
+        ResponseEntity<String> ranking = restTemplate.getForEntity(
+                "/api/realestate/reactions/rankings?type=complex&windowStart=2026-06-22T00:00:00Z&windowMinutes=1440&limit=10",
+                String.class
+        );
+
+        assertThat(snapshotResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(snapshotResponse.getBody()).contains("\"acceptedSnapshots\":2");
+        assertThat(ranking.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode root = objectMapper.readTree(ranking.getBody());
+        JsonNode row = root.path("items").get(0);
+        assertThat(root.path("items")).hasSize(1);
+        assertThat(row.path("targetId").asText()).isEqualTo(canonicalTargetId);
+        assertThat(row.path("mentionCount").asInt()).isEqualTo(50);
+        assertThat(row.path("confidence").asDouble()).isEqualTo(0.80);
+        assertThat(row.path("sourceCount").asInt()).isEqualTo(5);
+        assertThat(row.path("issueMix").findValuesAsText("issueKey"))
+                .containsExactly("policy", "transport");
     }
 
     @Test

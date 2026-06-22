@@ -11,6 +11,7 @@ from youbuyfirst_pipeline.realestate_daily_scheduler import (
     RealEstateMapLayerRefreshJob,
     RealEstateOfficialStatsRefreshJob,
     RealEstateRecentIssuesRefreshJob,
+    _ranking_with_window_defaults,
 )
 from youbuyfirst_pipeline.realestate_recent_issues import SerpApiRecentIssueResult
 from youbuyfirst_pipeline.realestate_reaction_scheduler import RealEstateReactionSnapshotRefreshResult
@@ -1492,6 +1493,18 @@ def test_evidence_log_refresh_job_marks_partial_when_search_candidates_are_missi
     assert result.content_item_count == 0
     published_log = spring_client.published_logs[0][0]
     assert "search_candidate_missing" in published_log["caveats"]
+
+
+def test_ranking_with_window_defaults_ends_at_refresh_time_not_future_midnight_window():
+    ranking = _ranking_with_window_defaults(
+        {},
+        window_minutes=10_080,
+        now=datetime(2026, 6, 21, 9, 30, tzinfo=timezone.utc),
+    )
+
+    assert ranking["windowStart"] == "2026-06-14T09:30:00Z"
+    assert ranking["windowEnd"] == "2026-06-21T09:30:00Z"
+    assert ranking["freshness"]["asOf"] == "2026-06-21T09:30:00Z"
 
 
 def test_map_layer_refresh_job_calls_backend_for_each_layer_type():

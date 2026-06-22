@@ -30,6 +30,8 @@ const dashboardContentItems = ref<NewsroomFeedItem[]>([]);
 const dashboardContentLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const dashboardContentFeeds: NewsroomCategory[] = ['news', 'reports', 'videos', 'links'];
 const dashboardContentPageSize = 100;
+const isRefreshing = ref(false);
+const lastRefreshedAt = ref<Date | null>(null);
 type ReactionKeyword = { word: string; weight: number };
 type ReactionDriver = { type: string; label: string };
 type DashboardReactionItem = {
@@ -338,13 +340,33 @@ const kwWordStyles = computed(() => Object.fromEntries(
   ])
 ));
 
+const refreshAll = async () => {
+  if (isRefreshing.value) return;
+  isRefreshing.value = true;
+  try {
+    await Promise.allSettled([
+      refreshDashboardReactions(),
+      refreshMarketSummary(),
+      refreshDashboardContent()
+    ]);
+    lastRefreshedAt.value = new Date();
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
 onMounted(() => {
   startTimer();
-  void refreshDashboardReactions();
-  void refreshMarketSummary();
-  void refreshDashboardContent();
+  void refreshAll();
 });
 onUnmounted(() => clearInterval(autoSlideTimer));
+
+const refreshButtonLabel = computed(() => (isRefreshing.value ? '불러오는 중…' : '실시간 데이터 불러오기'));
+const lastRefreshedLabel = computed(() => {
+  if (isRefreshing.value) return '갱신 중';
+  if (!lastRefreshedAt.value) return '갱신 전';
+  return `${lastRefreshedAt.value.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} 기준`;
+});
 
 const formatPct = (value: number | null) => value === null ? '최신' : `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;

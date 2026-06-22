@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { loadKakaoSdk } from '../lib/kakao-sdk';
 
 export type ComplexMapTone = 'up' | 'down' | 'flat';
 
@@ -47,6 +48,20 @@ const selectedMarkerId = ref(props.selectedTargetId);
 
 let renderedMap: any = null;
 let renderedMarkers: any[] = [];
+let overlayElements: { targetId: string; el: HTMLElement }[] = [];
+
+const priceTag = (price: string) => {
+  const match = price.match(/[\d,]+(?:\.\d+)?\s*억/);
+  return match ? match[0].replace(/\s/g, '') : price;
+};
+
+const highlightSelectedOverlay = () => {
+  for (const { targetId, el } of overlayElements) {
+    const isActive = targetId === selectedMarkerId.value;
+    el.classList.toggle('active', isActive);
+    el.style.zIndex = isActive ? '20' : '1';
+  }
+};
 
 const isTestMode = import.meta.env.MODE === 'test';
 const kakaoEnabled = computed(() => import.meta.env.VITE_KAKAO_MAP_ENABLED === 'true' && !isTestMode);
@@ -103,43 +118,12 @@ const setSelectedMarker = (marker: ComplexMapMarker) => {
   focusKakaoMarker(marker);
 };
 
-const loadKakaoSdk = async () => {
-  if ((window as any).kakao?.maps) {
-    await new Promise<void>((resolve) => (window as any).kakao.maps.load(resolve));
-    return;
-  }
-
-  const existingPromise = (window as any).__ybfKakaoMapPromise as Promise<void> | undefined;
-  if (existingPromise) {
-    await existingPromise;
-    return;
-  }
-
-  (window as any).__ybfKakaoMapPromise = new Promise<void>((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>('script[data-ybf-kakao-map="true"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => (window as any).kakao.maps.load(resolve), { once: true });
-      existingScript.addEventListener('error', () => reject(new Error('Kakao map SDK failed to load')), { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.dataset.ybfKakaoMap = 'true';
-    script.async = true;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(kakaoKey.value)}&autoload=false`;
-    script.addEventListener('load', () => (window as any).kakao.maps.load(resolve), { once: true });
-    script.addEventListener('error', () => reject(new Error('Kakao map SDK failed to load')), { once: true });
-    document.head.appendChild(script);
-  });
-
-  await (window as any).__ybfKakaoMapPromise;
-};
-
 const clearKakaoMarkers = () => {
   for (const marker of renderedMarkers) {
     marker.setMap(null);
   }
   renderedMarkers = [];
+  overlayElements = [];
 };
 
 const focusKakaoMarker = (marker: ComplexMapMarker) => {
@@ -163,7 +147,7 @@ const renderKakaoMap = async () => {
   }
 
   try {
-    await loadKakaoSdk();
+    await loadKakaoSdk(kakaoKey.value);
     const kakao = (window as any).kakao;
     const center = new kakao.maps.LatLng(mapCenter.value.lat, mapCenter.value.lng);
 
@@ -174,15 +158,24 @@ const renderKakaoMap = async () => {
     clearKakaoMarkers();
 
     for (const marker of props.markers) {
-      const kakaoMarker = new kakao.maps.Marker({
+      const content = document.createElement('div');
+      content.className = `complex-price-overlay ${marker.tone}`;
+      content.title = marker.name;
+      content.innerHTML = `<span class="price-overlay-amount">${priceTag(marker.price)}</span>`;
+      content.addEventListener('click', () => setSelectedMarker(marker));
+
+      const overlay = new kakao.maps.CustomOverlay({
         map: renderedMap,
         position: new kakao.maps.LatLng(marker.lat, marker.lng),
-        title: marker.name
+        content,
+        yAnchor: 1.25,
+        clickable: true
       });
-      kakao.maps.event.addListener(kakaoMarker, 'click', () => setSelectedMarker(marker));
-      renderedMarkers.push(kakaoMarker);
+      renderedMarkers.push(overlay);
+      overlayElements.push({ targetId: marker.targetId, el: content });
     }
 
+    highlightSelectedOverlay();
     if (selectedMarker.value) {
       focusKakaoMarker(selectedMarker.value);
     }
@@ -202,6 +195,7 @@ onBeforeUnmount(() => {
 
 watch(() => props.selectedTargetId, (targetId) => {
   selectedMarkerId.value = targetId;
+  highlightSelectedOverlay();
   if (selectedMarker.value) {
     focusKakaoMarker(selectedMarker.value);
   }
@@ -232,10 +226,11 @@ watch(() => props.markers, () => {
             type="button"
             :class="['complex-map-pin', marker.tone, { active: marker.targetId === selectedMarker?.targetId }]"
             :style="fallbackPointStyle(marker)"
-            :aria-label="`${marker.name} 위치`"
+            :title="marker.name"
+            :aria-label="`${marker.name} ${marker.price}`"
             @click="setSelectedMarker(marker)"
           >
-            <span>{{ marker.name }}</span>
+            <span>{{ priceTag(marker.price) }}</span>
           </button>
         </div>
       </div>

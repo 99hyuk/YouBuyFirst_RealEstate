@@ -8,6 +8,7 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
     SerpApiRecentIssueError,
     SerpApiRecentIssueResult,
     SerpApiRecentIssueClient,
+    _is_stale_search_result,
     build_recent_issue_content_items,
     build_recent_issue_query,
     load_recent_issue_search_targets,
@@ -200,6 +201,17 @@ def test_recent_issue_results_keep_serpapi_published_date():
     payloads = [item.to_content_item_dict() for item in items]
     assert payloads[0]["publishedAt"] == "2026-06-16T00:00:00Z"
     assert payloads[1]["publishedAt"] == "2026-06-17T00:00:00Z"
+
+
+def test_recent_issue_stale_filter_keeps_recent_previous_year_results():
+    assert not _is_stale_search_result(
+        datetime(2025, 12, 31, 12, 0, tzinfo=timezone.utc),
+        ingested_at=datetime(2026, 1, 2, 9, 0, tzinfo=timezone.utc),
+    )
+    assert _is_stale_search_result(
+        datetime(2025, 11, 1, 12, 0, tzinfo=timezone.utc),
+        ingested_at=datetime(2026, 1, 2, 9, 0, tzinfo=timezone.utc),
+    )
 
 
 def test_recent_issue_results_classify_reports_videos_and_links():

@@ -907,8 +907,10 @@ def _ranking_with_window_defaults(
     normalized = dict(ranking or {})
     if normalized.get("windowStart") and normalized.get("windowEnd"):
         return normalized
-    window_start = _utc_day_start(now)
-    window_end = window_start + timedelta(minutes=window_minutes)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    window_end = now.astimezone(timezone.utc)
+    window_start = window_end - timedelta(minutes=window_minutes)
     normalized.setdefault("window", f"{window_minutes}m")
     normalized["windowStart"] = normalized.get("windowStart") or _iso_utc(window_start)
     normalized["windowEnd"] = normalized.get("windowEnd") or _iso_utc(window_end)

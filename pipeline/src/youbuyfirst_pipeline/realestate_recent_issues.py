@@ -291,8 +291,6 @@ def _is_stale_search_result(published_at: datetime | None, *, ingested_at: datet
     published_at = _as_utc(published_at)
     ingested_at = _as_utc(ingested_at)
     age = ingested_at - published_at
-    if published_at.year < ingested_at.year:
-        return True
     return age > timedelta(days=MAX_SEARCH_RESULT_AGE_DAYS)
 
 
