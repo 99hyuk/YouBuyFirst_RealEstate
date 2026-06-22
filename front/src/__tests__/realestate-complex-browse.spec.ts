@@ -109,3 +109,39 @@ describe('complex browse filter + markers', () => {
     expect(Math.abs(a.lng - 127.0473)).toBeLessThan(0.02);
   });
 });
+
+describe('complex browse property type', () => {
+  const mixedFacts: RealEstateMarketFact[] = [
+    ...facts,
+    {
+      factType: 'offi_trade',
+      provider: 'molit',
+      legalDongCode: '11680',
+      observedAt: '2026-05-28',
+      asOf: '2026-05-01',
+      valueJson: { apartmentName: '사이룩스', legalDongName: '수서동', dealAmountManwon: 28000, exclusiveAreaM2: 40.88, builtYear: 2003 },
+      dataStatus: 'ok',
+      stale: false
+    }
+  ];
+
+  it('classifies offi_trade as officetel and apt facts as apartment', () => {
+    const items = aggregateComplexes(mixedFacts);
+    const offi = items.find((item) => item.name === '사이룩스');
+    expect(offi).toBeDefined();
+    expect(offi!.propertyType).toBe('offi');
+    expect(offi!.dealType).toBe('trade');
+    expect(items.filter((item) => item.propertyType === 'apt').length).toBeGreaterThan(0);
+  });
+
+  it('filters by property type', () => {
+    const items = aggregateComplexes(mixedFacts);
+    const offiOnly = filterComplexes(items, { propertyType: 'offi' });
+    expect(offiOnly.every((item) => item.propertyType === 'offi')).toBe(true);
+    expect(offiOnly.map((item) => item.name)).toContain('사이룩스');
+
+    const aptOnly = filterComplexes(items, { propertyType: 'apt' });
+    expect(aptOnly.every((item) => item.propertyType === 'apt')).toBe(true);
+    expect(aptOnly.map((item) => item.name)).not.toContain('사이룩스');
+  });
+});

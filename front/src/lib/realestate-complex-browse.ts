@@ -3,12 +3,14 @@ import { fetchRealEstateMarketFacts, type RealEstateMarketFact } from './realest
 import seed from '../fixtures/complex-browse-seed.json';
 
 export type DealType = 'trade' | 'rent';
+export type PropertyType = 'apt' | 'offi';
 
 export type ComplexBrowseItem = {
   id: string;
   name: string;
   region: string;
   gu: string;
+  propertyType: PropertyType;
   dealType: DealType;
   priceLabel: string;
   priceValue: number;
@@ -30,6 +32,7 @@ export type ComplexBrowseResult = {
 };
 
 export type ComplexBrowseFilter = {
+  propertyType?: PropertyType | 'all';
   dealType?: DealType | 'all';
   query?: string;
 };
@@ -45,8 +48,17 @@ const dealTypeLabels: Record<DealType, string> = {
   rent: '전·월세'
 };
 
+const propertyTypeLabels: Record<PropertyType, string> = {
+  apt: '아파트',
+  offi: '오피스텔'
+};
+
 export function dealTypeLabel(dealType: DealType): string {
   return dealTypeLabels[dealType];
+}
+
+export function propertyTypeLabel(propertyType: PropertyType): string {
+  return propertyTypeLabels[propertyType];
 }
 
 /** Deterministic small offset so complexes in the same gu spread out instead of stacking. */
@@ -69,9 +81,11 @@ function hashString(value: string): number {
   return hash;
 }
 
-function dealTypeFromFactType(factType?: string): DealType | null {
-  if (factType === 'apt_trade') return 'trade';
-  if (factType === 'apt_rent') return 'rent';
+function factTypeInfo(factType?: string): { propertyType: PropertyType; dealType: DealType } | null {
+  if (factType === 'apt_trade') return { propertyType: 'apt', dealType: 'trade' };
+  if (factType === 'apt_rent') return { propertyType: 'apt', dealType: 'rent' };
+  if (factType === 'offi_trade') return { propertyType: 'offi', dealType: 'trade' };
+  if (factType === 'offi_rent') return { propertyType: 'offi', dealType: 'rent' };
   return null;
 }
 
@@ -110,6 +124,7 @@ type Accumulator = {
   name: string;
   region: string;
   gu: string;
+  propertyType: PropertyType;
   dealType: DealType;
   priceValue: number;
   dealCount: number;
@@ -129,14 +144,15 @@ export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowse
   const groups = new Map<string, Accumulator>();
 
   for (const fact of facts) {
-    const dealType = dealTypeFromFactType(fact.factType);
-    if (!dealType) continue;
+    const info = factTypeInfo(fact.factType);
+    if (!info) continue;
+    const { propertyType, dealType } = info;
     const valueJson = fact.valueJson ?? {};
     const name = stringValue(valueJson.apartmentName);
     if (!name) continue;
     const region = stringValue(valueJson.legalDongName) ?? '지역 확인 필요';
     const legalDongCode = fact.legalDongCode ?? null;
-    const groupKey = `${name}|${region}|${dealType}`;
+    const groupKey = `${propertyType}|${name}|${region}|${dealType}`;
 
     const area = numberValue(valueJson.exclusiveAreaM2);
     const builtYear = numberValue(valueJson.builtYear);
@@ -152,6 +168,7 @@ export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowse
         name,
         region,
         gu: (legalDongCode && guCentroids[legalDongCode]?.name) || '서울',
+        propertyType,
         dealType,
         priceValue: dealType === 'trade' ? dealAmount : deposit,
         dealCount: 1,
@@ -190,6 +207,7 @@ export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowse
       name: group.name,
       region: group.region,
       gu: group.gu,
+      propertyType: group.propertyType,
       dealType: group.dealType,
       priceLabel:
         group.dealType === 'trade'
@@ -224,8 +242,10 @@ export function filterComplexes(
 ): ComplexBrowseItem[] {
   const query = (filter.query ?? '').trim().toLowerCase();
   const dealType = filter.dealType ?? 'all';
+  const propertyType = filter.propertyType ?? 'all';
 
   const filtered = items.filter((item) => {
+    if (propertyType !== 'all' && item.propertyType !== propertyType) return false;
     if (dealType !== 'all' && item.dealType !== dealType) return false;
     if (query && !`${item.name} ${item.region} ${item.gu}`.toLowerCase().includes(query)) return false;
     return true;
@@ -265,6 +285,7 @@ function mockComplexItems(): ComplexBrowseItem[] {
     name: string;
     region: string;
     gu: string;
+    propertyType?: PropertyType;
     dealType: DealType;
     priceValue: number;
     dealCount: number;
@@ -280,6 +301,7 @@ function mockComplexItems(): ComplexBrowseItem[] {
     name: mock.name,
     region: mock.region,
     gu: mock.gu,
+    propertyType: mock.propertyType ?? 'apt',
     dealType: mock.dealType,
     priceLabel:
       mock.dealType === 'trade'
@@ -303,7 +325,8 @@ type Fetcher = (input: string) => Promise<Response>;
 
 export async function fetchComplexBrowse(fetcher: Fetcher = fetch): Promise<ComplexBrowseResult> {
   try {
-    const facts = await fetchRealEstateMarketFacts({}, fetcher);
+    // Fetch a broad page so both apartment and officetel facts are represented.
+    const facts = await fetchRealEstateMarketFacts({ limit: 500 }, fetcher);
     const items = aggregateComplexes(facts);
     if (items.length) {
       return { items, source: 'live' };
