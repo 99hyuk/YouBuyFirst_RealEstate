@@ -420,6 +420,83 @@ a {
   text-align: center;
 }
 
+.dashboard-refresh-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.dashboard-refresh-control {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard-refresh-control .refresh-meta {
+  color: var(--muted-2);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dashboard-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--brand-line, var(--line));
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 11px;
+  font-weight: 820;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.dashboard-refresh-button:hover:not(:disabled) {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.dashboard-refresh-button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.dashboard-refresh-button .refresh-spin {
+  width: 11px;
+  height: 11px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  opacity: 0.85;
+}
+
+.dashboard-refresh-button .refresh-spin.spinning {
+  animation: dashboard-refresh-spin 0.7s linear infinite;
+}
+
+@keyframes dashboard-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard-refresh-control {
+    position: static;
+    justify-content: center;
+  }
+}
+
 .search-line {
   display: grid;
   gap: 7px;
@@ -11573,6 +11650,20 @@ a {
   stroke: #fb923c;
   stroke-width: 2.4;
   filter: drop-shadow(0 0 9px rgba(251, 146, 60, 0.82));
+}
+
+.dokdo-marker .dokdo-dot {
+  fill: rgba(223, 231, 240, 0.85);
+  stroke: rgba(136, 151, 170, 0.7);
+  stroke-width: 1.5;
+  transition: filter 200ms ease, fill 200ms ease;
+}
+
+.dokdo-marker.glow .dokdo-dot {
+  fill: #ffffff;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.95));
 }
 
 .realestate-map-page .map-target-buttons button {

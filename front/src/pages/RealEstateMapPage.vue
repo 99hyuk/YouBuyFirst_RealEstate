@@ -109,6 +109,7 @@ const targets = reactive<MapTarget[]>(
     targetId: target.targetId
   }))
 );
+const hoveredRegionCode = ref<string | null>(null);
 const mapLayerLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const subregionLayerLoadState = ref<'idle' | 'loading' | 'live' | 'fallback'>('idle');
 const subregionLayerByCode = shallowRef<Map<string, RealEstateMapLayerTarget>>(new Map());
@@ -500,6 +501,8 @@ const mapLayerStatusText = computed(() => {
   return `${mapLayerMeta.dataStatus ?? 'unknown'} · ${freshness} · ${mapLayerMeta.asOf ?? 'asOf unknown'}`;
 });
 const mapDataSourceLabel = computed(() => mapLayerMeta.mapDataSource ?? mapFixture.mapDataSource);
+const dokdoSeodo = computed(() => { const p = nationalProjection([131.8624, 37.2433]); return p ? { x: p[0], y: p[1] } : null; });
+const dokdoDongdo = computed(() => { const p = nationalProjection([131.8684, 37.2417]); return p ? { x: p[0], y: p[1] } : null; });
 const subregionLayerStatusText = computed(() => {
   if (!selectedRegion.value) return '전국';
   if (subregionLayerLoadState.value === 'live') {
@@ -797,6 +800,8 @@ onMounted(() => {
                   :transform="feature.pathTransform"
                   :aria-label="`${feature.target.name} ${formatChange(periodChange(feature.target))}`"
                   @click="navigateToRegion(feature.target)"
+                  @mouseenter="hoveredRegionCode = feature.code"
+                  @mouseleave="hoveredRegionCode = null"
                 />
               </g>
               <g class="region-labels" aria-hidden="true">
@@ -817,6 +822,10 @@ onMounted(() => {
                   :cy="feature.label.y"
                   r="4.5"
                 />
+              </g>
+              <g v-if="dokdoSeodo && dokdoDongdo" :class="['dokdo-marker', { glow: hoveredRegionCode === '37' }]" aria-label="독도">
+                <ellipse class="dokdo-dot seodo" :cx="dokdoSeodo.x" :cy="dokdoSeodo.y" rx="2.2" ry="3.4" :transform="`rotate(-20 ${dokdoSeodo.x} ${dokdoSeodo.y})`" />
+                <ellipse class="dokdo-dot dongdo" :cx="dokdoDongdo.x" :cy="dokdoDongdo.y" rx="1.8" ry="2.4" :transform="`rotate(10 ${dokdoDongdo.x} ${dokdoDongdo.y})`" />
               </g>
             </svg>
 
