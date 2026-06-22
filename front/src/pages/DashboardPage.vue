@@ -53,6 +53,8 @@ const dashboardMapLayer = ref<RealEstateMapLayerResponse | null>(null);
 const mapLayerLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const dashboardContentItems = ref<NewsroomFeedItem[]>([]);
 const dashboardContentLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+const isRefreshing = ref(false);
+const lastRefreshedAt = ref<Date | null>(null);
 type ReactionKeyword = { word: string; weight: number };
 type ReactionDriver = { type: string; label: string };
 type DashboardReactionItem = {
@@ -322,15 +324,35 @@ const kwWordStyles = computed(() => Object.fromEntries(
   ])
 ));
 
+const refreshAll = async () => {
+  if (isRefreshing.value) return;
+  isRefreshing.value = true;
+  try {
+    await Promise.allSettled([
+      refreshDashboardReactions(),
+      refreshDashboardMapLayer(),
+      refreshMarketSummary(),
+      refreshMarketFacts(),
+      refreshDashboardContent()
+    ]);
+    lastRefreshedAt.value = new Date();
+  } finally {
+    isRefreshing.value = false;
+  }
+};
+
 onMounted(() => {
   startTimer();
-  void refreshDashboardReactions();
-  void refreshDashboardMapLayer();
-  void refreshMarketSummary();
-  void refreshMarketFacts();
-  void refreshDashboardContent();
+  void refreshAll();
 });
 onUnmounted(() => clearInterval(autoSlideTimer));
+
+const refreshButtonLabel = computed(() => (isRefreshing.value ? '불러오는 중…' : '실시간 데이터 불러오기'));
+const lastRefreshedLabel = computed(() => {
+  if (isRefreshing.value) return '갱신 중';
+  if (!lastRefreshedAt.value) return '갱신 전';
+  return `${lastRefreshedAt.value.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} 기준`;
+});
 
 const formatPct = (value: number | null) => value === null ? '최신' : `${value > 0 ? '+' : ''}${value}%`;
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
@@ -432,7 +454,22 @@ const needleEnd = computed(() => gaugePoint(speculationHeatIndex.value.value, 56
 <template>
   <section class="dashboard-page">
     <section class="standalone-search" aria-label="대시보드 검색과 필터">
-      <p class="eyebrow">최근 24시간 · {{ reactionStatusLabel }}</p>
+      <div class="dashboard-refresh-row">
+        <p class="eyebrow">최근 24시간 · {{ reactionStatusLabel }}</p>
+        <div class="dashboard-refresh-control">
+          <span class="refresh-meta">{{ lastRefreshedLabel }}</span>
+          <button
+            class="dashboard-refresh-button"
+            type="button"
+            :disabled="isRefreshing"
+            :aria-busy="isRefreshing"
+            @click="refreshAll"
+          >
+            <span class="refresh-spin" :class="{ spinning: isRefreshing }" aria-hidden="true"></span>
+            {{ refreshButtonLabel }}
+          </button>
+        </div>
+      </div>
       <div class="search-line">
         <div class="search-primary-row">
           <aside class="speculation-heat-gauge-card" aria-label="부동산 투기 과열 지표">
