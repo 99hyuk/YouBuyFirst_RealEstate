@@ -1936,6 +1936,8 @@ def _dataset_alias_from_fact_type(fact_type: str) -> str:
         return "trade"
     if fact_type == "apt_rent":
         return "rent"
+    if fact_type == "offi_trade":
+        return "offi-trade"
     raise ValueError(f"unsupported real-estate market fact type: {fact_type}")
 
 

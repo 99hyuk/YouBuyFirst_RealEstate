@@ -8,6 +8,7 @@ from youbuyfirst_pipeline.realestate_public_data import (
     DATA_GO_SERVICE_KEY_ENV,
     MOLIT_APT_RENT_DATASET,
     MOLIT_APT_TRADE_DATASET,
+    MOLIT_OFFI_TRADE_DATASET,
     MolitRealEstatePublicDataClient,
     PublicDataProviderError,
     build_official_apartment_price_raw_ingestions,
@@ -106,6 +107,66 @@ def test_molit_client_builds_trade_request_and_normalizes_market_fact():
             "umdNm": "Sajik-dong",
         },
     }
+
+
+def test_molit_client_fetches_offi_trade_and_maps_offi_name():
+    calls = []
+
+    def fetcher(url, params):
+        calls.append((url, dict(params)))
+        return (FIXTURE_DIR / "molit_offi_trade_sample.xml").read_text(encoding="utf-8")
+
+    client = MolitRealEstatePublicDataClient(service_key="secret-service-key", fetcher=fetcher)
+
+    facts = client.fetch_offi_trades(
+        lawd_code="11680",
+        deal_ym="202605",
+        now=datetime(2026, 6, 22, 0, 0, tzinfo=timezone.utc),
+    )
+
+    assert calls[0][0] == MOLIT_OFFI_TRADE_DATASET.endpoint_url
+    assert len(facts) == 2
+
+    payload = facts[0].to_ingestion_dict()
+    assert payload["factType"] == "offi_trade"
+    assert payload["providerDataset"] == "molit_offi_trade"
+    assert payload["legalDongCode"] == "11680"
+    assert payload["observedAt"] == "2026-05-28"
+    assert payload["providerObjectId"].startswith("molit_offi_trade:11680:202605:")
+    # offiNm is mapped onto apartmentName so it flows through the existing UI pipeline
+    assert payload["valueJson"]["apartmentName"] == "사이룩스"
+    assert payload["valueJson"]["legalDongName"] == "수서동"
+    assert payload["valueJson"]["dealAmountManwon"] == 28000
+    assert payload["valueJson"]["exclusiveAreaM2"] == 40.88
+
+
+def test_collect_offi_trade_dataset_routes_to_offi_fetch():
+    class _OffiFakeClient:
+        def __init__(self):
+            self.calls = []
+
+        def fetch_apt_trades(self, *args, **kwargs):
+            self.calls.append("trade")
+            return []
+
+        def fetch_apt_rents(self, *args, **kwargs):
+            self.calls.append("rent")
+            return []
+
+        def fetch_offi_trades(self, lawd_code, deal_ym, page_no=1, num_rows=100, now=None):
+            self.calls.append(("offi", lawd_code, deal_ym))
+            return ["offi-fact"]
+
+    client = _OffiFakeClient()
+    facts = collect_molit_real_estate_market_facts(
+        client,
+        lawd_code="11680",
+        deal_ym="202605",
+        datasets=["offi_trade"],
+    )
+
+    assert facts == ["offi-fact"]
+    assert client.calls == [("offi", "11680", "202605")]
 
 
 def test_molit_rent_parser_preserves_deposit_monthly_rent_and_contract_fields():

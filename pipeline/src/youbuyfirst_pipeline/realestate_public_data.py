@@ -43,6 +43,12 @@ MOLIT_APT_RENT_DATASET = MolitPublicDataDataset(
     endpoint_url="https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent",
 )
 
+MOLIT_OFFI_TRADE_DATASET = MolitPublicDataDataset(
+    dataset_id="molit_offi_trade",
+    fact_type="offi_trade",
+    endpoint_url="https://apis.data.go.kr/1613000/RTMSDataSvcOffiTrade/getRTMSDataSvcOffiTrade",
+)
+
 MOLIT_OFFICIAL_APARTMENT_PRICE_DATASET_ID = "molit_official_apartment_price_csv"
 
 
@@ -250,6 +256,16 @@ class MolitRealEstatePublicDataReader(Protocol):
     ) -> list[RealEstateMarketFact]:
         ...
 
+    def fetch_offi_trades(
+        self,
+        lawd_code: str,
+        deal_ym: str,
+        page_no: int = 1,
+        num_rows: int = 100,
+        now: datetime | None = None,
+    ) -> list[RealEstateMarketFact]:
+        ...
+
 
 class MolitRealEstatePublicDataClient:
     def __init__(
@@ -292,6 +308,23 @@ class MolitRealEstatePublicDataClient:
     ) -> list[RealEstateMarketFact]:
         return self.fetch_dataset(
             MOLIT_APT_RENT_DATASET,
+            lawd_code=lawd_code,
+            deal_ym=deal_ym,
+            page_no=page_no,
+            num_rows=num_rows,
+            now=now,
+        )
+
+    def fetch_offi_trades(
+        self,
+        lawd_code: str,
+        deal_ym: str,
+        page_no: int = 1,
+        num_rows: int = 100,
+        now: datetime | None = None,
+    ) -> list[RealEstateMarketFact]:
+        return self.fetch_dataset(
+            MOLIT_OFFI_TRADE_DATASET,
             lawd_code=lawd_code,
             deal_ym=deal_ym,
             page_no=page_no,
@@ -359,6 +392,20 @@ def collect_molit_real_estate_market_facts(
         facts.extend(
             _fetch_paginated_molit_facts(
                 lambda page_no: client.fetch_apt_trades(
+                    lawd_code,
+                    deal_ym,
+                    page_no=page_no,
+                    num_rows=page_size,
+                    now=collected_at,
+                ),
+                page_size=page_size,
+                max_pages=max_pages,
+            )
+        )
+    if "offi-trade" in normalized_datasets:
+        facts.extend(
+            _fetch_paginated_molit_facts(
+                lambda page_no: client.fetch_offi_trades(
                     lawd_code,
                     deal_ym,
                     page_no=page_no,
@@ -784,7 +831,7 @@ def _market_fact_from_item(
 ) -> RealEstateMarketFact:
     observed_at = _observed_date(fields)
     legal_dong_code = fields.get("sggCd") or lawd_code
-    value_json = _trade_value_json(fields) if dataset.fact_type == "apt_trade" else _rent_value_json(fields)
+    value_json = _rent_value_json(fields) if dataset.fact_type in {"apt_rent", "offi_rent"} else _trade_value_json(fields)
     value_json["raw"] = dict(sorted((key, value) for key, value in fields.items() if value))
     return RealEstateMarketFact(
         fact_type=dataset.fact_type,
@@ -802,7 +849,7 @@ def _market_fact_from_item(
 def _trade_value_json(fields: dict[str, str]) -> dict:
     return _without_empty_values(
         {
-            "apartmentName": fields.get("aptNm"),
+            "apartmentName": fields.get("aptNm") or fields.get("offiNm"),
             "legalDongName": fields.get("umdNm"),
             "jibun": fields.get("jibun"),
             "dealAmountManwon": _int_from_text(fields.get("dealAmount")),
@@ -1203,6 +1250,8 @@ def _normalize_dataset_name(value: str) -> str:
         return "trade"
     if normalized in {"rent", "apt-rent", "molit-apt-rent", "lease"}:
         return "rent"
+    if normalized in {"offi-trade", "offi", "officetel", "officetel-trade", "molit-offi-trade"}:
+        return "offi-trade"
     raise ValueError(f"unsupported real-estate public data dataset: {value}")
 
 
