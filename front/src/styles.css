@@ -11878,9 +11878,19 @@ a {
   color: var(--brand-strong);
 }
 
-.filter-chip:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.filter-chip:disabled,
+.filter-chip.pending {
+  color: var(--muted-2);
+  background: var(--surface-soft);
+  border-style: dashed;
+  cursor: default;
+}
+
+.filter-chip.pending small {
+  margin-left: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  opacity: 0.85;
 }
 
 .complex-search input {

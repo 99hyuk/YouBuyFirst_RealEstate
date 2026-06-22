@@ -9,18 +9,20 @@ import {
   toComplexMarkers,
   type ComplexBrowseItem,
   type ComplexBrowseSort,
-  type DealType
+  type DealType,
+  type PropertyType
 } from '../lib/realestate-complex-browse';
 
 type DealFilter = DealType | 'all';
 
-// 네이버 부동산 a=APT:PRE:ABYG:JGC 매물유형 칩. 현재 데이터가 APT만 있어 아파트만 활성.
-const propertyTypeChips = [
-  { id: 'APT', label: '아파트', active: true },
-  { id: 'OPST', label: '오피스텔', active: false },
-  { id: 'ABYG', label: '재건축', active: false },
-  { id: 'PRE', label: '분양권', active: false },
-  { id: 'JGC', label: '재개발', active: false }
+// 네이버 부동산 a=APT:PRE:ABYG:JGC 매물유형 칩. value가 있으면 실데이터 연결(활성).
+// 재건축/분양권/재개발은 수집 데이터가 없어 준비중(비활성).
+const propertyTypeChips: { id: string; label: string; value?: PropertyType }[] = [
+  { id: 'APT', label: '아파트', value: 'apt' },
+  { id: 'OPST', label: '오피스텔', value: 'offi' },
+  { id: 'ABYG', label: '재건축' },
+  { id: 'PRE', label: '분양권' },
+  { id: 'JGC', label: '재개발' }
 ];
 const dealFilters: { id: DealFilter; label: string }[] = [
   { id: 'all', label: '전체' },
@@ -36,13 +38,18 @@ const sortOptions: { id: ComplexBrowseSort; label: string }[] = [
 const items = ref<ComplexBrowseItem[]>([]);
 let loadToken = 0;
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
+const activePropertyType = ref<PropertyType>('apt');
 const activeDealFilter = ref<DealFilter>('all');
 const activeSort = ref<ComplexBrowseSort>('price-desc');
 const query = ref('');
 const selectedId = ref('');
 
 const visibleItems = computed(() =>
-  filterComplexes(items.value, { dealType: activeDealFilter.value, query: query.value }, activeSort.value)
+  filterComplexes(
+    items.value,
+    { propertyType: activePropertyType.value, dealType: activeDealFilter.value, query: query.value },
+    activeSort.value
+  )
 );
 const markers = computed<ComplexMapMarker[]>(() => toComplexMarkers(visibleItems.value));
 const selectedItem = computed(
@@ -118,11 +125,12 @@ onMounted(() => {
             :key="chip.id"
             type="button"
             class="filter-chip"
-            :class="{ active: chip.active }"
-            :disabled="!chip.active"
-            :title="chip.active ? '' : '현재 데이터는 아파트만 제공됩니다'"
+            :class="{ active: chip.value && activePropertyType === chip.value, pending: !chip.value }"
+            :disabled="!chip.value"
+            :title="chip.value ? '' : '아직 수집 데이터가 없습니다 (준비중)'"
+            @click="chip.value && (activePropertyType = chip.value)"
           >
-            {{ chip.label }}
+            {{ chip.label }}<small v-if="!chip.value"> 준비중</small>
           </button>
         </div>
 

@@ -23,6 +23,7 @@ export type RealEstateMarketFactRow = {
 export type FetchMarketFactParams = {
   legalDongCode?: string;
   factType?: string;
+  limit?: number;
 };
 
 type Fetcher = (input: string) => Promise<Response>;
@@ -65,6 +66,7 @@ export async function fetchRealEstateMarketFacts(
   const query = new URLSearchParams();
   if (params.legalDongCode) query.set('legalDongCode', params.legalDongCode);
   if (params.factType) query.set('factType', params.factType);
+  if (params.limit) query.set('limit', String(params.limit));
 
   const suffix = query.toString();
   const response = await fetcher(`/api/realestate/market-facts${suffix ? `?${suffix}` : ''}`);
