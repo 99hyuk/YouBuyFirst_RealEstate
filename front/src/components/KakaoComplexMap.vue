@@ -48,6 +48,20 @@ const selectedMarkerId = ref(props.selectedTargetId);
 
 let renderedMap: any = null;
 let renderedMarkers: any[] = [];
+let overlayElements: { targetId: string; el: HTMLElement }[] = [];
+
+const priceTag = (price: string) => {
+  const match = price.match(/[\d,]+(?:\.\d+)?\s*억/);
+  return match ? match[0].replace(/\s/g, '') : price;
+};
+
+const highlightSelectedOverlay = () => {
+  for (const { targetId, el } of overlayElements) {
+    const isActive = targetId === selectedMarkerId.value;
+    el.classList.toggle('active', isActive);
+    el.style.zIndex = isActive ? '20' : '1';
+  }
+};
 
 const isTestMode = import.meta.env.MODE === 'test';
 const kakaoEnabled = computed(() => import.meta.env.VITE_KAKAO_MAP_ENABLED === 'true' && !isTestMode);
@@ -109,6 +123,7 @@ const clearKakaoMarkers = () => {
     marker.setMap(null);
   }
   renderedMarkers = [];
+  overlayElements = [];
 };
 
 const focusKakaoMarker = (marker: ComplexMapMarker) => {
@@ -143,15 +158,24 @@ const renderKakaoMap = async () => {
     clearKakaoMarkers();
 
     for (const marker of props.markers) {
-      const kakaoMarker = new kakao.maps.Marker({
+      const content = document.createElement('div');
+      content.className = `complex-price-overlay ${marker.tone}`;
+      content.title = marker.name;
+      content.innerHTML = `<span class="price-overlay-amount">${priceTag(marker.price)}</span>`;
+      content.addEventListener('click', () => setSelectedMarker(marker));
+
+      const overlay = new kakao.maps.CustomOverlay({
         map: renderedMap,
         position: new kakao.maps.LatLng(marker.lat, marker.lng),
-        title: marker.name
+        content,
+        yAnchor: 1.25,
+        clickable: true
       });
-      kakao.maps.event.addListener(kakaoMarker, 'click', () => setSelectedMarker(marker));
-      renderedMarkers.push(kakaoMarker);
+      renderedMarkers.push(overlay);
+      overlayElements.push({ targetId: marker.targetId, el: content });
     }
 
+    highlightSelectedOverlay();
     if (selectedMarker.value) {
       focusKakaoMarker(selectedMarker.value);
     }
@@ -171,6 +195,7 @@ onBeforeUnmount(() => {
 
 watch(() => props.selectedTargetId, (targetId) => {
   selectedMarkerId.value = targetId;
+  highlightSelectedOverlay();
   if (selectedMarker.value) {
     focusKakaoMarker(selectedMarker.value);
   }
@@ -201,10 +226,11 @@ watch(() => props.markers, () => {
             type="button"
             :class="['complex-map-pin', marker.tone, { active: marker.targetId === selectedMarker?.targetId }]"
             :style="fallbackPointStyle(marker)"
-            :aria-label="`${marker.name} 위치`"
+            :title="marker.name"
+            :aria-label="`${marker.name} ${marker.price}`"
             @click="setSelectedMarker(marker)"
           >
-            <span>{{ marker.name }}</span>
+            <span>{{ priceTag(marker.price) }}</span>
           </button>
         </div>
       </div>
