@@ -58,10 +58,10 @@ const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? visibleItems.value[0] ?? null
 );
 const statusLabel = computed(() => {
-  if (loadState.value === 'loading') return '단지 데이터 불러오는 중';
-  if (loadState.value === 'live') return `국토교통부 실거래 · ${visibleItems.value.length}개 단지`;
+  if (loadState.value === 'loading') return '실거래 데이터 불러오는 중';
+  if (loadState.value === 'live') return `국토교통부 실거래 · 서울 · ${visibleItems.value.length}곳`;
   if (loadState.value === 'fallback') return 'mock fallback · 실데이터 수집 전';
-  return '단지 데이터 API 오류';
+  return '실거래 데이터 API 오류';
 });
 const coordSummary = computed(() => {
   const geocoded = visibleItems.value.filter((item) => item.coordSource === 'geocoded').length;
@@ -122,8 +122,9 @@ onMounted(() => {
   <section class="complex-browse-page" aria-labelledby="complex-browse-title">
     <header class="complex-filter-bar">
       <div class="complex-filter-heading">
-        <p class="eyebrow">complex browser · 단지 지도</p>
-        <h2 id="complex-browse-title">단지로 보는 실거래 지도</h2>
+        <p class="eyebrow">transaction map · 실거래 지도</p>
+        <h2 id="complex-browse-title">실거래 지도</h2>
+        <p class="complex-browse-sub">국토교통부 실거래를 건물·단지명으로 묶어 지도에 표시합니다 · 현재 서울 일부 지역</p>
       </div>
 
       <div class="complex-filter-groups">
@@ -156,7 +157,7 @@ onMounted(() => {
         </div>
 
         <label class="complex-search">
-          <input v-model="query" type="search" placeholder="단지명·지역 검색" aria-label="단지명 또는 지역 검색" />
+          <input v-model="query" type="search" placeholder="건물·단지명·지역 검색" aria-label="건물·단지명 또는 지역 검색" />
         </label>
 
         <select v-model="activeSort" class="complex-sort" aria-label="정렬 기준">
@@ -178,10 +179,10 @@ onMounted(() => {
     </header>
 
     <section class="complex-browse-layout">
-      <aside class="complex-list-panel" aria-label="단지 목록">
-        <div v-if="loadState === 'loading'" class="complex-empty">단지 목록을 불러오는 중입니다…</div>
+      <aside class="complex-list-panel" aria-label="실거래 목록">
+        <div v-if="loadState === 'loading'" class="complex-empty">실거래 목록을 불러오는 중입니다…</div>
         <div v-else-if="!visibleItems.length" class="complex-empty">
-          조건에 맞는 단지가 없습니다. 필터를 조정해 보세요.
+          조건에 맞는 실거래가 없습니다. 필터를 조정해 보세요.
         </div>
         <ul v-else class="complex-card-list">
           <li
