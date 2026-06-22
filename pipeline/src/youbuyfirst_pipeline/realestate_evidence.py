@@ -153,7 +153,11 @@ def _reaction_evidence_item(snapshot: dict[str, Any], tone: str) -> dict[str, An
 def _market_fact_evidence_items(target_id: str, facts: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     items = []
     for fact in facts:
-        if _text(fact.get("targetId") or fact.get("target_id")) != target_id:
+        fact_target_id = _text(fact.get("targetId") or fact.get("target_id"))
+        legal_dong_code = _text(fact.get("legalDongCode") or fact.get("legal_dong_code"))
+        is_target_fact = fact_target_id == target_id
+        is_national_context = not fact_target_id and legal_dong_code == "00000"
+        if not is_target_fact and not is_national_context:
             continue
         fact_type = _text(fact.get("factType") or fact.get("fact_type") or "market_fact")
         provider_object_id = _text(fact.get("providerObjectId") or fact.get("provider_object_id"))
@@ -163,9 +167,9 @@ def _market_fact_evidence_items(target_id: str, facts: Iterable[dict[str, Any]])
             {
                 "evidenceItemId": _stable_id("market-fact", target_id, fact_type, ref_id),
                 "evidenceType": "market_fact",
-                "refType": "market_fact",
+                "refType": "national_market_fact" if is_national_context else "market_fact",
                 "refId": _truncate_id(ref_id),
-                "label": _market_fact_label(fact_type),
+                "label": _market_fact_label(fact_type, national=is_national_context),
                 "valueText": _market_fact_value_text(fact_type, fact.get("valueJson") or fact.get("value_json") or {}),
                 "severity": "info",
             }
@@ -320,6 +324,10 @@ def _caveats(snapshot: dict[str, Any], evidence_items: list[dict[str, Any]]) -> 
     present_types = {item["evidenceType"] for item in evidence_items}
     if "market_fact" not in present_types:
         caveats.append("market_fact_missing")
+    else:
+        market_fact_items = [item for item in evidence_items if item["evidenceType"] == "market_fact"]
+        if market_fact_items and all(item.get("refType") == "national_market_fact" for item in market_fact_items):
+            caveats.append("national_market_fact_only")
     if "timeline_event" not in present_types:
         caveats.append("timeline_event_missing")
     if "similar_window" not in present_types:
@@ -338,14 +346,20 @@ def _data_quality(snapshot: dict[str, Any]) -> str:
     return coverage_status or "unknown"
 
 
-def _market_fact_label(fact_type: str) -> str:
-    return {
+def _market_fact_label(fact_type: str, *, national: bool = False) -> str:
+    prefix = "전국 배경 시장 사실" if national else "시장 사실"
+    labels = {
         "apt_trade": "시장 사실: 매매 실거래",
         "apt_rent": "시장 사실: 전월세",
         "official_apartment_price": "시장 사실: 공동주택 공시가격",
         "unsold_housing": "시장 사실: 미분양",
         "price_index": "시장 사실: 가격지수",
-    }.get(fact_type, f"시장 사실: {fact_type}")
+        "sale_price_index_change_pct": "시장 사실: 매매가격지수 변동률",
+        "jeonse_price_index_change_pct": "시장 사실: 전세가격지수 변동률",
+        "apartment_trade_volume": "시장 사실: 아파트 매매거래호수",
+    }
+    label = labels.get(fact_type, f"시장 사실: {fact_type}")
+    return label.replace("시장 사실", prefix, 1)
 
 
 def _market_fact_value_text(fact_type: str, value_json: dict[str, Any]) -> str:
@@ -362,10 +376,18 @@ def _market_fact_value_text(fact_type: str, value_json: dict[str, Any]) -> str:
         return " / ".join(parts) if parts else "전월세 사실 확인"
     if fact_type == "official_apartment_price" and isinstance(value_json.get("officialPriceWon"), (int, float)):
         return f"공시가격 {_format_number(value_json['officialPriceWon'])}원"
-    if fact_type in {"unsold_housing", "price_index"}:
+    if fact_type in {"unsold_housing", "price_index", "sale_price_index_change_pct", "jeonse_price_index_change_pct", "apartment_trade_volume"}:
+        metric_name = {
+            "unsold_housing": "미분양",
+            "price_index": "가격지수",
+            "sale_price_index_change_pct": "매매가격지수 변동률",
+            "jeonse_price_index_change_pct": "전세가격지수 변동률",
+            "apartment_trade_volume": "아파트 매매거래호수",
+        }.get(fact_type, "시장 지표")
         for key in ("value", "count", "householdCount", "indexValue"):
             if isinstance(value_json.get(key), (int, float)):
-                return f"{key} {_format_number(value_json[key])}"
+                unit = _text(value_json.get("unit"))
+                return f"{metric_name} {_format_metric_value(value_json[key], unit)}"
     return "시장 사실 확인"
 
 
@@ -420,6 +442,13 @@ def _format_number(value: int | float) -> str:
     if isinstance(value, float) and not value.is_integer():
         return f"{value:,.1f}"
     return f"{int(value):,}"
+
+
+def _format_metric_value(value: int | float, unit: str) -> str:
+    if unit == "%":
+        return f"{float(value):+.2f}%"
+    suffix = unit if unit else ""
+    return f"{_format_number(value)}{suffix}"
 
 
 def _dedupe(values: Iterable[str]) -> list[str]:

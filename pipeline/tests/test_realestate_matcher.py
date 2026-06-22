@@ -155,6 +155,50 @@ def test_real_estate_target_matcher_matches_spacing_and_punctuation_variants():
     }
 
 
+def test_real_estate_target_matcher_counts_same_complex_once_across_aliases_and_sources():
+    matcher = RealEstateTargetMatcher(
+        [
+            RealEstateAliasRule(
+                target_type="complex",
+                target_id="complex-maraepu",
+                alias="마포 래미안 푸르지오",
+                alias_type="official",
+                review_state="approved",
+                confidence=0.92,
+            ),
+            RealEstateAliasRule(
+                target_type="complex",
+                target_id="complex-maraepu",
+                alias="마래푸",
+                alias_type="short_name",
+                review_state="approved",
+                confidence=0.68,
+            ),
+        ]
+    )
+    post = RealEstatePostForMatching(
+        source="PPOMPPU:house",
+        external_id="post-maraepu-duplicate",
+        published_at=datetime(2026, 6, 14, 0, 20, tzinfo=timezone.utc),
+        title="마래푸 전세 불안 얘기 다시 늘었네요",
+        content_snippet="마포 래미안 푸르지오라고 안 쓰고 다들 마래푸로 부르는 분위기",
+    )
+
+    result = matcher.match_post(post)
+
+    assert [mention.to_dict() for mention in result.mentions] == [
+        {
+            "targetType": "complex",
+            "targetId": "complex-maraepu",
+            "matchedText": "마래푸",
+            "matchSource": "title",
+            "confidence": 0.68,
+            "reviewState": "approved",
+            "aliasType": "short_name",
+        }
+    ]
+
+
 def test_load_real_estate_alias_rules_and_posts_from_jsonl(tmp_path):
     aliases_path = tmp_path / "aliases.jsonl"
     aliases_path.write_text(

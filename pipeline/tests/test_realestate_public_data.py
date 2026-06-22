@@ -14,9 +14,16 @@ from youbuyfirst_pipeline.realestate_public_data import (
     MOLIT_SILV_TRADE_DATASET,
     MolitRealEstatePublicDataClient,
     PublicDataProviderError,
+    RebRoneMainSnapshotClient,
+    RebRoneMonthlyAptSalePriceIndexClient,
+    RebRoneRegionalMapClient,
+    build_reb_rone_region_lookup_from_regional_map_json,
     build_official_apartment_price_raw_ingestions,
     build_molit_raw_ingestions,
     build_molit_public_data_client_from_env,
+    collect_reb_rone_main_snapshot_facts,
+    collect_reb_rone_monthly_price_index_change_facts,
+    collect_reb_rone_regional_map_facts,
     collect_molit_real_estate_market_facts,
     collect_molit_real_estate_market_facts_from_data_targets,
     inspect_official_apartment_price_csv,
@@ -24,6 +31,9 @@ from youbuyfirst_pipeline.realestate_public_data import (
     iter_official_apartment_price_market_facts,
     iter_regional_stat_market_facts,
     parse_molit_public_data_xml,
+    parse_reb_rone_main_snapshot,
+    parse_reb_rone_monthly_price_index_changes,
+    parse_reb_rone_regional_map,
 )
 
 
@@ -286,6 +296,307 @@ def test_molit_rent_parser_preserves_deposit_monthly_rent_and_contract_fields():
     assert payload["valueJson"]["monthlyRentAmountManwon"] == 120
     assert payload["valueJson"]["contractType"] == "renewal"
     assert payload["valueJson"]["contractTerm"] == "202606-202806"
+
+
+def test_reb_rone_main_snapshot_parser_normalizes_major_stats_to_market_facts():
+    html_text = """
+    <script>
+    doEvent.changeMajorStat('A_2024_00045', 'MM', '매매가격지수 변동률', 'PR', '%', '아파트', '2026년 5월', '0.25', '전국주택가격동향조사')
+    doEvent.changeMajorStat('A_2024_00050', 'MM', '전세가격지수 변동률', 'PR', '%', '아파트', '2026년 5월', '0.45', '전국주택가격동향조사')
+    doEvent.changeMajorStat('A_2024_00554', 'MM', '아파트 매매거래호수', 'OD', '호수', '', '2026년 4월', '53,177', '부동산거래현황')
+    doEvent.changeMajorStat('A_2024_00903', 'MM', '지가변동률', 'OD', '%', '', '2026년 4월', '0.204', '전국지가변동률조사')
+    </script>
+    """
+
+    facts = parse_reb_rone_main_snapshot(
+        html_text,
+        ingested_at=datetime(2026, 6, 15, 1, 0, tzinfo=timezone.utc),
+    )
+
+    payloads = [fact.to_ingestion_dict() for fact in facts]
+    assert [payload["factType"] for payload in payloads] == [
+        "sale_price_index_change_pct",
+        "jeonse_price_index_change_pct",
+        "apartment_trade_volume",
+    ]
+    assert payloads[0]["provider"] == "reb"
+    assert payloads[0]["providerDataset"] == "reb_rone_main_snapshot"
+    assert payloads[0]["legalDongCode"] == "00000"
+    assert payloads[0]["observedAt"] == "2026-05-01"
+    assert payloads[0]["asOf"] == "2026-05-01"
+    assert payloads[0]["valueJson"]["regionName"] == "전국"
+    assert payloads[0]["valueJson"]["value"] == 0.25
+    assert payloads[0]["valueJson"]["unit"] == "%"
+    assert payloads[2]["observedAt"] == "2026-04-01"
+    assert payloads[2]["valueJson"]["value"] == 53177
+    assert payloads[2]["valueJson"]["unit"] == "호수"
+
+
+def test_reb_rone_main_snapshot_client_fetches_public_page_with_same_clock():
+    calls = []
+
+    def fetcher(url):
+        calls.append(url)
+        return """
+        doEvent.changeMajorStat('A_2024_00045', 'MM', '매매가격지수 변동률', 'PR', '%', '아파트', '2026년 5월', '0.25', '전국주택가격동향조사')
+        """
+
+    client = RebRoneMainSnapshotClient(fetcher=fetcher)
+
+    facts = collect_reb_rone_main_snapshot_facts(
+        client,
+        now=datetime(2026, 6, 15, 1, 5, tzinfo=timezone.utc),
+    )
+
+    assert calls == ["https://www.reb.or.kr/r-one/portal/main/indexPage.do"]
+    assert len(facts) == 1
+    assert facts[0].to_ingestion_dict()["ingestedAt"] == "2026-06-15T01:05:00Z"
+
+
+def test_reb_rone_regional_map_parser_normalizes_price_change_rows():
+    json_text = """
+    {
+      "data": [
+        {
+          "statblId": "A_2024_00045",
+          "datano": 500001,
+          "viewItmNm": "전국",
+          "geoCd": "10",
+          "uiNm": "%",
+          "wrttimeIdtfrId": "202605",
+          "dtaVal": 0.25,
+          "pdDtaVal": 0.25,
+          "odRnk": 0
+        },
+        {
+          "statblId": "A_2024_00045",
+          "datano": 500008,
+          "viewItmNm": "서울",
+          "geoCd": "11",
+          "uiNm": "%",
+          "wrttimeIdtfrId": "202605",
+          "dtaVal": 1.06,
+          "pdDtaVal": 1.08,
+          "odRnk": 1
+        },
+        {
+          "statblId": "A_2024_00045",
+          "datano": 500009,
+          "viewItmNm": "경기",
+          "geoCd": "41",
+          "uiNm": "%",
+          "wrttimeIdtfrId": "202605",
+          "dtaVal": 0.41,
+          "pdDtaVal": 0.42,
+          "odRnk": 2
+        },
+        {
+          "statblId": "A_2024_00045",
+          "datano": 500123,
+          "viewItmNm": "마포구",
+          "geoCd": "11440",
+          "uiNm": "%",
+          "wrttimeIdtfrId": "202605",
+          "dtaVal": 0.33,
+          "pdDtaVal": 0.35,
+          "odRnk": 8
+        }
+      ]
+    }
+    """
+
+    facts = parse_reb_rone_regional_map(
+        json_text,
+        ingested_at=datetime(2026, 6, 15, 2, 0, tzinfo=timezone.utc),
+    )
+
+    payloads = [fact.to_ingestion_dict() for fact in facts]
+    assert [payload["factType"] for payload in payloads] == [
+        "sale_price_index_change_pct",
+        "sale_price_index_change_pct",
+        "sale_price_index_change_pct",
+        "sale_price_index_change_pct",
+    ]
+    assert payloads[0]["targetId"] is None
+    assert payloads[0]["legalDongCode"] == "00000"
+    assert payloads[0]["valueJson"]["regionName"] == "전국"
+    assert payloads[1]["targetId"] == "region-seoul"
+    assert payloads[1]["legalDongCode"] == "11"
+    assert payloads[1]["observedAt"] == "2026-05-01"
+    assert payloads[1]["valueJson"]["value"] == 1.06
+    assert payloads[1]["valueJson"]["sourceLabel"] == "한국부동산원 R-ONE 전국주택가격동향조사 매매가격지수 변동률"
+    assert payloads[2]["targetId"] == "region-gyeonggi"
+    assert payloads[2]["legalDongCode"] == "41"
+    assert payloads[2]["valueJson"]["topologyRegionCode"] == "31"
+    assert payloads[3]["targetId"] is None
+    assert payloads[3]["legalDongCode"] == "11440"
+
+
+def test_reb_rone_regional_map_client_uses_selected_geo_code_with_same_clock():
+    calls = []
+
+    def fetcher(url, params):
+        calls.append((url, dict(params)))
+        return """
+        {
+          "data": [
+            {
+              "statblId": "A_2024_00045",
+              "datano": 500008,
+              "viewItmNm": "서울",
+              "geoCd": "11",
+              "uiNm": "%",
+              "wrttimeIdtfrId": "202605",
+              "dtaVal": 1.06,
+              "pdDtaVal": 1.08,
+              "odRnk": 1
+            }
+          ]
+        }
+        """
+
+    client = RebRoneRegionalMapClient(fetcher=fetcher)
+
+    facts = collect_reb_rone_regional_map_facts(
+        client,
+        geo_cd="10",
+        now=datetime(2026, 6, 15, 2, 5, tzinfo=timezone.utc),
+    )
+
+    assert calls == [
+        (
+            "https://www.reb.or.kr/r-one/portal/main/searchRegionalStatusMap.do",
+            {
+                "statblId": "A_2024_00045",
+                "dtacycleCd": "MM",
+                "itmDatano": "100001",
+                "geoCd": "10",
+                "dtadvsCd": "PR",
+                "itmTag": "C",
+                "clsDatano": "",
+            },
+        )
+    ]
+    assert len(facts) == 1
+    assert facts[0].to_ingestion_dict()["ingestedAt"] == "2026-06-15T02:05:00Z"
+
+
+def test_reb_rone_monthly_price_index_parser_backfills_changes_and_skips_unmatched_regions():
+    regional_map_json = """
+    {
+      "data": [
+        {
+          "statblId": "A_2024_00045",
+          "viewItmNm": "마포구",
+          "geoCd": "11440",
+          "uiNm": "%",
+          "wrttimeIdtfrId": "202605",
+          "dtaVal": 0.86
+        },
+        {
+          "statblId": "A_2024_00045",
+          "viewItmNm": "파주시",
+          "geoCd": "41480",
+          "uiNm": "%",
+          "wrttimeIdtfrId": "202605",
+          "dtaVal": -0.12
+        }
+      ]
+    }
+    """
+    monthly_json = """
+    {
+      "DATA": [
+        {
+          "CATE1": "서울",
+          "CATE2": "강북지역",
+          "CATE3": "서북권",
+          "CATE4": "마포구",
+          "COL_202603100001OD": "101.32",
+          "COL_202604100001OD": "101.91",
+          "COL_202605100001OD": "102.79"
+        },
+        {
+          "CATE1": "충남",
+          "CATE2": "서천군",
+          "CATE3": "서천군",
+          "CATE4": "서천군",
+          "COL_202603100001OD": "99.10",
+          "COL_202604100001OD": "99.00",
+          "COL_202605100001OD": "98.80"
+        }
+      ]
+    }
+    """
+    lookup = build_reb_rone_region_lookup_from_regional_map_json(regional_map_json)
+
+    facts = parse_reb_rone_monthly_price_index_changes(
+        monthly_json,
+        ingested_at=datetime(2026, 6, 16, 1, 0, tzinfo=timezone.utc),
+        region_lookup=lookup,
+    )
+
+    payloads = [fact.to_ingestion_dict() for fact in facts]
+    assert len(payloads) == 2
+    assert {payload["legalDongCode"] for payload in payloads} == {"11440"}
+    assert payloads[0]["providerDataset"] == "reb_rone_monthly_apt_sale_price_index"
+    assert payloads[0]["targetId"] is None
+    assert payloads[0]["observedAt"] == "2026-04-01"
+    assert payloads[0]["valueJson"]["periodYm"] == "202604"
+    assert payloads[0]["valueJson"]["previousPeriodYm"] == "202603"
+    assert payloads[0]["valueJson"]["value"] == pytest.approx(0.5823)
+    assert payloads[1]["observedAt"] == "2026-05-01"
+    assert payloads[1]["valueJson"]["value"] == pytest.approx(0.8635)
+
+
+def test_reb_rone_monthly_price_index_client_fetches_table_and_region_lookup_with_same_clock():
+    calls = []
+    monthly_json = """
+    {
+      "DATA": [
+        {
+          "CATE1": "서울",
+          "CATE2": "강북지역",
+          "CATE3": "서북권",
+          "CATE4": "마포구",
+          "COL_202604100001OD": "101.91",
+          "COL_202605100001OD": "102.79"
+        }
+      ]
+    }
+    """
+    regional_map_json = """
+    {
+      "data": [
+        {
+          "statblId": "A_2024_00045",
+          "viewItmNm": "마포구",
+          "geoCd": "11440",
+          "uiNm": "%",
+          "wrttimeIdtfrId": "202605",
+          "dtaVal": 0.86
+        }
+      ]
+    }
+    """
+
+    def fetcher(url, latest_months):
+        calls.append((url, latest_months))
+        return monthly_json, regional_map_json
+
+    client = RebRoneMonthlyAptSalePriceIndexClient(fetcher=fetcher, latest_months=6)
+
+    facts = collect_reb_rone_monthly_price_index_change_facts(
+        client,
+        now=datetime(2026, 6, 16, 1, 5, tzinfo=timezone.utc),
+    )
+
+    assert calls == [("https://www.reb.or.kr/r-one/portal/stat/easyStatPage/A_2024_00045.do", 6)]
+    assert len(facts) == 1
+    payload = facts[0].to_ingestion_dict()
+    assert payload["ingestedAt"] == "2026-06-16T01:05:00Z"
+    assert payload["legalDongCode"] == "11440"
+    assert payload["valueJson"]["sourceLabel"] == "한국부동산원 R-ONE 월간 아파트 매매가격지수"
 
 
 def test_molit_parser_raises_provider_error_for_non_ok_response():

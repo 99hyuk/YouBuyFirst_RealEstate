@@ -1,3 +1,5 @@
+import { repairMojibake } from './text-encoding';
+
 export type RealEstateEvidenceItem = {
   evidenceItemId: string;
   evidenceType?: string | null;
@@ -53,7 +55,7 @@ export async function fetchRealEstateTargetEvidenceLogs(
   }
 
   const payload = await response.json() as { items?: RealEstateEvidenceLog[] };
-  return Array.isArray(payload.items) ? payload.items.filter(isEvidenceLog) : [];
+  return Array.isArray(payload.items) ? payload.items.map(normalizeEvidenceLog).filter(isEvidenceLog) : [];
 }
 
 function isEvidenceLog(item: RealEstateEvidenceLog): boolean {
@@ -61,4 +63,35 @@ function isEvidenceLog(item: RealEstateEvidenceLog): boolean {
     && item.evidenceLogId.trim().length > 0
     && typeof item.summary === 'string'
     && item.summary.trim().length > 0;
+}
+
+function normalizeEvidenceLog(item: RealEstateEvidenceLog): RealEstateEvidenceLog {
+  return {
+    ...item,
+    targetId: repairMojibake(item.targetId),
+    evaluationVersion: repairMojibake(item.evaluationVersion),
+    promptVersion: repairMojibake(item.promptVersion),
+    modelName: repairMojibake(item.modelName),
+    tone: repairMojibake(item.tone),
+    summary: repairMojibake(item.summary),
+    subtitle: repairMojibake(item.subtitle),
+    caveats: Array.isArray(item.caveats) ? item.caveats.map(repairMojibake) : item.caveats,
+    dataQuality: repairMojibake(item.dataQuality),
+    skipReason: repairMojibake(item.skipReason),
+    evidenceItems: Array.isArray(item.evidenceItems) ? item.evidenceItems.map(normalizeEvidenceItem) : item.evidenceItems
+  };
+}
+
+function normalizeEvidenceItem(item: RealEstateEvidenceItem): RealEstateEvidenceItem {
+  return {
+    ...item,
+    evidenceType: repairMojibake(item.evidenceType),
+    refType: repairMojibake(item.refType),
+    label: repairMojibake(item.label),
+    valueText: repairMojibake(item.valueText),
+    severity: repairMojibake(item.severity),
+    sourceId: repairMojibake(item.sourceId),
+    sourceDomain: repairMojibake(item.sourceDomain),
+    sourceDataStatus: repairMojibake(item.sourceDataStatus)
+  };
 }

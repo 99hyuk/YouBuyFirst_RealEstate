@@ -1,49 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildDashboardSpeculationHeat,
-  buildRegionalMomentumRows
-} from '../lib/realestate-dashboard';
+import { buildRegionalMomentumRows } from '../lib/realestate-dashboard';
 
 describe('real-estate dashboard adapters', () => {
-  it('derives the speculation heat gauge from live reaction ranking rows', () => {
-    const heat = buildDashboardSpeculationHeat([
-      {
-        rank: 1,
-        targetId: 'region-seoul',
-        targetType: 'region',
-        displayName: '서울특별시',
-        mentionCount: 120,
-        mentionDeltaPct: 80,
-        reactionDirectionRatio: { expectation: 0.48, concern: 0.34, neutral: 0.18 },
-        heatScore: 76,
-        confidence: 0.86,
-        sourceCount: 4,
-        sourceSkew: 0.33,
-        coverageStatus: 'partial',
-        stale: false,
-        issueMix: [
-          { issueKey: 'jeonse', label: '전세', share: 0.4, direction: 'concern', confidence: 0.8 },
-          { issueKey: 'transport', label: '교통', share: 0.22, direction: 'expectation', confidence: 0.7 }
-        ]
-      }
-    ]);
-
-    expect(heat.label).toBe('부동산 투기 과열 지표');
-    expect(heat.value).toBeGreaterThan(0);
-    expect(heat.changePct).toBe(80);
-    expect(heat.keywords).toEqual(['전세', '교통']);
-    expect(heat.dataStatus).toBe('partial');
-  });
-
-  it('keeps the speculation heat gauge explicit when no ranking rows exist', () => {
-    const heat = buildDashboardSpeculationHeat([]);
-
-    expect(heat.value).toBe(0);
-    expect(heat.status).toBe('수집 전');
-    expect(heat.dataStatus).toBe('insufficient');
-  });
-
   it('builds regional momentum rows from map layer snapshots', () => {
     const rows = buildRegionalMomentumRows({
       layerType: 'sido',
@@ -51,7 +10,7 @@ describe('real-estate dashboard adapters', () => {
       sourceLabel: 'map_layer_snapshots',
       dataStatus: 'ok',
       stale: false,
-      periods: ['week', 'month', 'halfYear'],
+      periods: ['month', 'quarter', 'halfYear'],
       targets: [
         {
           targetId: 'region-seoul',
@@ -111,9 +70,37 @@ describe('real-estate dashboard adapters', () => {
   it('does not invent annual momentum before the yearly snapshot exists', () => {
     const rows = buildRegionalMomentumRows({
       layerType: 'sido',
-      periods: ['week', 'month', 'halfYear'],
+      periods: ['month', 'quarter', 'halfYear'],
       targets: []
     }, 'year');
+
+    expect(rows).toEqual([]);
+  });
+
+  it('does not treat reaction-only map periods as regional price momentum', () => {
+    const rows = buildRegionalMomentumRows({
+      layerType: 'sido',
+      periods: ['month', 'quarter', 'halfYear'],
+      targets: [
+        {
+          targetId: 'region-seoul',
+          targetType: 'region',
+          displayName: '서울특별시',
+          regionCode: '11',
+          periods: {
+            quarter: {
+              changePct: 0.65,
+              sampleCount: 21,
+              confidence: 86,
+              provider: 'real_estate_reaction_snapshots',
+              asOf: '2026-06-01',
+              dataStatus: 'partial',
+              stale: false
+            }
+          }
+        }
+      ]
+    }, 'quarter');
 
     expect(rows).toEqual([]);
   });

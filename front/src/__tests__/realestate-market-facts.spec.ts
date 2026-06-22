@@ -77,7 +77,7 @@ describe('real-estate market fact adapter', () => {
       }
     ]);
 
-    expect(marketFactStatusLabel({ dataStatus: 'mock', stale: false })).toBe('mock');
+    expect(marketFactStatusLabel({ dataStatus: 'mock', stale: false })).toBe('수집 전/insufficient');
     expect(marketFactStatusLabel({ dataStatus: 'error', stale: false })).toBe('확인 필요');
   });
 

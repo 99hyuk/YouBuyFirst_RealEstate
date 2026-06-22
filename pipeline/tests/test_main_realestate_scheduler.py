@@ -1,9 +1,11 @@
 import asyncio
 import json
 import sys
+from types import SimpleNamespace
 
 from youbuyfirst_pipeline import main as pipeline_main
 from youbuyfirst_pipeline.realestate_recent_issues import SerpApiRecentIssueResult
+from youbuyfirst_pipeline.source_policy import CrawlRuntimeEnvironment
 
 
 class _FakePipeline:
@@ -13,6 +15,10 @@ class _FakePipeline:
 
 class _FakeSpringClient:
     pass
+
+
+class _RuntimeAwarePipeline(_FakePipeline):
+    runtime_environment = CrawlRuntimeEnvironment.PUBLIC
 
 
 class _FakeRefreshJob:
@@ -133,6 +139,63 @@ class _DailyRefreshSpringClient:
         }
 
 
+class _ReadinessSpringClient:
+    def list_real_estate_aliases(self, **_kwargs):
+        return [
+            {
+                "targetType": "complex",
+                "targetId": "complex-molit-1144010100-maraepu",
+                "alias": "마래푸",
+                "source": "molit:market-fact",
+            }
+        ]
+
+    def list_real_estate_target_edges(self, **_kwargs):
+        return [
+            {
+                "fromTargetType": "region",
+                "fromTargetId": "region-1144010100",
+                "toTargetType": "complex",
+                "toTargetId": "complex-molit-1144010100-maraepu",
+                "edgeType": "contains",
+                "source": "molit:market-fact",
+            }
+        ]
+
+    def get_real_estate_reaction_ranking(self, *, target_type: str, window_minutes: int, limit: int):
+        assert window_minutes == 10080
+        assert limit == 10
+        return {
+            "items": [
+                {
+                    "targetType": target_type,
+                    "targetId": f"{target_type}-readiness-{index}",
+                    "displayName": f"{target_type} readiness {index}",
+                }
+                for index in range(10)
+            ]
+        }
+        if target_type == "complex":
+            return {
+                "items": [
+                    {
+                        "targetType": "complex",
+                        "targetId": "complex-molit-1144010100-maraepu",
+                        "displayName": "마포래미안푸르지오",
+                    }
+                ]
+            }
+        return {
+            "items": [
+                {
+                    "targetType": "region",
+                    "targetId": "region-seoul-mapo",
+                    "displayName": "서울 마포구",
+                }
+            ]
+        }
+
+
 class _FakeQdrantClient:
     collection_name = "realestate_reaction_windows"
 
@@ -190,6 +253,16 @@ def _daily_embedding_item(target_id: str = "region-daejeon") -> dict:
         "windowStart": "2026-06-14T00:00:00Z",
         "windowEnd": "2026-06-14T01:00:00Z",
     }
+
+
+def test_build_pipeline_from_args_applies_crawl_runtime_environment(monkeypatch):
+    pipeline = _RuntimeAwarePipeline()
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: pipeline)
+
+    result = pipeline_main._build_pipeline_from_args(SimpleNamespace(crawl_runtime_environment="local"))
+
+    assert result is pipeline
+    assert result.runtime_environment == CrawlRuntimeEnvironment.LOCAL
 
 
 def test_serve_command_can_enable_real_estate_market_facts_refresh(monkeypatch):
@@ -311,6 +384,7 @@ def test_serve_command_can_enable_reaction_snapshot_refresh_from_backend_posts(m
             "PPOMPPU",
             "--realestate-community-posts-limit",
             "250",
+            "--realestate-reaction-use-current-window",
         ],
     )
 
@@ -320,6 +394,7 @@ def test_serve_command_can_enable_reaction_snapshot_refresh_from_backend_posts(m
     assert builder_kwargs["community_posts_jsonl"] is None
     assert builder_kwargs["backend_posts_source"] == "PPOMPPU"
     assert builder_kwargs["backend_posts_limit"] == 250
+    assert builder_kwargs["use_current_window"] is True
 
 
 def test_serve_command_can_enable_reaction_snapshot_refresh_from_backend_aliases(monkeypatch):
@@ -431,7 +506,7 @@ def test_serve_command_can_group_recent_issue_refresh_from_backend_ranking(monke
             "serve",
             "--enable-realestate-daily-refresh",
             "--enable-realestate-recent-issues-refresh",
-            "--reaction-window-minutes",
+            "--realestate-daily-reaction-window-minutes",
             "1440",
             "--realestate-recent-issues-ranking-limit",
             "10",
@@ -450,11 +525,53 @@ def test_serve_command_can_group_recent_issue_refresh_from_backend_ranking(monke
     assert recent_issue_step.ranking_limit == 10
 
 
+def test_daily_refresh_uses_7d_reaction_window_by_default(monkeypatch):
+    captured = {}
+    spring_client = _FakeSpringClient()
+
+    async def fake_serve(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: _FakePipeline())
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(pipeline_main, "_serpapi_recent_issue_client", lambda: _FakeRecentIssueClient())
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-reaction-snapshots-refresh",
+            "--realestate-use-backend-aliases",
+            "--realestate-use-backend-community-posts",
+            "--enable-realestate-recent-issues-refresh",
+            "--enable-realestate-evidence-logs-refresh",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    assert [name for name, _step in daily_job.steps] == [
+        "reaction_snapshots",
+        "recent_issues",
+        "evidence_logs",
+    ]
+    assert daily_job.steps[0][1].window_minutes == 10080
+    assert daily_job.steps[1][1].window_minutes == 10080
+    assert daily_job.steps[2][1].window_minutes == 10080
+
+
 def test_serve_command_can_group_full_mvp_daily_refresh_in_order(monkeypatch):
     captured = {}
     pipeline = _FakePipeline()
     spring_client = _FakeSpringClient()
     market_job = _FakeRefreshJob()
+    official_stats_job = _FakeRefreshJob()
+    community_seed_job = _FakeRefreshJob()
     reaction_job = _FakeRefreshJob()
 
     async def fake_serve(*args, **kwargs):
@@ -473,6 +590,16 @@ def test_serve_command_can_group_full_mvp_daily_refresh_in_order(monkeypatch):
         "build_real_estate_reaction_snapshot_refresh_job",
         lambda **kwargs: reaction_job,
     )
+    monkeypatch.setattr(
+        pipeline_main,
+        "RealEstateOfficialStatsRefreshJob",
+        lambda **kwargs: official_stats_job,
+    )
+    monkeypatch.setattr(
+        pipeline_main,
+        "RealEstateCommunityComplexSeedRefreshJob",
+        lambda **kwargs: community_seed_job,
+    )
     monkeypatch.setattr(pipeline_main, "_serpapi_recent_issue_client", lambda: _FakeRecentIssueClient())
     monkeypatch.setattr(pipeline_main, "serve", fake_serve)
     monkeypatch.setattr(
@@ -485,7 +612,9 @@ def test_serve_command_can_group_full_mvp_daily_refresh_in_order(monkeypatch):
             "--enable-realestate-market-facts-refresh",
             "--realestate-deal-ym",
             "202606",
+            "--enable-realestate-official-stats-refresh",
             "--enable-realestate-daily-crawl-refresh",
+            "--enable-realestate-community-complex-seed-refresh",
             "--enable-realestate-reaction-snapshots-refresh",
             "--realestate-aliases-jsonl",
             "aliases.jsonl",
@@ -501,19 +630,195 @@ def test_serve_command_can_group_full_mvp_daily_refresh_in_order(monkeypatch):
     daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
     assert [name for name, _step in daily_job.steps] == [
         "market_facts",
+        "official_stats",
         "community_crawl",
+        "community_complex_seed",
         "reaction_snapshots",
         "recent_issues",
         "evidence_logs",
         "map_layers",
     ]
-    assert daily_job.steps[1][1].pipeline is pipeline
+    assert daily_job.steps[2][1].pipeline is pipeline
+
+
+def test_serve_command_can_insert_complex_registry_before_reaction_snapshots(monkeypatch):
+    captured = {}
+    pipeline = _FakePipeline()
+    spring_client = _FakeSpringClient()
+    market_job = _FakeRefreshJob()
+    official_stats_job = _FakeRefreshJob()
+    complex_registry_job = _FakeRefreshJob()
+    reaction_job = _FakeRefreshJob()
+    reaction_kwargs = {}
+
+    async def fake_serve(*args, **kwargs):
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: pipeline)
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(
+        pipeline_main,
+        "build_real_estate_market_facts_refresh_job",
+        lambda **kwargs: market_job,
+    )
+    monkeypatch.setattr(
+        pipeline_main,
+        "build_real_estate_reaction_snapshot_refresh_job",
+        lambda **kwargs: reaction_kwargs.update(kwargs) or reaction_job,
+    )
+    monkeypatch.setattr(
+        pipeline_main,
+        "RealEstateOfficialStatsRefreshJob",
+        lambda **kwargs: official_stats_job,
+    )
+    monkeypatch.setattr(
+        pipeline_main,
+        "RealEstateComplexRegistryRefreshJob",
+        lambda **kwargs: complex_registry_job,
+    )
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-market-facts-refresh",
+            "--realestate-deal-ym",
+            "202606",
+            "--enable-realestate-official-stats-refresh",
+            "--enable-realestate-complex-registry-refresh",
+            "--enable-realestate-daily-crawl-refresh",
+            "--enable-realestate-reaction-snapshots-refresh",
+            "--realestate-use-backend-aliases",
+            "--realestate-use-backend-target-edges",
+            "--realestate-use-backend-community-posts",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    assert [name for name, _step in daily_job.steps] == [
+        "market_facts",
+        "official_stats",
+        "complex_registry",
+        "community_crawl",
+        "reaction_snapshots",
+    ]
+    assert reaction_kwargs["alias_loader"] is not None
+    assert reaction_kwargs["target_edge_loader"] is not None
+    assert reaction_kwargs["target_edges_jsonl"] is None
+
+
+def test_serve_command_can_insert_community_complex_seed_before_reaction_snapshots(monkeypatch):
+    captured = {}
+    pipeline = _FakePipeline()
+    spring_client = _FakeSpringClient()
+    community_seed_job = _FakeRefreshJob()
+    reaction_job = _FakeRefreshJob()
+    reaction_kwargs = {}
+
+    async def fake_serve(*args, **kwargs):
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: pipeline)
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(
+        pipeline_main,
+        "RealEstateCommunityComplexSeedRefreshJob",
+        lambda **kwargs: community_seed_job,
+    )
+    monkeypatch.setattr(
+        pipeline_main,
+        "build_real_estate_reaction_snapshot_refresh_job",
+        lambda **kwargs: reaction_kwargs.update(kwargs) or reaction_job,
+    )
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-daily-crawl-refresh",
+            "--enable-realestate-community-complex-seed-refresh",
+            "--enable-realestate-reaction-snapshots-refresh",
+            "--realestate-use-backend-aliases",
+            "--realestate-use-backend-target-edges",
+            "--realestate-use-backend-community-posts",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    assert [name for name, _step in daily_job.steps] == [
+        "community_crawl",
+        "community_complex_seed",
+        "reaction_snapshots",
+    ]
+    assert reaction_kwargs["candidate_alias_sources"] == ("community:structured-trade-table",)
+    assert reaction_kwargs["candidate_edge_sources"] == ("community:structured-trade-table",)
+
+
+def test_complex_registry_refresh_implicitly_wires_backend_aliases_and_edges_for_reaction_snapshots(monkeypatch):
+    captured = {}
+    pipeline = _FakePipeline()
+    spring_client = _FakeSpringClient()
+    complex_registry_job = _FakeRefreshJob()
+    reaction_job = _FakeRefreshJob()
+    reaction_kwargs = {}
+
+    async def fake_serve(*args, **kwargs):
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: pipeline)
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(
+        pipeline_main,
+        "build_real_estate_reaction_snapshot_refresh_job",
+        lambda **kwargs: reaction_kwargs.update(kwargs) or reaction_job,
+    )
+    monkeypatch.setattr(
+        pipeline_main,
+        "RealEstateComplexRegistryRefreshJob",
+        lambda **kwargs: complex_registry_job,
+    )
+    monkeypatch.setattr(pipeline_main, "serve", fake_serve)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "serve",
+            "--enable-realestate-daily-refresh",
+            "--enable-realestate-complex-registry-refresh",
+            "--enable-realestate-reaction-snapshots-refresh",
+            "--realestate-use-backend-community-posts",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    daily_job = captured["kwargs"]["realestate_daily_refresh_job"]
+    assert [name for name, _step in daily_job.steps] == [
+        "complex_registry",
+        "reaction_snapshots",
+    ]
+    assert reaction_kwargs["alias_loader"] is not None
+    assert reaction_kwargs["aliases_jsonl"] is None
+    assert reaction_kwargs["target_edge_loader"] is not None
+    assert reaction_kwargs["target_edges_jsonl"] is None
 
 
 def test_realestate_daily_refresh_command_runs_once_and_prints_summary(monkeypatch, capsys):
     pipeline = _FakePipeline()
     spring_client = _DailyRefreshSpringClient()
     market_job = _FakeRefreshJob()
+    official_stats_job = _FakeRefreshJob()
     reaction_job = _FakeRefreshJob()
 
     monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: pipeline)
@@ -528,6 +833,11 @@ def test_realestate_daily_refresh_command_runs_once_and_prints_summary(monkeypat
         "build_real_estate_reaction_snapshot_refresh_job",
         lambda **kwargs: reaction_job,
     )
+    monkeypatch.setattr(
+        pipeline_main,
+        "RealEstateOfficialStatsRefreshJob",
+        lambda **kwargs: official_stats_job,
+    )
     monkeypatch.setattr(pipeline_main, "_serpapi_recent_issue_client", lambda: _FakeRecentIssueClient())
     monkeypatch.setattr(
         sys,
@@ -538,6 +848,7 @@ def test_realestate_daily_refresh_command_runs_once_and_prints_summary(monkeypat
             "--enable-realestate-market-facts-refresh",
             "--realestate-deal-ym",
             "202606",
+            "--enable-realestate-official-stats-refresh",
             "--enable-realestate-daily-crawl-refresh",
             "--enable-realestate-reaction-snapshots-refresh",
             "--realestate-aliases-jsonl",
@@ -555,6 +866,7 @@ def test_realestate_daily_refresh_command_runs_once_and_prints_summary(monkeypat
     assert payload["status"] == "OK"
     assert [step["name"] for step in payload["steps"]] == [
         "market_facts",
+        "official_stats",
         "community_crawl",
         "reaction_snapshots",
         "recent_issues",
@@ -596,6 +908,31 @@ def test_realestate_daily_refresh_command_keeps_running_when_serpapi_key_is_miss
     assert payload["steps"][2]["status"] == "OK"
 
 
+def test_realestate_top10_readiness_command_reads_backend_chain_state(monkeypatch, capsys):
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: _ReadinessSpringClient())
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-top10-readiness",
+            "--realestate-daily-reaction-window-minutes",
+            "10080",
+            "--realestate-top10-readiness-limit",
+            "10",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "READY"
+    assert payload["windowMinutes"] == 10080
+    assert payload["complexRegistry"]["marketFactBackedComplexCount"] == 1
+    assert payload["reactionSnapshots"] == {"complex": 10, "region": 10}
+    assert payload["frontTop10"]["complexOnly"] is True
+
+
 def test_serve_command_can_group_evidence_log_refresh_into_daily_refresh(monkeypatch):
     captured = {}
     spring_client = _FakeSpringClient()
@@ -615,7 +952,7 @@ def test_serve_command_can_group_evidence_log_refresh_into_daily_refresh(monkeyp
             "serve",
             "--enable-realestate-daily-refresh",
             "--enable-realestate-evidence-logs-refresh",
-            "--reaction-window-minutes",
+            "--realestate-daily-reaction-window-minutes",
             "1440",
             "--realestate-evidence-ranking-limit",
             "3",

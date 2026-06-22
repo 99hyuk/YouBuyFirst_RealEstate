@@ -252,7 +252,7 @@ const formatTickMark = (time: Time, tickMarkType: TickMarkType) => {
 };
 
 const formatSnapshotTime = (value?: string) => {
-  if (!value) return 'snapshot 대기';
+  if (!value) return '시점 대기';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
 
@@ -663,11 +663,11 @@ onBeforeUnmount(() => {
         <strong>{{ title }}</strong>
         <span>{{ providerTargetId }} · {{ chartSourceLabel }}</span>
       </div>
-      <span class="status-pill subtle">{{ props.snapshotStatus ?? 'front-only chart shell' }}</span>
+      <span class="status-pill subtle">{{ props.snapshotStatus ?? '차트 자료 수집 전' }}</span>
     </div>
 
     <div v-if="isFixtureChart" class="chart-source-warning" role="note">
-      <strong>차트 UI fixture</strong>
+      <strong>차트 데이터 수집 전</strong>
       <span>현재 화면의 가격 포인트와 날짜별 가격 범위는 실제 일자별 {{ providerTargetId }} 실거래 데이터가 아닙니다.</span>
     </div>
 
@@ -756,7 +756,7 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="chart-price-stat-strip" v-if="latest">
-      <span>{{ latest.time }}<template v-if="isFixtureChart"> · fixture</template></span>
+      <span>{{ latest.time }}<template v-if="isFixtureChart"> · 수집 전</template></span>
       <span>처음 {{ formatPrice(latest.open) }}</span>
       <span>상단 {{ formatPrice(latest.high) }}</span>
       <span>하단 {{ formatPrice(latest.low) }}</span>
@@ -777,7 +777,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="chart-axis-meta">
         <strong>{{ axisSummary.mode }} · {{ axisSummary.range }} · {{ axisSummary.count }}개</strong>
-        <em>{{ isFixtureChart ? '샘플 축' : `기준 ${formatSnapshotTime(props.snapshotAsOf)}` }}</em>
+        <em>{{ isFixtureChart ? '수집 전 축' : `기준 ${formatSnapshotTime(props.snapshotAsOf)}` }}</em>
       </div>
     </div>
 

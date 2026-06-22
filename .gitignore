@@ -30,3 +30,8 @@ artifacts/
 output/
 .playwright-mcp/
 /indicators-domestic-snapshot.md
+/dashboard-feed-title-snapshot.md
+/complex-trade-history-card.png
+
+# Local tunnel binary
+tools/cloudflared/

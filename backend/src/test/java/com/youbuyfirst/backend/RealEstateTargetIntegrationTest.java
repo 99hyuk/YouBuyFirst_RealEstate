@@ -71,6 +71,26 @@ class RealEstateTargetIntegrationTest {
     }
 
     @Test
+    void pagesMarketDataTargetsForLargeRegionExports() throws Exception {
+        ResponseEntity<String> firstPage = restTemplate.getForEntity(
+                "/internal/realestate/market-data-targets?enabled=true&limit=1&page=0",
+                String.class
+        );
+        ResponseEntity<String> secondPage = restTemplate.getForEntity(
+                "/internal/realestate/market-data-targets?enabled=true&limit=1&page=1",
+                String.class
+        );
+
+        assertThat(firstPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(secondPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode firstItem = objectMapper.readTree(firstPage.getBody()).path("items").path(0);
+        JsonNode secondItem = objectMapper.readTree(secondPage.getBody()).path("items").path(0);
+        assertThat(firstItem.path("targetId").asText() + ":" + firstItem.path("providerDataset").asText())
+                .isNotEqualTo(secondItem.path("targetId").asText() + ":" + secondItem.path("providerDataset").asText());
+    }
+
+    @Test
     void mapsMarketFactToSeededRegionWhenTargetIdIsMissing() throws Exception {
         Map<String, Object> request = Map.of(
                 "items",
@@ -154,6 +174,133 @@ class RealEstateTargetIntegrationTest {
     }
 
     @Test
+    void searchesComplexTargetsAlongsideRegionTargets() throws Exception {
+        Map<String, Object> targetRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", "complex-test-raemian-palace-search",
+                        "targetType", "complex",
+                        "displayName", "Raemian Palace Search",
+                        "slug", "raemian-palace-search",
+                        "reviewState", "approved",
+                        "dataStatus", "ok"
+                ))
+        );
+        Map<String, Object> complexRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetId", "complex-test-raemian-palace-search"),
+                        Map.entry("regionTargetId", "region-seoul-jongno"),
+                        Map.entry("legalDongCode", "1144010100"),
+                        Map.entry("jibunAddress", "test address"),
+                        Map.entry("source", "test:search"),
+                        Map.entry("markerDataStatus", "ok"),
+                        Map.entry("markerStale", false)
+                ))
+        );
+
+        ResponseEntity<String> targetResponse = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                targetRequest,
+                String.class
+        );
+        ResponseEntity<String> complexResponse = restTemplate.postForEntity(
+                "/internal/realestate/complexes",
+                complexRequest,
+                String.class
+        );
+        ResponseEntity<String> search = restTemplate.getForEntity(
+                "/api/realestate/targets/search?q=raemian&limit=5",
+                String.class
+        );
+
+        assertThat(targetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(complexResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode items = objectMapper.readTree(search.getBody()).path("items");
+        assertThat(items)
+                .filteredOn(item -> "complex-test-raemian-palace-search".equals(item.path("targetId").asText()))
+                .singleElement()
+                .satisfies(item -> {
+                    assertThat(item.path("targetType").asText()).isEqualTo("complex");
+                    assertThat(item.path("regionLevel").asText()).isEqualTo("complex");
+                    assertThat(item.path("parentTargetId").asText()).isEqualTo("region-seoul-jongno");
+                    assertThat(item.path("legalDongCode").asText()).isEqualTo("1144010100");
+                });
+    }
+
+    @Test
+    void searchesTargetsByApprovedAliases() throws Exception {
+        Map<String, Object> targetRequest = Map.of(
+                "items",
+                List.of(Map.of(
+                        "targetId", "complex-test-mapo-alias-search",
+                        "targetType", "complex",
+                        "displayName", "Mapo Raemian Prugio Alias Search",
+                        "slug", "mapo-raemian-prugio-alias-search",
+                        "reviewState", "approved",
+                        "dataStatus", "ok"
+                ))
+        );
+        Map<String, Object> complexRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetId", "complex-test-mapo-alias-search"),
+                        Map.entry("regionTargetId", "region-seoul-jongno"),
+                        Map.entry("legalDongCode", "1144010100"),
+                        Map.entry("jibunAddress", "alias search address"),
+                        Map.entry("source", "test:alias-search"),
+                        Map.entry("markerDataStatus", "ok"),
+                        Map.entry("markerStale", false)
+                ))
+        );
+        Map<String, Object> aliasRequest = Map.of(
+                "items",
+                List.of(Map.ofEntries(
+                        Map.entry("targetType", "complex"),
+                        Map.entry("targetId", "complex-test-mapo-alias-search"),
+                        Map.entry("alias", "mapo shortcut"),
+                        Map.entry("aliasType", "community_slang"),
+                        Map.entry("source", "test:alias-search"),
+                        Map.entry("confidence", 0.94),
+                        Map.entry("reviewState", "approved"),
+                        Map.entry("createdBy", "test"),
+                        Map.entry("ambiguous", false)
+                ))
+        );
+
+        ResponseEntity<String> targetResponse = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                targetRequest,
+                String.class
+        );
+        ResponseEntity<String> complexResponse = restTemplate.postForEntity(
+                "/internal/realestate/complexes",
+                complexRequest,
+                String.class
+        );
+        ResponseEntity<String> aliasResponse = restTemplate.postForEntity(
+                "/internal/realestate/aliases",
+                aliasRequest,
+                String.class
+        );
+        ResponseEntity<String> search = restTemplate.getForEntity(
+                "/api/realestate/targets/search?q={query}&limit=5",
+                String.class,
+                "mapo shortcut"
+        );
+
+        assertThat(targetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(complexResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(aliasResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode items = objectMapper.readTree(search.getBody()).path("items");
+        assertThat(items)
+                .filteredOn(item -> "complex-test-mapo-alias-search".equals(item.path("targetId").asText()))
+                .singleElement()
+                .satisfies(item -> assertThat(item.path("targetType").asText()).isEqualTo("complex"));
+    }
+
+    @Test
     void importsRegionsAndCreatesMolitMarketDataTargetsForSigungu() throws Exception {
         Map<String, Object> request = Map.of(
                 "items",
@@ -209,5 +356,58 @@ class RealEstateTargetIntegrationTest {
                 .filteredOn(item -> "region-busan-haeundae".equals(item.path("targetId").asText()))
                 .extracting(item -> item.path("providerDataset").asText())
                 .containsExactlyInAnyOrder("molit_apt_trade", "molit_apt_rent");
+    }
+
+    @Test
+    void listsImportedEupmyeondongRegionsForComplexRegistryMapping() throws Exception {
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetId", "region-test-mapo"),
+                                Map.entry("displayName", "서울특별시 마포구"),
+                                Map.entry("slug", "test-mapo"),
+                                Map.entry("regionLevel", "sigungu"),
+                                Map.entry("parentTargetId", "region-seoul"),
+                                Map.entry("legalDongCode", "11440"),
+                                Map.entry("regionCode", "11440"),
+                                Map.entry("source", "test:region-list")
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetId", "region-test-ahyeon"),
+                                Map.entry("displayName", "서울특별시 마포구 아현동"),
+                                Map.entry("slug", "test-ahyeon"),
+                                Map.entry("regionLevel", "eupmyeondong"),
+                                Map.entry("parentTargetId", "region-test-mapo"),
+                                Map.entry("legalDongCode", "1144010100"),
+                                Map.entry("regionCode", "1144010100"),
+                                Map.entry("source", "test:region-list")
+                        )
+                )
+        );
+
+        ResponseEntity<String> importResponse = restTemplate.postForEntity(
+                "/internal/realestate/regions",
+                request,
+                String.class
+        );
+        ResponseEntity<String> regions = restTemplate.getForEntity(
+                "/internal/realestate/regions?regionLevel=eupmyeondong&limit=50",
+                String.class
+        );
+
+        assertThat(importResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(regions.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode items = objectMapper.readTree(regions.getBody()).path("items");
+        assertThat(items)
+                .filteredOn(item -> "region-test-ahyeon".equals(item.path("targetId").asText()))
+                .singleElement()
+                .satisfies(item -> {
+                    assertThat(item.path("displayName").asText()).isEqualTo("서울특별시 마포구 아현동");
+                    assertThat(item.path("regionLevel").asText()).isEqualTo("eupmyeondong");
+                    assertThat(item.path("parentTargetId").asText()).isEqualTo("region-test-mapo");
+                    assertThat(item.path("legalDongCode").asText()).isEqualTo("1144010100");
+                });
     }
 }

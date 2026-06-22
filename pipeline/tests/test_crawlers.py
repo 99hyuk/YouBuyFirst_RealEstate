@@ -2,11 +2,13 @@ from pathlib import Path
 
 import pytest
 
+from youbuyfirst_pipeline import main as pipeline_main
 from youbuyfirst_pipeline.board_stream import BoardStreamCrawler, BoardWatermark
 from youbuyfirst_pipeline.crawl_targets import CrawlTarget
 from youbuyfirst_pipeline.crawlers.base import FetchResult
 from youbuyfirst_pipeline.crawlers.dcinside import DcinsideAdapter
 from youbuyfirst_pipeline.crawlers.fmkorea import FmkoreaAdapter
+from youbuyfirst_pipeline.crawlers.generic_board import GenericLinkBoardAdapter
 from youbuyfirst_pipeline.crawlers.ppomppu import PpomppuAdapter
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "crawlers"
@@ -74,6 +76,54 @@ def test_fmkorea_query_links_skip_reply_links_and_keep_counts():
     assert posts[0].comment_count == 3
     assert posts[0].view_count == 121
     assert posts[0].recommend_count == 2
+
+
+def test_generic_link_board_parses_clien_mobile_board_links():
+    html = """
+    <section>
+      <a href="/service/board/park/19210348?od=T31&po=0&category=0&groupCd=">
+        꼭 부동산문제를 공급수요와 금리 대출로만 해결해야 할까요? 2 2 13:54 182
+      </a>
+      <a href="/service/board/park">목록</a>
+    </section>
+    """
+
+    posts = GenericLinkBoardAdapter.parse_list_html(
+        html,
+        source="CLIEN",
+        board_id="park",
+        base_url="https://m.clien.net/service/board/park",
+    )
+
+    assert len(posts) == 1
+    assert posts[0].source == "CLIEN"
+    assert posts[0].board_id == "park"
+    assert posts[0].external_id == "CLIEN-park-19210348"
+    assert posts[0].title == "꼭 부동산문제를 공급수요와 금리 대출로만 해결해야 할까요?"
+    assert posts[0].url == "https://m.clien.net/service/board/park/19210348?od=T31&po=0&category=0&groupCd="
+
+
+def test_generic_link_board_parses_82cook_freeboard_links():
+    html = """
+    <table>
+      <tr><td><a href="/entiz/read.php?num=4202197">전세 때문에 이사 고민이에요</a></td></tr>
+      <tr><td><a href="/entiz/enti.php?bn=15">목록</a></td></tr>
+    </table>
+    """
+
+    posts = GenericLinkBoardAdapter.parse_list_html(
+        html,
+        source="COOK82",
+        board_id="freeboard",
+        base_url="https://www.82cook.com/entiz/enti.php?bn=15",
+    )
+
+    assert len(posts) == 1
+    assert posts[0].source == "COOK82"
+    assert posts[0].board_id == "freeboard"
+    assert posts[0].external_id == "COOK82-freeboard-4202197"
+    assert posts[0].title == "전세 때문에 이사 고민이에요"
+    assert posts[0].url == "https://www.82cook.com/entiz/read.php?num=4202197"
 
 
 def test_dcinside_fixture_parses_board_counts_and_skips_notice_rows():
@@ -301,6 +351,32 @@ async def test_fmkorea_fetch_stream_uses_browser_fetch_by_default_without_http_f
 
 
 @pytest.mark.anyio
+async def test_main_pipeline_fmkorea_adapter_uses_http_fetch_by_default(monkeypatch):
+    page = """
+    <table><tr>
+      <td class="title"><a href="/1002">new thread</a></td>
+      <td class="author"><span>writer</span></td>
+      <td class="time">09:20</td>
+    </tr></table>
+    """
+    fetcher = FakeFetcher({"https://www.fmkorea.com/realestate": page})
+    target = CrawlTarget.community_board("FMKOREA", board_id="realestate", url="https://www.fmkorea.com/realestate")
+    monkeypatch.delenv("CRAWLER_FMKOREA_USE_BROWSER_FETCH", raising=False)
+
+    adapter = pipeline_main._adapters_from_targets(
+        [target],
+        fetcher,
+        stream_crawler=BoardStreamCrawler(max_pages_per_run=1),
+    )[0]
+
+    result = await adapter.fetch_stream()
+
+    assert [post.external_id for post in result.posts] == ["FMKOREA-1002"]
+    assert fetcher.urls == ["https://www.fmkorea.com/realestate"]
+    assert fetcher.browser_urls == []
+
+
+@pytest.mark.anyio
 async def test_dcinside_fetch_stream_walks_pages_until_duplicate():
     first_page = """
     <table><tr class="ub-content us-post">
@@ -388,3 +464,130 @@ async def test_ppomppu_fetch_stream_walks_pages_until_duplicate():
     ]
     assert [post.external_id for post in result.posts] == ["PPOMPPU-house-2"]
     assert result.coverage.duplicate_stop is True
+
+
+@pytest.mark.anyio
+async def test_ppomppu_fetch_stream_replaces_existing_mobile_page_param():
+    first_page = """
+    <table><tr>
+      <td>2</td>
+      <td><a href="/new/bbs_view.php?id=house&no=2&page=1">new thread</a></td>
+      <td>writer</td>
+      <td>09:20</td>
+      <td>1 - 0</td>
+      <td>10</td>
+    </tr></table>
+    """
+    second_page = """
+    <table><tr>
+      <td>1</td>
+      <td><a href="/new/bbs_view.php?id=house&no=1&page=2">old thread</a></td>
+      <td>writer</td>
+      <td>09:19</td>
+      <td>0 - 0</td>
+      <td>9</td>
+    </tr></table>
+    """
+    fetcher = FakeFetcher(
+        {
+            "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1": first_page,
+            "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=2": second_page,
+        }
+    )
+    target = CrawlTarget.community_board(
+        "PPOMPPU",
+        board_id="house",
+        url="https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1",
+    )
+    adapter = PpomppuAdapter(fetcher, target=target, stream_crawler=BoardStreamCrawler(max_pages_per_run=5))
+
+    result = await adapter.fetch_stream(BoardWatermark(last_seen_external_id="PPOMPPU-house-1"))
+
+    assert fetcher.urls == [
+        "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1",
+        "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=2",
+    ]
+    assert [post.external_id for post in result.posts] == ["PPOMPPU-house-2"]
+    assert result.coverage.duplicate_stop is True
+
+
+def test_ppomppu_mobile_old_date_uses_two_digit_hyphen_date():
+    html = """
+    <ul>
+      <li>
+        <a href="/new/bbs_view.php?id=house&no=250817&page=160">
+          <strong>04월 21일 서울특별시 신고가 자료입니다.</strong>
+          <span class="times"><time>26-04-21</time> | <span class="rec_view"><span class="view">1713</span></span></span>
+          <span class="names">writer</span>
+        </a>
+      </li>
+    </ul>
+    """
+
+    posts = PpomppuAdapter.parse_list_html(
+        html,
+        board_id="house",
+        base_url="https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=160",
+    )
+
+    assert posts[0].published_at.isoformat() == "2026-04-20T15:00:00+00:00"
+
+
+@pytest.mark.anyio
+async def test_ppomppu_fetch_stream_enriches_limited_detail_content_snippets():
+    list_page = """
+    <table>
+      <tr>
+        <td>253287</td>
+        <td><a href="bbs_view.php?id=house&no=253287&page=1">weekly apartment trade list</a></td>
+        <td>writer</td>
+        <td>09:20</td>
+        <td>1 - 0</td>
+        <td>10</td>
+      </tr>
+      <tr>
+        <td>253288</td>
+        <td><a href="bbs_view.php?id=house&no=253288&page=1">general real estate talk</a></td>
+        <td>writer</td>
+        <td>09:21</td>
+        <td>0 - 0</td>
+        <td>9</td>
+      </tr>
+    </table>
+    """
+    detail_page = """
+    <html>
+      <body>
+        <div id="KH_Content" class="cont">
+          Mapo Raemian Prugio Ricenz Helio City apartment transaction rows.
+        </div>
+      </body>
+    </html>
+    """
+    fetcher = FakeFetcher(
+        {
+            "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1": list_page,
+            "https://m.ppomppu.co.kr/new/bbs_view.php?id=house&no=253287&page=1": detail_page,
+        }
+    )
+    target = CrawlTarget.community_board(
+        "PPOMPPU",
+        board_id="house",
+        url="https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1",
+    )
+    adapter = PpomppuAdapter(
+        fetcher,
+        target=target,
+        stream_crawler=BoardStreamCrawler(max_pages_per_run=1),
+        detail_content_max_posts=1,
+        detail_content_max_chars=40,
+    )
+
+    result = await adapter.fetch_stream()
+
+    assert fetcher.urls == [
+        "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1",
+        "https://m.ppomppu.co.kr/new/bbs_view.php?id=house&no=253287&page=1",
+    ]
+    assert result.posts[0].content == "Mapo Raemian Prugio Ricenz Helio City"
+    assert result.posts[1].content == ""

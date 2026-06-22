@@ -4,7 +4,7 @@ import sys
 from datetime import date, datetime, timezone
 
 from youbuyfirst_pipeline import main as pipeline_main
-from youbuyfirst_pipeline.realestate_public_data import RealEstateMarketFact
+from youbuyfirst_pipeline.realestate_public_data import PublicDataProviderError, RealEstateMarketFact
 
 
 class _FakeMolitClient:
@@ -40,12 +40,33 @@ class _FakeMolitClient:
 class _FakeSpringClient:
     def __init__(self) -> None:
         self.raw_ingestions = []
+        self.market_facts = []
         self.promote_requests = []
         self.market_data_targets = []
         self.import_runs = []
+        self.targets = []
+        self.complexes = []
+        self.aliases = []
+        self.target_edges = []
+        self.regions = []
+
+    def publish_real_estate_market_facts(self, facts) -> None:
+        self.market_facts.extend(fact.to_ingestion_dict() for fact in facts)
 
     def publish_real_estate_public_data_raw_ingestion(self, ingestion) -> None:
         self.raw_ingestions.append(ingestion.to_request_dict())
+
+    def publish_real_estate_targets(self, targets) -> None:
+        self.targets.extend(targets)
+
+    def publish_real_estate_complexes(self, complexes) -> None:
+        self.complexes.extend(complexes)
+
+    def publish_real_estate_aliases(self, aliases) -> None:
+        self.aliases.extend(aliases)
+
+    def publish_real_estate_target_edges(self, edges) -> None:
+        self.target_edges.extend(edges)
 
     def promote_real_estate_public_data_staging(
         self,
@@ -67,6 +88,11 @@ class _FakeSpringClient:
 
     def list_real_estate_market_data_targets(self, enabled=True):
         return self.market_data_targets
+
+    def list_real_estate_regions(self, *, region_level=None, limit=500):
+        if region_level is None:
+            return self.regions
+        return [region for region in self.regions if region.get("regionLevel") == region_level]
 
     def list_real_estate_public_data_import_runs(
         self,
@@ -112,6 +138,38 @@ def test_realestate_market_facts_raw_push_command_publishes_raw_ingestion(monkey
     assert payload["run"]["runKey"] == "molit_apt_trade:11110:202606"
     assert payload["items"][0]["providerObjectId"] == "molit_apt_trade:11110:202606:raw-1"
     assert payload["items"][0]["staging"]["factType"] == "apt_trade"
+
+
+def test_reb_rone_main_snapshot_push_command_publishes_market_facts(monkeypatch):
+    fake_client = _FakeSpringClient()
+    fixed_fact = RealEstateMarketFact(
+        fact_type="sale_price_index_change_pct",
+        provider="reb",
+        provider_dataset="reb_rone_main_snapshot",
+        provider_object_id="reb_rone_main_snapshot:A_2024_00045:202605",
+        legal_dong_code="00000",
+        observed_at=date(2026, 5, 1),
+        as_of=date(2026, 5, 1),
+        ingested_at=datetime(2026, 6, 15, 1, 0, tzinfo=timezone.utc),
+        value_json={"regionName": "전국", "metricName": "매매가격지수 변동률", "value": 0.25, "unit": "%"},
+    )
+    monkeypatch.setattr(pipeline_main, "build_reb_rone_main_snapshot_client_from_env", lambda: object())
+    monkeypatch.setattr(pipeline_main, "collect_reb_rone_main_snapshot_facts", lambda _provider: [fixed_fact])
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-reb-rone-main-snapshot-push",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    assert len(fake_client.market_facts) == 1
+    assert fake_client.market_facts[0]["factType"] == "sale_price_index_change_pct"
+    assert fake_client.market_facts[0]["providerDataset"] == "reb_rone_main_snapshot"
 
 
 def test_realestate_market_facts_raw_push_command_backfills_multiple_lawd_codes_and_months(monkeypatch):
@@ -268,6 +326,7 @@ def test_realestate_market_facts_raw_push_prints_execution_manifest(monkeypatch,
         "publishedRuns": 2,
         "publishedItems": 1,
         "emptyRuns": 1,
+        "failedRuns": 0,
         "promotedRuns": 2,
         "items": [
             {
@@ -278,6 +337,8 @@ def test_realestate_market_facts_raw_push_prints_execution_manifest(monkeypatch,
                 "fetchedFacts": 1,
                 "rawItems": 1,
                 "empty": False,
+                "status": "completed",
+                "providerError": None,
                 "promoted": True,
                 "promotedFacts": 1,
             },
@@ -289,6 +350,8 @@ def test_realestate_market_facts_raw_push_prints_execution_manifest(monkeypatch,
                 "fetchedFacts": 0,
                 "rawItems": 0,
                 "empty": True,
+                "status": "completed",
+                "providerError": None,
                 "promoted": True,
                 "promotedFacts": 1,
             },
@@ -324,6 +387,58 @@ def test_realestate_market_facts_raw_push_records_empty_provider_result(monkeypa
     assert payload["run"]["runKey"] == "molit_apt_rent:11680:202605"
     assert payload["run"]["status"] == "completed"
     assert payload["items"] == []
+
+
+def test_realestate_market_facts_raw_push_records_provider_error_and_continues(monkeypatch, capsys):
+    class PartiallyFailingMolitClient(_FakeMolitClient):
+        def fetch_apt_trades(self, lawd_code, deal_ym, page_no=1, num_rows=100, now=None):
+            self.trade_calls.append((lawd_code, deal_ym))
+            if lawd_code == "11110":
+                raise PublicDataProviderError("MOLIT public data request failed: endpoint status=502")
+            return super().fetch_apt_trades(lawd_code, deal_ym, page_no, num_rows, now)
+
+    fake_client = _FakeSpringClient()
+    provider = PartiallyFailingMolitClient()
+    monkeypatch.setattr(pipeline_main, "build_molit_public_data_client_from_env", lambda: provider)
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-market-facts-raw-push",
+            "--realestate-lawd-codes",
+            "11110",
+            "11680",
+            "--realestate-start-ym",
+            "202606",
+            "--realestate-end-ym",
+            "202606",
+            "--realestate-datasets",
+            "trade",
+            "--realestate-promote-after-raw-push",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["publishedRuns"] == 2
+    assert payload["failedRuns"] == 1
+    assert payload["promotedRuns"] == 1
+    assert [item["status"] for item in payload["items"]] == ["provider_error", "completed"]
+    assert "status=502" in payload["items"][0]["providerError"]
+    assert fake_client.raw_ingestions[0]["run"]["status"] == "provider_error"
+    assert "status=502" in fake_client.raw_ingestions[0]["run"]["errorMessage"]
+    assert fake_client.raw_ingestions[1]["run"]["status"] == "completed"
+    assert fake_client.promote_requests == [
+        {
+            "provider_dataset": "molit_apt_trade",
+            "run_key": "molit_apt_trade:11680:202606",
+            "validation_status": "valid",
+            "limit": 1000,
+        }
+    ]
 
 
 def test_realestate_market_facts_raw_push_accepts_public_data_pagination_options(monkeypatch, capsys):
@@ -436,6 +551,7 @@ def test_realestate_market_facts_raw_push_skips_completed_runs_before_building_p
         "publishedRuns": 0,
         "publishedItems": 0,
         "emptyRuns": 0,
+        "failedRuns": 0,
         "promotedRuns": 0,
         "items": [],
     }
@@ -473,6 +589,155 @@ def test_realestate_market_facts_promote_staging_command_calls_backend(monkeypat
         }
     ]
     assert '"promotedFacts": 1' in capsys.readouterr().out
+
+
+def test_realestate_complex_registry_push_builds_complex_aliases_and_edges_from_market_facts(monkeypatch, tmp_path):
+    market_facts_path = tmp_path / "market-facts.jsonl"
+    market_facts_path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "factType": "apt_trade",
+                        "legalDongCode": "11110",
+                        "valueJson": {
+                            "apartmentName": "Sajik Palace",
+                            "legalDongName": "Sajik-dong",
+                            "jibun": "1-1",
+                            "builtYear": 2015,
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "factType": "apt_rent",
+                        "legalDongCode": "11110",
+                        "valueJson": {
+                            "apartmentName": "Sajik Palace",
+                            "legalDongName": "Sajik-dong",
+                            "jibun": "1-1",
+                            "depositAmountManwon": 45000,
+                        },
+                    }
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    fake_client = _FakeSpringClient()
+    fake_client.market_data_targets = [
+        {
+            "targetId": "region-seoul-jongno",
+            "provider": "molit",
+            "providerDataset": "molit_apt_trade",
+            "lawdCode": "11110",
+            "enabled": True,
+        }
+    ]
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-complex-registry-push",
+            "--realestate-market-facts-jsonl",
+            str(market_facts_path),
+            "--realestate-use-backend-targets",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    assert len(fake_client.targets) == 1
+    assert fake_client.targets[0]["targetType"] == "complex"
+    assert fake_client.complexes == [
+        {
+            "targetId": fake_client.targets[0]["targetId"],
+            "regionTargetId": "region-seoul-jongno",
+            "legalDongCode": "11110",
+            "roadAddress": None,
+            "jibunAddress": "Sajik-dong 1-1",
+            "normalizedAddress": "11110Sajikdong11SajikPalace",
+            "builtYear": 2015,
+            "householdCount": None,
+            "source": "molit:market-fact",
+            "markerDataStatus": "partial",
+            "markerStale": True,
+        }
+    ]
+    assert [alias["alias"] for alias in fake_client.aliases] == [
+        "Sajik Palace",
+        "Sajik-dong Sajik Palace",
+    ]
+    assert fake_client.target_edges == [
+        {
+            "fromTargetType": "region",
+            "fromTargetId": "region-seoul-jongno",
+            "toTargetType": "complex",
+            "toTargetId": fake_client.targets[0]["targetId"],
+            "edgeType": "contains",
+            "confidence": 0.74,
+            "source": "molit:market-fact",
+            "reviewState": "approved",
+        }
+    ]
+
+
+def test_realestate_complex_registry_push_links_complex_to_eupmyeondong_region(monkeypatch, tmp_path):
+    market_facts_path = tmp_path / "market-facts.jsonl"
+    market_facts_path.write_text(
+        json.dumps(
+            {
+                "factType": "apt_trade",
+                "legalDongCode": "11440",
+                "valueJson": {
+                    "apartmentName": "마포 래미안 푸르지오",
+                    "legalDongName": "아현동",
+                    "jibun": "777",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    fake_client = _FakeSpringClient()
+    fake_client.market_data_targets = [
+        {
+            "targetId": "region-seoul-mapo",
+            "provider": "molit",
+            "providerDataset": "molit_apt_trade",
+            "lawdCode": "11440",
+            "enabled": True,
+        }
+    ]
+    fake_client.regions = [
+        {
+            "targetId": "region-1144010100",
+            "targetType": "region",
+            "displayName": "서울특별시 마포구 아현동",
+            "regionLevel": "eupmyeondong",
+            "parentTargetId": "region-seoul-mapo",
+            "legalDongCode": "1144010100",
+            "regionCode": "1144010100",
+        }
+    ]
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-complex-registry-push",
+            "--realestate-market-facts-jsonl",
+            str(market_facts_path),
+            "--realestate-use-backend-targets",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    assert fake_client.complexes[0]["regionTargetId"] == "region-1144010100"
+    assert fake_client.target_edges[0]["fromTargetId"] == "region-1144010100"
 
 
 def test_realestate_official_apartment_prices_raw_push_streams_csv_batches(monkeypatch, tmp_path):

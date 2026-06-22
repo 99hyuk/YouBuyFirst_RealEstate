@@ -118,14 +118,16 @@ public class RealEstateAliasService {
             String targetType,
             String reviewState,
             Boolean ambiguous,
-            int limit
+            int limit,
+            int page
     ) {
         int boundedLimit = Math.max(1, Math.min(limit, 1000));
+        int boundedPage = Math.max(0, page);
         return aliasRepository.findAliasesForExport(
                         trimToNull(targetType),
                         trimToNull(reviewState),
                         ambiguous,
-                        PageRequest.of(0, boundedLimit)
+                        PageRequest.of(boundedPage, boundedLimit)
                 )
                 .stream()
                 .map(this::toResponse)

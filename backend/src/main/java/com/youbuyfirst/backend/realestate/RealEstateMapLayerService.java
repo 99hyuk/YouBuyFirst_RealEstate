@@ -33,9 +33,20 @@ import java.util.Optional;
 @Service
 public class RealEstateMapLayerService {
 
-    private static final List<String> PERIOD_ORDER = List.of("week", "month", "halfYear");
+    private static final List<String> PERIOD_ORDER = List.of("month", "quarter", "halfYear");
     private static final String MAP_REFRESH_PROVIDER = "real_estate_map_layer_refresh";
     private static final String MAP_REFRESH_SOURCE_LABEL = "실거래 market facts + 반응 snapshot";
+    private static final String REACTION_ONLY_PROVIDER = "real_estate_reaction_snapshots";
+    private static final String REACTION_ONLY_SOURCE_LABEL = "커뮤니티 반응 heat · market fact 수집 전";
+    private static final String OFFICIAL_PRICE_INDEX_FACT_TYPE = "sale_price_index_change_pct";
+    private static final String OFFICIAL_PRICE_INDEX_MONTHLY_DATASET = "reb_rone_monthly_apt_sale_price_index";
+    private static final String OFFICIAL_PRICE_INDEX_REGIONAL_MAP_DATASET = "reb_rone_regional_price_change";
+    private static final List<String> OFFICIAL_PRICE_INDEX_PROVIDER_DATASETS = List.of(
+            OFFICIAL_PRICE_INDEX_MONTHLY_DATASET,
+            OFFICIAL_PRICE_INDEX_REGIONAL_MAP_DATASET
+    );
+    private static final String OFFICIAL_PRICE_INDEX_SOURCE_LABEL =
+            "한국부동산원 R-ONE 전국주택가격동향조사 매매가격지수 변동률";
     private static final BigDecimal EXTREME_CHANGE_THRESHOLD_PCT = BigDecimal.valueOf(50);
 
     private final MapFeatureRepository mapFeatureRepository;
@@ -69,7 +80,9 @@ public class RealEstateMapLayerService {
         List<MapLayerSnapshotRow> rows = mapFeatureRepository.findLatestLayerRows(
                 normalizedLayerType,
                 parentRegionCode
-        );
+        ).stream()
+                .filter(RealEstateMapLayerService::isPriceMapLayerRow)
+                .toList();
         Map<String, TargetAccumulator> targets = new LinkedHashMap<>();
 
         for (MapLayerSnapshotRow row : rows) {
@@ -141,8 +154,8 @@ public class RealEstateMapLayerService {
                         value.sampleCount(),
                         value.confidence(),
                         value.asOf(),
-                        MAP_REFRESH_PROVIDER,
-                        MAP_REFRESH_SOURCE_LABEL,
+                        value.provider(),
+                        value.sourceLabel(),
                         value.dataStatus(),
                         value.stale(),
                         now
@@ -162,6 +175,12 @@ public class RealEstateMapLayerService {
     }
 
     private Optional<MapLayerComputation> computeSnapshot(MapFeature feature, String period, Instant asOf) {
+        Optional<MapLayerComputation> officialPriceIndex = computeOfficialPriceIndexSnapshot(feature, period, asOf);
+        if (officialPriceIndex.isPresent()) {
+            return officialPriceIndex;
+        }
+        boolean priceIndexPeriod = officialPriceIndexWindowMonths(period).isPresent();
+
         LocalDate endDate = LocalDate.ofInstant(asOf, ZoneOffset.UTC);
         LocalDate startDate = endDate.minusDays(periodDays(period));
         List<RealEstateMarketFact> facts = findMapLayerOkFacts(feature, startDate, endDate);
@@ -173,14 +192,20 @@ public class RealEstateMapLayerService {
                     endDate
             );
             if (fallbackEndDate.isEmpty()) {
-                return Optional.empty();
+                if (priceIndexPeriod) {
+                    return Optional.empty();
+                }
+                return computeReactionOnlySnapshot(feature, asOf);
             }
             endDate = fallbackEndDate.get();
             startDate = endDate.minusDays(periodDays(period));
             facts = findMapLayerOkFacts(feature, startDate, endDate);
             staleWindow = true;
             if (facts.size() < 2) {
-                return Optional.empty();
+                if (priceIndexPeriod) {
+                    return Optional.empty();
+                }
+                return computeReactionOnlySnapshot(feature, asOf);
             }
         }
 
@@ -220,8 +245,129 @@ public class RealEstateMapLayerService {
                 confidence,
                 snapshotAsOf,
                 weak ? "partial" : "ok",
-                weak
+                weak,
+                MAP_REFRESH_PROVIDER,
+                MAP_REFRESH_SOURCE_LABEL
         ));
+    }
+
+    private Optional<MapLayerComputation> computeOfficialPriceIndexSnapshot(
+            MapFeature feature,
+            String period,
+            Instant asOf
+    ) {
+        Optional<Integer> windowMonths = officialPriceIndexWindowMonths(period);
+        if (windowMonths.isEmpty()) {
+            return Optional.empty();
+        }
+        LocalDate endDate = LocalDate.ofInstant(asOf, ZoneOffset.UTC);
+        List<String> lookupCodes = officialPriceIndexLookupCodes(feature);
+        List<RealEstateMarketFact> facts = marketFactRepository.findLatestOfficialMapLayerFacts(
+                        feature.getTargetId(),
+                        lookupCodes,
+                        OFFICIAL_PRICE_INDEX_FACT_TYPE,
+                        OFFICIAL_PRICE_INDEX_PROVIDER_DATASETS,
+                        endDate,
+                        PageRequest.of(0, Math.max(8, windowMonths.get() * OFFICIAL_PRICE_INDEX_PROVIDER_DATASETS.size() * 3))
+                ).stream()
+                .filter(fact -> "ok".equals(fact.getDataStatus()))
+                .collect(java.util.stream.Collectors.toMap(
+                        RealEstateMarketFact::getObservedAt,
+                        fact -> fact,
+                        this::preferOfficialPriceIndexFact,
+                        LinkedHashMap::new
+                ))
+                .values()
+                .stream()
+                .limit(windowMonths.get())
+                .toList();
+        if (facts.size() < windowMonths.get()) {
+            return Optional.empty();
+        }
+
+        BigDecimal cumulativeMultiplier = BigDecimal.ONE;
+        for (RealEstateMarketFact fact : facts) {
+            Optional<BigDecimal> changePct = marketFactDecimalValue(fact, "value");
+            if (changePct.isEmpty()) {
+                return Optional.empty();
+            }
+            cumulativeMultiplier = cumulativeMultiplier.multiply(
+                    BigDecimal.ONE.add(changePct.get().divide(BigDecimal.valueOf(100), 8, RoundingMode.HALF_UP))
+            );
+        }
+
+        RealEstateMarketFact latestFact = facts.get(0);
+        BigDecimal confidence = facts.stream()
+                .map(this::marketFactConfidence)
+                .min(Comparator.naturalOrder())
+                .orElse(BigDecimal.ONE.setScale(4, RoundingMode.HALF_UP));
+        boolean stale = facts.stream().anyMatch(RealEstateMarketFact::isStale);
+        int sampleCount = facts.stream()
+                .mapToInt(this::marketFactSampleCount)
+                .sum();
+        BigDecimal changePct = cumulativeMultiplier.subtract(BigDecimal.ONE)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(4, RoundingMode.HALF_UP);
+
+        return Optional.of(new MapLayerComputation(
+                changePct,
+                sampleCount,
+                confidence,
+                latestFact.getAsOf().atStartOfDay().toInstant(ZoneOffset.UTC),
+                stale ? "partial" : "ok",
+                stale,
+                latestFact.getProvider(),
+                marketFactSourceLabel(latestFact)
+        ));
+    }
+
+    private List<String> officialPriceIndexLookupCodes(MapFeature feature) {
+        List<String> lookupCodes = new ArrayList<>();
+        regionRepository.findById(feature.getTargetId()).ifPresent(region -> {
+            addLookupCode(lookupCodes, region.getLegalDongCode());
+        });
+        if (lookupCodes.isEmpty()) {
+            lookupCodes.add("__none__");
+        }
+        return lookupCodes;
+    }
+
+    private static void addLookupCode(List<String> lookupCodes, String value) {
+        String trimmed = trimToNull(value);
+        if (trimmed != null && !lookupCodes.contains(trimmed)) {
+            lookupCodes.add(trimmed);
+        }
+    }
+
+    private static Optional<Integer> officialPriceIndexWindowMonths(String period) {
+        return switch (period) {
+            case "month" -> Optional.of(1);
+            case "quarter" -> Optional.of(3);
+            case "halfYear" -> Optional.of(6);
+            default -> Optional.empty();
+        };
+    }
+
+    private RealEstateMarketFact preferOfficialPriceIndexFact(
+            RealEstateMarketFact current,
+            RealEstateMarketFact candidate
+    ) {
+        int currentPriority = officialPriceIndexDatasetPriority(current.getProviderDataset());
+        int candidatePriority = officialPriceIndexDatasetPriority(candidate.getProviderDataset());
+        if (candidatePriority != currentPriority) {
+            return candidatePriority < currentPriority ? candidate : current;
+        }
+        return candidate.getIngestedAt().isAfter(current.getIngestedAt()) ? candidate : current;
+    }
+
+    private static int officialPriceIndexDatasetPriority(String providerDataset) {
+        if (OFFICIAL_PRICE_INDEX_MONTHLY_DATASET.equals(providerDataset)) {
+            return 0;
+        }
+        if (OFFICIAL_PRICE_INDEX_REGIONAL_MAP_DATASET.equals(providerDataset)) {
+            return 1;
+        }
+        return 9;
     }
 
     private List<RealEstateMarketFact> findMapLayerOkFacts(
@@ -245,6 +391,38 @@ public class RealEstateMapLayerService {
                 asOf,
                 PageRequest.of(0, 1)
         ).stream().findFirst();
+    }
+
+    private Optional<MapLayerComputation> computeReactionOnlySnapshot(MapFeature feature, Instant asOf) {
+        return latestReactionSnapshot(feature.getTargetId(), asOf)
+                .map(snapshot -> new MapLayerComputation(
+                        reactionChangePct(snapshot),
+                        snapshot.getMentionCount(),
+                        BigDecimal.valueOf(snapshot.getConfidence()).setScale(4, RoundingMode.HALF_UP),
+                        snapshot.getAsOf(),
+                        "partial",
+                        snapshot.isStale(),
+                        REACTION_ONLY_PROVIDER,
+                        REACTION_ONLY_SOURCE_LABEL
+                ));
+    }
+
+    private static BigDecimal reactionChangePct(RealEstateReactionSnapshot snapshot) {
+        double directionScore = snapshot.getExpectationScore() - snapshot.getConcernScore();
+        double deltaScore = mentionDeltaPct(snapshot) / 100.0;
+        double signedScore = directionScore == 0
+                ? deltaScore
+                : directionScore * 0.7 + deltaScore * 0.3;
+        double capped = Math.max(-0.65, Math.min(0.65, signedScore));
+        return BigDecimal.valueOf(capped).setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private static double mentionDeltaPct(RealEstateReactionSnapshot snapshot) {
+        int previous = snapshot.getPreviousMentionCount();
+        if (previous <= 0) {
+            return snapshot.getMentionCount() > 0 ? 100 : 0;
+        }
+        return ((double) snapshot.getMentionCount() - previous) * 100.0 / previous;
     }
 
     private BigDecimal averageDealAmount(List<RealEstateMarketFact> facts, LocalDate observedAt) {
@@ -282,6 +460,66 @@ public class RealEstateMapLayerService {
         }
     }
 
+    private Optional<BigDecimal> marketFactDecimalValue(RealEstateMarketFact fact, String fieldName) {
+        try {
+            JsonNode root = objectMapper.readTree(fact.getValueJson());
+            JsonNode value = root.path(fieldName);
+            if (value.isNumber()) {
+                return Optional.of(BigDecimal.valueOf(value.asDouble()));
+            }
+            if (value.isTextual()) {
+                return parseDecimal(value.asText());
+            }
+            return Optional.empty();
+        } catch (JsonProcessingException exc) {
+            return Optional.empty();
+        }
+    }
+
+    private int marketFactSampleCount(RealEstateMarketFact fact) {
+        try {
+            JsonNode root = objectMapper.readTree(fact.getValueJson());
+            JsonNode sampleCount = root.path("sampleCount");
+            if (sampleCount.isInt() && sampleCount.asInt() > 0) {
+                return sampleCount.asInt();
+            }
+        } catch (JsonProcessingException ignored) {
+            // Fall through to the official statistic default.
+        }
+        return 1;
+    }
+
+    private BigDecimal marketFactConfidence(RealEstateMarketFact fact) {
+        try {
+            JsonNode root = objectMapper.readTree(fact.getValueJson());
+            JsonNode confidence = root.path("confidence");
+            if (confidence.isNumber()) {
+                return BigDecimal.valueOf(confidence.asDouble()).setScale(4, RoundingMode.HALF_UP);
+            }
+            if (confidence.isTextual()) {
+                return parseDecimal(confidence.asText())
+                        .map(value -> value.setScale(4, RoundingMode.HALF_UP))
+                        .orElse(BigDecimal.ONE.setScale(4, RoundingMode.HALF_UP));
+            }
+        } catch (JsonProcessingException ignored) {
+            // Fall through to the official statistic default.
+        }
+        return BigDecimal.ONE.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private String marketFactSourceLabel(RealEstateMarketFact fact) {
+        try {
+            JsonNode root = objectMapper.readTree(fact.getValueJson());
+            JsonNode sourceLabel = root.path("sourceLabel");
+            if (sourceLabel.isTextual() && !sourceLabel.asText().isBlank()) {
+                return sourceLabel.asText();
+            }
+        } catch (JsonProcessingException ignored) {
+            // Fall through to the official source label default.
+        }
+        return OFFICIAL_PRICE_INDEX_SOURCE_LABEL;
+    }
+
     private Optional<BigDecimal> parseDecimal(String value) {
         String normalized = value == null ? "" : value.replace(",", "").trim();
         if (normalized.isBlank()) {
@@ -301,8 +539,8 @@ public class RealEstateMapLayerService {
 
     private static long periodDays(String period) {
         return switch (period) {
-            case "week" -> 7L;
             case "month" -> 31L;
+            case "quarter" -> 92L;
             case "halfYear" -> 183L;
             default -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -325,6 +563,12 @@ public class RealEstateMapLayerService {
         }
         if ("halfyear".equals(trimmed.toLowerCase(Locale.ROOT))) {
             return "halfYear";
+        }
+        if ("3month".equals(trimmed.toLowerCase(Locale.ROOT))
+                || "3months".equals(trimmed.toLowerCase(Locale.ROOT))
+                || "threemonth".equals(trimmed.toLowerCase(Locale.ROOT))
+                || "threemonths".equals(trimmed.toLowerCase(Locale.ROOT))) {
+            return "quarter";
         }
         if (!PERIOD_ORDER.contains(trimmed)) {
             throw new ResponseStatusException(
@@ -396,6 +640,15 @@ public class RealEstateMapLayerService {
         return Math.round(value * 10.0) / 10.0;
     }
 
+    private static boolean isPriceMapLayerRow(MapLayerSnapshotRow row) {
+        String provider = row.provider() == null ? "" : row.provider().toLowerCase(Locale.ROOT);
+        String dataStatus = row.dataStatus() == null ? "" : row.dataStatus().toLowerCase(Locale.ROOT);
+        return !"real_estate_reaction_snapshots".equals(provider)
+                && !"reaction_snapshots".equals(provider)
+                && !"seed".equals(provider)
+                && !"mock".equals(dataStatus);
+    }
+
     private static String layerDataStatus(List<MapLayerSnapshotRow> rows, boolean empty) {
         if (empty) {
             return "empty";
@@ -415,7 +668,9 @@ public class RealEstateMapLayerService {
             BigDecimal confidence,
             Instant asOf,
             String dataStatus,
-            boolean stale
+            boolean stale,
+            String provider,
+            String sourceLabel
     ) {
     }
 
@@ -466,7 +721,6 @@ public class RealEstateMapLayerService {
                     orderedPeriods.put(period, periods.get(period));
                 }
             }
-            periods.forEach(orderedPeriods::putIfAbsent);
             return new RealEstateMapLayerTargetResponse(
                     targetId,
                     targetType,

@@ -200,3 +200,28 @@ async def test_board_stream_waits_between_page_requests():
 def test_board_stream_rejects_invalid_delay_window():
     with pytest.raises(ValueError, match="page_delay"):
         BoardStreamCrawler(page_delay_min_seconds=5.0, page_delay_max_seconds=1.0)
+
+
+@pytest.mark.anyio
+async def test_board_stream_records_filtered_candidate_counts_in_coverage():
+    pages = {
+        None: BoardPage(
+            cursor="1",
+            posts=[_post("FMKOREA-3", "2026-05-24T02:02:00")],
+            next_cursor=None,
+            filtered_count=3,
+            excluded_title_count=1,
+            keyword_miss_count=2,
+            duplicate_link_count=4,
+        ),
+    }
+
+    async def fetch_page(cursor: str | None) -> BoardPage:
+        return pages[cursor]
+
+    result = await BoardStreamCrawler().collect(fetch_page)
+
+    assert result.coverage.filtered_count == 3
+    assert result.coverage.excluded_title_count == 1
+    assert result.coverage.keyword_miss_count == 2
+    assert result.coverage.duplicate_link_count == 4

@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from youbuyfirst_pipeline.realestate_regions import parse_molit_legal_dong_code_csv
+from youbuyfirst_pipeline.realestate_regions import (
+    build_real_estate_region_alias_requests,
+    parse_molit_legal_dong_code_csv,
+)
 
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures" / "realestate"
@@ -43,3 +46,67 @@ def test_parse_molit_legal_dong_code_csv_keeps_active_regions_and_builds_hierarc
             "source": "import:molit-legal-dong-code",
         },
     ]
+
+
+def test_build_real_estate_region_alias_requests_promotes_specific_child_regions():
+    aliases = build_real_estate_region_alias_requests(
+        [
+            {
+                "targetId": "region-gyeonggi-paju",
+                "displayName": "경기도 파주시",
+                "regionLevel": "sigungu",
+            },
+            {
+                "targetId": "region-seoul-gwangjin-guui",
+                "displayName": "서울특별시 광진구 구의동",
+                "regionLevel": "eupmyeondong",
+            },
+        ]
+    )
+
+    alias_by_target = {
+        (alias["targetId"], alias["alias"]): alias
+        for alias in aliases
+    }
+
+    assert alias_by_target[("region-gyeonggi-paju", "경기도 파주시")]["reviewState"] == "approved"
+    assert alias_by_target[("region-gyeonggi-paju", "경기 파주시")]["reviewState"] == "approved"
+    assert alias_by_target[("region-gyeonggi-paju", "파주시")]["reviewState"] == "approved"
+    assert alias_by_target[("region-gyeonggi-paju", "파주")]["reviewState"] == "approved"
+    assert alias_by_target[("region-seoul-gwangjin-guui", "서울특별시 광진구 구의동")]["reviewState"] == "approved"
+    assert alias_by_target[("region-seoul-gwangjin-guui", "광진구 구의동")]["reviewState"] == "approved"
+    assert alias_by_target[("region-seoul-gwangjin-guui", "구의동")]["reviewState"] == "approved"
+
+
+def test_build_real_estate_region_alias_requests_marks_duplicate_terminal_aliases_ambiguous():
+    aliases = build_real_estate_region_alias_requests(
+        [
+            {
+                "targetId": "region-seoul-jung",
+                "displayName": "서울특별시 중구",
+                "regionLevel": "sigungu",
+            },
+            {
+                "targetId": "region-busan-jung",
+                "displayName": "부산광역시 중구",
+                "regionLevel": "sigungu",
+            },
+        ]
+    )
+
+    terminal_aliases = [
+        alias
+        for alias in aliases
+        if alias["alias"] == "중구"
+    ]
+    contextual_aliases = {
+        alias["alias"]: alias
+        for alias in aliases
+        if alias["alias"] in {"서울 중구", "부산 중구"}
+    }
+
+    assert len(terminal_aliases) == 2
+    assert {alias["reviewState"] for alias in terminal_aliases} == {"candidate"}
+    assert {alias["ambiguous"] for alias in terminal_aliases} == {True}
+    assert contextual_aliases["서울 중구"]["reviewState"] == "approved"
+    assert contextual_aliases["부산 중구"]["reviewState"] == "approved"

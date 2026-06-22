@@ -136,3 +136,70 @@ def test_roll_up_real_estate_reaction_observations_does_not_duplicate_existing_p
         ("region-seoul", None),
         ("region-seoul-jongno", None),
     ]
+
+
+def test_roll_up_real_estate_reaction_observations_counts_one_post_once_per_ancestor_target():
+    published_at = datetime(2026, 6, 11, 0, 5, tzinfo=timezone.utc)
+    observations = [
+        RealEstateReactionObservation(
+            target_type="region",
+            target_id="region-1144010100",
+            published_at=published_at,
+            source="naver-cafe:estate",
+            reaction_direction="concern",
+            external_id="post-maraepu-ahyeon",
+            matched_text="아현동",
+            confidence=0.9,
+        ),
+        RealEstateReactionObservation(
+            target_type="complex",
+            target_id="complex-molit-1144010100-maraepu",
+            published_at=published_at,
+            source="naver-cafe:estate",
+            reaction_direction="concern",
+            external_id="post-maraepu-ahyeon",
+            matched_text="마래푸",
+            confidence=0.88,
+        ),
+    ]
+    edges = [
+        RealEstateTargetEdgeRule(
+            from_target_type="region",
+            from_target_id="region-seoul",
+            to_target_type="region",
+            to_target_id="region-seoul-mapo",
+            edge_type="contains",
+            confidence=0.9,
+        ),
+        RealEstateTargetEdgeRule(
+            from_target_type="region",
+            from_target_id="region-seoul-mapo",
+            to_target_type="region",
+            to_target_id="region-1144010100",
+            edge_type="contains",
+            confidence=0.8,
+        ),
+        RealEstateTargetEdgeRule(
+            from_target_type="region",
+            from_target_id="region-1144010100",
+            to_target_type="complex",
+            to_target_id="complex-molit-1144010100-maraepu",
+            edge_type="contains",
+            confidence=0.74,
+        ),
+    ]
+
+    rolled_up = roll_up_real_estate_reaction_observations(observations, edges)
+    snapshots = build_real_estate_reaction_snapshots(
+        rolled_up,
+        window_start=datetime(2026, 6, 11, 0, 0, tzinfo=timezone.utc),
+        window_minutes=60,
+        as_of=datetime(2026, 6, 11, 1, 0, tzinfo=timezone.utc),
+    )
+
+    assert [(snapshot.target_id, snapshot.mention_count) for snapshot in snapshots] == [
+        ("complex-molit-1144010100-maraepu", 1),
+        ("region-1144010100", 1),
+        ("region-seoul", 1),
+        ("region-seoul-mapo", 1),
+    ]

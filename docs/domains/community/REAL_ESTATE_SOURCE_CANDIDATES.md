@@ -14,6 +14,13 @@
 2. P1: 이용자 규모나 영향력은 크지만 카페/앱/로그인 검증이 필요한 source
 3. P2: 뉴스, 컬럼, 앱 정보, 공공/시장 fact처럼 반응 분석을 보조하는 source
 
+2026-06-17 업데이트:
+
+- `NAVER_CAFE:public_search`, `DAUM_CAFE:public_search`를 `local-research-only` 실행 target으로 추가했다.
+- 이 target은 카페 내부 게시판을 직접 긁지 않고 SerpApi/Google 공개 검색 결과에서 카페 글 후보의 제목, snippet, URL만 저장한다.
+- 직접 네이버 카페 자동 수집 금지와 로그인/CAPTCHA 우회 금지는 유지한다.
+- 현재 로컬 smoke에서는 SerpApi `429`가 발생해 실제 카페 후보 DB 적재는 quota 회복 또는 추가 키 확보 뒤 재실행이 필요하다.
+
 이 문서는 "수집 승인 목록"이 아니라 "후보 목록"이다. `crawlPolicyCandidate`가 `public-http-candidate`여도 adapter 구현 전에는 source별 정책 검토가 필요하다.
 
 ## 분산성 검토
@@ -128,7 +135,7 @@
 1차 결론:
 
 - 실제 crawler spike는 `ppomppu_house`, `dc_immovables`, `kb_land_datahub`, `reb_rone`, `data_go_apt_trade`부터 시작한다.
-- 네이버 카페 seed는 source registry에는 남기되 자동 수집은 하지 않는다. 공식 API/제휴/수동 리서치 또는 검색 노출 범위가 확인될 때만 별도 검토한다.
+- 네이버 카페 seed는 source registry에는 남기되 내부 게시판 자동 수집은 하지 않는다. MVP에서는 공개 검색 discovery target으로 검색 노출 범위만 수집하고, 공식 API/제휴/수동 리서치 또는 공개 게시판 접근성이 확인될 때만 별도 adapter를 검토한다.
 - 지역/학군/맘카페는 부동산 반응 분산성의 중요한 근거지만 개인정보와 가입형 커뮤니티 리스크가 커서 화면 지표에는 source coverage caveat를 반드시 붙인다.
 - 일반 커뮤니티(클리앙, 더쿠, 82cook)는 부동산 전용 source가 아니므로 지표 가중치를 낮추고 정책/생활형 반응 보조로만 쓴다.
 

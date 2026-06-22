@@ -186,7 +186,7 @@ def _build_snapshot(
         concern_score=concern_score,
     )
     latest_published_at = max(observation.published_at for observation in observations)
-    stale = as_of < window_end or as_of - latest_published_at > timedelta(minutes=stale_after_minutes)
+    stale = as_of - latest_published_at > timedelta(minutes=stale_after_minutes)
 
     return RealEstateReactionSnapshot(
         target_type=target_type,

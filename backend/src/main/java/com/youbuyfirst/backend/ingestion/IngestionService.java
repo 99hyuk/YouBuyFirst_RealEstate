@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class IngestionService {
@@ -53,8 +54,23 @@ public class IngestionService {
 
         for (PostPayload payload : request.posts()) {
             String externalId = payload.externalId().trim();
-            if (postRepository.existsBySourceAndExternalId(source, externalId)) {
+            String contentSnippet = trimTo(payload.contentSnippet(), 1000);
+            String boardId = trimTo(payload.boardId(), 120);
+            String contentHash = Hashing.sha256(source + "|" + externalId + "|" + payload.url() + "|" + payload.title() + "|" + nullToEmpty(contentSnippet));
+            Optional<CommunityPost> existing = postRepository.findBySourceAndExternalId(source, externalId);
+            if (existing.isPresent()) {
                 duplicates++;
+                if (existing.get().enrichMissingDetails(
+                        contentSnippet,
+                        boardId,
+                        payload.viewCount(),
+                        payload.recommendCount(),
+                        payload.commentCount(),
+                        contentHash,
+                        Instant.now()
+                )) {
+                    postRepository.save(existing.get());
+                }
                 continue;
             }
 
@@ -63,14 +79,14 @@ public class IngestionService {
                     externalId,
                     payload.url(),
                     payload.title().trim(),
-                    trimTo(payload.contentSnippet(), 1000),
-                    trimTo(payload.boardId(), 120),
+                    contentSnippet,
+                    boardId,
                     payload.viewCount(),
                     payload.recommendCount(),
                     payload.commentCount(),
                     Hashing.sha256(nullToEmpty(payload.authorDisplayName()).trim()),
                     payload.publishedAt(),
-                    Hashing.sha256(source + "|" + externalId + "|" + payload.url() + "|" + payload.title() + "|" + nullToEmpty(payload.contentSnippet())),
+                    contentHash,
                     Instant.now()
             );
             postRepository.save(post);
@@ -114,15 +130,17 @@ public class IngestionService {
             String source,
             Instant publishedFrom,
             Instant publishedTo,
-            int limit
+            int limit,
+            int page
     ) {
         int boundedLimit = Math.max(1, Math.min(limit, 5000));
+        int boundedPage = Math.max(0, page);
         String normalizedSource = trimTo(source, 40) == null ? null : normalize(source);
         List<CommunityPostExportItemResponse> items = postRepository.findForReactionExport(
                         normalizedSource,
                         publishedFrom,
                         publishedTo,
-                        PageRequest.of(0, boundedLimit)
+                        PageRequest.of(boundedPage, boundedLimit)
                 ).stream()
                 .map(CommunityPostExportItemResponse::from)
                 .toList();
@@ -131,6 +149,7 @@ public class IngestionService {
                 publishedFrom,
                 publishedTo,
                 boundedLimit,
+                boundedPage,
                 items
         );
     }

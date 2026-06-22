@@ -6,6 +6,29 @@ from dataclasses import dataclass
 
 
 LEGAL_DONG_CODE_SOURCE = "import:molit-legal-dong-code"
+REGION_ALIAS_SOURCE = "import:region-registry-alias"
+
+_SIDO_SHORT_LABELS = {
+    "서울특별시": "서울",
+    "부산광역시": "부산",
+    "대구광역시": "대구",
+    "인천광역시": "인천",
+    "광주광역시": "광주",
+    "대전광역시": "대전",
+    "울산광역시": "울산",
+    "세종특별자치시": "세종",
+    "경기도": "경기",
+    "강원특별자치도": "강원",
+    "강원도": "강원",
+    "충청북도": "충북",
+    "충청남도": "충남",
+    "전북특별자치도": "전북",
+    "전라북도": "전북",
+    "전라남도": "전남",
+    "경상북도": "경북",
+    "경상남도": "경남",
+    "제주특별자치도": "제주",
+}
 
 
 @dataclass(frozen=True)
@@ -95,6 +118,59 @@ def build_molit_region_market_data_targets(
     return targets
 
 
+def build_real_estate_region_alias_requests(
+    regions: list[RealEstateRegionImport | dict],
+) -> list[dict]:
+    candidates: list[dict] = []
+    seen_per_target: set[tuple[str, str]] = set()
+    alias_targets: dict[str, set[str]] = {}
+    for region in regions:
+        target_id = _region_value(region, "target_id", "targetId")
+        display_name = _region_value(region, "display_name", "displayName")
+        region_level = _region_value(region, "region_level", "regionLevel")
+        if not target_id or not display_name:
+            continue
+        for alias, alias_type, confidence in _region_alias_candidates(display_name, region_level):
+            normalized = _alias_key(alias)
+            if len(normalized) < 2:
+                continue
+            key = (target_id, normalized)
+            if key in seen_per_target:
+                continue
+            seen_per_target.add(key)
+            alias_targets.setdefault(normalized, set()).add(target_id)
+            candidates.append(
+                {
+                    "targetType": "region",
+                    "targetId": target_id,
+                    "alias": alias,
+                    "aliasType": alias_type,
+                    "source": REGION_ALIAS_SOURCE,
+                    "evidenceUrl": None,
+                    "confidence": confidence,
+                    "reviewState": "approved",
+                    "createdBy": "system",
+                    "ambiguous": False,
+                }
+            )
+
+    for alias in candidates:
+        normalized = _alias_key(alias["alias"])
+        if len(alias_targets.get(normalized, set())) > 1 and _is_context_free_region_alias(alias):
+            alias["reviewState"] = "candidate"
+            alias["ambiguous"] = True
+
+    return sorted(
+        candidates,
+        key=lambda item: (
+            item["targetId"],
+            item["reviewState"] != "approved",
+            item["aliasType"],
+            item["alias"],
+        ),
+    )
+
+
 def _normalize_row(row: dict[str | None, str | None]) -> dict[str, str]:
     normalized = {}
     for key, value in row.items():
@@ -151,3 +227,65 @@ def _normalize_molit_provider_dataset(value: str) -> str:
     if normalized in {"rent", "apt-rent", "molit-apt-rent", "lease"}:
         return "molit_apt_rent"
     raise ValueError(f"unsupported MOLIT region dataset: {value}")
+
+
+def _region_alias_candidates(display_name: str, region_level: str | None) -> list[tuple[str, str, float]]:
+    name = " ".join(display_name.split())
+    tokens = name.split()
+    if not name or not tokens:
+        return []
+
+    aliases: list[tuple[str, str, float]] = [(name, "official", 0.96)]
+    if len(tokens) >= 2:
+        prefix = _SIDO_SHORT_LABELS.get(tokens[0], _strip_region_suffix(tokens[0]))
+        if prefix:
+            aliases.append((f"{prefix} {' '.join(tokens[1:])}", "context_name", 0.90))
+
+    if region_level != "sido" and len(tokens) >= 2:
+        terminal = tokens[-1]
+        aliases.append((terminal, "terminal_name", 0.86))
+        short_terminal = _strip_region_suffix(terminal)
+        if short_terminal and _alias_key(short_terminal) != _alias_key(terminal):
+            aliases.append((short_terminal, "short_name", 0.72))
+        aliases.append((f"{tokens[-2]} {terminal}", "nearby_area", 0.88))
+
+    return aliases
+
+
+def _strip_region_suffix(value: str) -> str:
+    for suffix in (
+        "특별자치시",
+        "특별자치도",
+        "특별시",
+        "광역시",
+        "자치구",
+        "자치시",
+        "시",
+        "군",
+        "구",
+        "읍",
+        "면",
+        "동",
+        "리",
+        "가",
+        "도",
+    ):
+        if value.endswith(suffix) and len(value) > len(suffix):
+            return value[: -len(suffix)]
+    return value
+
+
+def _is_context_free_region_alias(alias: dict) -> bool:
+    alias_type = str(alias.get("aliasType") or "")
+    alias_text = str(alias.get("alias") or "")
+    return alias_type in {"terminal_name", "short_name"} and " " not in alias_text
+
+
+def _alias_key(value: str) -> str:
+    return "".join(ch.lower() for ch in value if ch.isalnum())
+
+
+def _region_value(region: RealEstateRegionImport | dict, snake_key: str, camel_key: str) -> str:
+    if isinstance(region, RealEstateRegionImport):
+        return str(getattr(region, snake_key) or "").strip()
+    return str(region.get(camel_key) or region.get(snake_key) or "").strip()

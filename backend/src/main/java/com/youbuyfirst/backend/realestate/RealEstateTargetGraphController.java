@@ -46,10 +46,11 @@ public class RealEstateTargetGraphController {
             @RequestParam(defaultValue = "both") String direction,
             @RequestParam(required = false) String edgeType,
             @RequestParam(required = false) String reviewState,
-            @RequestParam(defaultValue = "500") int limit
+            @RequestParam(defaultValue = "500") int limit,
+            @RequestParam(defaultValue = "0") int page
     ) {
         return new RealEstateTargetEdgeListResponse(
-                service.internalEdges(targetId, normalizeDirection(direction), edgeType, reviewState, limit)
+                service.internalEdges(targetId, normalizeDirection(direction), edgeType, reviewState, limit, page)
         );
     }
 

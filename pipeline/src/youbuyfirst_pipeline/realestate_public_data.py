@@ -4,9 +4,12 @@ import calendar
 import csv
 import hashlib
 import io
+import json
 import math
 import os
 import re
+import time
+import urllib.parse
 import xml.etree.ElementTree as ET
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
@@ -18,6 +21,7 @@ import httpx
 DATA_GO_SERVICE_KEY_ENV = "DATA_GO_SERVICE_KEY"
 
 _OK_RESULT_CODES = {"00", "000", "INFO-000"}
+_RETRYABLE_HTTP_STATUS_CODES = {502, 503, 504}
 
 
 class PublicDataProviderError(RuntimeError):
@@ -86,6 +90,56 @@ MOLIT_SILV_TRADE_DATASET = MolitPublicDataDataset(
 )
 
 MOLIT_OFFICIAL_APARTMENT_PRICE_DATASET_ID = "molit_official_apartment_price_csv"
+REB_RONE_MAIN_SNAPSHOT_DATASET_ID = "reb_rone_main_snapshot"
+REB_RONE_MAIN_URL = "https://www.reb.or.kr/r-one/portal/main/indexPage.do"
+REB_RONE_REGIONAL_MAP_DATASET_ID = "reb_rone_regional_price_change"
+REB_RONE_REGIONAL_MAP_URL = "https://www.reb.or.kr/r-one/portal/main/searchRegionalStatusMap.do"
+REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID = "reb_rone_monthly_apt_sale_price_index"
+REB_RONE_EASY_STAT_PAGE_URL = "https://www.reb.or.kr/r-one/portal/stat/easyStatPage/A_2024_00045.do"
+REB_RONE_EASY_STAT_DATA_URL = "https://www.reb.or.kr/r-one/portal/stat/sttsDataPreviewList.do"
+REB_RONE_APT_SALE_PRICE_STATBL_ID = "A_2024_00045"
+
+_REB_RONE_PROVINCE_BY_CODE_PREFIX = {
+    "11": "서울",
+    "26": "부산",
+    "27": "대구",
+    "28": "인천",
+    "29": "광주",
+    "30": "대전",
+    "31": "울산",
+    "36": "세종",
+    "41": "경기",
+    "42": "강원",
+    "43": "충북",
+    "44": "충남",
+    "45": "전북",
+    "46": "전남",
+    "47": "경북",
+    "48": "경남",
+    "50": "제주",
+    "51": "강원",
+    "52": "전북",
+}
+
+_REB_RONE_SIDO_TARGETS_BY_NAME = {
+    "서울": ("region-seoul", "11"),
+    "부산": ("region-busan", "21"),
+    "대구": ("region-daegu", "22"),
+    "인천": ("region-incheon", "23"),
+    "광주": ("region-gwangju", "24"),
+    "대전": ("region-daejeon", "25"),
+    "울산": ("region-ulsan", "26"),
+    "세종": ("region-sejong", "29"),
+    "경기": ("region-gyeonggi", "31"),
+    "강원": ("region-gangwon", "32"),
+    "충북": ("region-chungbuk", "33"),
+    "충남": ("region-chungnam", "34"),
+    "전북": ("region-jeonbuk", "35"),
+    "전남": ("region-jeonnam", "36"),
+    "경북": ("region-gyeongbuk", "37"),
+    "경남": ("region-gyeongnam", "38"),
+    "제주": ("region-jeju", "39"),
+}
 
 
 @dataclass(frozen=True)
@@ -134,6 +188,7 @@ class RealEstatePublicDataRawIngestion:
     finished_at: datetime
     facts: tuple[RealEstateMarketFact, ...]
     status: str = "completed"
+    error_message: str | None = None
 
     def to_request_dict(self) -> dict:
         requested_from = _parse_deal_ym(self.deal_ym)
@@ -142,21 +197,24 @@ class RealEstatePublicDataRawIngestion:
             requested_from.month,
             calendar.monthrange(requested_from.year, requested_from.month)[1],
         )
-        return {
-            "run": {
-                "runKey": self.run_key,
-                "providerDataset": self.provider_dataset,
-                "runType": "backfill",
-                "requestedFrom": requested_from.isoformat(),
-                "requestedTo": requested_to.isoformat(),
-                "requestParams": {
-                    "LAWD_CD": self.lawd_code,
-                    "DEAL_YMD": self.deal_ym,
-                },
-                "status": self.status,
-                "startedAt": _iso(self.started_at),
-                "finishedAt": _iso(self.finished_at),
+        run = {
+            "runKey": self.run_key,
+            "providerDataset": self.provider_dataset,
+            "runType": "backfill",
+            "requestedFrom": requested_from.isoformat(),
+            "requestedTo": requested_to.isoformat(),
+            "requestParams": {
+                "LAWD_CD": self.lawd_code,
+                "DEAL_YMD": self.deal_ym,
             },
+            "status": self.status,
+            "startedAt": _iso(self.started_at),
+            "finishedAt": _iso(self.finished_at),
+        }
+        if self.error_message:
+            run["errorMessage"] = self.error_message
+        return {
+            "run": run,
             "items": [_raw_item_payload(fact) for fact in self.facts],
         }
 
@@ -175,20 +233,24 @@ class RealEstatePublicDataFileRawIngestion:
     finished_at: datetime
     facts: tuple[RealEstateMarketFact, ...]
     status: str = "completed"
+    error_message: str | None = None
 
     def to_request_dict(self) -> dict:
+        run = {
+            "runKey": self.run_key,
+            "providerDataset": self.provider_dataset,
+            "runType": "backfill",
+            "requestedFrom": self.requested_from.isoformat(),
+            "requestedTo": self.requested_to.isoformat(),
+            "requestParams": dict(self.request_params),
+            "status": self.status,
+            "startedAt": _iso(self.started_at),
+            "finishedAt": _iso(self.finished_at),
+        }
+        if self.error_message:
+            run["errorMessage"] = self.error_message
         return {
-            "run": {
-                "runKey": self.run_key,
-                "providerDataset": self.provider_dataset,
-                "runType": "backfill",
-                "requestedFrom": self.requested_from.isoformat(),
-                "requestedTo": self.requested_to.isoformat(),
-                "requestParams": dict(self.request_params),
-                "status": self.status,
-                "startedAt": _iso(self.started_at),
-                "finishedAt": _iso(self.finished_at),
-            },
+            "run": run,
             "items": [_raw_item_payload(fact) for fact in self.facts],
         }
 
@@ -269,6 +331,7 @@ class RegionalStatCsvInspection:
 
 
 PublicDataFetcher = Callable[[str, Mapping[str, str]], str]
+SimpleTextFetcher = Callable[[str], str]
 
 
 class MolitRealEstatePublicDataReader(Protocol):
@@ -303,18 +366,175 @@ class MolitRealEstatePublicDataReader(Protocol):
         ...
 
 
+class RebRoneMainSnapshotClient:
+    def __init__(
+        self,
+        fetcher: SimpleTextFetcher | None = None,
+        timeout_seconds: float = 20,
+    ) -> None:
+        self.timeout_seconds = timeout_seconds
+        self.fetcher = fetcher or self._fetch
+
+    def fetch_main_snapshot(self, now: datetime | None = None) -> list[RealEstateMarketFact]:
+        html_text = self.fetcher(REB_RONE_MAIN_URL)
+        return parse_reb_rone_main_snapshot(html_text, ingested_at=now or datetime.now(timezone.utc))
+
+    def _fetch(self, url: str) -> str:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds) as client:
+                response = client.get(url)
+            response.raise_for_status()
+            return response.text
+        except httpx.TimeoutException as exc:
+            raise PublicDataProviderError(f"REB R-ONE main snapshot request failed: {url} error=timeout") from exc
+        except httpx.HTTPStatusError as exc:
+            raise PublicDataProviderError(
+                f"REB R-ONE main snapshot request failed: {url} status={exc.response.status_code}"
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise PublicDataProviderError(
+                f"REB R-ONE main snapshot request failed: {url} error={exc.__class__.__name__}"
+            ) from exc
+
+
+class RebRoneRegionalMapClient:
+    def __init__(
+        self,
+        fetcher: Callable[[str, Mapping[str, str]], str] | None = None,
+        timeout_seconds: float = 20,
+    ) -> None:
+        self.timeout_seconds = timeout_seconds
+        self.fetcher = fetcher or self._fetch
+
+    def fetch_regional_map(
+        self,
+        geo_cd: str = "10",
+        now: datetime | None = None,
+    ) -> list[RealEstateMarketFact]:
+        params = {
+            "statblId": REB_RONE_APT_SALE_PRICE_STATBL_ID,
+            "dtacycleCd": "MM",
+            "itmDatano": "100001",
+            "geoCd": geo_cd,
+            "dtadvsCd": "PR",
+            "itmTag": "C",
+            "clsDatano": "",
+        }
+        json_text = self.fetcher(REB_RONE_REGIONAL_MAP_URL, params)
+        return parse_reb_rone_regional_map(json_text, ingested_at=now or datetime.now(timezone.utc))
+
+    def _fetch(self, url: str, params: Mapping[str, str]) -> str:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds, follow_redirects=True) as client:
+                client.get(REB_RONE_MAIN_URL)
+                response = client.post(
+                    url,
+                    data=params,
+                    headers={
+                        "Referer": REB_RONE_MAIN_URL,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                )
+            response.raise_for_status()
+            return response.text
+        except httpx.TimeoutException as exc:
+            raise PublicDataProviderError(f"REB R-ONE regional map request failed: {url} error=timeout") from exc
+        except httpx.HTTPStatusError as exc:
+            raise PublicDataProviderError(
+                f"REB R-ONE regional map request failed: {url} status={exc.response.status_code}"
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise PublicDataProviderError(
+                f"REB R-ONE regional map request failed: {url} error={exc.__class__.__name__}"
+            ) from exc
+
+
+class RebRoneMonthlyAptSalePriceIndexClient:
+    def __init__(
+        self,
+        fetcher: Callable[[str, int], tuple[str, str]] | None = None,
+        timeout_seconds: float = 20,
+        latest_months: int = 13,
+    ) -> None:
+        self.timeout_seconds = timeout_seconds
+        self.latest_months = max(2, latest_months)
+        self.fetcher = fetcher or self._fetch
+
+    def fetch_monthly_price_index_changes(
+        self,
+        now: datetime | None = None,
+    ) -> list[RealEstateMarketFact]:
+        table_json, regional_map_json = self.fetcher(REB_RONE_EASY_STAT_PAGE_URL, self.latest_months)
+        lookup = build_reb_rone_region_lookup_from_regional_map_json(regional_map_json)
+        return parse_reb_rone_monthly_price_index_changes(
+            table_json,
+            ingested_at=now or datetime.now(timezone.utc),
+            region_lookup=lookup,
+        )
+
+    def _fetch(self, url: str, latest_months: int) -> tuple[str, str]:
+        try:
+            with httpx.Client(timeout=self.timeout_seconds, follow_redirects=True) as client:
+                page_response = client.get(url)
+                page_response.raise_for_status()
+                fir_param = _reb_rone_fir_param(page_response.text)
+                params = dict(_parse_query_pairs(fir_param))
+                params["wrttimeLastestVal"] = str(latest_months)
+                data_response = client.post(
+                    REB_RONE_EASY_STAT_DATA_URL,
+                    data=params,
+                    headers={
+                        "Referer": str(page_response.url),
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                )
+                data_response.raise_for_status()
+                regional_map_response = client.post(
+                    REB_RONE_REGIONAL_MAP_URL,
+                    data={
+                        "statblId": REB_RONE_APT_SALE_PRICE_STATBL_ID,
+                        "dtacycleCd": "MM",
+                        "itmDatano": "100001",
+                        "geoCd": "10",
+                        "dtadvsCd": "PR",
+                        "itmTag": "C",
+                        "clsDatano": "",
+                    },
+                    headers={
+                        "Referer": REB_RONE_MAIN_URL,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                )
+                regional_map_response.raise_for_status()
+            return data_response.text, regional_map_response.text
+        except httpx.TimeoutException as exc:
+            raise PublicDataProviderError(f"REB R-ONE monthly price index request failed: {url} error=timeout") from exc
+        except httpx.HTTPStatusError as exc:
+            raise PublicDataProviderError(
+                f"REB R-ONE monthly price index request failed: {url} status={exc.response.status_code}"
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise PublicDataProviderError(
+                f"REB R-ONE monthly price index request failed: {url} error={exc.__class__.__name__}"
+            ) from exc
+
+
 class MolitRealEstatePublicDataClient:
     def __init__(
         self,
         service_key: str,
         fetcher: PublicDataFetcher | None = None,
         timeout_seconds: float = 20,
+        max_retries: int = 0,
+        retry_backoff_seconds: float = 1,
     ) -> None:
         normalized_key = service_key.strip()
         if not normalized_key:
             raise ValueError(f"{DATA_GO_SERVICE_KEY_ENV} is required")
         self.service_key = normalized_key
         self.timeout_seconds = timeout_seconds
+        self.max_retries = max(0, max_retries)
+        self.retry_backoff_seconds = max(0.0, retry_backoff_seconds)
         self.fetcher = fetcher or self._fetch
 
     def fetch_apt_trades(
@@ -414,20 +634,135 @@ class MolitRealEstatePublicDataClient:
         )
 
     def _fetch(self, url: str, params: Mapping[str, str]) -> str:
-        try:
-            with httpx.Client(timeout=self.timeout_seconds) as client:
-                response = client.get(url, params=params)
+        attempts = self.max_retries + 1
+        last_status: int | None = None
+        last_error = "unknown"
+        for attempt in range(attempts):
+            try:
+                with httpx.Client(timeout=self.timeout_seconds) as client:
+                    response = client.get(url, params=params)
+                last_status = response.status_code
+                if response.status_code in _RETRYABLE_HTTP_STATUS_CODES and attempt < self.max_retries:
+                    last_error = f"http_{response.status_code}"
+                    self._sleep_before_retry(attempt)
+                    continue
                 response.raise_for_status()
                 return response.text
-        except httpx.HTTPError as exc:
-            raise PublicDataProviderError(f"MOLIT public data request failed: {url}") from exc
+            except httpx.TimeoutException as exc:
+                last_error = "timeout"
+                if attempt < self.max_retries:
+                    self._sleep_before_retry(attempt)
+                    continue
+                raise PublicDataProviderError(
+                    f"MOLIT public data request failed: {url} error=timeout attempts={attempts}"
+                ) from exc
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                last_status = status
+                last_error = f"http_{status}"
+                if status in _RETRYABLE_HTTP_STATUS_CODES and attempt < self.max_retries:
+                    self._sleep_before_retry(attempt)
+                    continue
+                raise PublicDataProviderError(
+                    f"MOLIT public data request failed: {url} status={status} attempts={attempts}"
+                ) from exc
+            except httpx.HTTPError as exc:
+                last_error = exc.__class__.__name__
+                if attempt < self.max_retries:
+                    self._sleep_before_retry(attempt)
+                    continue
+                raise PublicDataProviderError(
+                    f"MOLIT public data request failed: {url} error={last_error} attempts={attempts}"
+                ) from exc
+        status_part = f" status={last_status}" if last_status is not None else ""
+        raise PublicDataProviderError(
+            f"MOLIT public data request failed: {url}{status_part} error={last_error} attempts={attempts}"
+        )
+
+    def _sleep_before_retry(self, attempt: int) -> None:
+        if self.retry_backoff_seconds <= 0:
+            return
+        time.sleep(self.retry_backoff_seconds * (attempt + 1))
 
 
 def build_molit_public_data_client_from_env() -> MolitRealEstatePublicDataClient:
     service_key = os.getenv(DATA_GO_SERVICE_KEY_ENV)
     if not service_key:
         raise ValueError(f"{DATA_GO_SERVICE_KEY_ENV} is required")
-    return MolitRealEstatePublicDataClient(service_key=service_key)
+    timeout_seconds = float(
+        os.getenv("REALESTATE_PUBLIC_DATA_TIMEOUT_SECONDS")
+        or os.getenv("DATA_GO_TIMEOUT_SECONDS")
+        or "20"
+    )
+    max_retries = int(
+        os.getenv("REALESTATE_PUBLIC_DATA_MAX_RETRIES")
+        or os.getenv("DATA_GO_MAX_RETRIES")
+        or "1"
+    )
+    retry_backoff_seconds = float(
+        os.getenv("REALESTATE_PUBLIC_DATA_RETRY_BACKOFF_SECONDS")
+        or os.getenv("DATA_GO_RETRY_BACKOFF_SECONDS")
+        or "1"
+    )
+    return MolitRealEstatePublicDataClient(
+        service_key=service_key,
+        timeout_seconds=timeout_seconds,
+        max_retries=max_retries,
+        retry_backoff_seconds=retry_backoff_seconds,
+    )
+
+
+def build_reb_rone_main_snapshot_client_from_env() -> RebRoneMainSnapshotClient:
+    timeout_seconds = float(
+        os.getenv("REALESTATE_REB_RONE_TIMEOUT_SECONDS")
+        or os.getenv("REALESTATE_PUBLIC_DATA_TIMEOUT_SECONDS")
+        or "20"
+    )
+    return RebRoneMainSnapshotClient(timeout_seconds=timeout_seconds)
+
+
+def build_reb_rone_regional_map_client_from_env() -> RebRoneRegionalMapClient:
+    timeout_seconds = float(
+        os.getenv("REALESTATE_REB_RONE_TIMEOUT_SECONDS")
+        or os.getenv("REALESTATE_PUBLIC_DATA_TIMEOUT_SECONDS")
+        or "20"
+    )
+    return RebRoneRegionalMapClient(timeout_seconds=timeout_seconds)
+
+
+def collect_reb_rone_main_snapshot_facts(
+    client: RebRoneMainSnapshotClient,
+    now: datetime | None = None,
+) -> list[RealEstateMarketFact]:
+    return client.fetch_main_snapshot(now=now)
+
+
+def collect_reb_rone_regional_map_facts(
+    client: RebRoneRegionalMapClient,
+    geo_cd: str = "10",
+    now: datetime | None = None,
+) -> list[RealEstateMarketFact]:
+    return client.fetch_regional_map(geo_cd=geo_cd, now=now)
+
+
+def build_reb_rone_monthly_price_index_client_from_env() -> RebRoneMonthlyAptSalePriceIndexClient:
+    timeout_seconds = float(
+        os.getenv("REALESTATE_REB_RONE_TIMEOUT_SECONDS")
+        or os.getenv("REALESTATE_PUBLIC_DATA_TIMEOUT_SECONDS")
+        or "20"
+    )
+    latest_months = int(os.getenv("REALESTATE_REB_RONE_MONTHLY_PRICE_INDEX_MONTHS") or "13")
+    return RebRoneMonthlyAptSalePriceIndexClient(
+        timeout_seconds=timeout_seconds,
+        latest_months=latest_months,
+    )
+
+
+def collect_reb_rone_monthly_price_index_change_facts(
+    client: RebRoneMonthlyAptSalePriceIndexClient,
+    now: datetime | None = None,
+) -> list[RealEstateMarketFact]:
+    return client.fetch_monthly_price_index_changes(now=now)
 
 
 def collect_molit_real_estate_market_facts(
@@ -863,6 +1198,417 @@ def parse_molit_public_data_xml(
         fields = _item_fields(item)
         facts.append(_market_fact_from_item(dataset, fields, lawd_code, deal_ym, as_of, ingested_at))
     return facts
+
+
+def parse_reb_rone_main_snapshot(
+    html_text: str,
+    ingested_at: datetime,
+) -> list[RealEstateMarketFact]:
+    facts: list[RealEstateMarketFact] = []
+    for args in _reb_rone_major_stat_args(html_text):
+        fact = _reb_rone_major_stat_fact(args, ingested_at=ingested_at)
+        if fact is not None:
+            facts.append(fact)
+    if not facts:
+        raise PublicDataProviderError("REB R-ONE main snapshot contained no supported major stats")
+    return facts
+
+
+def parse_reb_rone_regional_map(
+    json_text: str,
+    *,
+    ingested_at: datetime,
+) -> list[RealEstateMarketFact]:
+    try:
+        payload = json.loads(json_text)
+    except json.JSONDecodeError as exc:
+        raise PublicDataProviderError("REB R-ONE regional map response is not JSON") from exc
+
+    rows = payload.get("data")
+    if not isinstance(rows, list):
+        result = payload.get("RESULT")
+        if isinstance(result, Mapping):
+            code = result.get("CODE") or "unknown"
+            message = result.get("MESSAGE") or "unknown provider error"
+            raise PublicDataProviderError(f"REB R-ONE regional map failed with {code}: {message}")
+        raise PublicDataProviderError("REB R-ONE regional map response has no data rows")
+
+    facts: list[RealEstateMarketFact] = []
+    seen_provider_object_ids: set[str] = set()
+    for raw_row in rows:
+        if not isinstance(raw_row, Mapping):
+            continue
+        row = {str(key): "" if value is None else str(value) for key, value in raw_row.items()}
+        fact = _reb_rone_regional_map_fact(row, ingested_at=ingested_at)
+        if fact is None or fact.provider_object_id in seen_provider_object_ids:
+            continue
+        facts.append(fact)
+        seen_provider_object_ids.add(fact.provider_object_id)
+
+    if not facts:
+        raise PublicDataProviderError("REB R-ONE regional map contained no supported rows")
+    return facts
+
+
+def build_reb_rone_region_lookup_from_regional_map_json(
+    json_text: str,
+) -> dict[tuple[str, str], dict[str, str | None]]:
+    facts = parse_reb_rone_regional_map(json_text, ingested_at=datetime.now(timezone.utc))
+    lookup: dict[tuple[str, str], dict[str, str | None]] = {}
+    for fact in facts:
+        payload = fact.to_ingestion_dict()
+        value_json = payload.get("valueJson", {})
+        region_name = str(value_json.get("regionName") or "").strip()
+        legal_dong_code = str(payload.get("legalDongCode") or "").strip()
+        if not region_name or not legal_dong_code or region_name == "전국":
+            continue
+        province_name = _reb_rone_province_for_legal_dong_code(legal_dong_code)
+        if not province_name:
+            continue
+        lookup[(province_name, region_name)] = {
+            "legalDongCode": legal_dong_code,
+            "targetId": payload.get("targetId"),
+        }
+    return lookup
+
+
+def parse_reb_rone_monthly_price_index_changes(
+    json_text: str,
+    *,
+    ingested_at: datetime,
+    region_lookup: Mapping[tuple[str, str], Mapping[str, str | None]],
+) -> list[RealEstateMarketFact]:
+    try:
+        payload = json.loads(json_text)
+    except json.JSONDecodeError as exc:
+        raise PublicDataProviderError("REB R-ONE monthly price index response is not JSON") from exc
+
+    rows = payload.get("DATA")
+    if not isinstance(rows, list):
+        raise PublicDataProviderError("REB R-ONE monthly price index response has no DATA rows")
+
+    facts: list[RealEstateMarketFact] = []
+    seen_provider_object_ids: set[str] = set()
+    for raw_row in rows:
+        if not isinstance(raw_row, Mapping):
+            continue
+        row = {str(key): "" if value is None else str(value) for key, value in raw_row.items()}
+        row_facts = _reb_rone_monthly_price_index_row_facts(
+            row,
+            ingested_at=ingested_at,
+            region_lookup=region_lookup,
+        )
+        for fact in row_facts:
+            if fact.provider_object_id in seen_provider_object_ids:
+                continue
+            facts.append(fact)
+            seen_provider_object_ids.add(fact.provider_object_id)
+
+    if not facts:
+        raise PublicDataProviderError("REB R-ONE monthly price index table contained no supported rows")
+    return facts
+
+
+def _reb_rone_monthly_price_index_row_facts(
+    row: Mapping[str, str],
+    *,
+    ingested_at: datetime,
+    region_lookup: Mapping[tuple[str, str], Mapping[str, str | None]],
+) -> list[RealEstateMarketFact]:
+    province_name = str(row.get("CATE1") or "").strip()
+    region_name = _reb_rone_monthly_region_name(row)
+    if not province_name or not region_name:
+        return []
+
+    target = region_lookup.get((province_name, region_name))
+    if not target:
+        return []
+
+    legal_dong_code = str(target.get("legalDongCode") or "").strip()
+    if not legal_dong_code:
+        return []
+
+    month_values = _reb_rone_monthly_index_values(row)
+    facts: list[RealEstateMarketFact] = []
+    for index, (period_key, index_value) in enumerate(month_values):
+        if index == 0:
+            continue
+        previous_period_key, previous_index_value = month_values[index - 1]
+        if previous_index_value is None or index_value is None or previous_index_value == 0:
+            continue
+        change_pct = round(((index_value - previous_index_value) / previous_index_value) * 100, 4)
+        observed_at, _ = _reb_rone_period(period_key)
+        provider_object_id = (
+            f"{REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID}:"
+            f"{REB_RONE_APT_SALE_PRICE_STATBL_ID}:{period_key}:{legal_dong_code}"
+        )
+        source_label = "한국부동산원 R-ONE 월간 아파트 매매가격지수"
+        facts.append(
+            RealEstateMarketFact(
+                fact_type="sale_price_index_change_pct",
+                provider="reb",
+                provider_dataset=REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID,
+                provider_object_id=provider_object_id,
+                legal_dong_code=legal_dong_code,
+                observed_at=observed_at,
+                as_of=observed_at,
+                ingested_at=ingested_at,
+                value_json=_without_empty_values(
+                    {
+                        "regionName": region_name,
+                        "provinceName": province_name,
+                        "metricName": "매매가격지수 변동률",
+                        "housingType": "아파트",
+                        "surveyName": "전국주택가격동향조사",
+                        "value": change_pct,
+                        "unit": "%",
+                        "periodYm": period_key,
+                        "previousPeriodYm": previous_period_key,
+                        "indexValue": index_value,
+                        "previousIndexValue": previous_index_value,
+                        "sourceLabel": source_label,
+                        "sourceUrl": REB_RONE_EASY_STAT_PAGE_URL,
+                        "raw": {
+                            "CATE1": row.get("CATE1"),
+                            "CATE2": row.get("CATE2"),
+                            "CATE3": row.get("CATE3"),
+                            "CATE4": row.get("CATE4"),
+                        },
+                    }
+                ),
+                target_type="region",
+                target_id=target.get("targetId"),
+                data_status="ok",
+            )
+        )
+    return facts
+
+
+def _reb_rone_monthly_region_name(row: Mapping[str, str]) -> str:
+    for key in ("CATE4", "CATE3", "CATE2", "CATE1"):
+        value = str(row.get(key) or "").strip()
+        if value:
+            return value
+    return ""
+
+
+def _reb_rone_monthly_index_values(row: Mapping[str, str]) -> list[tuple[str, float | None]]:
+    values: list[tuple[str, float | None]] = []
+    for key, value in row.items():
+        match = re.match(r"COL_(\d{6})", key)
+        if not match:
+            continue
+        values.append((match.group(1), _number_from_text(value)))
+    return sorted(values, key=lambda item: item[0])
+
+
+def _reb_rone_province_for_legal_dong_code(legal_dong_code: str) -> str | None:
+    if legal_dong_code == "00000":
+        return None
+    return _REB_RONE_PROVINCE_BY_CODE_PREFIX.get(legal_dong_code[:2])
+
+
+def _reb_rone_regional_map_fact(
+    row: Mapping[str, str],
+    *,
+    ingested_at: datetime,
+) -> RealEstateMarketFact | None:
+    stat_id = row.get("statblId", "").strip()
+    if stat_id != REB_RONE_APT_SALE_PRICE_STATBL_ID:
+        return None
+
+    geo_cd = row.get("geoCd", "").strip()
+    region_name = row.get("viewItmNm", "").strip()
+    period_date, period_key = _reb_rone_period(row.get("wrttimeIdtfrId", ""))
+    value = _number_from_text(row.get("dtaVal"))
+    target_id, topology_region_code = _reb_rone_target_for_row(region_name)
+    legal_dong_code = _reb_rone_legal_dong_code(geo_cd)
+    source_label = "한국부동산원 R-ONE 전국주택가격동향조사 매매가격지수 변동률"
+
+    value_json = _without_empty_values(
+        {
+            "regionName": region_name,
+            "metricName": "매매가격지수 변동률",
+            "housingType": "아파트",
+            "surveyName": "전국주택가격동향조사",
+            "value": value,
+            "unit": row.get("uiNm") or "%",
+            "periodYm": period_key,
+            "roneGeoCode": geo_cd,
+            "topologyRegionCode": topology_region_code,
+            "previousPeriodValue": _number_from_text(row.get("pdDtaVal")),
+            "rank": _int_from_text(row.get("odRnk")),
+            "sourceLabel": source_label,
+            "sourceUrl": REB_RONE_MAIN_URL,
+            "raw": dict(row),
+        }
+    )
+    provider_object_id = (
+        f"{REB_RONE_REGIONAL_MAP_DATASET_ID}:{stat_id}:{period_key}:"
+        f"{geo_cd or row.get('datano') or region_name}"
+    )
+    return RealEstateMarketFact(
+        fact_type="sale_price_index_change_pct",
+        provider="reb",
+        provider_dataset=REB_RONE_REGIONAL_MAP_DATASET_ID,
+        provider_object_id=provider_object_id,
+        legal_dong_code=legal_dong_code,
+        observed_at=period_date,
+        as_of=period_date,
+        ingested_at=ingested_at,
+        value_json=value_json,
+        target_type="region",
+        target_id=target_id,
+        data_status="ok" if value is not None and geo_cd else "partial",
+    )
+
+
+def _reb_rone_target_for_row(region_name: str) -> tuple[str | None, str | None]:
+    if region_name == "전국":
+        return None, None
+    return _REB_RONE_SIDO_TARGETS_BY_NAME.get(region_name, (None, None))
+
+
+def _reb_rone_legal_dong_code(geo_cd: str) -> str:
+    if not geo_cd:
+        return "unknown"
+    if geo_cd == "10":
+        return "00000"
+    return geo_cd
+
+
+def _reb_rone_major_stat_args(html_text: str) -> Iterator[tuple[str, ...]]:
+    pattern = re.compile(r"doEvent\.changeMajorStat\((.*?)\)", re.DOTALL)
+    for match in pattern.finditer(html_text):
+        parsed = _parse_js_string_args(match.group(1))
+        if parsed:
+            yield parsed
+
+
+def _reb_rone_fir_param(html_text: str) -> str:
+    match = re.search(r'id="firParam"[^>]*value="([^"]+)"', html_text)
+    if not match:
+        raise PublicDataProviderError("REB R-ONE easy stat page has no firParam")
+    return match.group(1)
+
+
+def _parse_query_pairs(value: str) -> list[tuple[str, str]]:
+    return urllib.parse.parse_qsl(value, keep_blank_values=True)
+
+
+def _parse_js_string_args(raw_args: str) -> tuple[str, ...]:
+    values: list[str] = []
+    current: list[str] = []
+    in_string = False
+    escaped = False
+    for char in raw_args:
+        if escaped:
+            current.append(char)
+            escaped = False
+            continue
+        if char == "\\" and in_string:
+            escaped = True
+            continue
+        if char == "'":
+            if in_string:
+                values.append("".join(current).strip())
+                current = []
+                in_string = False
+            else:
+                in_string = True
+            continue
+        if in_string:
+            current.append(char)
+    return tuple(values)
+
+
+def _reb_rone_major_stat_fact(
+    args: tuple[str, ...],
+    *,
+    ingested_at: datetime,
+) -> RealEstateMarketFact | None:
+    if len(args) < 9:
+        return None
+    stat_code, period_code, metric_name, value_kind, unit, housing_type, period_label, value_text, survey_name = args[:9]
+    fact_type = _reb_rone_fact_type(metric_name, housing_type, survey_name)
+    if fact_type is None:
+        return None
+    observed_at, period_key = _reb_rone_period(period_label)
+    value = _number_from_text(value_text)
+    raw = {
+        "statCode": stat_code,
+        "periodCode": period_code,
+        "metricName": metric_name,
+        "valueKind": value_kind,
+        "unit": unit,
+        "housingType": housing_type,
+        "periodLabel": period_label,
+        "value": value_text,
+        "surveyName": survey_name,
+    }
+    value_json = _without_empty_values(
+        {
+            "regionName": "전국",
+            "metricName": metric_name,
+            "surveyName": survey_name,
+            "housingType": housing_type,
+            "value": value,
+            "unit": unit,
+            "periodLabel": period_label,
+            "periodYm": period_key,
+            "sourceUrl": REB_RONE_MAIN_URL,
+            "raw": raw,
+        }
+    )
+    return RealEstateMarketFact(
+        fact_type=fact_type,
+        provider="reb",
+        provider_dataset=REB_RONE_MAIN_SNAPSHOT_DATASET_ID,
+        provider_object_id=f"{REB_RONE_MAIN_SNAPSHOT_DATASET_ID}:{stat_code}:{period_key}",
+        legal_dong_code="00000",
+        observed_at=observed_at,
+        as_of=observed_at,
+        ingested_at=ingested_at,
+        value_json=value_json,
+        target_type="region",
+        target_id=None,
+        data_status="ok" if value is not None else "partial",
+    )
+
+
+def _reb_rone_fact_type(metric_name: str, housing_type: str, survey_name: str) -> str | None:
+    normalized_metric = metric_name.strip()
+    normalized_housing = housing_type.strip()
+    normalized_survey = survey_name.strip()
+    if (
+        normalized_metric == "매매가격지수 변동률"
+        and normalized_housing == "아파트"
+        and normalized_survey == "전국주택가격동향조사"
+    ):
+        return "sale_price_index_change_pct"
+    if (
+        normalized_metric == "전세가격지수 변동률"
+        and normalized_housing == "아파트"
+        and normalized_survey == "전국주택가격동향조사"
+    ):
+        return "jeonse_price_index_change_pct"
+    if normalized_metric == "아파트 매매거래호수" and normalized_survey == "부동산거래현황":
+        return "apartment_trade_volume"
+    return None
+
+
+def _reb_rone_period(period_label: str) -> tuple[date, str]:
+    cleaned = period_label.strip()
+    if re.fullmatch(r"\d{6}", cleaned):
+        year = int(cleaned[:4])
+        month = int(cleaned[4:])
+        return date(year, month, 1), cleaned
+    match = re.search(r"(\d{4})\s*년\s*(\d{1,2})\s*월", period_label)
+    if not match:
+        raise PublicDataProviderError(f"unsupported REB R-ONE period label: {period_label}")
+    year = int(match.group(1))
+    month = int(match.group(2))
+    return date(year, month, 1), f"{year:04d}{month:02d}"
 
 
 def _market_fact_from_item(

@@ -1,4 +1,6 @@
-export type PeriodKey = 'week' | 'month' | 'halfYear';
+import { repairMojibake } from './text-encoding';
+
+export type PeriodKey = 'month' | 'quarter' | 'halfYear';
 
 export type RealEstateMapLayerPeriod = {
   changePct: number;
@@ -60,12 +62,12 @@ export async function fetchRealEstateMapLayer(
   const payload = await response.json() as Partial<RealEstateMapLayerResponse>;
   return {
     layerType: payload.layerType ?? params.layerType ?? 'sido',
-    parentTargetId: payload.parentTargetId,
-    parentRegionCode: payload.parentRegionCode,
-    asOf: payload.asOf,
-    sourceLabel: payload.sourceLabel,
-    mapDataSource: payload.mapDataSource,
-    dataStatus: payload.dataStatus,
+    parentTargetId: repairMojibake(payload.parentTargetId),
+    parentRegionCode: repairMojibake(payload.parentRegionCode),
+    asOf: repairMojibake(payload.asOf),
+    sourceLabel: repairMojibake(payload.sourceLabel),
+    mapDataSource: repairMojibake(payload.mapDataSource),
+    dataStatus: repairMojibake(payload.dataStatus),
     stale: Boolean(payload.stale),
     periods: normalizePeriods(payload.periods),
     targets: Array.isArray(payload.targets) ? payload.targets.map(normalizeTarget).filter(isMapLayerTarget) : []
@@ -73,10 +75,10 @@ export async function fetchRealEstateMapLayer(
 }
 
 function normalizePeriods(periods: unknown): PeriodKey[] {
-  if (!Array.isArray(periods)) return ['week', 'month', 'halfYear'];
-  const allowed = new Set<PeriodKey>(['week', 'month', 'halfYear']);
+  if (!Array.isArray(periods)) return ['month', 'quarter', 'halfYear'];
+  const allowed = new Set<PeriodKey>(['month', 'quarter', 'halfYear']);
   const normalized = periods.filter((period): period is PeriodKey => allowed.has(period as PeriodKey));
-  return normalized.length ? normalized : ['week', 'month', 'halfYear'];
+  return normalized.length ? normalized : ['month', 'quarter', 'halfYear'];
 }
 
 function normalizeTarget(target: RealEstateMapLayerTarget): RealEstateMapLayerTarget | null {
@@ -84,15 +86,34 @@ function normalizeTarget(target: RealEstateMapLayerTarget): RealEstateMapLayerTa
   return {
     targetId: target.targetId,
     targetType: target.targetType ?? 'region',
-    displayName: target.displayName ?? target.targetId,
+    displayName: repairMojibake(target.displayName) || target.targetId,
     slug: target.slug,
-    regionLevel: target.regionLevel,
+    regionLevel: repairMojibake(target.regionLevel),
     regionCode: target.regionCode,
     legalDongCode: target.legalDongCode,
     parentTargetId: target.parentTargetId,
     geometryId: target.geometryId,
-    periods: target.periods ?? {}
+    periods: normalizeLayerPeriods(target.periods ?? {})
   };
+}
+
+function normalizeLayerPeriods(
+  periods: Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>
+): Partial<Record<PeriodKey, RealEstateMapLayerPeriod>> {
+  return Object.fromEntries(
+    Object.entries(periods)
+      .filter((entry): entry is [string, RealEstateMapLayerPeriod] => Boolean(entry[1]))
+      .map(([key, period]) => [
+        key,
+        {
+          ...period,
+          asOf: repairMojibake(period.asOf),
+          provider: repairMojibake(period.provider),
+          sourceLabel: repairMojibake(period.sourceLabel),
+          dataStatus: repairMojibake(period.dataStatus)
+        }
+      ])
+  ) as Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>;
 }
 
 function isMapLayerTarget(target: RealEstateMapLayerTarget | null): target is RealEstateMapLayerTarget {

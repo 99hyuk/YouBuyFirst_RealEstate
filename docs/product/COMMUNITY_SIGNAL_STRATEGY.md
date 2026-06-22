@@ -1,21 +1,22 @@
-# 부동산 반응 지표와 유사 상황 전략
+# 보조 공개 반응 신호와 유사 상황 전략
 
-이 문서는 커뮤니티 수집, 지역/단지 반응 지표, issueMix, 유사 과거 상황 검색, 에이전트 근거 로그의 경계를 한곳에 묶는 기준입니다.
+이 문서는 공개 커뮤니티/블로그/댓글에서 얻을 수 있는 보조 반응 신호, issueMix, 유사 과거 상황 검색, 에이전트 근거 로그의 경계를 한곳에 묶는 기준입니다. 현재 제품 정본은 실거래·전세·매물·공급·정책 일정 기반 인사이트 탐색이며, 반응 신호는 핵심 화면이나 대표 랭킹이 아니라 근거 로그와 상세 리포트의 보조 관찰 데이터로만 사용합니다.
 
-## 2026-06-01 결정 요약
+## 2026-06-22 결정 요약
 
-- 공개 대표값은 `지역/단지 반응 지표`와 `쟁점 비율`입니다.
-- source별 데이터는 지표의 입력입니다. 공개 화면에서 source별 성향, source별 우열을 직접 노출하지 않습니다.
-- source별 slice 실험은 내부 검증용입니다. 사용자 화면에서는 `반응 일관성`, `표본 신뢰도`, `소스 편중 주의`, `수집 지연`처럼 압축합니다.
+- 공개 대표값은 `실거래 탐색`, `시장 fact`, `주요 일정`, `근거 로그`입니다.
+- 공개 반응은 `지역/단지 반응 지표`라는 독립 대표 화면으로 내세우지 않습니다.
+- source별 데이터는 보조 근거의 입력입니다. 공개 화면에서 source별 성향, source별 우열을 직접 노출하지 않습니다.
+- source별 slice 실험은 내부 검증용입니다. 사용자 화면에서는 `보조 반응`, `표본 신뢰도`, `소스 편중 주의`, `수집 지연`처럼 압축합니다.
 - 특정 매수, 매도, 청약, 대출 행동을 유도하는 표현은 쓰지 않습니다. 결과는 `관찰`, `비교`, `과거 사례`, `근거 로그`로 표현합니다.
 
 ## 공개 노출과 내부 분석 경계
 
-공개 화면에 노출하는 값:
+공개 화면에 노출할 수 있는 값:
 
-- `지역/단지 반응 지표`: target/window 단위의 관찰 상태
+- `보조 공개 반응`: target/window 단위의 관찰 상태
 - `쟁점 비율`: 교통, 학군, 전세, 재건축, 청약, 대출, 공급, 정책 등
-- `언급 급증`, `기대/우려`, `반응 일관성`, `확산 강도`, `신뢰도`
+- `언급 변화`, `기대/우려`, `반응 일관성`, `확산 강도`, `신뢰도`
 - `표본 부족`, `소스 편중`, `수집 지연`, `market fact stale` 같은 주의 배지
 - 유사 과거 상황과 이후 시장 흐름 요약
 
@@ -51,7 +52,7 @@
 `issueMix`는 target/window 안의 글을 의미가 비슷한 쟁점으로 묶은 구조입니다.
 
 ```text
-지역 반응 지표: 혼조
+보조 공개 반응: 혼조
 표본 신뢰도: 보통
 
 주요 쟁점
@@ -63,7 +64,7 @@
 
 벡터DB는 초기 필수 저장소가 아닙니다. 먼저 Python batch에서 임베딩/클러스터링 실험을 하고, 아래 기능이 필요해질 때 Qdrant, pgvector 같은 저장소를 검토합니다.
 
-벡터DB의 역할은 과거 유사 상황 검색입니다. 지역/단지 식별, alias matcher, 실거래가 계산, 관심도 점수 산출의 정본으로 쓰지 않습니다. 예를 들어 현재 어떤 단지에서 `전세 불안 + 재건축 기대 + 매물 감소 + 커뮤니티 언급량 증가`가 동시에 나타났다면, 과거에 비슷한 반응 패턴이 있었던 target/window를 찾고 그 이후 실거래가, 전세가, 매물 흐름을 비교하는 데 사용합니다.
+벡터DB의 역할은 과거 유사 상황 검색입니다. 지역/단지 식별, alias matcher, 실거래가 계산, 관심도 점수 산출의 정본으로 쓰지 않습니다. 예를 들어 현재 어떤 단지에서 `전세 불안 + 재건축 기대 + 매물 감소 + 공개 반응 증가`가 동시에 나타났다면, 과거에 비슷한 반응 패턴이 있었던 target/window를 찾고 그 이후 실거래가, 전세가, 매물 흐름을 비교하는 데 사용합니다.
 
 - 현재 window와 비슷한 과거 반응 검색
 - 비슷한 `issueMix`를 가진 다른 지역/단지 검색
@@ -77,7 +78,7 @@ RAG가 맡는 일:
 
 - 지금 반응과 비슷했던 과거 window 요약
 - 비슷한 반응 이후 실거래/전세/매물 흐름 설명
-- 반응 지표가 왜 높거나 낮게 나왔는지 근거 정리
+- 보조 반응이 왜 높거나 낮게 나왔는지 근거 정리
 - 데이터 품질이 낮은 구간에서 caveat 설명
 
 RAG가 맡지 않는 일:
@@ -157,16 +158,16 @@ RealEstateReactionSnapshot
 
 ## 충돌 검토 결과
 
-- 부동산에서는 `RealEstateReactionSnapshot`, `RealEstateMarketFact`, `EvidenceLog`, `similar historical window`를 정본으로 둡니다.
+- 부동산에서는 `RealEstateMarketFact`, `MarketDataSchedule`, `EvidenceLog`, `similar historical window`를 정본으로 둡니다. `RealEstateReactionSnapshot`은 보조 관찰 신호입니다.
 - 기존 `sourceMoods` API 개념은 운영/내부 분석에는 유지할 수 있지만, 사용자-facing 필드명으로 그대로 쓰지 않습니다.
-- 벡터DB와 RAG는 실시간 matcher나 가격 계산기가 아닙니다. `collect -> match target -> classify reaction -> aggregate -> issueMix -> similar-window/RAG` 순서를 유지합니다.
+- 벡터DB와 RAG는 실시간 matcher나 가격 계산기가 아닙니다. 보조 반응을 쓸 때도 `collect -> match target -> classify reaction -> aggregate -> issueMix -> similar-window/RAG` 순서를 유지합니다.
 - SerpApi 같은 검색 API는 관심도 지표가 아니라 최근 이슈 후보와 근거 링크를 찾는 보조 채널입니다.
 
 ## 구현 순서
 
-1. `RealEstateReactionSnapshot` 저장 모델과 target/window 통합 지표 contract를 확정합니다.
-2. `RealEstateMarketFact`와 timeline event contract를 확정합니다.
-3. `issueMix` 후보 라벨과 confidence 기준을 정합니다.
+1. `RealEstateMarketFact`, `MarketDataSchedule`, timeline event contract를 확정합니다.
+2. 실거래 탐색과 지도/상세 리포트가 같은 target/window 기준을 쓰게 합니다.
+3. 보조 반응을 사용할 경우에만 `RealEstateReactionSnapshot` contract와 `issueMix` 후보 라벨을 확정합니다.
 4. 임베딩/클러스터링 batch로 유사 쟁점 후보를 만듭니다.
 5. 유사 window 검색이 실제 제품 기능이 될 때 벡터DB를 도입합니다.
 6. RAG는 유사 사례와 market fact 차이를 설명하는 레이어로 붙입니다.

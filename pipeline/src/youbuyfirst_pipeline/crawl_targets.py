@@ -5,6 +5,22 @@ from enum import Enum
 
 DCINSIDE_REALESTATE_BOARD_URL = "https://gall.dcinside.com/board/lists/?id=immovables"
 PPOMPPU_REALESTATE_BOARD_URL = "https://m.ppomppu.co.kr/new/bbs_list.php?id=house&page=1"
+FMKOREA_REALESTATE_BOARD_URL = "https://www.fmkorea.com/realestate"
+NAVER_CAFE_PUBLIC_SEARCH_URL = "serpapi://google?domain=cafe.naver.com"
+DAUM_CAFE_PUBLIC_SEARCH_URL = "serpapi://google?domain=cafe.daum.net"
+CLIEN_PARK_BOARD_URL = "https://m.clien.net/service/board/park"
+COOK82_FREEBOARD_URL = "https://www.82cook.com/entiz/enti.php?bn=15"
+DEALAGORA_COMMUNITY_BOARD_URL = "https://dealagora.co.kr/subpage/bbs/borad.php?cate=&code=community&order=new"
+THEQOO_SQUARE_BOARD_URL = "https://theqoo.net/square"
+MLBPARK_BULLPEN_BOARD_URL = "https://mlbpark.donga.com/mp/b.php?m=list&b=bullpen"
+NATEPANN_TALK_BOARD_URL = "https://pann.nate.com/talk/c20002"
+TODAYHUMOR_ECONOMY_BOARD_URL = "https://www.todayhumor.co.kr/board/list.php?table=economy"
+TODAYHUMOR_FREEBOARD_URL = "https://www.todayhumor.co.kr/board/list.php?table=freeboard"
+RULIWEB_COMMUNITY_BOARD_URL = "https://bbs.ruliweb.com/community/board/300143"
+BOBAEDREAM_FREEBOARD_URL = "https://www.bobaedream.co.kr/list?code=freeb"
+INSTIZ_NAME_BOARD_URL = "https://www.instiz.net/name"
+SLRCLUB_FREE_BOARD_URL = "https://www.slrclub.com/bbs/zboard.php?id=free"
+INVEN_WEBZINE_BOARD_URL = "https://www.inven.co.kr/board/webzine/2097"
 
 
 class CrawlTargetKind(str, Enum):
@@ -135,6 +151,152 @@ def real_estate_community_board_registry() -> tuple[CommunityBoardRegistryEntry,
             domain_scope="KR_REALESTATE",
             latest_url=DCINSIDE_REALESTATE_BOARD_URL,
             latest_priority=210,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="FMKOREA",
+            board_id="realestate",
+            display_name="FMKOREA real estate board",
+            domain_scope="KR_REALESTATE",
+            latest_url=FMKOREA_REALESTATE_BOARD_URL,
+            latest_priority=220,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="NAVER_CAFE",
+            board_id="public_search",
+            display_name="Naver Cafe public real-estate search discovery",
+            domain_scope="KR_REALESTATE",
+            latest_url=NAVER_CAFE_PUBLIC_SEARCH_URL,
+            latest_priority=230,
+            enabled_by_default=False,
+            crawl_policy="realestate-cafe-public-search",
+        ),
+        CommunityBoardRegistryEntry(
+            source="DAUM_CAFE",
+            board_id="public_search",
+            display_name="Daum Cafe public real-estate search discovery",
+            domain_scope="KR_REALESTATE",
+            latest_url=DAUM_CAFE_PUBLIC_SEARCH_URL,
+            latest_priority=231,
+            enabled_by_default=False,
+            crawl_policy="realestate-cafe-public-search",
+        ),
+        CommunityBoardRegistryEntry(
+            source="CLIEN",
+            board_id="park",
+            display_name="Clien park real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=CLIEN_PARK_BOARD_URL,
+            latest_priority=300,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="COOK82",
+            board_id="freeboard",
+            display_name="82cook freeboard real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=COOK82_FREEBOARD_URL,
+            latest_priority=300,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="DEALAGORA",
+            board_id="community",
+            display_name="Dealagora real-estate community board",
+            domain_scope="KR_REALESTATE",
+            latest_url=DEALAGORA_COMMUNITY_BOARD_URL,
+            latest_priority=240,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="THEQOO",
+            board_id="square",
+            display_name="Theqoo square real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=THEQOO_SQUARE_BOARD_URL,
+            latest_priority=310,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="MLBPARK",
+            board_id="bullpen",
+            display_name="MLBPark bullpen real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=MLBPARK_BULLPEN_BOARD_URL,
+            latest_priority=320,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="NATEPANN",
+            board_id="talk",
+            display_name="Nate Pann talk real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=NATEPANN_TALK_BOARD_URL,
+            latest_priority=330,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="TODAYHUMOR",
+            board_id="economy",
+            display_name="TodayHumor economy real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=TODAYHUMOR_ECONOMY_BOARD_URL,
+            latest_priority=340,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="TODAYHUMOR",
+            board_id="freeboard",
+            display_name="TodayHumor freeboard real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=TODAYHUMOR_FREEBOARD_URL,
+            latest_priority=341,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="RULIWEB",
+            board_id="community",
+            display_name="Ruliweb community real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=RULIWEB_COMMUNITY_BOARD_URL,
+            latest_priority=350,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="BOBAEDREAM",
+            board_id="freeb",
+            display_name="Bobaedream freeboard real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=BOBAEDREAM_FREEBOARD_URL,
+            latest_priority=360,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="INSTIZ",
+            board_id="name",
+            display_name="Instiz name real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=INSTIZ_NAME_BOARD_URL,
+            latest_priority=370,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="SLRCLUB",
+            board_id="free",
+            display_name="SLRClub freeboard real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=SLRCLUB_FREE_BOARD_URL,
+            latest_priority=380,
+            enabled_by_default=False,
+        ),
+        CommunityBoardRegistryEntry(
+            source="INVEN",
+            board_id="webzine2097",
+            display_name="Inven webzine freeboard real-estate keyword board",
+            domain_scope="KR_REALESTATE",
+            latest_url=INVEN_WEBZINE_BOARD_URL,
+            latest_priority=390,
             enabled_by_default=False,
         ),
     )

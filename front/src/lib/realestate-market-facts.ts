@@ -1,4 +1,7 @@
+import { repairMojibake } from './text-encoding';
+
 export type RealEstateMarketFact = {
+  providerObjectId?: string;
   factType?: string;
   provider?: string;
   providerDataset?: string;
@@ -22,8 +25,11 @@ export type RealEstateMarketFactRow = {
 
 export type FetchMarketFactParams = {
   legalDongCode?: string;
+  targetId?: string;
   factType?: string;
+  officialOnly?: boolean;
   limit?: number;
+  page?: number;
 };
 
 type Fetcher = (input: string) => Promise<Response>;
@@ -59,19 +65,64 @@ export type RealEstateMarketIndicatorCard = {
   trend: string;
 };
 
+export const realEstateMarketIndicatorFallbacks: RealEstateMarketIndicatorCard[] = [
+  {
+    label: '공급·수급',
+    value: '미분양·공급 후보',
+    changePct: null,
+    updatedLabel: '공공데이터 연동 대기',
+    trend: 'down'
+  },
+  {
+    label: '수요·심리',
+    value: '반응 지표 기반',
+    changePct: null,
+    updatedLabel: '커뮤니티 반응 보조',
+    trend: 'up'
+  },
+  {
+    label: '거시·금융',
+    value: '금리·대출 이슈',
+    changePct: null,
+    updatedLabel: '최근 이슈 후보',
+    trend: 'up'
+  }
+];
+
 export async function fetchRealEstateMarketFacts(
   params: FetchMarketFactParams = {},
   fetcher: Fetcher = fetch
 ): Promise<RealEstateMarketFact[]> {
   const query = new URLSearchParams();
   if (params.legalDongCode) query.set('legalDongCode', params.legalDongCode);
+  if (params.targetId) query.set('targetId', params.targetId);
   if (params.factType) query.set('factType', params.factType);
-  if (params.limit) query.set('limit', String(params.limit));
+  if (typeof params.limit === 'number') query.set('limit', String(params.limit));
+  if (typeof params.page === 'number') query.set('page', String(params.page));
 
   const suffix = query.toString();
   const response = await fetcher(`/api/realestate/market-facts${suffix ? `?${suffix}` : ''}`);
   if (!response.ok) {
     throw new Error(`market facts request failed: ${response.status}`);
+  }
+  const payload = await response.json() as { items?: RealEstateMarketFact[] };
+  return Array.isArray(payload.items) ? payload.items : [];
+}
+
+export async function fetchRealEstateTargetMarketFacts(
+  targetId: string,
+  params: Pick<FetchMarketFactParams, 'factType' | 'limit' | 'officialOnly'> = {},
+  fetcher: Fetcher = fetch
+): Promise<RealEstateMarketFact[]> {
+  const query = new URLSearchParams();
+  if (params.factType) query.set('factType', params.factType);
+  if (typeof params.limit === 'number') query.set('limit', String(params.limit));
+  if (params.officialOnly) query.set('officialOnly', 'true');
+
+  const suffix = query.toString();
+  const response = await fetcher(`/api/realestate/targets/${encodeURIComponent(targetId)}/market-facts${suffix ? `?${suffix}` : ''}`);
+  if (!response.ok) {
+    throw new Error(`target market facts request failed: ${response.status}`);
   }
   const payload = await response.json() as { items?: RealEstateMarketFact[] };
   return Array.isArray(payload.items) ? payload.items : [];
@@ -101,10 +152,10 @@ export function buildMarketSummaryIndicators(
   fallbackIndicators: RealEstateMarketIndicatorCard[] = []
 ): RealEstateMarketIndicatorCard[] {
   const apiIndicators = summary.items.map((item) => ({
-    label: item.label,
-    value: item.value,
+    label: repairMojibake(item.label),
+    value: repairMojibake(item.value),
     changePct: typeof item.changePct === 'number' ? item.changePct : null,
-    updatedLabel: item.updatedLabel,
+    updatedLabel: repairMojibake(item.updatedLabel),
     trend: item.trend === 'down' ? 'down' : 'up'
   }));
 
@@ -152,19 +203,24 @@ export function buildMarketFactRows(facts: RealEstateMarketFact[]): RealEstateMa
 }
 
 function marketFactBaseId(fact: RealEstateMarketFact): string {
-  return [
+  const parts = [
     fact.providerDataset ?? 'market-fact',
     fact.legalDongCode ?? 'unknown',
     fact.factType ?? 'unknown',
     fact.observedAt ?? fact.asOf ?? 'unknown'
-  ].join(':');
+  ];
+  if (fact.providerObjectId) {
+    parts.splice(1, 0, fact.providerObjectId);
+  }
+  return parts.join(':');
 }
 
 export function marketFactStatusLabel(fact: Pick<RealEstateMarketFact, 'dataStatus' | 'stale'>): string {
   if (fact.stale) return '지연 가능';
   const status = (fact.dataStatus ?? '').toLowerCase();
   if (status === 'ok') return '공공데이터 반영';
-  if (status === 'mock') return 'mock';
+  if (status === 'mock') return '수집 전/insufficient';
+  if (status === 'insufficient') return '수집 전/insufficient';
   if (status === 'empty') return '데이터 없음';
   return '확인 필요';
 }
@@ -193,15 +249,23 @@ function factValue(fact: RealEstateMarketFact, valueJson: Record<string, unknown
 }
 
 function factMeta(fact: RealEstateMarketFact, valueJson: Record<string, unknown>): string {
-  const name = stringValue(valueJson.apartmentName) ?? '단지명 확인 필요';
-  const observedAt = fact.observedAt ?? '계약일 확인 필요';
-  const asOf = fact.asOf ?? '기준일 확인 필요';
-  return `${name} · 계약 ${observedAt} · 기준 ${asOf}`;
+  const name = repairMojibake(stringValue(valueJson.apartmentName)) || '단지명 확인 필요';
+  const observedAt = repairMojibake(fact.observedAt) || '계약일 확인 필요';
+  const asOf = repairMojibake(fact.asOf) || '기준일 확인 필요';
+  const exclusiveArea = numberValue(valueJson.exclusiveAreaM2);
+  const floor = numberValue(valueJson.floor);
+  return [
+    name,
+    exclusiveArea === null ? null : `전용 ${exclusiveArea.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}㎡`,
+    floor === null ? null : `${floor}층`,
+    `계약 ${observedAt}`,
+    `기준 ${asOf}`
+  ].filter((item): item is string => Boolean(item)).join(' · ');
 }
 
 function providerLabel(provider?: string): string {
   if (provider === 'molit') return '국토교통부';
-  return provider ?? 'provider 확인 필요';
+  return provider ?? '출처 확인 필요';
 }
 
 function formatManwonAsEok(value: number): string {

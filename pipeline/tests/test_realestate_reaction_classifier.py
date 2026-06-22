@@ -127,6 +127,35 @@ def test_rule_based_classifier_detects_concern_issues_and_keeps_neutral_when_sig
     assert observations[1].issues == []
 
 
+def test_rule_based_classifier_skips_naver_cafe_trade_table_posts_as_reactions():
+    post = RealEstateMatchedPost(
+        source="NAVER_CAFE",
+        external_id="NAVER_CAFE-public_search-trade-table",
+        published_at=datetime(2026, 6, 17, 1, 0, tzinfo=timezone.utc),
+        url="https://cafe.naver.com/example/123",
+        title="경기도 아파트 매매 시세, 화성동탄2센트럴힐즈동탄아파트 외 실거래가 2505건",
+        content_snippet="화성동탄2센트럴힐즈동탄아파트 2017년 준공 / 경기도 화성시 오산동 4억 7,500만 신고가",
+        mentions=[
+            RealEstateTargetMention(
+                target_type="complex",
+                target_id="complex-ssafy-home-41590-1554",
+                matched_text="화성동탄2센트럴힐즈동탄아파트",
+                match_source="contentSnippet",
+                confidence=0.92,
+                review_state="approved",
+                alias_type="official",
+            )
+        ],
+    )
+
+    observations = classify_real_estate_reaction_observations(
+        [post],
+        classifier=RuleBasedRealEstateReactionClassifier(),
+    )
+
+    assert observations == []
+
+
 def test_load_real_estate_matched_posts_reads_target_match_output(tmp_path):
     path = tmp_path / "matches.json"
     path.write_text(

@@ -8,6 +8,7 @@ public record CommunityPostExportResponse(
         Instant publishedFrom,
         Instant publishedTo,
         int limit,
+        int page,
         List<CommunityPostExportItemResponse> items
 ) {
 }

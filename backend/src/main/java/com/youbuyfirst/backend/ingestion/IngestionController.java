@@ -35,9 +35,10 @@ public class IngestionController {
             @RequestParam(required = false) String source,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant publishedFrom,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant publishedTo,
-            @RequestParam(defaultValue = "1000") int limit
+            @RequestParam(defaultValue = "1000") int limit,
+            @RequestParam(defaultValue = "0") int page
     ) {
-        return ingestionService.exportCommunityPosts(source, publishedFrom, publishedTo, limit);
+        return ingestionService.exportCommunityPosts(source, publishedFrom, publishedTo, limit, page);
     }
 
     @PostMapping("/crawl-runs")

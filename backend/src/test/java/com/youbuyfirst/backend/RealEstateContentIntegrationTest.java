@@ -127,4 +127,73 @@ class RealEstateContentIntegrationTest {
         assertThat(evidenceContentItems.get(0).path("reviewState").asText()).isEqualTo("candidate");
         assertThat(evidenceContentItems.get(0).path("linkType").asText()).isEqualTo("context");
     }
+
+    @Test
+    void newsroomPrioritizesCuratedContentAheadOfSearchCandidates() throws Exception {
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("contentId", "content-news-candidate-newer"),
+                                Map.entry("sourceId", "serpapi:google_news"),
+                                Map.entry("contentType", "news"),
+                                Map.entry("title", "검색 후보 최신 기사"),
+                                Map.entry("snippet", "검색 후보로 들어온 최신 기사입니다."),
+                                Map.entry("url", "https://example.com/news/candidate-newer"),
+                                Map.entry("domain", "example.com"),
+                                Map.entry("publishedAt", "2026-06-18T04:00:00Z"),
+                                Map.entry("metricLabel", "query: 서울 부동산"),
+                                Map.entry("statusLabel", "search_candidate"),
+                                Map.entry("ingestedAt", "2026-06-18T04:10:00Z"),
+                                Map.entry("dataStatus", "candidate"),
+                                Map.entry("targets", List.of())
+                        ),
+                        Map.ofEntries(
+                                Map.entry("contentId", "content-news-curated-older"),
+                                Map.entry("sourceId", "manual_curated:news"),
+                                Map.entry("contentType", "news"),
+                                Map.entry("title", "검증 큐레이션 기사"),
+                                Map.entry("snippet", "검증된 수동 큐레이션 기사입니다."),
+                                Map.entry("url", "https://example.com/news/curated-older"),
+                                Map.entry("domain", "example.com"),
+                                Map.entry("publishedAt", "2026-06-01T04:00:00Z"),
+                                Map.entry("metricLabel", "큐레이션"),
+                                Map.entry("statusLabel", "수동 큐레이션"),
+                                Map.entry("ingestedAt", "2026-06-18T04:20:00Z"),
+                                Map.entry("dataStatus", "curated"),
+                                Map.entry("targets", List.of())
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/content-items",
+                request,
+                String.class
+        );
+        ResponseEntity<String> newsroom = restTemplate.getForEntity(
+                "/api/realestate/newsroom?feed=news&page=1&pageSize=100",
+                String.class
+        );
+
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(newsroom.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode items = objectMapper.readTree(newsroom.getBody()).path("items");
+        int curatedIndex = indexOfContent(items, "content-news-curated-older");
+        int candidateIndex = indexOfContent(items, "content-news-candidate-newer");
+
+        assertThat(curatedIndex).isGreaterThanOrEqualTo(0);
+        assertThat(candidateIndex).isGreaterThanOrEqualTo(0);
+        assertThat(curatedIndex).isLessThan(candidateIndex);
+    }
+
+    private static int indexOfContent(JsonNode items, String contentId) {
+        for (int index = 0; index < items.size(); index++) {
+            if (contentId.equals(items.get(index).path("contentId").asText())) {
+                return index;
+            }
+        }
+        return -1;
+    }
 }

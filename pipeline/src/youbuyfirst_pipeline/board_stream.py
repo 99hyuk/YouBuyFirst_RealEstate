@@ -26,6 +26,10 @@ class BoardPage:
     posts: list[RawPost]
     next_cursor: str | None = None
     ignored_pinned_count: int = 0
+    filtered_count: int = 0
+    excluded_title_count: int = 0
+    keyword_miss_count: int = 0
+    duplicate_link_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -39,6 +43,10 @@ class BoardCoverage:
     newest_seen_at: datetime | None
     last_cursor: str | None
     coverage_status: str
+    filtered_count: int = 0
+    excluded_title_count: int = 0
+    keyword_miss_count: int = 0
+    duplicate_link_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -80,6 +88,10 @@ class BoardStreamCrawler:
         pages_fetched = 0
         rows_seen = 0
         ignored_pinned_count = 0
+        filtered_count = 0
+        excluded_title_count = 0
+        keyword_miss_count = 0
+        duplicate_link_count = 0
         duplicate_stop = False
         cutoff_stop = False
         limit_stop = False
@@ -94,6 +106,10 @@ class BoardStreamCrawler:
             pages_fetched += 1
             last_cursor = page.cursor
             ignored_pinned_count += page.ignored_pinned_count
+            filtered_count += page.filtered_count
+            excluded_title_count += page.excluded_title_count
+            keyword_miss_count += page.keyword_miss_count
+            duplicate_link_count += page.duplicate_link_count
 
             for post in page.posts:
                 rows_seen += 1
@@ -131,6 +147,10 @@ class BoardStreamCrawler:
                 newest_seen_at=newest_seen_at,
                 last_cursor=last_cursor,
                 coverage_status=coverage_status,
+                filtered_count=filtered_count,
+                excluded_title_count=excluded_title_count,
+                keyword_miss_count=keyword_miss_count,
+                duplicate_link_count=duplicate_link_count,
             ),
         )
 

@@ -1,3 +1,5 @@
+import { repairMojibake } from './text-encoding';
+
 export type NewsroomFilter = 'all' | 'news' | 'reports' | 'videos' | 'links';
 export type NewsroomCategory = Exclude<NewsroomFilter, 'all'>;
 export type NewsroomTone = 'news' | 'report' | 'video' | 'link';
@@ -32,7 +34,7 @@ export type NewsroomFeedItem = {
   url: string;
   meta: string;
   statusLabel: string;
-  rankLabel?: string;
+  derived?: boolean;
 };
 
 export type FetchRealEstateNewsroomParams = {
@@ -47,6 +49,8 @@ export type FetchRealEstateTargetContentParams = {
 };
 
 type Fetcher = (input: string) => Promise<Response>;
+const SEARCH_CANDIDATE_MAX_AGE_DAYS = 90;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function fetchRealEstateNewsroom(
   params: FetchRealEstateNewsroomParams = {},
@@ -83,33 +87,31 @@ export async function fetchRealEstateTargetContent(
 }
 
 export function buildNewsroomFeedItems(items: RealEstateContentItem[]): NewsroomFeedItem[] {
-  const rankCounters: Record<'videos' | 'links', number> = {
-    videos: 0,
-    links: 0
-  };
+  return items.flatMap((item) => {
+    const normalizedItem = normalizeContentItem(item);
+    if (!shouldDisplayContentItem(normalizedItem)) return [];
 
-  return items.map((item) => {
-    const category = contentCategory(item.contentType);
+    const category = contentCategory(normalizedItem);
     const tone = contentTone(category);
-    const iconDomain = item.domain ?? hostname(item.url);
-    const rankLabel = category === 'videos' || category === 'links'
-      ? `${++rankCounters[category]}위`
-      : undefined;
+    const iconDomain = normalizedItem.domain ?? hostname(normalizedItem.url);
 
-    return {
-      id: item.contentId,
+    return [{
+      id: normalizedItem.contentId,
       category,
       tone,
-      title: item.title,
-      source: sourceLabel(item.sourceId, iconDomain),
+      title: normalizedItem.title,
+      source: sourceLabel(normalizedItem.sourceId, iconDomain),
       iconDomain,
-      iconClass: contentIconClass(item.contentType, iconDomain),
-      url: item.url,
-      meta: contentMeta(item),
-      statusLabel: displayStatusLabel(item),
-      ...(rankLabel ? { rankLabel } : {})
-    };
+      iconClass: contentIconClass(normalizedItem.contentType, iconDomain, normalizedItem.title, category),
+      url: normalizedItem.url,
+      meta: contentMeta(normalizedItem),
+      statusLabel: displayStatusLabel(normalizedItem)
+    }];
   });
+}
+
+export function ensureNewsroomCategoryCoverage(items: NewsroomFeedItem[]): NewsroomFeedItem[] {
+  return items;
 }
 
 function apiFeed(feed: NewsroomFilter): string {
@@ -123,12 +125,145 @@ function apiFeed(feed: NewsroomFilter): string {
   return map[feed] ?? 'all';
 }
 
-function contentCategory(contentType?: string | null): NewsroomCategory {
-  const normalized = (contentType ?? '').toLowerCase();
-  if (['report', 'reports', 'column', 'official_notice'].includes(normalized)) return 'reports';
-  if (['video', 'videos', 'youtube'].includes(normalized)) return 'videos';
-  if (['link', 'links', 'blog', 'community'].includes(normalized)) return 'links';
+function normalizeContentItem(item: RealEstateContentItem): RealEstateContentItem {
+  return {
+    ...item,
+    title: repairMojibake(item.title),
+    snippet: repairMojibake(item.snippet),
+    metricLabel: repairMojibake(item.metricLabel),
+    statusLabel: repairMojibake(item.statusLabel),
+    domain: repairMojibake(item.domain),
+    sourceId: repairMojibake(item.sourceId)
+  };
+}
+
+function contentCategory(item: RealEstateContentItem): NewsroomCategory {
+  const normalized = (item.contentType ?? '').toLowerCase();
+  const domain = (item.domain ?? hostname(item.url)).toLowerCase();
+  const searchable = `${item.title} ${item.snippet ?? ''} ${item.metricLabel ?? ''} ${domain}`.toLowerCase();
+  const isSearchCandidate = isSearchCandidateItem(item);
+
+  if (['video', 'videos', 'youtube'].includes(normalized)) {
+    return !isSearchCandidate || isVideoDomain(domain) ? 'videos' : 'news';
+  }
+  if (['link', 'links', 'blog', 'community'].includes(normalized)) {
+    return 'links';
+  }
+  if (['report', 'reports', 'column', 'official_notice'].includes(normalized)) {
+    return !isSearchCandidate || isReportDomain(domain) ? 'reports' : 'news';
+  }
+  if (normalized === 'news' && !isSearchCandidate) return 'news';
+  if (isVideoDomain(domain)) return 'videos';
+  if (isLinkDomain(domain)) return 'links';
+  if (isReportDomain(domain) || (!isSearchCandidate && isReportLikeText(searchable))) return 'reports';
+  if (!isSearchCandidate && /동영상|영상|유튜브|영상 브리핑|브리핑 영상|인터뷰 영상/.test(searchable)) return 'videos';
+  if (!isSearchCandidate && /칼럼|블로그|브런치|커뮤니티|카페 글|원문 후기/.test(searchable)) return 'links';
   return 'news';
+}
+
+function shouldDisplayContentItem(item: RealEstateContentItem): boolean {
+  if (!isSearchCandidateItem(item)) return true;
+
+  const domain = (item.domain ?? hostname(item.url)).toLowerCase();
+  const searchable = `${item.title} ${item.snippet ?? ''} ${domain}`.toLowerCase();
+
+  if (isJobDomain(domain)) return false;
+  if (domain === 'gogogogo.kr' && /\/share\/youtube\//.test(item.url)) return false;
+  if (isMismatchedSearchIntent(item, domain)) return false;
+  if (!hasRealEstateContentSignal(searchable)) return false;
+  if (isVideoDomain(domain) && (isInvalidYouTubeCandidateUrl(item.url) || !trustedRealEstateVideoSignal(searchable))) return false;
+  if (isStaleSearchCandidate(item, searchable, domain)) return false;
+  if (isLowQualityRealEstateSearchCandidate(searchable, domain)) return false;
+  if (/채용|구인|구직|recruit|jobkorea|saramin|wanted/.test(searchable)) return false;
+  return true;
+}
+
+function isSearchCandidateItem(item: RealEstateContentItem): boolean {
+  const sourceId = (item.sourceId ?? '').toLowerCase();
+  const dataStatus = (item.dataStatus ?? '').toLowerCase();
+  const statusLabel = (item.statusLabel ?? '').toLowerCase();
+  return sourceId === 'serpapi:google_news'
+    || dataStatus === 'candidate'
+    || statusLabel === 'search_candidate';
+}
+
+function isStaleSearchCandidate(item: RealEstateContentItem, searchable: string, domain: string): boolean {
+  const normalized = (item.contentType ?? '').toLowerCase();
+  const isLinkCandidate = ['link', 'links', 'blog', 'community'].includes(normalized) || isLinkDomain(domain);
+
+  const publishedAt = parseTimestamp(item.publishedAt);
+  if (publishedAt) {
+    const now = new Date();
+    const ageDays = Math.floor((now.getTime() - publishedAt.getTime()) / DAY_MS);
+    if (publishedAt.getUTCFullYear() < now.getUTCFullYear()) return true;
+    return ageDays > SEARCH_CANDIDATE_MAX_AGE_DAYS;
+  }
+
+  const years = yearHints(searchable);
+  if (!years.length) return false;
+
+  const currentYear = new Date().getUTCFullYear();
+  const hasPastYear = years.some((year) => year < currentYear);
+  const hasCurrentOrFutureYear = years.some((year) => year >= currentYear);
+  return isLinkCandidate && hasPastYear && !hasCurrentOrFutureYear;
+}
+
+function parseTimestamp(value?: string | null): Date | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  if (Number.isNaN(timestamp)) return null;
+  return new Date(timestamp);
+}
+
+function isMismatchedSearchIntent(item: RealEstateContentItem, domain: string): boolean {
+  const query = `${item.metricLabel ?? ''}`.toLowerCase();
+  if (!query.includes('query:')) return false;
+  if (query.includes('블로그') && !isLinkDomain(domain)) return true;
+  if ((query.includes('영상') || query.includes('유튜브')) && !isVideoDomain(domain)) return true;
+  if (query.includes('리포트') && !(isReportDomain(domain) || isReportLikeText(`${item.title} ${item.snippet ?? ''}`.toLowerCase()))) {
+    return true;
+  }
+  return false;
+}
+
+function trustedRealEstateVideoSignal(searchable: string): boolean {
+  return /부읽남|부동산\s*읽어주는\s*남자|집코노미|매부리tv|삼프로tv|3protv|김작가\s*tv|스튜tv|스마트튜브|빠숑|kb부동산tv|부동산r114|직방tv|땅집고/.test(searchable);
+}
+
+function isInvalidYouTubeCandidateUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    if (!isVideoDomain(hostname)) return false;
+    if (hostname === 'youtu.be') return false;
+    return !parsed.pathname.startsWith('/watch');
+  } catch {
+    return true;
+  }
+}
+
+function isLowQualityRealEstateSearchCandidate(searchable: string, domain: string): boolean {
+  const isMediaOrLink = isLinkDomain(domain) || isVideoDomain(domain);
+  if (!isMediaOrLink) return false;
+  return /속눈썹|펜션|캠핑|맛집|전통시장|체험단|원룸텔|고시원|일반공장|경매|법원입찰|급매매\s*추천|매물\s*홍보|소액으로|보증금\s*\d|월세\s*\d|논\s*밭|임야|전원생활|토지매매|no:\s*|아늑한|전원주택|단독주택|상가\s*매매|하이엔드\s*타운하우스|언박싱/.test(searchable);
+}
+
+function hasRealEstateContentSignal(value: string): boolean {
+  return /부동산|아파트|주택|주거|전세|월세|전월세|매매가|매매\s*가격|분양|청약|재건축|재개발|입주|공시가격|실거래|대출|금리|학군|교통|개발|공급|집값|시세|단지|real estate|housing|apartment/.test(value);
+}
+
+function yearHints(value: string): number[] {
+  const years = new Set<number>();
+  for (const match of value.matchAll(/20\d{2}/g)) {
+    years.add(Number(match[0]));
+  }
+  for (const match of value.matchAll(/(?:^|[^\d])(\d{2})\s*년/g)) {
+    const year = Number(match[1]);
+    if (year >= 0 && year <= 99) {
+      years.add(2000 + year);
+    }
+  }
+  return [...years];
 }
 
 function contentTone(category: NewsroomCategory): NewsroomTone {
@@ -138,13 +273,21 @@ function contentTone(category: NewsroomCategory): NewsroomTone {
   return 'news';
 }
 
-function contentIconClass(contentType?: string | null, domain = ''): string {
+function contentIconClass(
+  contentType?: string | null,
+  domain = '',
+  title = '',
+  category: NewsroomCategory = 'news'
+): string {
   const normalizedType = (contentType ?? '').toLowerCase();
   const normalizedDomain = domain.toLowerCase();
-  if (normalizedDomain.includes('youtube') || normalizedType === 'video') return 'youtube';
+  const normalizedTitle = title.toLowerCase();
+  if (category === 'videos' && (normalizedDomain.includes('youtube') || normalizedType === 'video')) return 'youtube';
   if (normalizedDomain === 'blog.naver.com') return 'naver-blog';
   if (normalizedDomain === 'cafe.naver.com') return 'naver';
   if (normalizedDomain === 'cafe.daum.net') return 'community';
+  if (normalizedDomain.includes('brunch') || normalizedDomain.includes('blog') || normalizedDomain.includes('tistory')) return 'naver-blog';
+  if (isReportDomain(normalizedDomain) || /보고서|리포트|연구원|리서치|전망/.test(normalizedTitle)) return 'news-research';
   if (['report', 'column', 'official_notice'].includes(normalizedType)) return 'news-research';
   if (['link', 'blog', 'community'].includes(normalizedType)) return 'community';
   return 'news';
@@ -158,11 +301,12 @@ function contentMeta(item: RealEstateContentItem): string {
 
 function displayStatusLabel(item: RealEstateContentItem): string {
   const statusLabel = trimToNull(item.statusLabel);
-  if (statusLabel) return statusLabel;
+  if (statusLabel) return displayRawStatusLabel(statusLabel);
 
   const dataStatus = (item.dataStatus ?? '').toLowerCase();
   if (dataStatus === 'ok') return '수집 확인';
-  if (dataStatus === 'mock') return 'mock';
+  if (dataStatus === 'mock') return '수집 전/insufficient';
+  if (dataStatus === 'insufficient') return '수집 전/insufficient';
   if (dataStatus === 'stale') return '지연 가능';
   if (dataStatus === 'empty') return '데이터 없음';
   return '확인 필요';
@@ -177,11 +321,94 @@ function sourceLabel(sourceId?: string | null, domain = ''): string {
     naver_blog: '네이버 블로그',
     naver_cafe: '네이버 카페',
     reb: '한국부동산원',
+    'serpapi:google_news': '최근 이슈 검색',
     youtube: '유튜브'
   };
+  if (normalized === 'serpapi:google_news' && domain) {
+    return domainLabel(domain);
+  }
   if (map[normalized]) return map[normalized];
-  if (domain) return domain;
+  if (domain) return domainLabel(domain);
   return '출처 확인 필요';
+}
+
+function isReportDomain(domain: string): boolean {
+  return [
+    'www.reb.or.kr',
+    'www.molit.go.kr',
+    'www.krihs.re.kr',
+    'www.kab.co.kr',
+    'www.khug.or.kr',
+    'www.hf.go.kr',
+    'www.bok.or.kr',
+    'www.fss.or.kr',
+    'www.kdi.re.kr',
+    'www.kbfg.com',
+    'www.kbstar.com',
+    'kbthink.com',
+    'www.hanaif.re.kr',
+    'www.hanafn.com',
+    'www.shinhan.com',
+    'www.woorifg.com',
+    'www.nhwm.com',
+    'www.miraeasset.com',
+    'securities.miraeasset.com',
+    'www.samsungpop.com'
+  ].includes(domain);
+}
+
+function isVideoDomain(domain: string): boolean {
+  return /youtube|youtu\.be/.test(domain);
+}
+
+function isLinkDomain(domain: string): boolean {
+  return /blog|brunch|tistory|cafe/.test(domain);
+}
+
+function isJobDomain(domain: string): boolean {
+  return /jobkorea|saramin|wanted/.test(domain);
+}
+
+function isReportLikeText(searchable: string): boolean {
+  return /보고서|리포트|연구원|리서치|전망 자료|시장 전망|월간 동향|주간 동향|주택 통계|가격지수 통계|k-hai/.test(searchable);
+}
+
+function displayRawStatusLabel(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'search_candidate') return '근거 후보';
+  if (normalized === 'candidate') return '후보';
+  return value;
+}
+
+function domainLabel(domain: string): string {
+  const normalized = domain.toLowerCase();
+  const labels: Record<string, string> = {
+    'www.youtube.com': '유튜브',
+    'youtu.be': '유튜브',
+    'blog.naver.com': '네이버 블로그',
+    'cafe.naver.com': '네이버 카페',
+    'cafe.daum.net': '다음 카페',
+    'v.daum.net': '다음 뉴스',
+    'www.google.co.kr': 'Google 검색',
+    'www.hankyung.com': '한국경제',
+    'magazine.hankyung.com': '한경 매거진',
+    'www.mk.co.kr': '매일경제',
+    'www.sedaily.com': '서울경제',
+    'biz.chosun.com': '조선비즈',
+    'realty.chosun.com': '땅집고',
+    'www.yna.co.kr': '연합뉴스',
+    'news.kbs.co.kr': 'KBS 뉴스',
+    'www.reb.or.kr': '한국부동산원',
+    'www.molit.go.kr': '국토교통부',
+    'www.kbfg.com': 'KB금융',
+    'www.kbstar.com': 'KB국민은행',
+    'www.hanaif.re.kr': '하나금융연구소',
+    'www.shinhan.com': '신한은행',
+    'www.woorifg.com': '우리금융',
+    'www.nhwm.com': 'NH투자증권',
+    'www.miraeasset.com': '미래에셋'
+  };
+  return labels[normalized] ?? domain;
 }
 
 function hostname(url: string): string {

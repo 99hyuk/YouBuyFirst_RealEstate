@@ -39,6 +39,7 @@ class CommunityPipeline:
         comment_trigger_min_views: int = 5000,
         high_engagement_max_comments: int = 30,
         diffusion_max_comments: int = 50,
+        ignore_board_watermark: bool = False,
     ) -> None:
         self.adapters = adapters
         self.client = client
@@ -53,6 +54,7 @@ class CommunityPipeline:
         self.comment_trigger_min_views = comment_trigger_min_views
         self.high_engagement_max_comments = high_engagement_max_comments
         self.diffusion_max_comments = diffusion_max_comments
+        self.ignore_board_watermark = ignore_board_watermark
         self._active_backoffs: dict[str, CrawlBackoffDecision] = {}
 
     async def run_once(self) -> list[dict]:
@@ -67,7 +69,7 @@ class CommunityPipeline:
                 finished = self.now_provider()
                 message = _active_backoff_record_message(result_context, active_backoff)
                 record_error = self._safe_record_run(
-                    adapter.source, run_id, started, finished, "SKIPPED", 0, 0, message
+                    adapter.source, run_id, started, finished, "SKIPPED", 0, 0, message, target_context=result_context
                 )
                 result = {
                     "source": adapter.source,
@@ -88,7 +90,7 @@ class CommunityPipeline:
                 finished = self.now_provider()
                 skip_message = _skip_record_message(result_context, policy_decision)
                 record_error = self._safe_record_run(
-                    adapter.source, run_id, started, finished, "SKIPPED", 0, 0, skip_message
+                    adapter.source, run_id, started, finished, "SKIPPED", 0, 0, skip_message, target_context=result_context
                 )
                 result = {
                     "source": adapter.source,
@@ -108,6 +110,7 @@ class CommunityPipeline:
                     adapter,
                     self.client,
                     default_cutoff_at=self._default_cutoff_at(started),
+                    ignore_watermark=self.ignore_board_watermark,
                 )
                 raw_posts = stream_result.posts
                 diffusion_positioned_posts = _positioned_diffusion_posts_for_adapter(
@@ -160,7 +163,16 @@ class CommunityPipeline:
                     results.append({**result_context, **result})
                 else:
                     record_error = self._safe_record_run(
-                        adapter.source, run_id, started, finished, "SUCCESS", coverage.get("rowsSeen", 0), 0, None, coverage
+                        adapter.source,
+                        run_id,
+                        started,
+                        finished,
+                        "SUCCESS",
+                        coverage.get("rowsSeen", 0),
+                        0,
+                        None,
+                        coverage,
+                        target_context=result_context,
                     )
                     empty_result = {
                         "source": adapter.source,
@@ -180,7 +192,15 @@ class CommunityPipeline:
                 self._active_backoffs[backoff_key] = backoff
                 error_message = _failure_record_message(str(exc), backoff)
                 record_error = self._safe_record_run(
-                    adapter.source, run_id, started, finished, "PARTIAL_FAILURE", 0, 0, error_message
+                    adapter.source,
+                    run_id,
+                    started,
+                    finished,
+                    "PARTIAL_FAILURE",
+                    0,
+                    0,
+                    error_message,
+                    target_context=result_context,
                 )
                 result = {
                     "source": adapter.source,
@@ -199,7 +219,15 @@ class CommunityPipeline:
                 self._active_backoffs[backoff_key] = backoff
                 error_message = _failure_record_message(str(exc), backoff)
                 record_error = self._safe_record_run(
-                    adapter.source, run_id, started, finished, "FAILED", 0, 0, error_message
+                    adapter.source,
+                    run_id,
+                    started,
+                    finished,
+                    "FAILED",
+                    0,
+                    0,
+                    error_message,
+                    target_context=result_context,
                 )
                 result = {
                     "source": adapter.source,
@@ -240,10 +268,21 @@ class CommunityPipeline:
         posts_accepted: int,
         error_message: str | None,
         coverage: dict | None = None,
+        target_context: dict | None = None,
     ) -> str | None:
         try:
             self.client.record_crawl_run(
-                source, run_id, started, finished, status, posts_seen, posts_accepted, error_message, coverage
+                source,
+                run_id,
+                started,
+                finished,
+                status,
+                posts_seen,
+                posts_accepted,
+                error_message,
+                coverage,
+                target_id=(target_context or {}).get("targetId"),
+                target_kind=(target_context or {}).get("targetKind"),
             )
             return None
         except Exception as exc:
@@ -259,10 +298,11 @@ async def _fetch_adapter_result(
     adapter: CommunityAdapter,
     client: SpringIngestionClient,
     default_cutoff_at: datetime | None = None,
+    ignore_watermark: bool = False,
 ) -> BoardStreamResult:
     fetch_stream = getattr(adapter, "fetch_stream", None)
     if fetch_stream:
-        return await fetch_stream(_watermark_for_adapter(adapter, client, default_cutoff_at))
+        return await fetch_stream(_watermark_for_adapter(adapter, client, default_cutoff_at, ignore_watermark))
     return BoardStreamResult(posts=await adapter.fetch_posts(), coverage=None)
 
 
@@ -270,6 +310,7 @@ def _watermark_for_adapter(
     adapter: CommunityAdapter,
     client: SpringIngestionClient,
     default_cutoff_at: datetime | None = None,
+    ignore_watermark: bool = False,
 ) -> BoardWatermark | None:
     target = getattr(adapter, "target", None)
     if target is not None and target.kind == CrawlTargetKind.GENERAL_BOARD_DIFFUSION:
@@ -277,6 +318,8 @@ def _watermark_for_adapter(
     board_id = getattr(target, "board_id", None)
     if not board_id:
         return None
+    if ignore_watermark:
+        return BoardWatermark(cutoff_at=default_cutoff_at) if default_cutoff_at else None
     get_board_watermark = getattr(client, "get_board_watermark", None)
     watermark = get_board_watermark(adapter.source, board_id) if get_board_watermark else None
     cutoff_at = _later_datetime(watermark.cutoff_at if watermark else None, default_cutoff_at)
@@ -306,6 +349,10 @@ def _coverage_result_fields(coverage: BoardCoverage | None) -> dict:
         "newestSeenAt": format_utc(coverage.newest_seen_at) if coverage.newest_seen_at else None,
         "lastCursor": coverage.last_cursor,
         "coverageStatus": coverage.coverage_status,
+        "filteredOutCount": coverage.filtered_count,
+        "excludedTitleCount": coverage.excluded_title_count,
+        "keywordMissCount": coverage.keyword_miss_count,
+        "duplicateLinkCount": coverage.duplicate_link_count,
     }
 
 

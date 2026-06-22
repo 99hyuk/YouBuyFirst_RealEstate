@@ -254,6 +254,121 @@ class RealEstateMarketFactIntegrationTest {
     }
 
     @Test
+    void listsOfficialApartmentTradesForComplexDetailWithoutSsafyFallback() throws Exception {
+        ResponseEntity<String> region = restTemplate.postForEntity(
+                "/internal/realestate/regions",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("targetId", "region-official-trade-match"),
+                        Map.entry("displayName", "Official Trade District"),
+                        Map.entry("slug", "official-trade-district"),
+                        Map.entry("regionLevel", "sigungu"),
+                        Map.entry("legalDongCode", "11993"),
+                        Map.entry("regionCode", "11993"),
+                        Map.entry("source", "test:official-trade-match")
+                ))),
+                String.class
+        );
+        ResponseEntity<String> target = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("targetId", "complex-official-trade-match"),
+                        Map.entry("targetType", "complex"),
+                        Map.entry("displayName", "Official Palace"),
+                        Map.entry("slug", "official-palace"),
+                        Map.entry("reviewState", "approved"),
+                        Map.entry("dataStatus", "ok")
+                ))),
+                String.class
+        );
+        ResponseEntity<String> complex = restTemplate.postForEntity(
+                "/internal/realestate/complexes",
+                Map.of("items", List.of(Map.ofEntries(
+                        Map.entry("targetId", "complex-official-trade-match"),
+                        Map.entry("regionTargetId", "region-official-trade-match"),
+                        Map.entry("legalDongCode", "1199310100"),
+                        Map.entry("jibunAddress", "테스트동 123"),
+                        Map.entry("normalizedAddress", "1199310100테스트동123officialpalace"),
+                        Map.entry("source", "test:ssafy-like-registry"),
+                        Map.entry("markerDataStatus", "ok"),
+                        Map.entry("markerStale", false)
+                ))),
+                String.class
+        );
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetType", "complex"),
+                                Map.entry("targetId", "complex-official-trade-match"),
+                                Map.entry("factType", "apt_trade"),
+                                Map.entry("provider", "ssafy_home"),
+                                Map.entry("providerDataset", "ssafy_home_housedeals"),
+                                Map.entry("providerObjectId", "ssafy_home:housedeals:official-match-old"),
+                                Map.entry("legalDongCode", "1199310100"),
+                                Map.entry("observedAt", "2024-08-16"),
+                                Map.entry("asOf", "2024-08-01"),
+                                Map.entry("ingestedAt", "2026-06-12T01:10:00Z"),
+                                Map.entry("dataStatus", "ok"),
+                                Map.entry("stale", false),
+                                Map.entry("valueJson", Map.of(
+                                        "apartmentName", "Official Palace",
+                                        "legalDongName", "테스트동",
+                                        "jibun", "123",
+                                        "dealAmountManwon", 190000
+                                ))
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetType", "region"),
+                                Map.entry("targetId", "region-official-trade-match"),
+                                Map.entry("factType", "apt_trade"),
+                                Map.entry("provider", "molit"),
+                                Map.entry("providerDataset", "molit_apt_trade"),
+                                Map.entry("providerObjectId", "molit_apt_trade:11993:202408:official-match"),
+                                Map.entry("legalDongCode", "11993"),
+                                Map.entry("observedAt", "2024-08-17"),
+                                Map.entry("asOf", "2024-08-01"),
+                                Map.entry("ingestedAt", "2026-06-12T01:12:00Z"),
+                                Map.entry("dataStatus", "ok"),
+                                Map.entry("stale", false),
+                                Map.entry("valueJson", Map.of(
+                                        "apartmentName", "Official Palace",
+                                        "legalDongName", "테스트동",
+                                        "jibun", "123",
+                                        "dealAmountManwon", 195000,
+                                        "exclusiveAreaM2", 84.97,
+                                        "floor", 12
+                                ))
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/market-facts",
+                request,
+                String.class
+        );
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/targets/{targetId}/market-facts?factType=apt_trade&limit=5&officialOnly=true",
+                String.class,
+                "complex-official-trade-match"
+        );
+
+        assertThat(region.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(target.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(complex.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode items = objectMapper.readTree(response.getBody()).path("items");
+        assertThat(items).hasSize(1);
+        JsonNode fact = items.get(0);
+        assertThat(fact.path("provider").asText()).isEqualTo("molit");
+        assertThat(fact.path("providerDataset").asText()).isEqualTo("molit_apt_trade");
+        assertThat(fact.path("targetId").asText()).isEqualTo("region-official-trade-match");
+        assertThat(fact.path("valueJson").path("apartmentName").asText()).isEqualTo("Official Palace");
+        assertThat(fact.path("valueJson").path("dealAmountManwon").asInt()).isEqualTo(195000);
+    }
+
+    @Test
     void filtersGenericMarketFactsByTargetIdWhenProvided() throws Exception {
         Map<String, Object> request = Map.of(
                 "items",
@@ -319,6 +434,58 @@ class RealEstateMarketFactIntegrationTest {
         assertThat(fact.path("targetId").asText()).isEqualTo("region-seoul-mapo");
         assertThat(fact.path("legalDongCode").asText()).isEqualTo("11440");
         assertThat(fact.path("valueJson").path("apartmentName").asText()).isEqualTo("Mapo Palace");
+    }
+
+    @Test
+    void listsGenericMarketFactsWithPageParameterForLargeBackfillExports() throws Exception {
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        marketFactForPage("molit_apt_trade:11992:202606:page-1", "Page One Palace"),
+                        marketFactForPage("molit_apt_trade:11992:202606:page-2", "Page Two Palace"),
+                        marketFactForPage("molit_apt_trade:11992:202606:page-3", "Page Three Palace")
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/market-facts",
+                request,
+                String.class
+        );
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/market-facts?legalDongCode=11992&factType=apt_trade&limit=2&page=1",
+                String.class
+        );
+
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode items = objectMapper.readTree(response.getBody()).path("items");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0).path("providerObjectId").asText())
+                .isEqualTo("molit_apt_trade:11992:202606:page-3");
+        assertThat(items.get(0).path("valueJson").path("apartmentName").asText())
+                .isEqualTo("Page Three Palace");
+    }
+
+    private static Map<String, Object> marketFactForPage(String providerObjectId, String apartmentName) {
+        return Map.ofEntries(
+                Map.entry("targetType", "region"),
+                Map.entry("targetId", "region-seoul-jongno"),
+                Map.entry("factType", "apt_trade"),
+                Map.entry("provider", "molit"),
+                Map.entry("providerDataset", "molit_apt_trade"),
+                Map.entry("providerObjectId", providerObjectId),
+                Map.entry("legalDongCode", "11992"),
+                Map.entry("observedAt", "2026-06-12"),
+                Map.entry("asOf", "2026-06-01"),
+                Map.entry("ingestedAt", "2026-06-12T01:10:00Z"),
+                Map.entry("dataStatus", "ok"),
+                Map.entry("stale", false),
+                Map.entry("valueJson", Map.of(
+                        "apartmentName", apartmentName,
+                        "dealAmountManwon", 91000
+                ))
+        );
     }
 
     private static JsonNode findByProviderObjectId(JsonNode items, String providerObjectId) {

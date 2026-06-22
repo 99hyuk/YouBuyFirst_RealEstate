@@ -37,8 +37,9 @@ public class RealEstateAliasController {
             @RequestParam(required = false) String targetType,
             @RequestParam(required = false) String reviewState,
             @RequestParam(required = false) Boolean ambiguous,
-            @RequestParam(defaultValue = "500") int limit
+            @RequestParam(defaultValue = "500") int limit,
+            @RequestParam(defaultValue = "0") int page
     ) {
-        return new RealEstateAliasListResponse(service.aliasesForExport(targetType, reviewState, ambiguous, limit));
+        return new RealEstateAliasListResponse(service.aliasesForExport(targetType, reviewState, ambiguous, limit, page));
     }
 }

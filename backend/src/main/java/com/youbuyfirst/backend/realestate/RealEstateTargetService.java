@@ -40,13 +40,21 @@ public class RealEstateTargetService {
         String rawQuery = trimToNull(query);
         String lowerQuery = rawQuery == null ? null : rawQuery.toLowerCase(Locale.ROOT);
         String normalizedQuery = lowerQuery == null ? null : lowerQuery.replace(" ", "");
-        return regionRepository.searchTargets(lowerQuery, normalizedQuery, rawQuery, PageRequest.of(0, boundedLimit));
+        String aliasQuery = rawQuery == null ? null : RealEstateAlias.normalizeAlias(rawQuery);
+        return targetRepository.searchTargets(
+                lowerQuery,
+                normalizedQuery,
+                aliasQuery,
+                rawQuery,
+                PageRequest.of(0, boundedLimit)
+        );
     }
 
     @Transactional(readOnly = true)
-    public List<RealEstateMarketDataTargetResponse> marketDataTargets(Boolean enabled, int limit) {
+    public List<RealEstateMarketDataTargetResponse> marketDataTargets(Boolean enabled, int limit, int page) {
         int boundedLimit = Math.max(1, Math.min(limit, 500));
-        return marketDataTargetRepository.listTargets(enabled, PageRequest.of(0, boundedLimit)).stream()
+        int boundedPage = Math.max(0, page);
+        return marketDataTargetRepository.listTargets(enabled, PageRequest.of(boundedPage, boundedLimit)).stream()
                 .map(target -> new RealEstateMarketDataTargetResponse(
                         target.getTargetId(),
                         target.getProvider(),
@@ -57,6 +65,16 @@ public class RealEstateTargetService {
                         target.getStaleAfterHours()
                 ))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RealEstateTargetResponse> regions(String regionLevel, int limit, int page) {
+        int boundedLimit = Math.max(1, Math.min(limit, 500));
+        int boundedPage = Math.max(0, page);
+        return regionRepository.listTargets(
+                normalizeNullable(regionLevel),
+                PageRequest.of(boundedPage, boundedLimit)
+        );
     }
 
     @Transactional
@@ -168,6 +186,11 @@ public class RealEstateTargetService {
             return null;
         }
         return value.trim();
+    }
+
+    private static String normalizeNullable(String value) {
+        String trimmed = trimToNull(value);
+        return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
     }
 
     private int ensureMolitMarketDataTargets(String targetId, String lawdCode, Instant now) {

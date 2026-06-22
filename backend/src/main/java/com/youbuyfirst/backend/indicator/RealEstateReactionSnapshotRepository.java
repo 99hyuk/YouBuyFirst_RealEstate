@@ -25,6 +25,7 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
             where snapshot.targetType = :targetType
               and snapshot.windowStart = :windowStart
               and snapshot.windowEnd = :windowEnd
+              and lower(target.reviewState) <> 'rejected'
             order by snapshot.mentionCount desc, snapshot.heatScore desc, target.id asc
             """)
     List<RealEstateReactionSnapshot> findRanking(
@@ -42,6 +43,7 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
               and snapshot.windowStart = :windowStart
               and snapshot.windowEnd = :windowEnd
               and target.id in :targetIds
+              and lower(target.reviewState) <> 'rejected'
             order by snapshot.mentionCount desc, snapshot.heatScore desc, target.id asc
             """)
     List<RealEstateReactionSnapshot> findRankingByTargetIds(
@@ -55,15 +57,19 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
     @Query("""
             select max(snapshot.windowStart)
             from RealEstateReactionSnapshot snapshot
+            join snapshot.target target
             where snapshot.targetType = :targetType
+              and lower(target.reviewState) <> 'rejected'
             """)
     Instant findLatestWindowStart(@Param("targetType") String targetType);
 
     @Query("""
             select max(snapshot.windowStart)
             from RealEstateReactionSnapshot snapshot
+            join snapshot.target target
             where snapshot.targetType = :targetType
               and snapshot.target.id in :targetIds
+              and lower(target.reviewState) <> 'rejected'
             """)
     Instant findLatestWindowStartByTargetTypeAndTargetIds(
             @Param("targetType") String targetType,
@@ -87,7 +93,9 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
     @Query("""
             select snapshot
             from RealEstateReactionSnapshot snapshot
+            join snapshot.target target
             where snapshot.targetType = :targetType
+              and lower(target.reviewState) <> 'rejected'
             order by snapshot.windowStart desc, snapshot.windowEnd desc
             """)
     List<RealEstateReactionSnapshot> findLatestWindowCandidatesByTargetType(
@@ -98,8 +106,10 @@ public interface RealEstateReactionSnapshotRepository extends JpaRepository<Real
     @Query("""
             select snapshot
             from RealEstateReactionSnapshot snapshot
+            join snapshot.target target
             where snapshot.targetType = :targetType
               and snapshot.target.id in :targetIds
+              and lower(target.reviewState) <> 'rejected'
             order by snapshot.windowStart desc, snapshot.windowEnd desc
             """)
     List<RealEstateReactionSnapshot> findLatestWindowCandidatesByTargetTypeAndTargetIds(

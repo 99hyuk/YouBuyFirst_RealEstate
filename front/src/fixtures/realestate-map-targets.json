@@ -2,7 +2,11 @@
   "asOf": "2026-06-01",
   "sourceLabel": "시도 단위 mock heat layer",
   "mapDataSource": "southkorea/southkorea-maps KOSTAT 2018 시도/시군구 TopoJSON",
-  "periods": ["week", "month", "halfYear"],
+  "periods": [
+    "month",
+    "quarter",
+    "halfYear"
+  ],
   "targets": [
     {
       "id": "seoul",
@@ -11,12 +15,23 @@
       "regionCode": "11",
       "geometryId": "sido-11",
       "path": "M178 132 L214 126 L225 150 L205 171 L173 162 Z",
-      "label": { "x": 198, "y": 150 },
-      "periodChanges": { "week": 0.18, "month": 0.62, "halfYear": 1.8 },
+      "label": {
+        "x": 198,
+        "y": 150
+      },
+      "periodChanges": {
+        "month": 0.62,
+        "quarter": 1.21,
+        "halfYear": 1.8
+      },
       "sampleCount": 218,
       "confidence": 82,
       "summary": "전세 압력과 정비사업 기대가 동시에 관찰되는 구간입니다.",
-      "issues": ["전세", "정비사업", "대출 규제"],
+      "issues": [
+        "전세",
+        "정비사업",
+        "대출 규제"
+      ],
       "report": {
         "priceFlow": "1개월 +0.62%, 표본 218건",
         "tradeStrength": "거래 신고는 전월 대비 완만한 증가",
@@ -25,7 +40,11 @@
         "policyEvent": "대출 규제 관망 반응이 강함",
         "communityReaction": "기대 52%, 우려 31%, 중립 17%"
       },
-      "sampleComplexes": ["마포구 아파트", "잠실동 단지군", "성수동 생활권"]
+      "sampleComplexes": [
+        "마포구 아파트",
+        "잠실동 아파트",
+        "성수동 생활권"
+      ]
     },
     {
       "id": "incheon",
@@ -34,12 +53,23 @@
       "regionCode": "23",
       "geometryId": "sido-23",
       "path": "M111 135 L165 120 L174 161 L142 196 L101 179 Z",
-      "label": { "x": 137, "y": 160 },
-      "periodChanges": { "week": -0.04, "month": -0.18, "halfYear": 0.42 },
+      "label": {
+        "x": 137,
+        "y": 160
+      },
+      "periodChanges": {
+        "month": -0.18,
+        "quarter": 0.12,
+        "halfYear": 0.42
+      },
       "sampleCount": 96,
       "confidence": 64,
       "summary": "가격보다 거래 강도 회복 여부가 먼저 확인되어야 하는 구간입니다.",
-      "issues": ["매물", "공급", "교통"],
+      "issues": [
+        "매물",
+        "공급",
+        "교통"
+      ],
       "report": {
         "priceFlow": "1개월 -0.18%, 표본 96건",
         "tradeStrength": "거래 강도는 낮고 특정 생활권만 반응",
@@ -48,7 +78,11 @@
         "policyEvent": "교통 이벤트 기대가 일부 확산",
         "communityReaction": "기대 34%, 우려 39%, 중립 27%"
       },
-      "sampleComplexes": ["송도 생활권", "검단 신도시", "청라 단지군"]
+      "sampleComplexes": [
+        "송도 생활권",
+        "검단 신도시",
+        "청라 아파트"
+      ]
     },
     {
       "id": "gyeonggi",
@@ -57,12 +91,23 @@
       "regionCode": "31",
       "geometryId": "sido-31",
       "path": "M145 84 L214 72 L264 116 L244 179 L198 203 L146 174 L116 130 Z",
-      "label": { "x": 205, "y": 111 },
-      "periodChanges": { "week": 0.11, "month": 0.44, "halfYear": 1.32 },
+      "label": {
+        "x": 205,
+        "y": 111
+      },
+      "periodChanges": {
+        "month": 0.44,
+        "quarter": 0.88,
+        "halfYear": 1.32
+      },
       "sampleCount": 304,
       "confidence": 79,
       "summary": "GTX·일자리·전세 흐름이 지역별로 다르게 갈리는 큰 권역입니다.",
-      "issues": ["GTX", "전세", "입주 물량"],
+      "issues": [
+        "GTX",
+        "전세",
+        "입주 물량"
+      ],
       "report": {
         "priceFlow": "1개월 +0.44%, 표본 304건",
         "tradeStrength": "동탄·분당 중심으로 거래 관심 증가",
@@ -71,7 +116,11 @@
         "policyEvent": "교통 호재와 대출 규제 반응이 공존",
         "communityReaction": "기대 49%, 우려 33%, 중립 18%"
       },
-      "sampleComplexes": ["동탄역권", "분당·판교", "광명 생활권"]
+      "sampleComplexes": [
+        "동탄역권",
+        "분당·판교",
+        "광명 생활권"
+      ]
     },
     {
       "id": "gangwon",
@@ -80,12 +129,23 @@
       "regionCode": "32",
       "geometryId": "sido-32",
       "path": "M221 66 L333 88 L357 164 L317 224 L245 181 L264 116 Z",
-      "label": { "x": 304, "y": 143 },
-      "periodChanges": { "week": 0.02, "month": 0.09, "halfYear": 0.36 },
+      "label": {
+        "x": 304,
+        "y": 143
+      },
+      "periodChanges": {
+        "month": 0.09,
+        "quarter": 0.22,
+        "halfYear": 0.36
+      },
       "sampleCount": 41,
       "confidence": 46,
       "summary": "표본이 적어 가격 색상보다 데이터 품질 확인이 우선입니다.",
-      "issues": ["표본 부족", "관광", "세컨드홈"],
+      "issues": [
+        "표본 부족",
+        "관광",
+        "세컨드홈"
+      ],
       "report": {
         "priceFlow": "1개월 +0.09%, 표본 41건",
         "tradeStrength": "거래 표본이 얇아 신뢰도 낮음",
@@ -94,7 +154,10 @@
         "policyEvent": "정책 이벤트 영향은 제한적",
         "communityReaction": "기대 31%, 우려 24%, 중립 45%"
       },
-      "sampleComplexes": ["원주 생활권", "춘천 단지군"]
+      "sampleComplexes": [
+        "원주 생활권",
+        "춘천 아파트"
+      ]
     },
     {
       "id": "chungnam",
@@ -103,12 +166,23 @@
       "regionCode": "34",
       "geometryId": "sido-34",
       "path": "M119 198 L192 197 L207 270 L160 321 L103 279 Z",
-      "label": { "x": 151, "y": 252 },
-      "periodChanges": { "week": -0.07, "month": -0.26, "halfYear": 0.08 },
+      "label": {
+        "x": 151,
+        "y": 252
+      },
+      "periodChanges": {
+        "month": -0.26,
+        "quarter": -0.09,
+        "halfYear": 0.08
+      },
       "sampleCount": 73,
       "confidence": 58,
       "summary": "산업단지 기대와 공급 부담이 같이 언급됩니다.",
-      "issues": ["산단", "공급", "전세"],
+      "issues": [
+        "산단",
+        "공급",
+        "전세"
+      ],
       "report": {
         "priceFlow": "1개월 -0.26%, 표본 73건",
         "tradeStrength": "거래 강도는 둔화",
@@ -117,7 +191,10 @@
         "policyEvent": "산업단지 기대가 일부 반영",
         "communityReaction": "기대 32%, 우려 42%, 중립 26%"
       },
-      "sampleComplexes": ["천안 생활권", "아산 단지군"]
+      "sampleComplexes": [
+        "천안 생활권",
+        "아산 아파트"
+      ]
     },
     {
       "id": "sejong",
@@ -126,12 +203,23 @@
       "regionCode": "29",
       "geometryId": "sido-29",
       "path": "M188 242 L216 235 L226 261 L203 279 L184 263 Z",
-      "label": { "x": 205, "y": 257 },
-      "periodChanges": { "week": 0.05, "month": 0.22, "halfYear": 0.64 },
+      "label": {
+        "x": 205,
+        "y": 257
+      },
+      "periodChanges": {
+        "month": 0.22,
+        "quarter": 0.43,
+        "halfYear": 0.64
+      },
       "sampleCount": 52,
       "confidence": 55,
       "summary": "정책 기대와 매물 부담이 동시에 확인됩니다.",
-      "issues": ["정책", "매물", "청약"],
+      "issues": [
+        "정책",
+        "매물",
+        "청약"
+      ],
       "report": {
         "priceFlow": "1개월 +0.22%, 표본 52건",
         "tradeStrength": "거래 강도는 관망",
@@ -140,7 +228,10 @@
         "policyEvent": "정책 기대 댓글이 반복",
         "communityReaction": "기대 38%, 우려 35%, 중립 27%"
       },
-      "sampleComplexes": ["세종 새롬동", "나성동 단지군"]
+      "sampleComplexes": [
+        "세종 새롬동",
+        "나성동 아파트"
+      ]
     },
     {
       "id": "daejeon",
@@ -149,12 +240,23 @@
       "regionCode": "25",
       "geometryId": "sido-25",
       "path": "M207 276 L237 270 L248 300 L225 320 L200 302 Z",
-      "label": { "x": 224, "y": 297 },
-      "periodChanges": { "week": 0.03, "month": 0.16, "halfYear": 0.48 },
+      "label": {
+        "x": 224,
+        "y": 297
+      },
+      "periodChanges": {
+        "month": 0.16,
+        "quarter": 0.32,
+        "halfYear": 0.48
+      },
       "sampleCount": 68,
       "confidence": 60,
       "summary": "학군·연구단지 키워드가 안정적으로 관찰됩니다.",
-      "issues": ["학군", "연구단지", "전세"],
+      "issues": [
+        "학군",
+        "연구단지",
+        "전세"
+      ],
       "report": {
         "priceFlow": "1개월 +0.16%, 표본 68건",
         "tradeStrength": "거래 강도는 보통",
@@ -163,7 +265,10 @@
         "policyEvent": "정책보다 학군 키워드 우세",
         "communityReaction": "기대 37%, 우려 29%, 중립 34%"
       },
-      "sampleComplexes": ["둔산 생활권", "유성 단지군"]
+      "sampleComplexes": [
+        "둔산 생활권",
+        "유성 아파트"
+      ]
     },
     {
       "id": "chungbuk",
@@ -172,12 +277,23 @@
       "regionCode": "33",
       "geometryId": "sido-33",
       "path": "M198 198 L255 187 L292 246 L263 311 L207 270 L192 205 Z",
-      "label": { "x": 249, "y": 244 },
-      "periodChanges": { "week": 0.01, "month": 0.05, "halfYear": 0.28 },
+      "label": {
+        "x": 249,
+        "y": 244
+      },
+      "periodChanges": {
+        "month": 0.05,
+        "quarter": 0.17,
+        "halfYear": 0.28
+      },
       "sampleCount": 57,
       "confidence": 52,
       "summary": "가격보다 산업·교통 이슈 추적이 더 적합합니다.",
-      "issues": ["산업", "교통", "표본 부족"],
+      "issues": [
+        "산업",
+        "교통",
+        "표본 부족"
+      ],
       "report": {
         "priceFlow": "1개월 +0.05%, 표본 57건",
         "tradeStrength": "거래 강도 낮음",
@@ -186,7 +302,10 @@
         "policyEvent": "산업·교통 기사 반응 위주",
         "communityReaction": "기대 30%, 우려 27%, 중립 43%"
       },
-      "sampleComplexes": ["청주 생활권", "오송 단지군"]
+      "sampleComplexes": [
+        "청주 생활권",
+        "오송 아파트"
+      ]
     },
     {
       "id": "gyeongbuk",
@@ -195,12 +314,23 @@
       "regionCode": "37",
       "geometryId": "sido-37",
       "path": "M282 236 L362 225 L389 314 L353 409 L286 382 L263 311 Z",
-      "label": { "x": 334, "y": 317 },
-      "periodChanges": { "week": -0.01, "month": -0.08, "halfYear": 0.18 },
+      "label": {
+        "x": 334,
+        "y": 317
+      },
+      "periodChanges": {
+        "month": -0.08,
+        "quarter": 0.05,
+        "halfYear": 0.18
+      },
       "sampleCount": 82,
       "confidence": 57,
       "summary": "대구 주변과 산업도시 반응이 분리되어 보입니다.",
-      "issues": ["산업", "공급", "대구권"],
+      "issues": [
+        "산업",
+        "공급",
+        "대구권"
+      ],
       "report": {
         "priceFlow": "1개월 -0.08%, 표본 82건",
         "tradeStrength": "거래 강도는 낮음",
@@ -209,7 +339,10 @@
         "policyEvent": "산업도시 뉴스 반응 중심",
         "communityReaction": "기대 29%, 우려 34%, 중립 37%"
       },
-      "sampleComplexes": ["포항 생활권", "구미 단지군"]
+      "sampleComplexes": [
+        "포항 생활권",
+        "구미 아파트"
+      ]
     },
     {
       "id": "daegu",
@@ -218,12 +351,23 @@
       "regionCode": "22",
       "geometryId": "sido-22",
       "path": "M298 337 L330 329 L344 358 L321 381 L292 366 Z",
-      "label": { "x": 319, "y": 357 },
-      "periodChanges": { "week": -0.1, "month": -0.41, "halfYear": -0.62 },
+      "label": {
+        "x": 319,
+        "y": 357
+      },
+      "periodChanges": {
+        "month": -0.41,
+        "quarter": -0.51,
+        "halfYear": -0.62
+      },
       "sampleCount": 110,
       "confidence": 67,
       "summary": "공급 부담과 가격 관망 반응이 강합니다.",
-      "issues": ["공급", "매물", "관망"],
+      "issues": [
+        "공급",
+        "매물",
+        "관망"
+      ],
       "report": {
         "priceFlow": "1개월 -0.41%, 표본 110건",
         "tradeStrength": "거래 강도 약함",
@@ -232,7 +376,10 @@
         "policyEvent": "정책 이슈보다 매물 이슈",
         "communityReaction": "기대 24%, 우려 49%, 중립 27%"
       },
-      "sampleComplexes": ["수성구 단지군", "달서 생활권"]
+      "sampleComplexes": [
+        "수성구 아파트",
+        "달서 생활권"
+      ]
     },
     {
       "id": "jeonbuk",
@@ -241,12 +388,23 @@
       "regionCode": "35",
       "geometryId": "sido-35",
       "path": "M145 321 L213 286 L266 316 L258 391 L181 408 L122 367 Z",
-      "label": { "x": 193, "y": 355 },
-      "periodChanges": { "week": 0.0, "month": 0.04, "halfYear": 0.12 },
+      "label": {
+        "x": 193,
+        "y": 355
+      },
+      "periodChanges": {
+        "month": 0.04,
+        "quarter": 0.08,
+        "halfYear": 0.12
+      },
       "sampleCount": 63,
       "confidence": 49,
       "summary": "전반적으로 관망이며 표본 신뢰도 확인이 필요합니다.",
-      "issues": ["관망", "표본", "전세"],
+      "issues": [
+        "관망",
+        "표본",
+        "전세"
+      ],
       "report": {
         "priceFlow": "1개월 +0.04%, 표본 63건",
         "tradeStrength": "거래 강도 낮음",
@@ -255,7 +413,10 @@
         "policyEvent": "뚜렷한 정책 이벤트 없음",
         "communityReaction": "기대 28%, 우려 27%, 중립 45%"
       },
-      "sampleComplexes": ["전주 생활권", "군산 단지군"]
+      "sampleComplexes": [
+        "전주 생활권",
+        "군산 아파트"
+      ]
     },
     {
       "id": "gwangju",
@@ -264,12 +425,23 @@
       "regionCode": "24",
       "geometryId": "sido-24",
       "path": "M153 430 L186 421 L202 449 L179 472 L148 458 Z",
-      "label": { "x": 176, "y": 447 },
-      "periodChanges": { "week": -0.03, "month": -0.14, "halfYear": -0.22 },
+      "label": {
+        "x": 176,
+        "y": 447
+      },
+      "periodChanges": {
+        "month": -0.14,
+        "quarter": -0.18,
+        "halfYear": -0.22
+      },
       "sampleCount": 59,
       "confidence": 52,
       "summary": "관망과 매물 부담 반응이 조금 더 큽니다.",
-      "issues": ["매물", "관망", "학군"],
+      "issues": [
+        "매물",
+        "관망",
+        "학군"
+      ],
       "report": {
         "priceFlow": "1개월 -0.14%, 표본 59건",
         "tradeStrength": "거래 강도는 약함",
@@ -278,7 +450,10 @@
         "policyEvent": "정책 이벤트 영향 낮음",
         "communityReaction": "기대 27%, 우려 38%, 중립 35%"
       },
-      "sampleComplexes": ["봉선 생활권", "수완 단지군"]
+      "sampleComplexes": [
+        "봉선 생활권",
+        "수완 아파트"
+      ]
     },
     {
       "id": "jeonnam",
@@ -287,12 +462,23 @@
       "regionCode": "36",
       "geometryId": "sido-36",
       "path": "M106 375 L181 411 L256 397 L244 487 L151 527 L68 469 Z",
-      "label": { "x": 158, "y": 485 },
-      "periodChanges": { "week": -0.01, "month": -0.06, "halfYear": 0.05 },
+      "label": {
+        "x": 158,
+        "y": 485
+      },
+      "periodChanges": {
+        "month": -0.06,
+        "quarter": 0,
+        "halfYear": 0.05
+      },
       "sampleCount": 48,
       "confidence": 43,
       "summary": "표본이 얇아 지역별 개별 확인이 필요합니다.",
-      "issues": ["표본 부족", "산업", "전세"],
+      "issues": [
+        "표본 부족",
+        "산업",
+        "전세"
+      ],
       "report": {
         "priceFlow": "1개월 -0.06%, 표본 48건",
         "tradeStrength": "거래 표본 부족",
@@ -301,7 +487,10 @@
         "policyEvent": "산업 뉴스가 일부 반응",
         "communityReaction": "기대 26%, 우려 30%, 중립 44%"
       },
-      "sampleComplexes": ["순천 생활권", "여수 단지군"]
+      "sampleComplexes": [
+        "순천 생활권",
+        "여수 아파트"
+      ]
     },
     {
       "id": "gyeongnam",
@@ -310,12 +499,23 @@
       "regionCode": "38",
       "geometryId": "sido-38",
       "path": "M262 389 L351 410 L332 487 L244 505 L236 434 Z",
-      "label": { "x": 291, "y": 450 },
-      "periodChanges": { "week": 0.04, "month": 0.19, "halfYear": 0.51 },
+      "label": {
+        "x": 291,
+        "y": 450
+      },
+      "periodChanges": {
+        "month": 0.19,
+        "quarter": 0.35,
+        "halfYear": 0.51
+      },
       "sampleCount": 88,
       "confidence": 59,
       "summary": "산업도시와 부산권 인접 생활권 반응이 함께 움직입니다.",
-      "issues": ["산업", "부산권", "전세"],
+      "issues": [
+        "산업",
+        "부산권",
+        "전세"
+      ],
       "report": {
         "priceFlow": "1개월 +0.19%, 표본 88건",
         "tradeStrength": "거래 강도 보통",
@@ -324,7 +524,10 @@
         "policyEvent": "산업 뉴스 반응 확인",
         "communityReaction": "기대 36%, 우려 29%, 중립 35%"
       },
-      "sampleComplexes": ["창원 생활권", "김해 단지군"]
+      "sampleComplexes": [
+        "창원 생활권",
+        "김해 아파트"
+      ]
     },
     {
       "id": "ulsan",
@@ -333,12 +536,23 @@
       "regionCode": "26",
       "geometryId": "sido-26",
       "path": "M342 412 L386 394 L398 438 L357 465 Z",
-      "label": { "x": 370, "y": 430 },
-      "periodChanges": { "week": 0.03, "month": 0.12, "halfYear": 0.39 },
+      "label": {
+        "x": 370,
+        "y": 430
+      },
+      "periodChanges": {
+        "month": 0.12,
+        "quarter": 0.26,
+        "halfYear": 0.39
+      },
       "sampleCount": 47,
       "confidence": 50,
       "summary": "산업 경기 기대가 반응의 큰 축입니다.",
-      "issues": ["산업", "전세", "표본"],
+      "issues": [
+        "산업",
+        "전세",
+        "표본"
+      ],
       "report": {
         "priceFlow": "1개월 +0.12%, 표본 47건",
         "tradeStrength": "거래 강도는 관망",
@@ -347,7 +561,10 @@
         "policyEvent": "산업 경기 기대 반영",
         "communityReaction": "기대 35%, 우려 27%, 중립 38%"
       },
-      "sampleComplexes": ["남구 생활권", "울주 단지군"]
+      "sampleComplexes": [
+        "남구 생활권",
+        "울주 아파트"
+      ]
     },
     {
       "id": "busan",
@@ -356,12 +573,23 @@
       "regionCode": "21",
       "geometryId": "sido-21",
       "path": "M322 476 L371 464 L361 508 L316 517 Z",
-      "label": { "x": 344, "y": 493 },
-      "periodChanges": { "week": -0.02, "month": -0.09, "halfYear": 0.21 },
+      "label": {
+        "x": 344,
+        "y": 493
+      },
+      "periodChanges": {
+        "month": -0.09,
+        "quarter": 0.06,
+        "halfYear": 0.21
+      },
       "sampleCount": 126,
       "confidence": 66,
       "summary": "해운대·수영 등 일부 권역과 외곽 반응이 갈립니다.",
-      "issues": ["생활권 편차", "매물", "전세"],
+      "issues": [
+        "생활권 편차",
+        "매물",
+        "전세"
+      ],
       "report": {
         "priceFlow": "1개월 -0.09%, 표본 126건",
         "tradeStrength": "거래 강도 약보합",
@@ -370,7 +598,10 @@
         "policyEvent": "교통·정비사업 키워드 일부",
         "communityReaction": "기대 31%, 우려 36%, 중립 33%"
       },
-      "sampleComplexes": ["해운대 생활권", "수영 단지군"]
+      "sampleComplexes": [
+        "해운대 생활권",
+        "수영 아파트"
+      ]
     },
     {
       "id": "jeju",
@@ -379,12 +610,23 @@
       "regionCode": "39",
       "geometryId": "sido-39",
       "path": "M155 565 L238 554 L264 581 L204 604 L139 591 Z",
-      "label": { "x": 201, "y": 581 },
-      "periodChanges": { "week": -0.05, "month": -0.21, "halfYear": -0.34 },
+      "label": {
+        "x": 201,
+        "y": 581
+      },
+      "periodChanges": {
+        "month": -0.21,
+        "quarter": -0.28,
+        "halfYear": -0.34
+      },
       "sampleCount": 36,
       "confidence": 40,
       "summary": "표본이 적고 외부 수요 영향이 커서 보수적으로 봅니다.",
-      "issues": ["표본 부족", "관광", "외부 수요"],
+      "issues": [
+        "표본 부족",
+        "관광",
+        "외부 수요"
+      ],
       "report": {
         "priceFlow": "1개월 -0.21%, 표본 36건",
         "tradeStrength": "거래 표본 부족",
@@ -393,7 +635,10 @@
         "policyEvent": "정책 이벤트 영향 낮음",
         "communityReaction": "기대 24%, 우려 41%, 중립 35%"
       },
-      "sampleComplexes": ["제주시 생활권", "서귀포 단지군"]
+      "sampleComplexes": [
+        "제주시 생활권",
+        "서귀포 아파트"
+      ]
     }
   ]
 }

@@ -80,6 +80,8 @@ class FakeClient:
         posts_accepted,
         error_message=None,
         coverage=None,
+        target_id=None,
+        target_kind=None,
     ):
         recorded = {
             "source": source,
@@ -88,6 +90,8 @@ class FakeClient:
             "postsSeen": posts_seen,
             "postsAccepted": posts_accepted,
             "errorMessage": error_message,
+            "targetId": target_id,
+            "targetKind": target_kind,
         }
         if coverage is not None:
             recorded["coverage"] = coverage
@@ -129,6 +133,10 @@ def _coverage(rows_seen: int = 0) -> BoardCoverage:
         newest_seen_at=observed,
         last_cursor="1",
         coverage_status="complete",
+        filtered_count=2,
+        excluded_title_count=1,
+        keyword_miss_count=1,
+        duplicate_link_count=3,
     )
 
 
@@ -156,6 +164,8 @@ def test_public_runtime_skips_local_research_source_without_fetching():
         "targetId=CAFE:house; sourceStatus=local-research-only; "
         "runtimeEnvironment=public; reason=source policy local-research-only is not allowed in public runtime"
     )
+    assert client.recorded_runs[0]["targetId"] == "CAFE:house"
+    assert client.recorded_runs[0]["targetKind"] == "community-board"
 
 
 def test_disabled_source_skips_and_records_backend_run():
@@ -235,6 +245,7 @@ def test_board_stream_adapter_records_coverage_when_no_new_posts():
     assert adapter.called is True
     assert results[0]["coverage"]["pagesFetched"] == 2
     assert results[0]["coverage"]["rowsSeen"] == 43
+    assert results[0]["coverage"]["filteredOutCount"] == 0
     assert client.recorded_runs[0]["coverage"]["coverageStatus"] == "complete"
 
 
@@ -253,6 +264,10 @@ def test_board_stream_adapter_receives_db_watermark_for_board_target():
     results = asyncio.run(pipeline.run_once())
 
     assert results[0]["coverage"]["rowsSeen"] == 1
+    assert results[0]["coverage"]["filteredOutCount"] == 2
+    assert results[0]["coverage"]["excludedTitleCount"] == 1
+    assert results[0]["coverage"]["keywordMissCount"] == 1
+    assert results[0]["coverage"]["duplicateLinkCount"] == 3
     assert adapter.received_watermark == BoardWatermark(
         last_seen_external_id="SAFE-house-100",
         cutoff_at=datetime(2026, 5, 23, 12, 0, tzinfo=timezone.utc),
@@ -295,6 +310,7 @@ def test_board_stream_adapter_passes_coverage_to_ingest_for_new_posts():
     results = asyncio.run(pipeline.run_once())
 
     assert results[0]["coverage"]["rowsSeen"] == 1
+    assert results[0]["coverage"]["filteredOutCount"] == 2
     assert client.ingested_batches[0]["coverage"]["rowsSeen"] == 1
     assert client.ingested_batches[0]["posts"][0].board_id == "house"
     assert client.ingested_batches[0]["posts"][0].view_count == 10
