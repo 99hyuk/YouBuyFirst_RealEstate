@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { loadKakaoSdk } from '../lib/kakao-sdk';
 
 export type ComplexMapTone = 'up' | 'down' | 'flat';
 
@@ -103,38 +104,6 @@ const setSelectedMarker = (marker: ComplexMapMarker) => {
   focusKakaoMarker(marker);
 };
 
-const loadKakaoSdk = async () => {
-  if ((window as any).kakao?.maps) {
-    await new Promise<void>((resolve) => (window as any).kakao.maps.load(resolve));
-    return;
-  }
-
-  const existingPromise = (window as any).__ybfKakaoMapPromise as Promise<void> | undefined;
-  if (existingPromise) {
-    await existingPromise;
-    return;
-  }
-
-  (window as any).__ybfKakaoMapPromise = new Promise<void>((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>('script[data-ybf-kakao-map="true"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => (window as any).kakao.maps.load(resolve), { once: true });
-      existingScript.addEventListener('error', () => reject(new Error('Kakao map SDK failed to load')), { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.dataset.ybfKakaoMap = 'true';
-    script.async = true;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(kakaoKey.value)}&autoload=false`;
-    script.addEventListener('load', () => (window as any).kakao.maps.load(resolve), { once: true });
-    script.addEventListener('error', () => reject(new Error('Kakao map SDK failed to load')), { once: true });
-    document.head.appendChild(script);
-  });
-
-  await (window as any).__ybfKakaoMapPromise;
-};
-
 const clearKakaoMarkers = () => {
   for (const marker of renderedMarkers) {
     marker.setMap(null);
@@ -163,7 +132,7 @@ const renderKakaoMap = async () => {
   }
 
   try {
-    await loadKakaoSdk();
+    await loadKakaoSdk(kakaoKey.value);
     const kakao = (window as any).kakao;
     const center = new kakao.maps.LatLng(mapCenter.value.lat, mapCenter.value.lng);
 

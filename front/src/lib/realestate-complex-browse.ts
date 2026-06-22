@@ -21,6 +21,7 @@ export type ComplexBrowseItem = {
   lat: number;
   lng: number;
   tone: ComplexMapTone;
+  coordSource?: 'approx' | 'geocoded';
 };
 
 export type ComplexBrowseResult = {
@@ -203,7 +204,8 @@ export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowse
       stale: group.stale,
       lat: coordinate.lat,
       lng: coordinate.lng,
-      tone: toneFromBuiltYear(group.builtYear)
+      tone: toneFromBuiltYear(group.builtYear),
+      coordSource: 'approx'
     } satisfies ComplexBrowseItem;
   });
 }
@@ -251,7 +253,9 @@ export function toComplexMarkers(items: ComplexBrowseItem[]): ComplexMapMarker[]
     provider: 'molit',
     asOf: item.asOf,
     dataStatus: item.stale ? `${item.dataStatus} · stale` : item.dataStatus,
-    note: '구 중심 좌표 기준 배치 · 단지 정밀 좌표 매핑 전'
+    note: item.coordSource === 'geocoded'
+      ? '카카오 장소검색 좌표 · 실제 단지 위치'
+      : '구 중심 좌표 기준 배치 · 단지 정밀 좌표 매핑 전'
   }));
 }
 
@@ -290,7 +294,8 @@ function mockComplexItems(): ComplexBrowseItem[] {
     stale: true,
     lat: mock.lat,
     lng: mock.lng,
-    tone: mock.tone
+    tone: mock.tone,
+    coordSource: 'approx'
   }));
 }
 

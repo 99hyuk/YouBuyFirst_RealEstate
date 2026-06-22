@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
+import { geocodeComplexItems } from '../lib/kakao-geocode';
 import {
   dealTypeLabel,
   fetchComplexBrowse,
@@ -33,6 +34,7 @@ const sortOptions: { id: ComplexBrowseSort; label: string }[] = [
 ];
 
 const items = ref<ComplexBrowseItem[]>([]);
+let loadToken = 0;
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
 const activeDealFilter = ref<DealFilter>('all');
 const activeSort = ref<ComplexBrowseSort>('price-desc');
@@ -52,17 +54,39 @@ const statusLabel = computed(() => {
   if (loadState.value === 'fallback') return 'mock fallback · 실데이터 수집 전';
   return '단지 데이터 API 오류';
 });
+const coordSummary = computed(() => {
+  const geocoded = visibleItems.value.filter((item) => item.coordSource === 'geocoded').length;
+  return { geocoded, total: visibleItems.value.length };
+});
+const coordStatusLabel = computed(() => {
+  const { geocoded, total } = coordSummary.value;
+  if (!total) return '';
+  return geocoded ? `실좌표 ${geocoded}/${total}` : '구 중심 좌표(실좌표 0)';
+});
 
 const refreshComplexes = async () => {
+  const token = ++loadToken;
   loadState.value = 'loading';
   try {
     const result = await fetchComplexBrowse();
+    if (token !== loadToken) return;
     items.value = result.items;
     selectedId.value = result.items[0]?.id ?? '';
     loadState.value = result.source === 'live' ? 'live' : 'fallback';
+    // Resolve real complex coordinates in the background; markers update once done.
+    void applyGeocoding(result.items, token);
   } catch {
+    if (token !== loadToken) return;
     items.value = [];
     loadState.value = 'error';
+  }
+};
+
+const applyGeocoding = async (base: ComplexBrowseItem[], token: number) => {
+  const geocoded = await geocodeComplexItems(base);
+  // Only apply if a newer load hasn't superseded this one.
+  if (token === loadToken) {
+    items.value = geocoded;
   }
 };
 
@@ -126,6 +150,14 @@ onMounted(() => {
 
       <span class="status-pill" :class="{ warning: loadState !== 'live' }" data-testid="complex-status">
         {{ statusLabel }}
+      </span>
+      <span
+        v-if="coordStatusLabel"
+        class="status-pill"
+        :class="{ warning: coordSummary.geocoded === 0 }"
+        data-testid="complex-coord-status"
+      >
+        {{ coordStatusLabel }}
       </span>
     </header>
 
