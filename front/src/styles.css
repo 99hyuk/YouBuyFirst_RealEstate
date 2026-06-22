@@ -11813,3 +11813,236 @@ a {
 .realestate-map-page .sample-complex-list article {
   border-color: rgba(148, 163, 184, 0.16);
 }
+
+/* === Complex browse page (네이버식 단지 카테고리) === */
+.complex-browse-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 0 32px;
+}
+
+.complex-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.complex-filter-heading h2 {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 860;
+  color: var(--ink);
+}
+
+.complex-filter-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  flex: 1;
+}
+
+.filter-chip-row {
+  display: inline-flex;
+  gap: 6px;
+  padding-right: 12px;
+  border-right: 1px solid var(--line);
+}
+
+.filter-chip {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: #526071;
+  font-size: 12px;
+  font-weight: 760;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.filter-chip:hover:not(:disabled):not(.active) {
+  border-color: var(--brand-line);
+}
+
+.filter-chip.active {
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.filter-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.complex-search input {
+  min-width: 200px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.complex-sort {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 700;
+  color: #526071;
+}
+
+.complex-filter-bar .status-pill {
+  margin-left: auto;
+}
+
+.complex-browse-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.complex-list-panel {
+  max-height: 72vh;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 8px;
+}
+
+.complex-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.complex-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.complex-card {
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.complex-card:hover {
+  background: var(--surface-soft);
+}
+
+.complex-card.active {
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
+}
+
+.complex-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.complex-deal-badge {
+  flex: none;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.complex-deal-badge.trade {
+  background: rgba(240, 68, 82, 0.12);
+  color: #d23142;
+}
+
+.complex-deal-badge.rent {
+  background: rgba(47, 111, 237, 0.12);
+  color: #2f6fed;
+}
+
+.complex-name {
+  font-size: 14px;
+  font-weight: 820;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.complex-price {
+  margin: 8px 0 4px;
+  font-size: 16px;
+  font-weight: 880;
+  color: var(--ink);
+}
+
+.complex-price.up {
+  color: var(--market-up);
+}
+
+.complex-price.down {
+  color: var(--market-down);
+}
+
+.complex-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.complex-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted-2);
+}
+
+.complex-stale {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #fff7eb;
+  color: #bd6b10;
+  font-weight: 700;
+}
+
+.complex-map-stage {
+  min-height: 420px;
+}
+
+@media (max-width: 880px) {
+  .complex-browse-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .complex-list-panel {
+    max-height: none;
+  }
+
+  .complex-filter-bar .status-pill {
+    margin-left: 0;
+  }
+}
