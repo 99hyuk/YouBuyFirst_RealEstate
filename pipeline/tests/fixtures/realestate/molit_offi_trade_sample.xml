@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+  <header>
+    <resultCode>000</resultCode>
+    <resultMsg>OK</resultMsg>
+  </header>
+  <body>
+    <items>
+      <item>
+        <buildYear>2003</buildYear>
+        <dealAmount>28,000</dealAmount>
+        <dealDay>28</dealDay>
+        <dealMonth>5</dealMonth>
+        <dealYear>2026</dealYear>
+        <dealingGbn>중개거래</dealingGbn>
+        <excluUseAr>40.88</excluUseAr>
+        <floor>11</floor>
+        <jibun>716</jibun>
+        <offiNm>사이룩스</offiNm>
+        <sggCd>11680</sggCd>
+        <umdNm>수서동</umdNm>
+      </item>
+      <item>
+        <buildYear>2015</buildYear>
+        <dealAmount>52,500</dealAmount>
+        <dealDay>3</dealDay>
+        <dealMonth>5</dealMonth>
+        <dealYear>2026</dealYear>
+        <dealingGbn>직거래</dealingGbn>
+        <excluUseAr>59.92</excluUseAr>
+        <floor>7</floor>
+        <jibun>815</jibun>
+        <offiNm>강남역센트럴푸르지오시티</offiNm>
+        <sggCd>11680</sggCd>
+        <umdNm>역삼동</umdNm>
+      </item>
+    </items>
+    <numOfRows>10</numOfRows>
+    <pageNo>1</pageNo>
+    <totalCount>2</totalCount>
+  </body>
+</response>
