@@ -145,7 +145,7 @@ const dismissNewsroomMenu = () => {
             </span>
           </span>
           <RouterLink data-testid="nav-map" to="/realestate/map">지도</RouterLink>
-          <RouterLink data-testid="nav-complexes" to="/realestate/complexes">단지</RouterLink>
+          <RouterLink data-testid="nav-complexes" to="/realestate/complexes">실거래 지도</RouterLink>
           <RouterLink data-testid="nav-region-reactions" to="/realestate/reactions">지역 반응</RouterLink>
           <RouterLink data-testid="nav-indicators" to="/indicators">주요 지표</RouterLink>
           <RouterLink data-testid="nav-watchlist" to="/realestate/watchlist">관심 지역</RouterLink>
