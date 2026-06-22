@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+  <header><resultCode>000</resultCode><resultMsg>OK</resultMsg></header>
+  <body>
+    <items>
+      <item>
+        <buildYear>1998</buildYear>
+        <dealDay>14</dealDay>
+        <dealMonth>5</dealMonth>
+        <dealYear>2026</dealYear>
+        <deposit>1,000</deposit>
+        <houseType>다가구</houseType>
+        <monthlyRent>66</monthlyRent>
+        <sggCd>11680</sggCd>
+        <totalFloorAr>32</totalFloorAr>
+        <umdNm>역삼동</umdNm>
+      </item>
+    </items>
+    <numOfRows>10</numOfRows><pageNo>1</pageNo><totalCount>1</totalCount>
+  </body>
+</response>

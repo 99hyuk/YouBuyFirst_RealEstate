@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+  <header><resultCode>000</resultCode><resultMsg>OK</resultMsg></header>
+  <body>
+    <items>
+      <item>
+        <buildYear>2022</buildYear>
+        <dealAmount>49,301</dealAmount>
+        <dealDay>28</dealDay>
+        <dealMonth>5</dealMonth>
+        <dealYear>2026</dealYear>
+        <dealingGbn>직거래</dealingGbn>
+        <excluUseAr>28.49</excluUseAr>
+        <floor>2</floor>
+        <houseType>다세대</houseType>
+        <jibun>744-8</jibun>
+        <landAr>17.36</landAr>
+        <mhouseNm>에이트</mhouseNm>
+        <sggCd>11680</sggCd>
+        <umdNm>역삼동</umdNm>
+      </item>
+    </items>
+    <numOfRows>10</numOfRows><pageNo>1</pageNo><totalCount>1</totalCount>
+  </body>
+</response>
