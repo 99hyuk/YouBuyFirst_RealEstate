@@ -4515,6 +4515,57 @@ a {
   pointer-events: none;
 }
 
+/* Kakao map price bubble (CustomOverlay) */
+.complex-price-overlay {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1.5px solid var(--neutral-slate);
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.22);
+  font-size: 12px;
+  font-weight: 820;
+  color: #526071;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.complex-price-overlay .price-overlay-amount {
+  color: currentColor;
+}
+
+.complex-price-overlay::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid currentColor;
+}
+
+.complex-price-overlay.up {
+  border-color: var(--market-up);
+  color: var(--market-up);
+}
+
+.complex-price-overlay.down {
+  border-color: var(--market-down);
+  color: var(--market-down);
+}
+
+.complex-price-overlay.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.34);
+}
+
 .complex-map-pin {
   position: absolute;
   z-index: 2;
@@ -11919,6 +11970,18 @@ a {
   font-size: 12px;
   font-weight: 700;
   color: #526071;
+}
+
+.complex-region-select {
+  min-height: 32px;
+  padding: 0 12px;
+  margin-right: 8px;
+  border: 1px solid var(--brand-line, var(--line));
+  border-radius: 8px;
+  background: var(--brand-soft);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--brand-strong);
 }
 
 .complex-filter-bar .status-pill {

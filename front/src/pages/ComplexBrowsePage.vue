@@ -6,14 +6,19 @@ import {
   dealTypeLabel,
   fetchComplexBrowse,
   filterComplexes,
+  regionCentroid,
   toComplexMarkers,
   type ComplexBrowseItem,
   type ComplexBrowseSort,
   type DealType,
   type PropertyType
 } from '../lib/realestate-complex-browse';
+import regionData from '../fixtures/transaction-regions.json';
 
 type DealFilter = DealType | 'all';
+
+const regionGroups = regionData.groups as { sido: string; items: { code: string; name: string }[] }[];
+const regionNameByCode = new Map(regionGroups.flatMap((group) => group.items.map((item) => [item.code, item.name])));
 
 // 매물유형 카테고리. value가 있으면 실데이터 연결(활성).
 // 단독·다가구는 단지명이 없어 단지 목록 표출 대상이 아니고, 재건축/재개발은 수집 데이터가 없어 준비중.
@@ -41,10 +46,14 @@ const items = ref<ComplexBrowseItem[]>([]);
 let loadToken = 0;
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
 const activePropertyType = ref<PropertyType>('apt');
+const activeRegion = ref<string>('11680');
 const activeDealFilter = ref<DealFilter>('all');
 const activeSort = ref<ComplexBrowseSort>('price-desc');
 const query = ref('');
 const selectedId = ref('');
+
+const regionName = computed(() => regionNameByCode.get(activeRegion.value) ?? '지역');
+const mapCenter = computed(() => regionCentroid(activeRegion.value) ?? undefined);
 
 const visibleItems = computed(() =>
   filterComplexes(
@@ -59,7 +68,7 @@ const selectedItem = computed(
 );
 const statusLabel = computed(() => {
   if (loadState.value === 'loading') return '실거래 데이터 불러오는 중';
-  if (loadState.value === 'live') return `국토교통부 실거래 · 서울 · ${visibleItems.value.length}곳`;
+  if (loadState.value === 'live') return `국토교통부 실거래 · ${regionName.value} · ${visibleItems.value.length}곳`;
   if (loadState.value === 'fallback') return 'mock fallback · 실데이터 수집 전';
   return '실거래 데이터 API 오류';
 });
@@ -77,7 +86,7 @@ const refreshComplexes = async () => {
   const token = ++loadToken;
   loadState.value = 'loading';
   try {
-    const result = await fetchComplexBrowse(activePropertyType.value);
+    const result = await fetchComplexBrowse(activePropertyType.value, activeRegion.value);
     if (token !== loadToken) return;
     items.value = result.items;
     selectedId.value = result.items[0]?.id ?? '';
@@ -105,6 +114,10 @@ const selectPropertyType = (value: PropertyType) => {
   void refreshComplexes();
 };
 
+const onRegionChange = () => {
+  void refreshComplexes();
+};
+
 const selectComplex = (item: ComplexBrowseItem) => {
   selectedId.value = item.id;
 };
@@ -124,10 +137,24 @@ onMounted(() => {
       <div class="complex-filter-heading">
         <p class="eyebrow">transaction map · 실거래 지도</p>
         <h2 id="complex-browse-title">실거래 지도</h2>
-        <p class="complex-browse-sub">국토교통부 실거래를 건물·단지명으로 묶어 지도에 표시합니다 · 현재 서울 일부 지역</p>
+        <p class="complex-browse-sub">국토교통부 실거래를 건물·단지명으로 묶어 지도에 표시합니다 · 지역을 선택해 보세요</p>
       </div>
 
       <div class="complex-filter-groups">
+        <select
+          v-model="activeRegion"
+          class="complex-region-select"
+          aria-label="지역 선택"
+          data-testid="complex-region-select"
+          @change="onRegionChange"
+        >
+          <optgroup v-for="group in regionGroups" :key="group.sido" :label="group.sido">
+            <option v-for="region in group.items" :key="region.code" :value="region.code">
+              {{ group.sido }} {{ region.name }}
+            </option>
+          </optgroup>
+        </select>
+
         <div class="filter-chip-row" aria-label="매물 유형">
           <button
             v-for="chip in propertyTypeChips"
@@ -210,7 +237,8 @@ onMounted(() => {
         <KakaoComplexMap
           :markers="markers"
           :selected-target-id="selectedItem?.id ?? ''"
-          :marker-source-status="loadState === 'live' ? 'molit 실거래' : loadState"
+          :center="mapCenter"
+          :marker-source-status="loadState === 'live' ? `molit 실거래 · ${regionName}` : loadState"
           @select="onMarkerSelect"
         />
       </div>
