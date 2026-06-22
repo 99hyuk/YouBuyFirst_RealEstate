@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   aggregateComplexes,
   complexCoordinate,
+  fetchComplexBrowse,
   filterComplexes,
   toComplexMarkers
 } from '../lib/realestate-complex-browse';
@@ -143,6 +144,17 @@ describe('complex browse property type', () => {
     const aptOnly = filterComplexes(items, { propertyType: 'apt' });
     expect(aptOnly.every((item) => item.propertyType === 'apt')).toBe(true);
     expect(aptOnly.map((item) => item.name)).not.toContain('사이룩스');
+  });
+
+  it('fetches the selected region and category factTypes', async () => {
+    const urls: string[] = [];
+    const fetcher = (async (input: string) => {
+      urls.push(input);
+      return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }) as unknown as typeof fetch;
+
+    await fetchComplexBrowse('rh', '26350', fetcher);
+    expect(urls.some((u) => u.includes('factType=rh_trade') && u.includes('legalDongCode=26350'))).toBe(true);
   });
 
   it('classifies rh_trade as 연립·다세대 and silv_trade as 분양권', () => {

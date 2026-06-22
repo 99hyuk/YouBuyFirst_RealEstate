@@ -83,6 +83,11 @@ export function complexCoordinate(legalDongCode: string | null | undefined, key:
   };
 }
 
+export function regionCentroid(legalDongCode: string): { lat: number; lng: number } | null {
+  const centroid = guCentroids[legalDongCode];
+  return centroid ? { lat: centroid.lat, lng: centroid.lng } : null;
+}
+
 function hashString(value: string): number {
   let hash = 0;
   for (let index = 0; index < value.length; index += 1) {
@@ -338,14 +343,15 @@ type Fetcher = (input: string) => Promise<Response>;
 
 export async function fetchComplexBrowse(
   propertyType: PropertyType = 'apt',
+  legalDongCode?: string,
   fetcher: Fetcher = fetch
 ): Promise<ComplexBrowseResult> {
   try {
-    // Fetch only the selected category's factTypes so minority types are never
-    // crowded out of a shared page.
+    // Fetch only the selected category's factTypes (and region) so minority types
+    // are never crowded out of a shared page.
     const factTypes = propertyFactTypes[propertyType];
     const factPages = await Promise.all(
-      factTypes.map((factType) => fetchRealEstateMarketFacts({ factType, limit: 500 }, fetcher))
+      factTypes.map((factType) => fetchRealEstateMarketFacts({ factType, legalDongCode, limit: 500 }, fetcher))
     );
     const items = aggregateComplexes(factPages.flat());
     if (items.length) {

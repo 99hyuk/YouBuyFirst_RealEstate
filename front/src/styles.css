@@ -11921,6 +11921,18 @@ a {
   color: #526071;
 }
 
+.complex-region-select {
+  min-height: 32px;
+  padding: 0 12px;
+  margin-right: 8px;
+  border: 1px solid var(--brand-line, var(--line));
+  border-radius: 8px;
+  background: var(--brand-soft);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--brand-strong);
+}
+
 .complex-filter-bar .status-pill {
   margin-left: auto;
 }
