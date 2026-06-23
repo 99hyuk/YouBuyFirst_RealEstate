@@ -338,6 +338,13 @@ export function filterTransactions(
   });
 }
 
+// 전월 대비(MoM) 변동이 있으면 마커 숫자 색을 상승=빨강/하락=파랑, 데이터 없으면 중립.
+function momTone(item: TransactionItem): TransactionMapTone {
+  const change = computeTransactionChange(item, 'mom');
+  if (change === null || change === 0) return 'flat';
+  return change > 0 ? 'up' : 'down';
+}
+
 export function toTransactionMarkers(items: TransactionItem[]): TransactionMapMarker[] {
   return items.map((item) => ({
     targetId: item.id,
@@ -346,7 +353,7 @@ export function toTransactionMarkers(items: TransactionItem[]): TransactionMapMa
     region: item.region,
     lat: item.lat,
     lng: item.lng,
-    tone: 'flat',
+    tone: momTone(item),
     price: item.priceLabel,
     change: `${dealTypeLabels[item.dealType]} ${item.dealCount}건`,
     reaction: item.builtYear ? `${item.builtYear}년 준공` : '준공연도 확인 필요',
