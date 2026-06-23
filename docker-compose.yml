@@ -24,6 +24,7 @@ services:
       SPRING_DATASOURCE_USERNAME: youbuyfirst
       SPRING_DATASOURCE_PASSWORD: youbuyfirst
       DATA_GO_SERVICE_KEY: ${DATA_GO_SERVICE_KEY:-}
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY:-}
     ports:
       - "8080:8080"
     depends_on:

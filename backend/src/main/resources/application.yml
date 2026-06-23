@@ -32,3 +32,5 @@ app:
   realestate:
     public-data:
       data-go-service-key: ${DATA_GO_SERVICE_KEY:}
+    kakao:
+      rest-api-key: ${KAKAO_REST_API_KEY:}
