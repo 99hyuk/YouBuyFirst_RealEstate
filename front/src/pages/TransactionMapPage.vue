@@ -178,6 +178,13 @@ const selectedChange = computed<number | null>(() =>
   computeTransactionChange(selectedItem.value, activeTrendPeriod.value)
 );
 
+// 리스트 가격 색: 전월 대비(MoM) 변동이 있으면 상승=빨강/하락=파랑, 없으면 기본색.
+const priceTone = (item: TransactionItem): '' | 'up' | 'down' => {
+  const change = computeTransactionChange(item, 'mom');
+  if (change === null || change === 0) return '';
+  return change > 0 ? 'up' : 'down';
+};
+
 // 준공연도 기준 신축/구축 라벨(색이 아닌 명시적 텍스트로 표시).
 const ageBadge = (builtYear: number | null) => {
   if (builtYear === null) return '';
@@ -302,7 +309,7 @@ onMounted(() => {
                 <span v-if="ageBadge(item.builtYear)" class="complex-age-badge">{{ ageBadge(item.builtYear) }}</span>
                 <span v-if="item.coordSource !== 'geocoded'" class="complex-coord-badge">근사좌표</span>
               </div>
-              <p class="complex-price">{{ item.priceLabel }}</p>
+              <p class="complex-price" :class="priceTone(item)">{{ item.priceLabel }}</p>
               <p class="complex-meta">{{ item.gu }} {{ item.region }} · {{ item.areaLabel }}</p>
               <p class="complex-sub">
                 거래 {{ item.dealCount }}건 · 기준 {{ item.asOf }}
