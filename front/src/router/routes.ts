@@ -4,7 +4,6 @@ import DashboardPage from '../pages/DashboardPage.vue';
 import IndicatorsPage from '../pages/IndicatorsPage.vue';
 import NewsroomPage from '../pages/NewsroomPage.vue';
 import RegionDetailPage from '../pages/RegionDetailPage.vue';
-import TransactionPage from '../pages/TransactionPage.vue';
 import WatchlistPage from '../pages/WatchlistPage.vue';
 
 export const routes: RouteRecordRaw[] = [
@@ -29,8 +28,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: '/realestate/complexes',
-    name: 'realestate-complexes',
-    component: () => import('../pages/TransactionMapPage.vue')
+    redirect: '/realestate/transactions'
   },
   {
     path: '/newsroom',
@@ -40,7 +38,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/realestate/transactions',
     name: 'realestate-transactions',
-    component: TransactionPage
+    component: () => import('../pages/TransactionMapPage.vue')
   },
   {
     path: '/realestate/reactions',

@@ -538,7 +538,7 @@ const transactionTargetCode = computed<string | null>(() => {
 });
 const hasTransactionData = computed(() => transactionTargetCode.value !== null);
 const transactionMapLink = computed(() =>
-  transactionTargetCode.value ? `/realestate/complexes?region=${transactionTargetCode.value}` : ''
+  transactionTargetCode.value ? `/realestate/transactions?region=${transactionTargetCode.value}` : ''
 );
 const transactionMapLabel = computed(() => {
   const regionLabel = selectedSubregion.value?.name ?? selectedRegion.value?.name ?? '';

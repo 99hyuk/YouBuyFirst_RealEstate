@@ -91,7 +91,7 @@ describe('real-estate legacy cleanup', () => {
     const routeTargetSources = [
       'App.vue',
       'pages/DashboardPage.vue',
-      'pages/TransactionPage.vue',
+      'pages/TransactionMapPage.vue',
       'pages/RegionDetailPage.vue',
       'fixtures/dashboard-summary.json',
       'fixtures/reaction-ranking.json',
