@@ -31,10 +31,11 @@ public class RealEstateMarketFactController {
             @RequestParam(required = false) String targetId,
             @RequestParam(required = false) String legalDongCode,
             @RequestParam(required = false) String factType,
+            @RequestParam(required = false) String dealYm,
             @RequestParam(defaultValue = "100") int limit,
             @RequestParam(defaultValue = "0") int page
     ) {
-        return new RealEstateMarketFactListResponse(service.list(targetId, legalDongCode, factType, limit, page));
+        return new RealEstateMarketFactListResponse(service.list(targetId, legalDongCode, factType, dealYm, limit, page));
     }
 
     @GetMapping("/api/realestate/targets/{targetId}/market-facts")

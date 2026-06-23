@@ -23,12 +23,14 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
             where (:targetId is null or fact.targetId = :targetId)
               and (:legalDongCode is null or fact.legalDongCode = :legalDongCode)
               and (:factType is null or fact.factType = :factType)
+              and (:dealMonth is null or fact.asOf = :dealMonth)
             order by fact.observedAt desc, fact.providerObjectId asc
             """)
     List<RealEstateMarketFact> search(
             @Param("targetId") String targetId,
             @Param("legalDongCode") String legalDongCode,
             @Param("factType") String factType,
+            @Param("dealMonth") LocalDate dealMonth,
             Pageable pageable
     );
 
