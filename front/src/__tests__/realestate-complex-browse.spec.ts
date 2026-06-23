@@ -179,4 +179,29 @@ describe('complex browse property type', () => {
     expect(rh?.propertyType).toBe('rh');
     expect(silv?.propertyType).toBe('silv');
   });
+
+  it('labels nameless 단독·다가구 by 지번 address, falling back to 동+유형', () => {
+    const items = aggregateComplexes([
+      {
+        factType: 'sh_trade',
+        provider: 'molit',
+        legalDongCode: '11680',
+        observedAt: '2026-05-20',
+        valueJson: { legalDongName: '역삼동', jibun: '736-12', dealAmountManwon: 250000, builtYear: 2001 }
+      },
+      {
+        factType: 'sh_rent',
+        provider: 'molit',
+        legalDongCode: '11680',
+        observedAt: '2026-05-21',
+        valueJson: { legalDongName: '역삼동', depositAmountManwon: 1000, monthlyRentAmountManwon: 66, houseType: '다가구', builtYear: 1998 }
+      }
+    ]);
+    const byJibun = items.find((item) => item.name === '역삼동 736-12');
+    const byHouseType = items.find((item) => item.name === '역삼동 다가구');
+    expect(byJibun?.propertyType).toBe('sh');
+    expect(byJibun?.dealType).toBe('trade');
+    expect(byHouseType?.propertyType).toBe('sh');
+    expect(byHouseType?.dealType).toBe('rent');
+  });
 });
