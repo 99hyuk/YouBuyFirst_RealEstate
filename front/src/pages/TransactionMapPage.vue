@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import RealEstateTransactionMap, { type TransactionMapMarker } from '../components/RealEstateTransactionMap.vue';
 import { geocodeTransactionItems } from '../lib/kakao-geocode';
 import {
+  computeTransactionChange,
   dealTypeLabel,
   fetchTransactions,
   filterTransactions,
@@ -79,11 +80,21 @@ const visibleItems = computed(() =>
     activeSort.value
   )
 );
-// 해당 지역/조건의 실거래 정보 유무를 먼저 판단한다.
-const hasTransactionData = computed(() => visibleItems.value.length > 0);
-const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(visibleItems.value));
+// 실좌표(카카오 지오코딩)가 적용된 건물만 지도/목록에 노출하고, 미적용 건물은 별도 목록으로 분리한다.
+const geocodedItems = computed(() => visibleItems.value.filter((item) => item.coordSource === 'geocoded'));
+const pendingItems = computed(() => visibleItems.value.filter((item) => item.coordSource !== 'geocoded'));
+// 실좌표 미적용 건물 포함 여부(필터 토글). 켜면 기존 목록에 미적용 건물도 합쳐 정렬된 채로 보여준다.
+const showPending = ref(false);
+const listItems = computed(() => (showPending.value ? visibleItems.value : geocodedItems.value));
+const listState = computed<'loading' | 'empty' | 'ready'>(() => {
+  if (loadState.value === 'loading') return 'loading';
+  if (!visibleItems.value.length) return 'empty';
+  return 'ready';
+});
+// 지도 마커는 실좌표가 있는 건물만(좌표 없는 건 위치가 부정확해 제외).
+const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(geocodedItems.value));
 const selectedItem = computed(
-  () => visibleItems.value.find((item) => item.id === selectedId.value) ?? visibleItems.value[0] ?? null
+  () => visibleItems.value.find((item) => item.id === selectedId.value) ?? null
 );
 const statusLabel = computed(() => {
   if (loadState.value === 'loading') return '실거래 데이터 불러오는 중';
@@ -162,12 +173,10 @@ const activeTrendPeriod = ref<TrendPeriod>('yoy');
 const activeTrendCaption = computed(
   () => trendPeriods.find((period) => period.id === activeTrendPeriod.value)?.caption ?? ''
 );
-// 선택 단지의 기간별 가격 변동률. 과거 월 실거래 비교 데이터가 적재되기 전까지는 null(비교데이터 없음).
-const selectedChange = computed<number | null>(() => {
-  if (!selectedItem.value) return null;
-  // TODO: 과거 월(YoY/6개월/MoM) 평단가 비교 데이터가 연결되면 여기서 변동률을 계산한다.
-  return null;
-});
+// 선택 단지의 기간별 평단가 변동률. 비교 월 데이터가 있으면 계산, 없으면 null(비교데이터 없음).
+const selectedChange = computed<number | null>(() =>
+  computeTransactionChange(selectedItem.value, activeTrendPeriod.value)
+);
 
 // 준공연도 기준 신축/구축 라벨(색이 아닌 명시적 텍스트로 표시).
 const ageBadge = (builtYear: number | null) => {
@@ -274,31 +283,45 @@ onMounted(() => {
 
     <section class="complex-browse-layout">
       <aside class="complex-list-panel" aria-label="실거래 목록">
-        <div v-if="loadState === 'loading'" class="complex-empty">실거래 목록을 불러오는 중입니다…</div>
-        <div v-else-if="!hasTransactionData" class="complex-empty complex-empty-nodata">
+        <div v-if="listState === 'loading'" class="complex-empty">실거래 목록을 불러오는 중입니다…</div>
+        <div v-else-if="listState === 'empty'" class="complex-empty complex-empty-nodata">
           실거래 정보 없음
         </div>
-        <ul v-else class="complex-card-list">
-          <li
-            v-for="item in visibleItems"
-            :key="item.id"
-            :class="['complex-card', { active: item.id === selectedItem?.id }]"
-            :data-testid="`complex-card-${item.id}`"
-            @click="selectComplex(item)"
+        <template v-else>
+          <ul v-if="listItems.length" class="complex-card-list">
+            <li
+              v-for="item in listItems"
+              :key="item.id"
+              :class="['complex-card', { active: item.id === selectedItem?.id }]"
+              :data-testid="`complex-card-${item.id}`"
+              @click="selectComplex(item)"
+            >
+              <div class="complex-card-head">
+                <span class="complex-deal-badge" :class="item.dealType">{{ dealBadge(item.dealType) }}</span>
+                <strong class="complex-name">{{ item.name }}</strong>
+                <span v-if="ageBadge(item.builtYear)" class="complex-age-badge">{{ ageBadge(item.builtYear) }}</span>
+                <span v-if="item.coordSource !== 'geocoded'" class="complex-coord-badge">근사좌표</span>
+              </div>
+              <p class="complex-price">{{ item.priceLabel }}</p>
+              <p class="complex-meta">{{ item.gu }} {{ item.region }} · {{ item.areaLabel }}</p>
+              <p class="complex-sub">
+                거래 {{ item.dealCount }}건 · 기준 {{ item.asOf }}
+                <span v-if="item.stale" class="complex-stale">지연 가능</span>
+              </p>
+            </li>
+          </ul>
+          <div v-else class="complex-empty">실좌표 확인 중…</div>
+          <button
+            v-if="pendingItems.length"
+            type="button"
+            class="pending-toggle"
+            :class="{ active: showPending }"
+            data-testid="pending-toggle"
+            @click="showPending = !showPending"
           >
-            <div class="complex-card-head">
-              <span class="complex-deal-badge" :class="item.dealType">{{ dealBadge(item.dealType) }}</span>
-              <strong class="complex-name">{{ item.name }}</strong>
-              <span v-if="ageBadge(item.builtYear)" class="complex-age-badge">{{ ageBadge(item.builtYear) }}</span>
-            </div>
-            <p class="complex-price">{{ item.priceLabel }}</p>
-            <p class="complex-meta">{{ item.gu }} {{ item.region }} · {{ item.areaLabel }}</p>
-            <p class="complex-sub">
-              거래 {{ item.dealCount }}건 · 기준 {{ item.asOf }}
-              <span v-if="item.stale" class="complex-stale">지연 가능</span>
-            </p>
-          </li>
-        </ul>
+            {{ showPending ? '실좌표 미적용 건물 숨기기' : `실좌표 미적용 건물 ${pendingItems.length}건 포함` }}
+          </button>
+        </template>
       </aside>
 
       <div class="complex-map-stage">

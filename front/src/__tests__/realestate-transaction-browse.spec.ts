@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   aggregateTransactions,
+  computeTransactionChange,
   transactionCoordinate,
   fetchTransactions,
   filterTransactions,
@@ -203,5 +204,27 @@ describe('complex browse property type', () => {
     expect(byJibun?.dealType).toBe('trade');
     expect(byHouseType?.propertyType).toBe('sh');
     expect(byHouseType?.dealType).toBe('rent');
+  });
+});
+
+describe('transaction trend (period change)', () => {
+  const make = (ym: string, dealAmountManwon: number) => ({
+    factType: 'apt_trade',
+    provider: 'molit',
+    legalDongCode: '11680',
+    observedAt: `${ym}-10`,
+    valueJson: { apartmentName: '트렌드단지', legalDongName: '역삼동', dealAmountManwon, exclusiveAreaM2: 50, builtYear: 2018 }
+  });
+
+  it('keeps per-month 평단가 and returns null when only one month exists', () => {
+    const item = aggregateTransactions([make('2026-05', 100000)])[0];
+    expect(item.pricePerAreaByMonth['2026-05']).toBeCloseTo(2000);
+    expect(computeTransactionChange(item, 'yoy')).toBeNull();
+  });
+
+  it('computes YoY change from per-month 평단가, null for missing comparison month', () => {
+    const item = aggregateTransactions([make('2025-05', 100000), make('2026-05', 110000)]).find((i) => i.name === '트렌드단지')!;
+    expect(computeTransactionChange(item, 'yoy')).toBeCloseTo(10); // 2200 vs 2000 → +10%
+    expect(computeTransactionChange(item, 'mom')).toBeNull(); // no 2026-04
   });
 });

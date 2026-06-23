@@ -11812,8 +11812,8 @@ a {
 .filter-chip-row {
   display: inline-flex;
   gap: 6px;
-  padding-right: 12px;
-  border-right: 1px solid var(--line);
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
 }
 
 .filter-chip {
@@ -12191,6 +12191,47 @@ a {
   margin: 8px 0 0;
   font-size: 11px;
   color: var(--muted-2);
+}
+
+/* 실좌표 미적용 건물 포함 토글(필터 버튼처럼 동작) */
+.pending-toggle {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 10px;
+  border: 1px dashed var(--line-strong, var(--line));
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.pending-toggle:hover {
+  color: var(--ink);
+  border-color: var(--brand-line, var(--line));
+}
+
+.pending-toggle.active {
+  border-style: solid;
+  border-color: var(--brand-line, var(--line));
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+/* 근사 좌표(실좌표 미적용) 건물 표시 뱃지 */
+.complex-coord-badge {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff7eb;
+  color: #bd6b10;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 @media (max-width: 880px) {
