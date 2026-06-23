@@ -11888,8 +11888,8 @@ a {
 
 .complex-browse-layout {
   display: grid;
-  grid-template-columns: minmax(230px, 276px) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(208px, 248px) minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
 }
 
@@ -12017,28 +12017,33 @@ a {
   border-radius: 16px;
 }
 
-/* 마커 클릭 시 오른쪽에서 슬라이드 인 되는 실거래 상세 패널 */
+/* 마커 클릭 시 지도 위에 떠서 오른쪽에서 슬라이드 인 되는 플로팅 상세 팝업 */
 .transaction-detail {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
   z-index: 30;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: min(320px, 86%);
-  height: 100%;
+  width: min(320px, 84%);
   padding: 18px 18px 20px;
   background: var(--surface);
-  border-left: 1px solid var(--line);
-  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.16);
-  transform: translateX(105%);
-  transition: transform 0.28s ease;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+  transform: translateX(calc(100% + 24px));
+  opacity: 0;
+  transition: transform 0.28s ease, opacity 0.28s ease;
   overflow-y: auto;
+  pointer-events: none;
 }
 
 .transaction-detail.open {
   transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .transaction-detail-close {
