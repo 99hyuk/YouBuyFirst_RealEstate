@@ -94,20 +94,35 @@ public class RealEstateMarketFactService {
     }
 
     @Transactional(readOnly = true)
-    public List<RealEstateMarketFactResponse> list(String targetId, String legalDongCode, String factType, int limit, int page) {
+    public List<RealEstateMarketFactResponse> list(String targetId, String legalDongCode, String factType, String dealYm, int limit, int page) {
         int boundedLimit = Math.max(1, Math.min(limit, 500));
         int boundedPage = Math.max(0, page);
         String normalizedTargetId = trimToNull(targetId);
         String normalizedLegalDongCode = trimToNull(legalDongCode);
         String normalizedFactType = trimToNull(factType) == null ? null : normalizeLower(factType);
+        LocalDate dealMonth = parseDealMonth(dealYm);
         PageRequest pageRequest = PageRequest.of(boundedPage, boundedLimit);
-        List<RealEstateMarketFact> facts = findListFacts(
-                normalizedTargetId,
-                normalizedLegalDongCode,
-                normalizedFactType,
-                pageRequest
-        );
+        List<RealEstateMarketFact> facts;
+        if (dealMonth != null) {
+            // 거래월(YYYYMM) 필터가 있으면 단일 쿼리로 처리(기간 비교용 월별 조회).
+            facts = repository.search(normalizedTargetId, normalizedLegalDongCode, normalizedFactType, dealMonth, pageRequest);
+        } else {
+            facts = findListFacts(normalizedTargetId, normalizedLegalDongCode, normalizedFactType, pageRequest);
+        }
         return facts.stream().map(this::toResponse).toList();
+    }
+
+    private static LocalDate parseDealMonth(String dealYm) {
+        String normalized = trimToNull(dealYm);
+        if (normalized == null || !normalized.matches("\\d{6}")) {
+            return null;
+        }
+        int year = Integer.parseInt(normalized.substring(0, 4));
+        int month = Integer.parseInt(normalized.substring(4, 6));
+        if (month < 1 || month > 12) {
+            return null;
+        }
+        return LocalDate.of(year, month, 1);
     }
 
     @Transactional(readOnly = true)
@@ -159,7 +174,7 @@ public class RealEstateMarketFactService {
         if (targetId == null) {
             return repository.findLatestByLegalDongCodeAndFactType(legalDongCode, factType, pageRequest);
         }
-        return repository.search(targetId, legalDongCode, factType, pageRequest);
+        return repository.search(targetId, legalDongCode, factType, null, pageRequest);
     }
 
     private List<RealEstateMarketFact> findLatestSummaryFact(String legalDongCode, String factType) {

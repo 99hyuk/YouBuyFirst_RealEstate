@@ -27,6 +27,7 @@ export type FetchMarketFactParams = {
   legalDongCode?: string;
   targetId?: string;
   factType?: string;
+  dealYm?: string;
   officialOnly?: boolean;
   limit?: number;
   page?: number;
@@ -97,6 +98,7 @@ export async function fetchRealEstateMarketFacts(
   if (params.legalDongCode) query.set('legalDongCode', params.legalDongCode);
   if (params.targetId) query.set('targetId', params.targetId);
   if (params.factType) query.set('factType', params.factType);
+  if (params.dealYm) query.set('dealYm', params.dealYm);
   if (typeof params.limit === 'number') query.set('limit', String(params.limit));
   if (typeof params.page === 'number') query.set('page', String(params.page));
 

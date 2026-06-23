@@ -404,20 +404,71 @@ function mockComplexItems(): TransactionItem[] {
 
 type Fetcher = (input: string) => Promise<Response>;
 
+// 현재 실거래 기준 월과 기간 비교용 과거 월(YoY/6개월/MoM). 데이터 적재 월에 맞춰 둔다.
+const CURRENT_DEAL_YM = '202605';
+const COMPARISON_DEAL_YMS = ['202604', '202511', '202505']; // MoM(-1), 6개월(-6), YoY(-12)
+
+/** 비교 월 실거래에서 단지별 월 평단가를 계산해 현재 목록 아이템에 병합한다(기간 비교용). */
+function attachComparisonMonths(items: TransactionItem[], facts: RealEstateMarketFact[]): void {
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const byItemMonth = new Map<string, Map<string, { sum: number; count: number }>>();
+  for (const fact of facts) {
+    const info = factTypeInfo(fact.factType);
+    if (!info) continue;
+    const valueJson = fact.valueJson ?? {};
+    const region = stringValue(valueJson.legalDongName) ?? '지역 확인 필요';
+    const name = stringValue(valueJson.apartmentName) ?? addressLabel(valueJson, region);
+    if (!name) continue;
+    const id = `${info.propertyType}|${name}|${region}|${info.dealType}`;
+    if (!itemById.has(id)) continue;
+    const area = numberValue(valueJson.exclusiveAreaM2);
+    const price = info.dealType === 'trade'
+      ? numberValue(valueJson.dealAmountManwon) ?? 0
+      : numberValue(valueJson.depositAmountManwon) ?? numberValue(valueJson.depositManwon) ?? 0;
+    const observedAt = fact.observedAt ?? fact.asOf ?? null;
+    if (!observedAt || !area || area <= 0 || price <= 0) continue;
+    const ym = observedAt.slice(0, 7);
+    const months = byItemMonth.get(id) ?? new Map();
+    const bucket = months.get(ym) ?? { sum: 0, count: 0 };
+    bucket.sum += price / area;
+    bucket.count += 1;
+    months.set(ym, bucket);
+    byItemMonth.set(id, months);
+  }
+  for (const [id, months] of byItemMonth) {
+    const item = itemById.get(id)!;
+    for (const [ym, bucket] of months) {
+      if (item.pricePerAreaByMonth[ym] == null) {
+        item.pricePerAreaByMonth[ym] = bucket.sum / bucket.count;
+      }
+    }
+  }
+}
+
 export async function fetchTransactions(
   propertyType: PropertyType = 'apt',
   legalDongCode?: string,
   fetcher: Fetcher = fetch
 ): Promise<TransactionResult> {
   try {
-    // Fetch only the selected category's factTypes (and region) so minority types
-    // are never crowded out of a shared page.
     const factTypes = propertyFactTypes[propertyType];
-    const factPages = await Promise.all(
-      factTypes.map((factType) => fetchRealEstateMarketFacts({ factType, legalDongCode, limit: 500 }, fetcher))
+    // 현재 월 실거래 = 목록/마커 기준.
+    const currentPages = await Promise.all(
+      factTypes.map((factType) =>
+        fetchRealEstateMarketFacts({ factType, legalDongCode, dealYm: CURRENT_DEAL_YM, limit: 500 }, fetcher)
+      )
     );
-    const items = aggregateTransactions(factPages.flat());
+    const items = aggregateTransactions(currentPages.flat());
     if (items.length) {
+      // 비교 월 실거래 = 기간 변동률(YoY/6개월/MoM) 계산용.
+      const comparisonPages = await Promise.all(
+        factTypes.flatMap((factType) =>
+          COMPARISON_DEAL_YMS.map((dealYm) =>
+            fetchRealEstateMarketFacts({ factType, legalDongCode, dealYm, limit: 500 }, fetcher)
+          )
+        )
+      );
+      attachComparisonMonths(items, comparisonPages.flat());
       return { items, source: 'live' };
     }
   } catch {
