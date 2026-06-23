@@ -238,7 +238,7 @@ watch(() => props.markers, () => {
       <span>{{ displayStatusLabel }}</span>
     </div>
 
-    <div class="complex-map-layout">
+    <div class="complex-map-layout" :class="{ 'no-inspector': !showInspector }">
       <div class="complex-map-shell" :class="{ 'is-fallback': mapState !== 'ready' }">
         <div ref="mapContainer" class="kakao-map-canvas" data-testid="kakao-map-canvas"></div>
         <div v-if="mapState !== 'ready'" class="complex-map-fallback" data-testid="kakao-map-fallback">
