@@ -151,6 +151,13 @@ const closeDetail = () => {
   isDetailOpen.value = false;
 };
 const dealBadge = (dealType: DealType) => dealTypeLabel(dealType);
+// 준공연도 기준 신축/구축 라벨(색이 아닌 명시적 텍스트로 표시).
+const ageBadge = (builtYear: number | null) => {
+  if (builtYear === null) return '';
+  if (builtYear >= 2015) return '신축';
+  if (builtYear <= 2005) return '구축';
+  return '';
+};
 
 onMounted(() => {
   void refreshComplexes();
@@ -248,8 +255,9 @@ onMounted(() => {
             <div class="complex-card-head">
               <span class="complex-deal-badge" :class="item.dealType">{{ dealBadge(item.dealType) }}</span>
               <strong class="complex-name">{{ item.name }}</strong>
+              <span v-if="ageBadge(item.builtYear)" class="complex-age-badge">{{ ageBadge(item.builtYear) }}</span>
             </div>
-            <p class="complex-price" :class="item.tone">{{ item.priceLabel }}</p>
+            <p class="complex-price">{{ item.priceLabel }}</p>
             <p class="complex-meta">{{ item.gu }} {{ item.region }} · {{ item.areaLabel }}</p>
             <p class="complex-sub">
               거래 {{ item.dealCount }}건 · 기준 {{ item.asOf }}
@@ -280,7 +288,7 @@ onMounted(() => {
           <button class="transaction-detail-close" type="button" aria-label="상세 정보 닫기" @click="closeDetail">×</button>
           <span class="transaction-detail-badge" :class="selectedItem.dealType">{{ dealBadge(selectedItem.dealType) }}</span>
           <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
-          <p class="transaction-detail-price" :class="selectedItem.tone">{{ selectedItem.priceLabel }}</p>
+          <p class="transaction-detail-price">{{ selectedItem.priceLabel }}</p>
           <dl class="transaction-detail-list">
             <div><dt>위치</dt><dd>{{ selectedItem.gu }} {{ selectedItem.region }}</dd></div>
             <div><dt>면적</dt><dd>{{ selectedItem.areaLabel }}</dd></div>

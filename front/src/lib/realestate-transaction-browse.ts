@@ -299,7 +299,7 @@ export function toTransactionMarkers(items: TransactionItem[]): TransactionMapMa
     region: item.region,
     lat: item.lat,
     lng: item.lng,
-    tone: item.tone,
+    tone: 'flat',
     price: item.priceLabel,
     change: `${dealTypeLabels[item.dealType]} ${item.dealCount}건`,
     reaction: item.builtYear ? `${item.builtYear}년 준공` : '준공연도 확인 필요',

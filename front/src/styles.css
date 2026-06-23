@@ -11959,6 +11959,18 @@ a {
   font-weight: 800;
 }
 
+.complex-age-badge {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .complex-deal-badge.trade {
   background: rgba(240, 68, 82, 0.12);
   color: #d23142;
