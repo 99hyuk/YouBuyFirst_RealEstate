@@ -31,6 +31,19 @@ services:
       mysql:
         condition: service_healthy
 
+  # 기동 시 실거래(MOLIT) 데이터를 1회 멱등 적재한다. 데이터가 이미 있으면 즉시 종료.
+  # 팀원은 .env에 DATA_GO_SERVICE_KEY만 넣고 `docker compose up` 하면 데이터가 채워진다.
+  realestate-seed:
+    build:
+      context: ./pipeline
+    environment:
+      SPRING_BASE_URL: http://backend:8080
+      DATA_GO_SERVICE_KEY: ${DATA_GO_SERVICE_KEY:-}
+    depends_on:
+      - backend
+    restart: "no"
+    command: ["bash", "/workspace/scripts/seed-realestate.sh"]
+
   pipeline:
     build:
       context: ./pipeline
