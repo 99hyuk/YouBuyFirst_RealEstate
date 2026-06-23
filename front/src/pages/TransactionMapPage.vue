@@ -151,6 +151,24 @@ const closeDetail = () => {
   isDetailOpen.value = false;
 };
 const dealBadge = (dealType: DealType) => dealTypeLabel(dealType);
+
+type TrendPeriod = 'yoy' | '6m' | 'mom';
+const trendPeriods: { id: TrendPeriod; label: string; caption: string }[] = [
+  { id: 'yoy', label: 'YoY', caption: '전년 동월 대비' },
+  { id: '6m', label: '6개월', caption: '6개월 전 대비' },
+  { id: 'mom', label: 'MoM', caption: '전월 대비' }
+];
+const activeTrendPeriod = ref<TrendPeriod>('yoy');
+const activeTrendCaption = computed(
+  () => trendPeriods.find((period) => period.id === activeTrendPeriod.value)?.caption ?? ''
+);
+// 선택 단지의 기간별 가격 변동률. 과거 월 실거래 비교 데이터가 적재되기 전까지는 null(비교데이터 없음).
+const selectedChange = computed<number | null>(() => {
+  if (!selectedItem.value) return null;
+  // TODO: 과거 월(YoY/6개월/MoM) 평단가 비교 데이터가 연결되면 여기서 변동률을 계산한다.
+  return null;
+});
+
 // 준공연도 기준 신축/구축 라벨(색이 아닌 명시적 텍스트로 표시).
 const ageBadge = (builtYear: number | null) => {
   if (builtYear === null) return '';
@@ -289,6 +307,28 @@ onMounted(() => {
           <span class="transaction-detail-badge" :class="selectedItem.dealType">{{ dealBadge(selectedItem.dealType) }}</span>
           <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
           <p class="transaction-detail-price">{{ selectedItem.priceLabel }}</p>
+
+          <div class="transaction-trend">
+            <div class="transaction-trend-tabs" role="radiogroup" aria-label="가격 비교 기간">
+              <button
+                v-for="period in trendPeriods"
+                :key="period.id"
+                type="button"
+                role="radio"
+                :aria-checked="activeTrendPeriod === period.id"
+                :class="{ active: activeTrendPeriod === period.id }"
+                @click="activeTrendPeriod = period.id"
+              >
+                {{ period.label }}
+              </button>
+            </div>
+            <p v-if="selectedChange !== null" class="transaction-trend-value" :class="selectedChange >= 0 ? 'up' : 'down'">
+              {{ activeTrendCaption }} {{ selectedChange > 0 ? '+' : '' }}{{ selectedChange }}%
+            </p>
+            <p v-else class="transaction-trend-empty" data-testid="transaction-trend-empty">
+              {{ activeTrendCaption }} · 비교데이터 없음
+            </p>
+          </div>
           <dl class="transaction-detail-list">
             <div><dt>위치</dt><dd>{{ selectedItem.gu }} {{ selectedItem.region }}</dd></div>
             <div><dt>면적</dt><dd>{{ selectedItem.areaLabel }}</dd></div>

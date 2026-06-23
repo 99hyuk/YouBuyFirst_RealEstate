@@ -12131,6 +12131,61 @@ a {
   color: var(--market-down);
 }
 
+.transaction-trend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 2px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.transaction-trend-tabs {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.transaction-trend-tabs button {
+  flex: 1;
+  min-height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: #526071;
+  font-size: 11px;
+  font-weight: 760;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.transaction-trend-tabs button.active {
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.transaction-trend-value {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.transaction-trend-value.up {
+  color: var(--market-up);
+}
+
+.transaction-trend-value.down {
+  color: var(--market-down);
+}
+
+.transaction-trend-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+
 .transaction-detail-list {
   display: flex;
   flex-direction: column;
