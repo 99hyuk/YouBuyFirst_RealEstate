@@ -67,6 +67,7 @@ const activeDealFilter = ref<DealFilter>('all');
 const activeSort = ref<TransactionSort>('price-desc');
 const query = ref('');
 const selectedId = ref('');
+const isDetailOpen = ref(false);
 
 const regionName = computed(() => regionNameByCode.get(activeRegion.value) ?? '지역');
 const mapCenter = computed(() => regionCentroid(activeRegion.value) ?? undefined);
@@ -107,7 +108,9 @@ const refreshComplexes = async () => {
     const result = await fetchTransactions(activePropertyType.value, activeRegion.value);
     if (token !== loadToken) return;
     items.value = result.items;
-    selectedId.value = result.items[0]?.id ?? '';
+    // 초기에는 상세 패널을 닫아두고, 마커/카드 클릭 시에만 연다.
+    selectedId.value = '';
+    isDetailOpen.value = false;
     loadState.value = result.source === 'live' ? 'live' : 'fallback';
     // Resolve real complex coordinates in the background; markers update once done.
     void applyGeocoding(result.items, token);
@@ -138,9 +141,14 @@ const onRegionChange = () => {
 
 const selectComplex = (item: TransactionItem) => {
   selectedId.value = item.id;
+  isDetailOpen.value = true;
 };
 const onMarkerSelect = (marker: TransactionMapMarker) => {
   selectedId.value = marker.targetId;
+  isDetailOpen.value = true;
+};
+const closeDetail = () => {
+  isDetailOpen.value = false;
 };
 const dealBadge = (dealType: DealType) => dealTypeLabel(dealType);
 
@@ -254,11 +262,34 @@ onMounted(() => {
       <div class="complex-map-stage">
         <RealEstateTransactionMap
           :markers="markers"
-          :selected-target-id="selectedItem?.id ?? ''"
+          :selected-target-id="isDetailOpen ? selectedId : ''"
           :center="mapCenter"
+          :show-inspector="false"
           :marker-source-status="loadState === 'live' ? `molit 실거래 · ${regionName}` : loadState"
           @select="onMarkerSelect"
+          @deselect="closeDetail"
         />
+
+        <aside
+          v-if="selectedItem"
+          class="transaction-detail"
+          :class="{ open: isDetailOpen }"
+          data-testid="transaction-detail"
+          aria-label="실거래 상세 정보"
+        >
+          <button class="transaction-detail-close" type="button" aria-label="상세 정보 닫기" @click="closeDetail">×</button>
+          <span class="transaction-detail-badge" :class="selectedItem.dealType">{{ dealBadge(selectedItem.dealType) }}</span>
+          <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
+          <p class="transaction-detail-price" :class="selectedItem.tone">{{ selectedItem.priceLabel }}</p>
+          <dl class="transaction-detail-list">
+            <div><dt>위치</dt><dd>{{ selectedItem.gu }} {{ selectedItem.region }}</dd></div>
+            <div><dt>면적</dt><dd>{{ selectedItem.areaLabel }}</dd></div>
+            <div><dt>거래</dt><dd>{{ selectedItem.dealCount }}건</dd></div>
+            <div><dt>준공</dt><dd>{{ selectedItem.builtYear ? `${selectedItem.builtYear}년` : '확인 필요' }}</dd></div>
+            <div><dt>기준일</dt><dd>{{ selectedItem.asOf }}</dd></div>
+          </dl>
+          <p class="transaction-detail-note">국토교통부 실거래 · {{ selectedItem.stale ? '지연 가능' : selectedItem.dataStatus }}</p>
+        </aside>
       </div>
     </section>
   </section>

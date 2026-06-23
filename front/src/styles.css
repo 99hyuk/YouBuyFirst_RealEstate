@@ -11888,7 +11888,7 @@ a {
 
 .complex-browse-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(230px, 276px) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -12011,7 +12011,116 @@ a {
 }
 
 .complex-map-stage {
+  position: relative;
   min-height: 420px;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+/* 마커 클릭 시 오른쪽에서 슬라이드 인 되는 실거래 상세 패널 */
+.transaction-detail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, 86%);
+  height: 100%;
+  padding: 18px 18px 20px;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.16);
+  transform: translateX(105%);
+  transition: transform 0.28s ease;
+  overflow-y: auto;
+}
+
+.transaction-detail.open {
+  transform: translateX(0);
+}
+
+.transaction-detail-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.transaction-detail-badge {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.transaction-detail-badge.trade {
+  background: rgba(240, 68, 82, 0.12);
+  color: #d23142;
+}
+
+.transaction-detail-badge.rent {
+  background: rgba(47, 111, 237, 0.12);
+  color: #2f6fed;
+}
+
+.transaction-detail-name {
+  font-size: 17px;
+  font-weight: 860;
+  color: var(--ink);
+  padding-right: 20px;
+}
+
+.transaction-detail-price {
+  font-size: 20px;
+  font-weight: 880;
+  color: var(--ink);
+}
+
+.transaction-detail-price.up {
+  color: var(--market-up);
+}
+
+.transaction-detail-price.down {
+  color: var(--market-down);
+}
+
+.transaction-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+
+.transaction-detail-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.transaction-detail-list dt {
+  color: var(--muted);
+}
+
+.transaction-detail-list dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+  text-align: right;
+}
+
+.transaction-detail-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--muted-2);
 }
 
 @media (max-width: 880px) {

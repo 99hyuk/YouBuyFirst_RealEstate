@@ -32,14 +32,17 @@ const props = withDefaults(defineProps<{
   center?: MapCenter;
   level?: number;
   markerSourceStatus?: string;
+  showInspector?: boolean;
 }>(), {
   selectedTargetId: '',
   level: 5,
-  markerSourceStatus: ''
+  markerSourceStatus: '',
+  showInspector: true
 });
 
 const emit = defineEmits<{
   select: [marker: TransactionMapMarker];
+  deselect: [];
 }>();
 
 const mapContainer = ref<HTMLElement | null>(null);
@@ -143,6 +146,8 @@ const ensureMap = async (): Promise<boolean> => {
     center: new kakao.maps.LatLng(mapCenter.value.lat, mapCenter.value.lng),
     level: props.level
   });
+  // 지도 빈 영역 클릭 시 상세 패널을 닫도록 알린다.
+  kakao.maps.event.addListener(renderedMap, 'click', () => emit('deselect'));
   return true;
 };
 
@@ -252,7 +257,7 @@ watch(() => props.markers, () => {
         </div>
       </div>
 
-      <aside v-if="selectedMarker" class="complex-map-inspector" data-testid="complex-map-inspector">
+      <aside v-if="showInspector && selectedMarker" class="complex-map-inspector" data-testid="complex-map-inspector">
         <span>{{ selectedMarker.region }} · {{ selectedMarker.dataStatus }}</span>
         <strong>{{ selectedMarker.name }}</strong>
         <p>{{ selectedMarker.address }}</p>
