@@ -10454,6 +10454,28 @@ a {
   gap: 10px;
 }
 
+.transaction-map-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--brand-line, var(--line));
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 12px;
+  font-weight: 820;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.transaction-map-cta:hover {
+  background: var(--brand);
+  color: #ffffff;
+}
+
 .map-return-cta {
   display: inline-flex;
   align-items: center;

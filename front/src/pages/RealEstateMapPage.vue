@@ -514,6 +514,16 @@ const subregionFeatures = computed<SubregionFeature[]>(() => {
 const selectedSubregion = computed(
   () => subregionFeatures.value.find((feature) => feature.code === selectedSubregionCode.value) ?? null
 );
+// 선택한 시군구(있으면) 또는 시도 기준으로 해당 지역 실거래 지도로 이동하는 링크.
+const transactionMapLink = computed(() => {
+  const code = selectedSubregion.value?.code ?? selectedRegion.value?.regionCode ?? '';
+  return code ? `/realestate/complexes?region=${code}` : '/realestate/complexes';
+});
+const transactionMapLabel = computed(() => {
+  if (selectedSubregion.value) return `${selectedSubregion.value.name} 실거래 지도`;
+  if (selectedRegion.value) return `${selectedRegion.value.name} 실거래 지도`;
+  return '실거래 지도';
+});
 const strongestRegion = computed(() =>
   [...targets].sort(
     (left, right) => Math.abs(right.periodChanges[activePeriod.value]) - Math.abs(left.periodChanges[activePeriod.value])
@@ -1250,6 +1260,14 @@ onMounted(() => {
         <p>{{ pageDescription }}</p>
       </div>
       <div class="map-header-actions">
+        <RouterLink
+          v-if="selectedRegion"
+          class="transaction-map-cta"
+          :to="transactionMapLink"
+          data-testid="region-transaction-map-link"
+        >
+          🗺️ {{ transactionMapLabel }}
+        </RouterLink>
         <div class="period-tabs" aria-label="지도 기간 선택">
           <button
             v-for="period in periodOptions"
