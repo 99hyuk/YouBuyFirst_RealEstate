@@ -24,7 +24,11 @@ export type TransactionItem = {
   lng: number;
   tone: TransactionMapTone;
   coordSource?: 'approx' | 'geocoded';
+  // 월별 평단가(만원/㎡) 평균. 기간 비교(YoY/6개월/MoM) 계산용. 데이터가 한 달뿐이면 1개.
+  pricePerAreaByMonth: Record<string, number>;
 };
+
+export type TransactionTrendPeriod = 'yoy' | '6m' | 'mom';
 
 export type TransactionResult = {
   items: TransactionItem[];
@@ -169,6 +173,7 @@ type Accumulator = {
   legalDongCode: string | null;
   dataStatus: string;
   stale: boolean;
+  monthlyPpa: Map<string, { sum: number; count: number }>;
 };
 
 /** Group raw market facts into one card per complex + deal type. Pure for testing. */
@@ -213,24 +218,35 @@ export function aggregateTransactions(facts: RealEstateMarketFact[]): Transactio
         asOf: observedAt,
         legalDongCode,
         dataStatus: fact.dataStatus ?? 'unknown',
-        stale: Boolean(fact.stale)
+        stale: Boolean(fact.stale),
+        monthlyPpa: new Map()
       });
-      continue;
+    } else {
+      existing.dealCount += 1;
+      if (area !== null) {
+        existing.minArea = existing.minArea === null ? area : Math.min(existing.minArea, area);
+        existing.maxArea = existing.maxArea === null ? area : Math.max(existing.maxArea, area);
+      }
+      // Keep the most recent observation as representative.
+      if (observedAt && (!existing.asOf || observedAt > existing.asOf)) {
+        existing.asOf = observedAt;
+        existing.priceValue = dealType === 'trade' ? dealAmount : deposit;
+        existing.deposit = deposit;
+        existing.monthlyRent = monthlyRent;
+      }
+      existing.stale = existing.stale || Boolean(fact.stale);
     }
 
-    existing.dealCount += 1;
-    if (area !== null) {
-      existing.minArea = existing.minArea === null ? area : Math.min(existing.minArea, area);
-      existing.maxArea = existing.maxArea === null ? area : Math.max(existing.maxArea, area);
+    // 월별 평단가(만원/㎡) 누적 — 기간 비교(YoY/6개월/MoM)용.
+    const group = groups.get(groupKey)!;
+    const ppaPrice = dealType === 'trade' ? dealAmount : deposit;
+    if (observedAt && area && area > 0 && ppaPrice > 0) {
+      const ym = observedAt.slice(0, 7);
+      const bucket = group.monthlyPpa.get(ym) ?? { sum: 0, count: 0 };
+      bucket.sum += ppaPrice / area;
+      bucket.count += 1;
+      group.monthlyPpa.set(ym, bucket);
     }
-    // Keep the most recent observation as representative.
-    if (observedAt && (!existing.asOf || observedAt > existing.asOf)) {
-      existing.asOf = observedAt;
-      existing.priceValue = dealType === 'trade' ? dealAmount : deposit;
-      existing.deposit = deposit;
-      existing.monthlyRent = monthlyRent;
-    }
-    existing.stale = existing.stale || Boolean(fact.stale);
   }
 
   return [...groups.values()].map((group) => {
@@ -256,9 +272,40 @@ export function aggregateTransactions(facts: RealEstateMarketFact[]): Transactio
       lat: coordinate.lat,
       lng: coordinate.lng,
       tone: toneFromBuiltYear(group.builtYear),
-      coordSource: 'approx'
+      coordSource: 'approx',
+      pricePerAreaByMonth: Object.fromEntries(
+        [...group.monthlyPpa].map(([ym, bucket]) => [ym, bucket.sum / bucket.count])
+      )
     } satisfies TransactionItem;
   });
+}
+
+const TREND_OFFSET_MONTHS: Record<TransactionTrendPeriod, number> = { yoy: 12, '6m': 6, mom: 1 };
+
+function shiftMonth(ym: string, deltaMonths: number): string {
+  const [year, month] = ym.split('-').map(Number);
+  const shifted = new Date(year, month - 1 + deltaMonths, 1);
+  return `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * 선택 단지의 기간별 평단가 변동률(%)을 계산한다. 최신 월 대비 기간만큼 이전 월과 비교하며,
+ * 두 시점 모두 데이터가 있어야 한다. 비교 데이터가 없으면 null(=비교 데이터 없음).
+ */
+export function computeTransactionChange(
+  item: Pick<TransactionItem, 'pricePerAreaByMonth'> | null | undefined,
+  period: TransactionTrendPeriod
+): number | null {
+  const byMonth = item?.pricePerAreaByMonth;
+  if (!byMonth) return null;
+  const months = Object.keys(byMonth).sort();
+  if (months.length === 0) return null;
+  const currentYm = months[months.length - 1];
+  const compareYm = shiftMonth(currentYm, -TREND_OFFSET_MONTHS[period]);
+  const current = byMonth[currentYm];
+  const previous = byMonth[compareYm];
+  if (current == null || previous == null || previous === 0) return null;
+  return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
 function areaLabel(minArea: number | null, maxArea: number | null): string {
@@ -350,7 +397,8 @@ function mockComplexItems(): TransactionItem[] {
     lat: mock.lat,
     lng: mock.lng,
     tone: mock.tone,
-    coordSource: 'approx'
+    coordSource: 'approx',
+    pricePerAreaByMonth: {}
   }));
 }
 
