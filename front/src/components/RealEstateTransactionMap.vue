@@ -2,16 +2,16 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { loadKakaoSdk } from '../lib/kakao-sdk';
 
-export type ComplexMapTone = 'up' | 'down' | 'flat';
+export type TransactionMapTone = 'up' | 'down' | 'flat';
 
-export type ComplexMapMarker = {
+export type TransactionMapMarker = {
   targetId: string;
   name: string;
   address: string;
   region: string;
   lat: number;
   lng: number;
-  tone: ComplexMapTone;
+  tone: TransactionMapTone;
   price: string;
   change: string;
   reaction: string;
@@ -27,7 +27,7 @@ type MapCenter = {
 };
 
 const props = withDefaults(defineProps<{
-  markers: ComplexMapMarker[];
+  markers: TransactionMapMarker[];
   selectedTargetId?: string;
   center?: MapCenter;
   level?: number;
@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  select: [marker: ComplexMapMarker];
+  select: [marker: TransactionMapMarker];
 }>();
 
 const mapContainer = ref<HTMLElement | null>(null);
@@ -100,7 +100,7 @@ const latRange = computed(() => {
   };
 });
 
-const fallbackPointStyle = (marker: ComplexMapMarker) => {
+const fallbackPointStyle = (marker: TransactionMapMarker) => {
   const xDenominator = Math.max(lngRange.value.max - lngRange.value.min, 0.0001);
   const yDenominator = Math.max(latRange.value.max - latRange.value.min, 0.0001);
   const left = ((marker.lng - lngRange.value.min) / xDenominator) * 100;
@@ -112,7 +112,7 @@ const fallbackPointStyle = (marker: ComplexMapMarker) => {
   };
 };
 
-const setSelectedMarker = (marker: ComplexMapMarker) => {
+const setSelectedMarker = (marker: TransactionMapMarker) => {
   selectedMarkerId.value = marker.targetId;
   emit('select', marker);
   focusKakaoMarker(marker);
@@ -126,7 +126,7 @@ const clearKakaoMarkers = () => {
   overlayElements = [];
 };
 
-const focusKakaoMarker = (marker: ComplexMapMarker) => {
+const focusKakaoMarker = (marker: TransactionMapMarker) => {
   if (!renderedMap || !(window as any).kakao?.maps) return;
   const point = new (window as any).kakao.maps.LatLng(marker.lat, marker.lng);
   renderedMap.panTo(point);

@@ -1,5 +1,5 @@
 import { isKakaoMapEnabled, kakaoJsKey, loadKakaoSdk } from './kakao-sdk';
-import type { ComplexBrowseItem } from './realestate-complex-browse';
+import type { TransactionItem } from './realestate-transaction-browse';
 
 // Resolve real complex coordinates via Kakao keyword place search so markers land
 // on the actual building instead of a gu-centroid approximation.
@@ -7,7 +7,7 @@ import type { ComplexBrowseItem } from './realestate-complex-browse';
 const coordinateCache = new Map<string, { lat: number; lng: number }>();
 const MAX_GEOCODE_PER_PASS = 160;
 
-function geocodeQuery(item: ComplexBrowseItem): string {
+function geocodeQuery(item: TransactionItem): string {
   return `${item.gu} ${item.region} ${item.name}`.replace(/\s+/g, ' ').trim();
 }
 
@@ -35,7 +35,7 @@ function searchOne(query: string): Promise<{ lat: number; lng: number } | null> 
  * available. Falls back to the original (gu-centroid) coordinates when Kakao is
  * disabled, the SDK fails to load, or a complex can't be resolved.
  */
-export async function geocodeComplexItems(items: ComplexBrowseItem[]): Promise<ComplexBrowseItem[]> {
+export async function geocodeTransactionItems(items: TransactionItem[]): Promise<TransactionItem[]> {
   if (!isKakaoMapEnabled() || !kakaoJsKey() || !items.length) return items;
 
   try {

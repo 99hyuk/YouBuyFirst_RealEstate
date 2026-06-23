@@ -30,7 +30,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/realestate/complexes',
     name: 'realestate-complexes',
-    component: () => import('../pages/ComplexBrowsePage.vue')
+    component: () => import('../pages/TransactionMapPage.vue')
   },
   {
     path: '/newsroom',

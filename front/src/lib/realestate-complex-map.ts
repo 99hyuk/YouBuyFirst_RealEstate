@@ -1,4 +1,4 @@
-import type { ComplexMapMarker, ComplexMapTone } from '../components/KakaoComplexMap.vue';
+import type { TransactionMapMarker, TransactionMapTone } from '../components/RealEstateTransactionMap.vue';
 
 export type RealEstateNearbyComplexItem = {
   targetId: string;
@@ -7,7 +7,7 @@ export type RealEstateNearbyComplexItem = {
   region?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  tone?: ComplexMapTone | string | null;
+  tone?: TransactionMapTone | string | null;
   price?: string | null;
   change?: string | null;
   reaction?: string | null;
@@ -31,7 +31,7 @@ export async function fetchRealEstateNearbyComplexes(
   targetId: string,
   params: FetchNearbyComplexParams = {},
   fetcher: Fetcher = fetch
-): Promise<ComplexMapMarker[]> {
+): Promise<TransactionMapMarker[]> {
   const query = new URLSearchParams();
   query.set('limit', String(params.limit ?? 20));
 
@@ -46,8 +46,8 @@ export async function fetchRealEstateNearbyComplexes(
   return Array.isArray(payload.items)
     ? payload.items
       .filter(isDisplayableNearbyComplex)
-      .map(toComplexMapMarker)
-      .filter((item): item is ComplexMapMarker => item !== null)
+      .map(toTransactionMapMarker)
+      .filter((item): item is TransactionMapMarker => item !== null)
     : [];
 }
 
@@ -57,7 +57,7 @@ function isDisplayableNearbyComplex(item: RealEstateNearbyComplexItem): boolean 
   return status !== 'mock' && !provider.includes('fixture');
 }
 
-function toComplexMapMarker(item: RealEstateNearbyComplexItem): ComplexMapMarker | null {
+function toTransactionMapMarker(item: RealEstateNearbyComplexItem): TransactionMapMarker | null {
   if (!item.targetId || !item.name || !Number.isFinite(item.latitude) || !Number.isFinite(item.longitude)) {
     return null;
   }
@@ -80,7 +80,7 @@ function toComplexMapMarker(item: RealEstateNearbyComplexItem): ComplexMapMarker
   };
 }
 
-function normalizeTone(value?: string | null): ComplexMapTone {
+function normalizeTone(value?: string | null): TransactionMapTone {
   if (value === 'up' || value === 'down' || value === 'flat') {
     return value;
   }

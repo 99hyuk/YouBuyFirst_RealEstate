@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
-import { geocodeComplexItems } from '../lib/kakao-geocode';
+import RealEstateTransactionMap, { type TransactionMapMarker } from '../components/RealEstateTransactionMap.vue';
+import { geocodeTransactionItems } from '../lib/kakao-geocode';
 import {
   dealTypeLabel,
-  fetchComplexBrowse,
-  filterComplexes,
+  fetchTransactions,
+  filterTransactions,
   regionCentroid,
-  toComplexMarkers,
-  type ComplexBrowseItem,
-  type ComplexBrowseSort,
+  toTransactionMarkers,
+  type TransactionItem,
+  type TransactionSort,
   type DealType,
   type PropertyType
-} from '../lib/realestate-complex-browse';
+} from '../lib/realestate-transaction-browse';
 import regionData from '../fixtures/transaction-regions.json';
 
 type DealFilter = DealType | 'all';
@@ -52,19 +52,19 @@ const dealFilters: { id: DealFilter; label: string }[] = [
   { id: 'trade', label: '매매' },
   { id: 'rent', label: '전·월세' }
 ];
-const sortOptions: { id: ComplexBrowseSort; label: string }[] = [
+const sortOptions: { id: TransactionSort; label: string }[] = [
   { id: 'price-desc', label: '가격 높은순' },
   { id: 'price-asc', label: '가격 낮은순' },
   { id: 'count-desc', label: '거래 많은순' }
 ];
 
-const items = ref<ComplexBrowseItem[]>([]);
+const items = ref<TransactionItem[]>([]);
 let loadToken = 0;
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
 const activePropertyType = ref<PropertyType>('apt');
 const activeRegion = ref<string>(resolveInitialRegion(route.query.region));
 const activeDealFilter = ref<DealFilter>('all');
-const activeSort = ref<ComplexBrowseSort>('price-desc');
+const activeSort = ref<TransactionSort>('price-desc');
 const query = ref('');
 const selectedId = ref('');
 
@@ -72,7 +72,7 @@ const regionName = computed(() => regionNameByCode.get(activeRegion.value) ?? '�
 const mapCenter = computed(() => regionCentroid(activeRegion.value) ?? undefined);
 
 const visibleItems = computed(() =>
-  filterComplexes(
+  filterTransactions(
     items.value,
     { propertyType: activePropertyType.value, dealType: activeDealFilter.value, query: query.value },
     activeSort.value
@@ -80,7 +80,7 @@ const visibleItems = computed(() =>
 );
 // 해당 지역/조건의 실거래 정보 유무를 먼저 판단한다.
 const hasTransactionData = computed(() => visibleItems.value.length > 0);
-const markers = computed<ComplexMapMarker[]>(() => toComplexMarkers(visibleItems.value));
+const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(visibleItems.value));
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? visibleItems.value[0] ?? null
 );
@@ -104,7 +104,7 @@ const refreshComplexes = async () => {
   const token = ++loadToken;
   loadState.value = 'loading';
   try {
-    const result = await fetchComplexBrowse(activePropertyType.value, activeRegion.value);
+    const result = await fetchTransactions(activePropertyType.value, activeRegion.value);
     if (token !== loadToken) return;
     items.value = result.items;
     selectedId.value = result.items[0]?.id ?? '';
@@ -118,8 +118,8 @@ const refreshComplexes = async () => {
   }
 };
 
-const applyGeocoding = async (base: ComplexBrowseItem[], token: number) => {
-  const geocoded = await geocodeComplexItems(base);
+const applyGeocoding = async (base: TransactionItem[], token: number) => {
+  const geocoded = await geocodeTransactionItems(base);
   // Only apply if a newer load hasn't superseded this one.
   if (token === loadToken) {
     items.value = geocoded;
@@ -136,10 +136,10 @@ const onRegionChange = () => {
   void refreshComplexes();
 };
 
-const selectComplex = (item: ComplexBrowseItem) => {
+const selectComplex = (item: TransactionItem) => {
   selectedId.value = item.id;
 };
-const onMarkerSelect = (marker: ComplexMapMarker) => {
+const onMarkerSelect = (marker: TransactionMapMarker) => {
   selectedId.value = marker.targetId;
 };
 const dealBadge = (dealType: DealType) => dealTypeLabel(dealType);
@@ -252,7 +252,7 @@ onMounted(() => {
       </aside>
 
       <div class="complex-map-stage">
-        <KakaoComplexMap
+        <RealEstateTransactionMap
           :markers="markers"
           :selected-target-id="selectedItem?.id ?? ''"
           :center="mapCenter"

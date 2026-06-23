@@ -23,7 +23,7 @@ import {
   type RealEstateMarketFact,
   type RealEstateMarketFactRow
 } from '../lib/realestate-market-facts';
-import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
+import RealEstateTransactionMap, { type TransactionMapMarker } from '../components/RealEstateTransactionMap.vue';
 
 type DetailTone = 'up' | 'down' | 'flat';
 
@@ -48,7 +48,7 @@ type RealEstateTarget = {
   mapCenter?: { lat: number; lng: number };
   mapLevel?: number;
   preferredMapTargetId?: string;
-  mapMarkers?: ComplexMapMarker[];
+  mapMarkers?: TransactionMapMarker[];
 };
 
 type TimelineItem = {
@@ -69,7 +69,7 @@ type EvidenceLink = {
 
 const route = useRoute();
 
-const mapoComplexMarkers: ComplexMapMarker[] = [
+const mapoComplexMarkers: TransactionMapMarker[] = [
   {
     targetId: 'complex-mapo-raemian-prugio',
     name: '마포래미안푸르지오',
@@ -120,7 +120,7 @@ const mapoComplexMarkers: ComplexMapMarker[] = [
   }
 ];
 
-const dongtanComplexMarkers: ComplexMapMarker[] = [
+const dongtanComplexMarkers: TransactionMapMarker[] = [
   {
     targetId: 'complex-dongtan-lotte-castle',
     name: '동탄역 롯데캐슬',
@@ -308,7 +308,7 @@ const hasDynamicTargetData = computed(() => !target.value && (
   targetTradeRows.value.length > 0
 ));
 const selectedMapMarkerId = ref('');
-const apiMapMarkers = ref<ComplexMapMarker[]>([]);
+const apiMapMarkers = ref<TransactionMapMarker[]>([]);
 const mapMarkerLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
 const evidenceLinks = ref<EvidenceLink[]>([]);
 const evidenceLoadState = ref<'loading' | 'live' | 'fallback'>('loading');
@@ -537,7 +537,7 @@ const refreshTargetTrades = async () => {
   }
 };
 
-const selectMapMarker = (marker: ComplexMapMarker) => {
+const selectMapMarker = (marker: TransactionMapMarker) => {
   selectedMapMarkerId.value = marker.targetId;
 };
 
@@ -756,7 +756,7 @@ function evidenceItemSourceMeta(item: RealEstateEvidenceItem): string {
       </article>
     </section>
 
-    <KakaoComplexMap
+    <RealEstateTransactionMap
       v-if="targetMapMarkers.length"
       :markers="targetMapMarkers"
       :selected-target-id="activeMapTargetId"
@@ -982,7 +982,7 @@ function evidenceItemSourceMeta(item: RealEstateEvidenceItem): string {
       </div>
     </section>
 
-    <KakaoComplexMap
+    <RealEstateTransactionMap
       v-if="targetMapMarkers.length"
       :markers="targetMapMarkers"
       :selected-target-id="activeMapTargetId"

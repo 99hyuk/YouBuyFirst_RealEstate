@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  aggregateComplexes,
-  complexCoordinate,
-  fetchComplexBrowse,
-  filterComplexes,
-  toComplexMarkers
-} from '../lib/realestate-complex-browse';
+  aggregateTransactions,
+  transactionCoordinate,
+  fetchTransactions,
+  filterTransactions,
+  toTransactionMarkers
+} from '../lib/realestate-transaction-browse';
 import type { RealEstateMarketFact } from '../lib/realestate-market-facts';
 
 const facts: RealEstateMarketFact[] = [
@@ -44,7 +44,7 @@ const facts: RealEstateMarketFact[] = [
 
 describe('complex browse aggregation', () => {
   it('groups facts into one card per complex + deal type and keeps the most recent price', () => {
-    const items = aggregateComplexes(facts);
+    const items = aggregateTransactions(facts);
     expect(items).toHaveLength(2);
 
     const cheongdam = items.find((item) => item.name === '청담자이');
@@ -59,14 +59,14 @@ describe('complex browse aggregation', () => {
   });
 
   it('labels rent deposit + monthly rent', () => {
-    const rent = aggregateComplexes(facts).find((item) => item.dealType === 'rent');
+    const rent = aggregateTransactions(facts).find((item) => item.dealType === 'rent');
     expect(rent).toBeDefined();
     expect(rent!.priceLabel).toContain('보증');
     expect(rent!.priceLabel).toContain('월');
   });
 
   it('skips facts without an apartment name or a known deal type', () => {
-    const items = aggregateComplexes([
+    const items = aggregateTransactions([
       { factType: 'apt_trade', valueJson: { dealAmountManwon: 1000 } },
       { factType: 'unknown', valueJson: { apartmentName: 'X' } }
     ]);
@@ -76,20 +76,20 @@ describe('complex browse aggregation', () => {
 
 describe('complex browse filter + markers', () => {
   it('filters by deal type and query, and sorts by price', () => {
-    const items = aggregateComplexes(facts);
-    const onlyTrade = filterComplexes(items, { dealType: 'trade' });
+    const items = aggregateTransactions(facts);
+    const onlyTrade = filterTransactions(items, { dealType: 'trade' });
     expect(onlyTrade.every((item) => item.dealType === 'trade')).toBe(true);
 
-    const byQuery = filterComplexes(items, { query: '공덕' });
+    const byQuery = filterTransactions(items, { query: '공덕' });
     expect(byQuery).toHaveLength(1);
     expect(byQuery[0].name).toBe('공덕더프라임');
 
-    const sorted = filterComplexes(items, {}, 'price-desc');
+    const sorted = filterTransactions(items, {}, 'price-desc');
     expect(sorted[0].priceValue).toBeGreaterThanOrEqual(sorted[sorted.length - 1].priceValue);
   });
 
   it('converts cards into map markers with required fields', () => {
-    const markers = toComplexMarkers(aggregateComplexes(facts));
+    const markers = toTransactionMarkers(aggregateTransactions(facts));
     expect(markers.length).toBeGreaterThan(0);
     for (const marker of markers) {
       expect(Number.isFinite(marker.lat)).toBe(true);
@@ -100,9 +100,9 @@ describe('complex browse filter + markers', () => {
   });
 
   it('places complexes deterministically near their gu centroid', () => {
-    const a = complexCoordinate('11680', 'key-1');
-    const b = complexCoordinate('11680', 'key-1');
-    const c = complexCoordinate('11680', 'key-2');
+    const a = transactionCoordinate('11680', 'key-1');
+    const b = transactionCoordinate('11680', 'key-1');
+    const c = transactionCoordinate('11680', 'key-2');
     expect(a).toEqual(b); // deterministic
     expect(a).not.toEqual(c); // different keys spread out
     // within ~2km of 강남구 centroid
@@ -127,7 +127,7 @@ describe('complex browse property type', () => {
   ];
 
   it('classifies offi_trade as officetel and apt facts as apartment', () => {
-    const items = aggregateComplexes(mixedFacts);
+    const items = aggregateTransactions(mixedFacts);
     const offi = items.find((item) => item.name === '사이룩스');
     expect(offi).toBeDefined();
     expect(offi!.propertyType).toBe('offi');
@@ -136,12 +136,12 @@ describe('complex browse property type', () => {
   });
 
   it('filters by property type', () => {
-    const items = aggregateComplexes(mixedFacts);
-    const offiOnly = filterComplexes(items, { propertyType: 'offi' });
+    const items = aggregateTransactions(mixedFacts);
+    const offiOnly = filterTransactions(items, { propertyType: 'offi' });
     expect(offiOnly.every((item) => item.propertyType === 'offi')).toBe(true);
     expect(offiOnly.map((item) => item.name)).toContain('사이룩스');
 
-    const aptOnly = filterComplexes(items, { propertyType: 'apt' });
+    const aptOnly = filterTransactions(items, { propertyType: 'apt' });
     expect(aptOnly.every((item) => item.propertyType === 'apt')).toBe(true);
     expect(aptOnly.map((item) => item.name)).not.toContain('사이룩스');
   });
@@ -153,12 +153,12 @@ describe('complex browse property type', () => {
       return new Response(JSON.stringify({ items: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }) as unknown as typeof fetch;
 
-    await fetchComplexBrowse('rh', '26350', fetcher);
+    await fetchTransactions('rh', '26350', fetcher);
     expect(urls.some((u) => u.includes('factType=rh_trade') && u.includes('legalDongCode=26350'))).toBe(true);
   });
 
   it('classifies rh_trade as 연립·다세대 and silv_trade as 분양권', () => {
-    const items = aggregateComplexes([
+    const items = aggregateTransactions([
       {
         factType: 'rh_trade',
         provider: 'molit',
@@ -181,7 +181,7 @@ describe('complex browse property type', () => {
   });
 
   it('labels nameless 단독·다가구 by 지번 address, falling back to 동+유형', () => {
-    const items = aggregateComplexes([
+    const items = aggregateTransactions([
       {
         factType: 'sh_trade',
         provider: 'molit',

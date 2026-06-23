@@ -1,5 +1,5 @@
 // Shared Kakao Maps SDK loader. Loads the SDK once with the `services` library so
-// both map rendering (KakaoComplexMap) and geocoding (kakao-geocode) can reuse it.
+// both map rendering (RealEstateTransactionMap) and geocoding (kakao-geocode) can reuse it.
 
 export function isKakaoMapEnabled(): boolean {
   const isTestMode = import.meta.env.MODE === 'test';
