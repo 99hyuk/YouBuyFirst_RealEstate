@@ -338,14 +338,17 @@ export function filterTransactions(
   });
 }
 
-// 전월 대비(MoM) 변동이 있으면 마커 숫자 색을 상승=빨강/하락=파랑, 데이터 없으면 중립.
-function momTone(item: TransactionItem): TransactionMapTone {
-  const change = computeTransactionChange(item, 'mom');
+// 선택한 비교 기간(YoY/6개월/MoM) 변동이 있으면 색을 상승=빨강/하락=파랑, 데이터 없으면 중립.
+export function transactionTone(item: TransactionItem, period: TransactionTrendPeriod): TransactionMapTone {
+  const change = computeTransactionChange(item, period);
   if (change === null || change === 0) return 'flat';
   return change > 0 ? 'up' : 'down';
 }
 
-export function toTransactionMarkers(items: TransactionItem[]): TransactionMapMarker[] {
+export function toTransactionMarkers(
+  items: TransactionItem[],
+  period: TransactionTrendPeriod = 'mom'
+): TransactionMapMarker[] {
   return items.map((item) => ({
     targetId: item.id,
     name: item.name,
@@ -353,7 +356,7 @@ export function toTransactionMarkers(items: TransactionItem[]): TransactionMapMa
     region: item.region,
     lat: item.lat,
     lng: item.lng,
-    tone: momTone(item),
+    tone: transactionTone(item, period),
     price: item.priceLabel,
     change: `${dealTypeLabels[item.dealType]} ${item.dealCount}건`,
     reaction: item.builtYear ? `${item.builtYear}년 준공` : '준공연도 확인 필요',

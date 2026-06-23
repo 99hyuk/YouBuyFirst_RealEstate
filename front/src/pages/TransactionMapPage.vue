@@ -92,7 +92,8 @@ const listState = computed<'loading' | 'empty' | 'ready'>(() => {
   return 'ready';
 });
 // 지도 마커는 실좌표가 있는 건물만(좌표 없는 건 위치가 부정확해 제외).
-const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(geocodedItems.value));
+// 마커 색은 선택한 비교 기간(YoY/6개월/MoM)을 따른다 → 기간 전환 시 지도 색이 함께 바뀜.
+const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(geocodedItems.value, activeTrendPeriod.value));
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? null
 );
@@ -178,9 +179,9 @@ const selectedChange = computed<number | null>(() =>
   computeTransactionChange(selectedItem.value, activeTrendPeriod.value)
 );
 
-// 리스트 가격 색: 전월 대비(MoM) 변동이 있으면 상승=빨강/하락=파랑, 없으면 기본색.
+// 리스트 가격 색: 선택한 비교 기간(YoY/6개월/MoM) 변동이 있으면 상승=빨강/하락=파랑, 없으면 기본색.
 const priceTone = (item: TransactionItem): '' | 'up' | 'down' => {
-  const change = computeTransactionChange(item, 'mom');
+  const change = computeTransactionChange(item, activeTrendPeriod.value);
   if (change === null || change === 0) return '';
   return change > 0 ? 'up' : 'down';
 };
