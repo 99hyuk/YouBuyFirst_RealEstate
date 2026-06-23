@@ -7,6 +7,7 @@ import { computed, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import mapFixture from '../fixtures/realestate-map-targets.json';
+import transactionRegionData from '../fixtures/transaction-regions.json';
 import municipalityTopologyUrl from '../fixtures/skorea-municipalities-2018-topo-simple.json?url';
 import koreaProvincesTopo from '../fixtures/skorea-provinces-2018-topo-simple.json';
 import {
@@ -514,6 +515,35 @@ const subregionFeatures = computed<SubregionFeature[]>(() => {
 const selectedSubregion = computed(
   () => subregionFeatures.value.find((feature) => feature.code === selectedSubregionCode.value) ?? null
 );
+// 실거래 지도 정보 제공 지역 화이트리스트. 지도 토폴로지 코드가 실거래 legalDongCode와
+// 달라(예: 강남구 토폴로지 11230 ≠ 실거래 11680) 코드가 아닌 '시도|시군구명'으로 매칭한다.
+const transactionRegionByName = new Map<string, string>();
+const transactionSidoFirstCode = new Map<string, string>();
+for (const group of transactionRegionData.groups as { sido: string; items: { code: string; name: string }[] }[]) {
+  for (const item of group.items) {
+    const district = item.name.split(' ').pop() ?? item.name;
+    transactionRegionByName.set(`${group.sido}|${district}`, item.code);
+    if (!transactionSidoFirstCode.has(group.sido)) transactionSidoFirstCode.set(group.sido, item.code);
+  }
+}
+// 선택한 지역의 실거래 대상 코드: 시군구가 화이트리스트에 있으면 그 코드(legalDongCode),
+// 시도만 선택했으면 해당 시도의 첫 화이트리스트 시군구, 아니면 null(정보 없음).
+const transactionTargetCode = computed<string | null>(() => {
+  const sido = selectedRegion.value?.name;
+  if (!sido) return null;
+  if (selectedSubregion.value) {
+    return transactionRegionByName.get(`${sido}|${selectedSubregion.value.name}`) ?? null;
+  }
+  return transactionSidoFirstCode.get(sido) ?? null;
+});
+const hasTransactionData = computed(() => transactionTargetCode.value !== null);
+const transactionMapLink = computed(() =>
+  transactionTargetCode.value ? `/realestate/complexes?region=${transactionTargetCode.value}` : ''
+);
+const transactionMapLabel = computed(() => {
+  const regionLabel = selectedSubregion.value?.name ?? selectedRegion.value?.name ?? '';
+  return hasTransactionData.value ? `${regionLabel} 실거래 지도` : '실거래 정보 없음';
+});
 const strongestRegion = computed(() =>
   [...targets].sort(
     (left, right) => Math.abs(right.periodChanges[activePeriod.value]) - Math.abs(left.periodChanges[activePeriod.value])
@@ -1250,6 +1280,22 @@ onMounted(() => {
         <p>{{ pageDescription }}</p>
       </div>
       <div class="map-header-actions">
+        <RouterLink
+          v-if="selectedRegion && hasTransactionData"
+          class="transaction-map-cta"
+          :to="transactionMapLink"
+          data-testid="region-transaction-map-link"
+        >
+          🗺️ {{ transactionMapLabel }}
+        </RouterLink>
+        <span
+          v-else-if="selectedRegion"
+          class="transaction-map-cta is-empty"
+          data-testid="region-transaction-map-empty"
+          aria-disabled="true"
+        >
+          {{ transactionMapLabel }}
+        </span>
         <div class="period-tabs" aria-label="지도 기간 선택">
           <button
             v-for="period in periodOptions"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
 import { geocodeComplexItems } from '../lib/kakao-geocode';
 import {
@@ -19,6 +20,21 @@ type DealFilter = DealType | 'all';
 
 const regionGroups = regionData.groups as { sido: string; items: { code: string; name: string }[] }[];
 const regionNameByCode = new Map(regionGroups.flatMap((group) => group.items.map((item) => [item.code, item.name])));
+const regionCodes = [...regionNameByCode.keys()];
+
+// 다른 페이지(지역 분석)에서 ?region=<시군구코드> 또는 시도 2자리 prefix로 진입 가능.
+function resolveInitialRegion(requested: unknown): string {
+  const code = (Array.isArray(requested) ? requested[0] : requested) ?? '';
+  const value = String(code).trim();
+  if (regionNameByCode.has(value)) return value;
+  if (/^\d{2}$/.test(value)) {
+    const match = regionCodes.find((regionCode) => regionCode.startsWith(value));
+    if (match) return match;
+  }
+  return '11680';
+}
+
+const route = useRoute();
 
 // 매물유형 카테고리. value가 있으면 실데이터 연결(활성).
 // 단독·다가구는 단지명이 없어 지번 주소로 라벨링한다. 재건축/재개발은 수집 데이터가 없어 준비중.
@@ -46,7 +62,7 @@ const items = ref<ComplexBrowseItem[]>([]);
 let loadToken = 0;
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
 const activePropertyType = ref<PropertyType>('apt');
-const activeRegion = ref<string>('11680');
+const activeRegion = ref<string>(resolveInitialRegion(route.query.region));
 const activeDealFilter = ref<DealFilter>('all');
 const activeSort = ref<ComplexBrowseSort>('price-desc');
 const query = ref('');
@@ -62,6 +78,8 @@ const visibleItems = computed(() =>
     activeSort.value
   )
 );
+// 해당 지역/조건의 실거래 정보 유무를 먼저 판단한다.
+const hasTransactionData = computed(() => visibleItems.value.length > 0);
 const markers = computed<ComplexMapMarker[]>(() => toComplexMarkers(visibleItems.value));
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? visibleItems.value[0] ?? null
@@ -208,8 +226,8 @@ onMounted(() => {
     <section class="complex-browse-layout">
       <aside class="complex-list-panel" aria-label="실거래 목록">
         <div v-if="loadState === 'loading'" class="complex-empty">실거래 목록을 불러오는 중입니다…</div>
-        <div v-else-if="!visibleItems.length" class="complex-empty">
-          조건에 맞는 실거래가 없습니다. 필터를 조정해 보세요.
+        <div v-else-if="!hasTransactionData" class="complex-empty complex-empty-nodata">
+          실거래 정보 없음
         </div>
         <ul v-else class="complex-card-list">
           <li
