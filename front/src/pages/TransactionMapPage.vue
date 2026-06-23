@@ -241,6 +241,22 @@ onMounted(() => {
         <select v-model="activeSort" class="complex-sort" aria-label="정렬 기준">
           <option v-for="option in sortOptions" :key="option.id" :value="option.id">{{ option.label }}</option>
         </select>
+
+        <div class="filter-chip-row" role="radiogroup" aria-label="가격 비교 기간">
+          <button
+            v-for="period in trendPeriods"
+            :key="period.id"
+            type="button"
+            class="filter-chip"
+            role="radio"
+            :aria-checked="activeTrendPeriod === period.id"
+            :class="{ active: activeTrendPeriod === period.id }"
+            :title="period.caption"
+            @click="activeTrendPeriod = period.id"
+          >
+            {{ period.label }}
+          </button>
+        </div>
       </div>
 
       <span class="status-pill" :class="{ warning: loadState !== 'live' }" data-testid="complex-status">
@@ -309,19 +325,6 @@ onMounted(() => {
           <p class="transaction-detail-price">{{ selectedItem.priceLabel }}</p>
 
           <div class="transaction-trend">
-            <div class="transaction-trend-tabs" role="radiogroup" aria-label="가격 비교 기간">
-              <button
-                v-for="period in trendPeriods"
-                :key="period.id"
-                type="button"
-                role="radio"
-                :aria-checked="activeTrendPeriod === period.id"
-                :class="{ active: activeTrendPeriod === period.id }"
-                @click="activeTrendPeriod = period.id"
-              >
-                {{ period.label }}
-              </button>
-            </div>
             <p v-if="selectedChange !== null" class="transaction-trend-value" :class="selectedChange >= 0 ? 'up' : 'down'">
               {{ activeTrendCaption }} {{ selectedChange > 0 ? '+' : '' }}{{ selectedChange }}%
             </p>
