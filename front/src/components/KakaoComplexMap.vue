@@ -132,13 +132,50 @@ const focusKakaoMarker = (marker: ComplexMapMarker) => {
   renderedMap.panTo(point);
 };
 
+// Create the Kakao map once and reuse it; only the overlays are redrawn on data
+// changes so dragging the map and background geocoding don't rebuild everything.
+const ensureMap = async (): Promise<boolean> => {
+  if (renderedMap) return true;
+  await loadKakaoSdk(kakaoKey.value);
+  const kakao = (window as any).kakao;
+  if (!mapContainer.value || !mapCenter.value) return false;
+  renderedMap = new kakao.maps.Map(mapContainer.value, {
+    center: new kakao.maps.LatLng(mapCenter.value.lat, mapCenter.value.lng),
+    level: props.level
+  });
+  return true;
+};
+
+const drawOverlays = () => {
+  const kakao = (window as any).kakao;
+  clearKakaoMarkers();
+  for (const marker of props.markers) {
+    const content = document.createElement('div');
+    content.className = `complex-price-overlay ${marker.tone}`;
+    content.title = marker.name;
+    content.innerHTML = `<span class="price-overlay-amount">${priceTag(marker.price)}</span>`;
+    content.addEventListener('click', () => setSelectedMarker(marker));
+
+    const overlay = new kakao.maps.CustomOverlay({
+      map: renderedMap,
+      position: new kakao.maps.LatLng(marker.lat, marker.lng),
+      content,
+      yAnchor: 1.25,
+      clickable: true
+    });
+    renderedMarkers.push(overlay);
+    overlayElements.push({ targetId: marker.targetId, el: content });
+  }
+  highlightSelectedOverlay();
+};
+
 const renderKakaoMap = async () => {
   if (!hasMarkers.value || !canUseKakao.value) {
     mapState.value = 'fallback';
     return;
   }
 
-  mapState.value = 'loading';
+  if (!renderedMap) mapState.value = 'loading';
   await nextTick();
 
   if (!mapContainer.value || !mapCenter.value) {
@@ -147,38 +184,11 @@ const renderKakaoMap = async () => {
   }
 
   try {
-    await loadKakaoSdk(kakaoKey.value);
-    const kakao = (window as any).kakao;
-    const center = new kakao.maps.LatLng(mapCenter.value.lat, mapCenter.value.lng);
-
-    renderedMap = new kakao.maps.Map(mapContainer.value, {
-      center,
-      level: props.level
-    });
-    clearKakaoMarkers();
-
-    for (const marker of props.markers) {
-      const content = document.createElement('div');
-      content.className = `complex-price-overlay ${marker.tone}`;
-      content.title = marker.name;
-      content.innerHTML = `<span class="price-overlay-amount">${priceTag(marker.price)}</span>`;
-      content.addEventListener('click', () => setSelectedMarker(marker));
-
-      const overlay = new kakao.maps.CustomOverlay({
-        map: renderedMap,
-        position: new kakao.maps.LatLng(marker.lat, marker.lng),
-        content,
-        yAnchor: 1.25,
-        clickable: true
-      });
-      renderedMarkers.push(overlay);
-      overlayElements.push({ targetId: marker.targetId, el: content });
+    if (!(await ensureMap())) {
+      mapState.value = 'fallback';
+      return;
     }
-
-    highlightSelectedOverlay();
-    if (selectedMarker.value) {
-      focusKakaoMarker(selectedMarker.value);
-    }
+    drawOverlays();
     mapState.value = 'ready';
   } catch {
     mapState.value = 'error';
@@ -198,6 +208,13 @@ watch(() => props.selectedTargetId, (targetId) => {
   highlightSelectedOverlay();
   if (selectedMarker.value) {
     focusKakaoMarker(selectedMarker.value);
+  }
+});
+
+// Recenter on region change without recreating the map.
+watch(() => props.center, (center) => {
+  if (renderedMap && center && (window as any).kakao?.maps) {
+    renderedMap.setCenter(new (window as any).kakao.maps.LatLng(center.lat, center.lng));
   }
 });
 
