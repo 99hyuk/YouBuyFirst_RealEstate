@@ -3,7 +3,7 @@ import { fetchRealEstateMarketFacts, type RealEstateMarketFact } from './realest
 import seed from '../fixtures/complex-browse-seed.json';
 
 export type DealType = 'trade' | 'rent';
-export type PropertyType = 'apt' | 'offi' | 'rh' | 'silv';
+export type PropertyType = 'apt' | 'offi' | 'rh' | 'silv' | 'sh';
 
 export type ComplexBrowseItem = {
   id: string;
@@ -52,7 +52,8 @@ const propertyTypeLabels: Record<PropertyType, string> = {
   apt: '아파트',
   offi: '오피스텔',
   rh: '연립·다세대',
-  silv: '분양권'
+  silv: '분양권',
+  sh: '단독·다가구'
 };
 
 // 매물유형 → 백엔드 factType. 카테고리 선택 시 해당 factType만 받아와 소수 유형이 누락되지 않게 한다.
@@ -60,7 +61,8 @@ export const propertyFactTypes: Record<PropertyType, string[]> = {
   apt: ['apt_trade', 'apt_rent'],
   offi: ['offi_trade', 'offi_rent'],
   rh: ['rh_trade', 'rh_rent'],
-  silv: ['silv_trade']
+  silv: ['silv_trade'],
+  sh: ['sh_trade', 'sh_rent']
 };
 
 export function dealTypeLabel(dealType: DealType): string {
@@ -104,6 +106,8 @@ function factTypeInfo(factType?: string): { propertyType: PropertyType; dealType
   if (factType === 'rh_trade') return { propertyType: 'rh', dealType: 'trade' };
   if (factType === 'rh_rent') return { propertyType: 'rh', dealType: 'rent' };
   if (factType === 'silv_trade') return { propertyType: 'silv', dealType: 'trade' };
+  if (factType === 'sh_trade') return { propertyType: 'sh', dealType: 'trade' };
+  if (factType === 'sh_rent') return { propertyType: 'sh', dealType: 'rent' };
   return null;
 }
 
@@ -113,6 +117,16 @@ function numberValue(value: unknown): number | null {
 
 function stringValue(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+// 단지명이 없는 실거래(단독·다가구 등)의 표시 라벨: 지번 주소 > 동+주택유형 > 동.
+function addressLabel(valueJson: Record<string, unknown>, region: string): string | null {
+  const jibun = stringValue(valueJson.jibun);
+  if (jibun) return `${region} ${jibun}`;
+  const raw = (valueJson.raw ?? {}) as Record<string, unknown>;
+  const houseType = stringValue(valueJson.houseType) ?? stringValue(raw.houseType);
+  if (houseType) return `${region} ${houseType}`;
+  return region === '지역 확인 필요' ? null : region;
 }
 
 function formatManwonAsEok(value: number): string {
@@ -166,9 +180,10 @@ export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowse
     if (!info) continue;
     const { propertyType, dealType } = info;
     const valueJson = fact.valueJson ?? {};
-    const name = stringValue(valueJson.apartmentName);
-    if (!name) continue;
     const region = stringValue(valueJson.legalDongName) ?? '지역 확인 필요';
+    // 단지명이 없으면(단독·다가구 등) 주소(지번) 또는 동+유형으로 라벨링한다.
+    const name = stringValue(valueJson.apartmentName) ?? addressLabel(valueJson, region);
+    if (!name) continue;
     const legalDongCode = fact.legalDongCode ?? null;
     const groupKey = `${propertyType}|${name}|${region}|${dealType}`;
 

@@ -21,13 +21,13 @@ const regionGroups = regionData.groups as { sido: string; items: { code: string;
 const regionNameByCode = new Map(regionGroups.flatMap((group) => group.items.map((item) => [item.code, item.name])));
 
 // 매물유형 카테고리. value가 있으면 실데이터 연결(활성).
-// 단독·다가구는 단지명이 없어 단지 목록 표출 대상이 아니고, 재건축/재개발은 수집 데이터가 없어 준비중.
+// 단독·다가구는 단지명이 없어 지번 주소로 라벨링한다. 재건축/재개발은 수집 데이터가 없어 준비중.
 const propertyTypeChips: { id: string; label: string; value?: PropertyType; note?: string }[] = [
   { id: 'APT', label: '아파트', value: 'apt' },
   { id: 'OPST', label: '오피스텔', value: 'offi' },
   { id: 'RH', label: '연립·다세대', value: 'rh' },
   { id: 'SILV', label: '분양권', value: 'silv' },
-  { id: 'SH', label: '단독·다가구', note: '단지 단위 아님' },
+  { id: 'SH', label: '단독·다가구', value: 'sh' },
   { id: 'ABYG', label: '재건축', note: '준비중' },
   { id: 'JGC', label: '재개발', note: '준비중' }
 ];
