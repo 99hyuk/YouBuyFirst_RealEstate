@@ -5,6 +5,7 @@ import type { ComplexBrowseItem } from './realestate-complex-browse';
 // on the actual building instead of a gu-centroid approximation.
 
 const coordinateCache = new Map<string, { lat: number; lng: number }>();
+const MAX_GEOCODE_PER_PASS = 160;
 
 function geocodeQuery(item: ComplexBrowseItem): string {
   return `${item.gu} ${item.region} ${item.name}`.replace(/\s+/g, ' ').trim();
@@ -45,11 +46,14 @@ export async function geocodeComplexItems(items: ComplexBrowseItem[]): Promise<C
   if (!(window as any).kakao?.maps?.services) return items;
 
   const result = [...items];
-  const concurrency = Math.min(4, result.length);
+  // Cap how many complexes we geocode so a large region resolves quickly; the rest
+  // keep their gu-centroid placement. Cached lookups still apply on later passes.
+  const geocodeLimit = Math.min(result.length, MAX_GEOCODE_PER_PASS);
+  const concurrency = Math.min(6, geocodeLimit);
   let cursor = 0;
 
   const worker = async () => {
-    while (cursor < result.length) {
+    while (cursor < geocodeLimit) {
       const index = cursor;
       cursor += 1;
       const item = result[index];
