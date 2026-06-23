@@ -10476,6 +10476,18 @@ a {
   color: #ffffff;
 }
 
+.transaction-map-cta.is-empty {
+  border-color: var(--line);
+  background: var(--surface-soft);
+  color: var(--muted-2);
+  cursor: not-allowed;
+}
+
+.transaction-map-cta.is-empty:hover {
+  background: var(--surface-soft);
+  color: var(--muted-2);
+}
+
 .map-return-cta {
   display: inline-flex;
   align-items: center;
