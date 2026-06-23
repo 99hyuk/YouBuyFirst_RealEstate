@@ -11897,6 +11897,10 @@ a {
   font-size: 13px;
 }
 
+.complex-empty-nodata {
+  cursor: not-allowed;
+}
+
 .complex-card-list {
   display: flex;
   flex-direction: column;

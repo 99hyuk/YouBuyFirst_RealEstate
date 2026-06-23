@@ -78,6 +78,8 @@ const visibleItems = computed(() =>
     activeSort.value
   )
 );
+// 해당 지역/조건의 실거래 정보 유무를 먼저 판단한다.
+const hasTransactionData = computed(() => visibleItems.value.length > 0);
 const markers = computed<ComplexMapMarker[]>(() => toComplexMarkers(visibleItems.value));
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? visibleItems.value[0] ?? null
@@ -224,8 +226,8 @@ onMounted(() => {
     <section class="complex-browse-layout">
       <aside class="complex-list-panel" aria-label="실거래 목록">
         <div v-if="loadState === 'loading'" class="complex-empty">실거래 목록을 불러오는 중입니다…</div>
-        <div v-else-if="!visibleItems.length" class="complex-empty">
-          조건에 맞는 실거래가 없습니다. 필터를 조정해 보세요.
+        <div v-else-if="!hasTransactionData" class="complex-empty complex-empty-nodata">
+          실거래 정보 없음
         </div>
         <ul v-else class="complex-card-list">
           <li
