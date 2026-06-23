@@ -3885,6 +3885,12 @@ a {
   align-items: stretch;
 }
 
+/* inspector를 페이지 오버레이로 대체한 실거래 지도: 지도가 가로 전체를 차지 */
+.complex-map-layout.no-inspector {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
 .complex-map-shell {
   position: relative;
   min-height: 420px;
@@ -11888,13 +11894,13 @@ a {
 
 .complex-browse-layout {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: minmax(208px, 248px) minmax(0, 1fr);
+  gap: 14px;
   align-items: start;
 }
 
 .complex-list-panel {
-  max-height: 72vh;
+  height: 72vh;
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -11951,6 +11957,18 @@ a {
   border-radius: 999px;
   font-size: 11px;
   font-weight: 800;
+}
+
+.complex-age-badge {
+  flex: none;
+  margin-left: auto;
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .complex-deal-badge.trade {
@@ -12011,7 +12029,168 @@ a {
 }
 
 .complex-map-stage {
-  min-height: 420px;
+  position: relative;
+  height: 72vh;
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+/* 실거래 지도 스테이지 안에서는 지도 컴포넌트가 높이를 꽉 채운다(리스트와 동일 높이). */
+.complex-map-stage .complex-map-panel {
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.complex-map-stage .complex-map-layout {
+  height: 100%;
+  min-height: 0;
+}
+
+.complex-map-stage .complex-map-shell {
+  height: 100%;
+  min-height: 0;
+}
+
+/* 마커 클릭 시 지도 위에 떠서 오른쪽에서 슬라이드 인 되는 플로팅 상세 팝업 */
+.transaction-detail {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, 84%);
+  padding: 18px 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+  transform: translateX(calc(100% + 24px));
+  opacity: 0;
+  transition: transform 0.28s ease, opacity 0.28s ease;
+  overflow-y: auto;
+  pointer-events: none;
+}
+
+.transaction-detail.open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.transaction-detail-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.transaction-detail-badge {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.transaction-detail-badge.trade {
+  background: rgba(240, 68, 82, 0.12);
+  color: #d23142;
+}
+
+.transaction-detail-badge.rent {
+  background: rgba(47, 111, 237, 0.12);
+  color: #2f6fed;
+}
+
+.transaction-detail-name {
+  font-size: 17px;
+  font-weight: 860;
+  color: var(--ink);
+  padding-right: 20px;
+}
+
+.transaction-detail-price {
+  font-size: 20px;
+  font-weight: 880;
+  color: var(--ink);
+}
+
+.transaction-detail-price.up {
+  color: var(--market-up);
+}
+
+.transaction-detail-price.down {
+  color: var(--market-down);
+}
+
+.transaction-trend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0 2px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.transaction-trend-value {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.transaction-trend-value.up {
+  color: var(--market-up);
+}
+
+.transaction-trend-value.down {
+  color: var(--market-down);
+}
+
+.transaction-trend-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+
+.transaction-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+
+.transaction-detail-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.transaction-detail-list dt {
+  color: var(--muted);
+}
+
+.transaction-detail-list dd {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
+  text-align: right;
+}
+
+.transaction-detail-note {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--muted-2);
 }
 
 @media (max-width: 880px) {

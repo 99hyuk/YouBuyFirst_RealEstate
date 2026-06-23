@@ -254,15 +254,15 @@ describe('front dashboard shell', () => {
     const transactions = await mountAt('/realestate/transactions');
     await flushPromises();
 
-    expect(transactions.find('.transaction-page').exists()).toBe(true);
-    expect(transactions.find('.transaction-page').text()).toBe('');
+    expect(transactions.find('.complex-browse-page').exists()).toBe(true);
+    expect(transactions.text()).toContain('실거래 지도');
 
     const legacyReactions = await mountAt('/realestate/reactions');
     await flushPromises();
 
     expect(legacyReactions.vm.$route.path).toBe('/realestate/transactions');
-    expect(legacyReactions.find('.transaction-page').exists()).toBe(true);
-    expect(legacyReactions.find('.transaction-page').text()).toBe('');
+    expect(legacyReactions.find('.complex-browse-page').exists()).toBe(true);
+    expect(legacyReactions.text()).toContain('실거래 지도');
 
     const target = await mountAt('/realestate/targets/region-seoul-mapo');
     expect(target.text()).toContain('실거래로');

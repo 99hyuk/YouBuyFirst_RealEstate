@@ -1,11 +1,11 @@
-import type { ComplexMapMarker, ComplexMapTone } from '../components/KakaoComplexMap.vue';
+import type { TransactionMapMarker, TransactionMapTone } from '../components/RealEstateTransactionMap.vue';
 import { fetchRealEstateMarketFacts, type RealEstateMarketFact } from './realestate-market-facts';
-import seed from '../fixtures/complex-browse-seed.json';
+import seed from '../fixtures/transaction-browse-seed.json';
 
 export type DealType = 'trade' | 'rent';
 export type PropertyType = 'apt' | 'offi' | 'rh' | 'silv' | 'sh';
 
-export type ComplexBrowseItem = {
+export type TransactionItem = {
   id: string;
   name: string;
   region: string;
@@ -22,22 +22,22 @@ export type ComplexBrowseItem = {
   stale: boolean;
   lat: number;
   lng: number;
-  tone: ComplexMapTone;
+  tone: TransactionMapTone;
   coordSource?: 'approx' | 'geocoded';
 };
 
-export type ComplexBrowseResult = {
-  items: ComplexBrowseItem[];
+export type TransactionResult = {
+  items: TransactionItem[];
   source: 'live' | 'fallback';
 };
 
-export type ComplexBrowseFilter = {
+export type TransactionFilter = {
   propertyType?: PropertyType | 'all';
   dealType?: DealType | 'all';
   query?: string;
 };
 
-export type ComplexBrowseSort = 'price-desc' | 'price-asc' | 'count-desc';
+export type TransactionSort = 'price-desc' | 'price-asc' | 'count-desc';
 
 type GuCentroid = { lat: number; lng: number; name: string };
 const guCentroids = seed.guCentroids as Record<string, GuCentroid>;
@@ -74,7 +74,7 @@ export function propertyTypeLabel(propertyType: PropertyType): string {
 }
 
 /** Deterministic small offset so complexes in the same gu spread out instead of stacking. */
-export function complexCoordinate(legalDongCode: string | null | undefined, key: string): { lat: number; lng: number } {
+export function transactionCoordinate(legalDongCode: string | null | undefined, key: string): { lat: number; lng: number } {
   const base = (legalDongCode && guCentroids[legalDongCode]) || fallbackCentroid;
   const hash = hashString(key);
   const latOffset = (((hash % 1000) / 1000) - 0.5) * 0.026;
@@ -144,7 +144,7 @@ function rentPriceLabel(deposit: number, monthlyRent: number): string {
   return `전세 ${formatManwonAsEok(deposit)}`;
 }
 
-function toneFromBuiltYear(builtYear: number | null): ComplexMapTone {
+function toneFromBuiltYear(builtYear: number | null): TransactionMapTone {
   if (builtYear === null) return 'flat';
   if (builtYear >= 2015) return 'up';
   if (builtYear <= 2005) return 'down';
@@ -172,7 +172,7 @@ type Accumulator = {
 };
 
 /** Group raw market facts into one card per complex + deal type. Pure for testing. */
-export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowseItem[] {
+export function aggregateTransactions(facts: RealEstateMarketFact[]): TransactionItem[] {
   const groups = new Map<string, Accumulator>();
 
   for (const fact of facts) {
@@ -234,7 +234,7 @@ export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowse
   }
 
   return [...groups.values()].map((group) => {
-    const coordinate = complexCoordinate(group.legalDongCode, group.id);
+    const coordinate = transactionCoordinate(group.legalDongCode, group.id);
     return {
       id: group.id,
       name: group.name,
@@ -257,7 +257,7 @@ export function aggregateComplexes(facts: RealEstateMarketFact[]): ComplexBrowse
       lng: coordinate.lng,
       tone: toneFromBuiltYear(group.builtYear),
       coordSource: 'approx'
-    } satisfies ComplexBrowseItem;
+    } satisfies TransactionItem;
   });
 }
 
@@ -268,11 +268,11 @@ function areaLabel(minArea: number | null, maxArea: number | null): string {
 }
 
 /** Filter + sort the aggregated cards. Pure for testing. */
-export function filterComplexes(
-  items: ComplexBrowseItem[],
-  filter: ComplexBrowseFilter = {},
-  sort: ComplexBrowseSort = 'price-desc'
-): ComplexBrowseItem[] {
+export function filterTransactions(
+  items: TransactionItem[],
+  filter: TransactionFilter = {},
+  sort: TransactionSort = 'price-desc'
+): TransactionItem[] {
   const query = (filter.query ?? '').trim().toLowerCase();
   const dealType = filter.dealType ?? 'all';
   const propertyType = filter.propertyType ?? 'all';
@@ -291,7 +291,7 @@ export function filterComplexes(
   });
 }
 
-export function toComplexMarkers(items: ComplexBrowseItem[]): ComplexMapMarker[] {
+export function toTransactionMarkers(items: TransactionItem[]): TransactionMapMarker[] {
   return items.map((item) => ({
     targetId: item.id,
     name: item.name,
@@ -299,7 +299,7 @@ export function toComplexMarkers(items: ComplexBrowseItem[]): ComplexMapMarker[]
     region: item.region,
     lat: item.lat,
     lng: item.lng,
-    tone: item.tone,
+    tone: 'flat',
     price: item.priceLabel,
     change: `${dealTypeLabels[item.dealType]} ${item.dealCount}건`,
     reaction: item.builtYear ? `${item.builtYear}년 준공` : '준공연도 확인 필요',
@@ -312,7 +312,7 @@ export function toComplexMarkers(items: ComplexBrowseItem[]): ComplexMapMarker[]
   }));
 }
 
-function mockComplexItems(): ComplexBrowseItem[] {
+function mockComplexItems(): TransactionItem[] {
   const mocks = seed.mockComplexes as Array<{
     id: string;
     name: string;
@@ -326,7 +326,7 @@ function mockComplexItems(): ComplexBrowseItem[] {
     builtYear: number;
     lat: number;
     lng: number;
-    tone: ComplexMapTone;
+    tone: TransactionMapTone;
   }>;
 
   return mocks.map((mock) => ({
@@ -356,11 +356,11 @@ function mockComplexItems(): ComplexBrowseItem[] {
 
 type Fetcher = (input: string) => Promise<Response>;
 
-export async function fetchComplexBrowse(
+export async function fetchTransactions(
   propertyType: PropertyType = 'apt',
   legalDongCode?: string,
   fetcher: Fetcher = fetch
-): Promise<ComplexBrowseResult> {
+): Promise<TransactionResult> {
   try {
     // Fetch only the selected category's factTypes (and region) so minority types
     // are never crowded out of a shared page.
@@ -368,7 +368,7 @@ export async function fetchComplexBrowse(
     const factPages = await Promise.all(
       factTypes.map((factType) => fetchRealEstateMarketFacts({ factType, legalDongCode, limit: 500 }, fetcher))
     );
-    const items = aggregateComplexes(factPages.flat());
+    const items = aggregateTransactions(factPages.flat());
     if (items.length) {
       return { items, source: 'live' };
     }

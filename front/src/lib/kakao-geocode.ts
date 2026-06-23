@@ -1,13 +1,12 @@
 import { isKakaoMapEnabled, kakaoJsKey, loadKakaoSdk } from './kakao-sdk';
-import type { ComplexBrowseItem } from './realestate-complex-browse';
+import type { TransactionItem } from './realestate-transaction-browse';
 
 // Resolve real complex coordinates via Kakao keyword place search so markers land
 // on the actual building instead of a gu-centroid approximation.
 
 const coordinateCache = new Map<string, { lat: number; lng: number }>();
-const MAX_GEOCODE_PER_PASS = 160;
 
-function geocodeQuery(item: ComplexBrowseItem): string {
+function geocodeQuery(item: TransactionItem): string {
   return `${item.gu} ${item.region} ${item.name}`.replace(/\s+/g, ' ').trim();
 }
 
@@ -35,7 +34,7 @@ function searchOne(query: string): Promise<{ lat: number; lng: number } | null> 
  * available. Falls back to the original (gu-centroid) coordinates when Kakao is
  * disabled, the SDK fails to load, or a complex can't be resolved.
  */
-export async function geocodeComplexItems(items: ComplexBrowseItem[]): Promise<ComplexBrowseItem[]> {
+export async function geocodeTransactionItems(items: TransactionItem[]): Promise<TransactionItem[]> {
   if (!isKakaoMapEnabled() || !kakaoJsKey() || !items.length) return items;
 
   try {
@@ -46,14 +45,11 @@ export async function geocodeComplexItems(items: ComplexBrowseItem[]): Promise<C
   if (!(window as any).kakao?.maps?.services) return items;
 
   const result = [...items];
-  // Cap how many complexes we geocode so a large region resolves quickly; the rest
-  // keep their gu-centroid placement. Cached lookups still apply on later passes.
-  const geocodeLimit = Math.min(result.length, MAX_GEOCODE_PER_PASS);
-  const concurrency = Math.min(6, geocodeLimit);
+  const concurrency = Math.min(6, result.length);
   let cursor = 0;
 
   const worker = async () => {
-    while (cursor < geocodeLimit) {
+    while (cursor < result.length) {
       const index = cursor;
       cursor += 1;
       const item = result[index];

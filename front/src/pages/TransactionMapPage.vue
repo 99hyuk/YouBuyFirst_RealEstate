@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import KakaoComplexMap, { type ComplexMapMarker } from '../components/KakaoComplexMap.vue';
-import { geocodeComplexItems } from '../lib/kakao-geocode';
+import RealEstateTransactionMap, { type TransactionMapMarker } from '../components/RealEstateTransactionMap.vue';
+import { geocodeTransactionItems } from '../lib/kakao-geocode';
 import {
   dealTypeLabel,
-  fetchComplexBrowse,
-  filterComplexes,
+  fetchTransactions,
+  filterTransactions,
   regionCentroid,
-  toComplexMarkers,
-  type ComplexBrowseItem,
-  type ComplexBrowseSort,
+  toTransactionMarkers,
+  type TransactionItem,
+  type TransactionSort,
   type DealType,
   type PropertyType
-} from '../lib/realestate-complex-browse';
+} from '../lib/realestate-transaction-browse';
 import regionData from '../fixtures/transaction-regions.json';
 
 type DealFilter = DealType | 'all';
@@ -52,27 +52,28 @@ const dealFilters: { id: DealFilter; label: string }[] = [
   { id: 'trade', label: '매매' },
   { id: 'rent', label: '전·월세' }
 ];
-const sortOptions: { id: ComplexBrowseSort; label: string }[] = [
+const sortOptions: { id: TransactionSort; label: string }[] = [
   { id: 'price-desc', label: '가격 높은순' },
   { id: 'price-asc', label: '가격 낮은순' },
   { id: 'count-desc', label: '거래 많은순' }
 ];
 
-const items = ref<ComplexBrowseItem[]>([]);
+const items = ref<TransactionItem[]>([]);
 let loadToken = 0;
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
 const activePropertyType = ref<PropertyType>('apt');
 const activeRegion = ref<string>(resolveInitialRegion(route.query.region));
 const activeDealFilter = ref<DealFilter>('all');
-const activeSort = ref<ComplexBrowseSort>('price-desc');
+const activeSort = ref<TransactionSort>('price-desc');
 const query = ref('');
 const selectedId = ref('');
+const isDetailOpen = ref(false);
 
 const regionName = computed(() => regionNameByCode.get(activeRegion.value) ?? '지역');
 const mapCenter = computed(() => regionCentroid(activeRegion.value) ?? undefined);
 
 const visibleItems = computed(() =>
-  filterComplexes(
+  filterTransactions(
     items.value,
     { propertyType: activePropertyType.value, dealType: activeDealFilter.value, query: query.value },
     activeSort.value
@@ -80,7 +81,7 @@ const visibleItems = computed(() =>
 );
 // 해당 지역/조건의 실거래 정보 유무를 먼저 판단한다.
 const hasTransactionData = computed(() => visibleItems.value.length > 0);
-const markers = computed<ComplexMapMarker[]>(() => toComplexMarkers(visibleItems.value));
+const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(visibleItems.value));
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? visibleItems.value[0] ?? null
 );
@@ -104,10 +105,12 @@ const refreshComplexes = async () => {
   const token = ++loadToken;
   loadState.value = 'loading';
   try {
-    const result = await fetchComplexBrowse(activePropertyType.value, activeRegion.value);
+    const result = await fetchTransactions(activePropertyType.value, activeRegion.value);
     if (token !== loadToken) return;
     items.value = result.items;
-    selectedId.value = result.items[0]?.id ?? '';
+    // 초기에는 상세 패널을 닫아두고, 마커/카드 클릭 시에만 연다.
+    selectedId.value = '';
+    isDetailOpen.value = false;
     loadState.value = result.source === 'live' ? 'live' : 'fallback';
     // Resolve real complex coordinates in the background; markers update once done.
     void applyGeocoding(result.items, token);
@@ -118,8 +121,8 @@ const refreshComplexes = async () => {
   }
 };
 
-const applyGeocoding = async (base: ComplexBrowseItem[], token: number) => {
-  const geocoded = await geocodeComplexItems(base);
+const applyGeocoding = async (base: TransactionItem[], token: number) => {
+  const geocoded = await geocodeTransactionItems(base);
   // Only apply if a newer load hasn't superseded this one.
   if (token === loadToken) {
     items.value = geocoded;
@@ -136,13 +139,43 @@ const onRegionChange = () => {
   void refreshComplexes();
 };
 
-const selectComplex = (item: ComplexBrowseItem) => {
+const selectComplex = (item: TransactionItem) => {
   selectedId.value = item.id;
+  isDetailOpen.value = true;
 };
-const onMarkerSelect = (marker: ComplexMapMarker) => {
+const onMarkerSelect = (marker: TransactionMapMarker) => {
   selectedId.value = marker.targetId;
+  isDetailOpen.value = true;
+};
+const closeDetail = () => {
+  isDetailOpen.value = false;
 };
 const dealBadge = (dealType: DealType) => dealTypeLabel(dealType);
+
+type TrendPeriod = 'yoy' | '6m' | 'mom';
+const trendPeriods: { id: TrendPeriod; label: string; caption: string }[] = [
+  { id: 'yoy', label: 'YoY', caption: '전년 동월 대비' },
+  { id: '6m', label: '6개월', caption: '6개월 전 대비' },
+  { id: 'mom', label: 'MoM', caption: '전월 대비' }
+];
+const activeTrendPeriod = ref<TrendPeriod>('yoy');
+const activeTrendCaption = computed(
+  () => trendPeriods.find((period) => period.id === activeTrendPeriod.value)?.caption ?? ''
+);
+// 선택 단지의 기간별 가격 변동률. 과거 월 실거래 비교 데이터가 적재되기 전까지는 null(비교데이터 없음).
+const selectedChange = computed<number | null>(() => {
+  if (!selectedItem.value) return null;
+  // TODO: 과거 월(YoY/6개월/MoM) 평단가 비교 데이터가 연결되면 여기서 변동률을 계산한다.
+  return null;
+});
+
+// 준공연도 기준 신축/구축 라벨(색이 아닌 명시적 텍스트로 표시).
+const ageBadge = (builtYear: number | null) => {
+  if (builtYear === null) return '';
+  if (builtYear >= 2015) return '신축';
+  if (builtYear <= 2005) return '구축';
+  return '';
+};
 
 onMounted(() => {
   void refreshComplexes();
@@ -208,6 +241,22 @@ onMounted(() => {
         <select v-model="activeSort" class="complex-sort" aria-label="정렬 기준">
           <option v-for="option in sortOptions" :key="option.id" :value="option.id">{{ option.label }}</option>
         </select>
+
+        <div class="filter-chip-row" role="radiogroup" aria-label="가격 비교 기간">
+          <button
+            v-for="period in trendPeriods"
+            :key="period.id"
+            type="button"
+            class="filter-chip"
+            role="radio"
+            :aria-checked="activeTrendPeriod === period.id"
+            :class="{ active: activeTrendPeriod === period.id }"
+            :title="period.caption"
+            @click="activeTrendPeriod = period.id"
+          >
+            {{ period.label }}
+          </button>
+        </div>
       </div>
 
       <span class="status-pill" :class="{ warning: loadState !== 'live' }" data-testid="complex-status">
@@ -240,8 +289,9 @@ onMounted(() => {
             <div class="complex-card-head">
               <span class="complex-deal-badge" :class="item.dealType">{{ dealBadge(item.dealType) }}</span>
               <strong class="complex-name">{{ item.name }}</strong>
+              <span v-if="ageBadge(item.builtYear)" class="complex-age-badge">{{ ageBadge(item.builtYear) }}</span>
             </div>
-            <p class="complex-price" :class="item.tone">{{ item.priceLabel }}</p>
+            <p class="complex-price">{{ item.priceLabel }}</p>
             <p class="complex-meta">{{ item.gu }} {{ item.region }} · {{ item.areaLabel }}</p>
             <p class="complex-sub">
               거래 {{ item.dealCount }}건 · 기준 {{ item.asOf }}
@@ -252,13 +302,45 @@ onMounted(() => {
       </aside>
 
       <div class="complex-map-stage">
-        <KakaoComplexMap
+        <RealEstateTransactionMap
           :markers="markers"
-          :selected-target-id="selectedItem?.id ?? ''"
+          :selected-target-id="isDetailOpen ? selectedId : ''"
           :center="mapCenter"
+          :show-inspector="false"
           :marker-source-status="loadState === 'live' ? `molit 실거래 · ${regionName}` : loadState"
           @select="onMarkerSelect"
+          @deselect="closeDetail"
         />
+
+        <aside
+          v-if="selectedItem"
+          class="transaction-detail"
+          :class="{ open: isDetailOpen }"
+          data-testid="transaction-detail"
+          aria-label="실거래 상세 정보"
+        >
+          <button class="transaction-detail-close" type="button" aria-label="상세 정보 닫기" @click="closeDetail">×</button>
+          <span class="transaction-detail-badge" :class="selectedItem.dealType">{{ dealBadge(selectedItem.dealType) }}</span>
+          <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
+          <p class="transaction-detail-price">{{ selectedItem.priceLabel }}</p>
+
+          <div class="transaction-trend">
+            <p v-if="selectedChange !== null" class="transaction-trend-value" :class="selectedChange >= 0 ? 'up' : 'down'">
+              {{ activeTrendCaption }} {{ selectedChange > 0 ? '+' : '' }}{{ selectedChange }}%
+            </p>
+            <p v-else class="transaction-trend-empty" data-testid="transaction-trend-empty">
+              {{ activeTrendCaption }} · 비교데이터 없음
+            </p>
+          </div>
+          <dl class="transaction-detail-list">
+            <div><dt>위치</dt><dd>{{ selectedItem.gu }} {{ selectedItem.region }}</dd></div>
+            <div><dt>면적</dt><dd>{{ selectedItem.areaLabel }}</dd></div>
+            <div><dt>거래</dt><dd>{{ selectedItem.dealCount }}건</dd></div>
+            <div><dt>준공</dt><dd>{{ selectedItem.builtYear ? `${selectedItem.builtYear}년` : '확인 필요' }}</dd></div>
+            <div><dt>기준일</dt><dd>{{ selectedItem.asOf }}</dd></div>
+          </dl>
+          <p class="transaction-detail-note">국토교통부 실거래 · {{ selectedItem.stale ? '지연 가능' : selectedItem.dataStatus }}</p>
+        </aside>
       </div>
     </section>
   </section>
