@@ -201,12 +201,8 @@ onMounted(() => {
 
 <template>
   <section class="complex-browse-page" aria-labelledby="complex-browse-title">
-    <header class="complex-filter-bar">
-      <div class="complex-filter-heading">
-        <p class="eyebrow">transaction map · 실거래 지도</p>
-        <h2 id="complex-browse-title">실거래 지도</h2>
-        <p class="complex-browse-sub">국토교통부 실거래를 건물·단지명으로 묶어 지도에 표시합니다 · 지역을 선택해 보세요</p>
-      </div>
+    <header class="complex-filter-bar floating" aria-label="실거래 지도 필터">
+      <h2 id="complex-browse-title" class="overlay-title">실거래 지도</h2>
 
       <div class="complex-filter-groups">
         <select
@@ -289,90 +285,104 @@ onMounted(() => {
       </span>
     </header>
 
-    <section class="complex-browse-layout">
-      <aside class="complex-list-panel" aria-label="실거래 목록">
-        <div v-if="listState === 'loading'" class="complex-empty">실거래 목록을 불러오는 중입니다…</div>
-        <div v-else-if="listState === 'empty'" class="complex-empty complex-empty-nodata">
-          실거래 정보 없음
-        </div>
-        <template v-else>
-          <ul v-if="listItems.length" class="complex-card-list">
-            <li
-              v-for="item in listItems"
-              :key="item.id"
-              :class="['complex-card', { active: item.id === selectedItem?.id }]"
-              :data-testid="`complex-card-${item.id}`"
-              @click="selectComplex(item)"
-            >
-              <div class="complex-card-head">
-                <span class="complex-deal-badge" :class="item.dealType">{{ dealBadge(item.dealType) }}</span>
-                <strong class="complex-name">{{ item.name }}</strong>
-                <span v-if="ageBadge(item.builtYear)" class="complex-age-badge">{{ ageBadge(item.builtYear) }}</span>
-                <span v-if="item.coordSource !== 'geocoded'" class="complex-coord-badge">근사좌표</span>
-              </div>
-              <p class="complex-price" :class="priceTone(item)">{{ item.priceLabel }}</p>
-              <p class="complex-meta">{{ item.gu }} {{ item.region }} · {{ item.areaLabel }}</p>
-              <p class="complex-sub">
-                거래 {{ item.dealCount }}건 · 기준 {{ item.asOf }}
-                <span v-if="item.stale" class="complex-stale">지연 가능</span>
-              </p>
-            </li>
-          </ul>
-          <div v-else class="complex-empty">실좌표 확인 중…</div>
-          <button
-            v-if="pendingItems.length"
-            type="button"
-            class="pending-toggle"
-            :class="{ active: showPending }"
-            data-testid="pending-toggle"
-            @click="showPending = !showPending"
-          >
-            {{ showPending ? '실좌표 미적용 건물 숨기기' : `실좌표 미적용 건물 ${pendingItems.length}건 포함` }}
-          </button>
-        </template>
-      </aside>
+    <div class="complex-map-stage">
+      <RealEstateTransactionMap
+        class="complex-map-canvas"
+        :markers="markers"
+        :selected-target-id="isDetailOpen ? selectedId : ''"
+        :center="mapCenter"
+        :show-inspector="false"
+        :marker-source-status="loadState === 'live' ? `molit 실거래 · ${regionName}` : loadState"
+        @select="onMarkerSelect"
+        @deselect="closeDetail"
+      />
 
-      <div class="complex-map-stage">
-        <RealEstateTransactionMap
-          :markers="markers"
-          :selected-target-id="isDetailOpen ? selectedId : ''"
-          :center="mapCenter"
-          :show-inspector="false"
-          :marker-source-status="loadState === 'live' ? `molit 실거래 · ${regionName}` : loadState"
-          @select="onMarkerSelect"
-          @deselect="closeDetail"
-        />
-
-        <aside
-          v-if="selectedItem"
-          class="transaction-detail"
-          :class="{ open: isDetailOpen }"
-          data-testid="transaction-detail"
-          aria-label="실거래 상세 정보"
-        >
-          <button class="transaction-detail-close" type="button" aria-label="상세 정보 닫기" @click="closeDetail">×</button>
-          <span class="transaction-detail-badge" :class="selectedItem.dealType">{{ dealBadge(selectedItem.dealType) }}</span>
-          <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
-          <p class="transaction-detail-price">{{ selectedItem.priceLabel }}</p>
-
-          <div class="transaction-trend">
-            <p v-if="selectedChange !== null" class="transaction-trend-value" :class="selectedChange >= 0 ? 'up' : 'down'">
-              {{ activeTrendCaption }} {{ selectedChange > 0 ? '+' : '' }}{{ selectedChange }}%
-            </p>
-            <p v-else class="transaction-trend-empty" data-testid="transaction-trend-empty">
-              {{ activeTrendCaption }} · 비교데이터 없음
-            </p>
-          </div>
-          <dl class="transaction-detail-list">
-            <div><dt>위치</dt><dd>{{ selectedItem.gu }} {{ selectedItem.region }}</dd></div>
-            <div><dt>면적</dt><dd>{{ selectedItem.areaLabel }}</dd></div>
-            <div><dt>거래</dt><dd>{{ selectedItem.dealCount }}건</dd></div>
-            <div><dt>준공</dt><dd>{{ selectedItem.builtYear ? `${selectedItem.builtYear}년` : '확인 필요' }}</dd></div>
-            <div><dt>기준일</dt><dd>{{ selectedItem.asOf }}</dd></div>
-          </dl>
-          <p class="transaction-detail-note">국토교통부 실거래 · {{ selectedItem.stale ? '지연 가능' : selectedItem.dataStatus }}</p>
-        </aside>
+      <aside class="complex-list-panel floating" aria-label="실거래 목록">
+      <div v-if="listState === 'loading'" class="complex-empty">실거래 목록을 불러오는 중입니다…</div>
+      <div v-else-if="listState === 'empty'" class="complex-empty complex-empty-nodata">
+        실거래 정보 없음
       </div>
-    </section>
+      <template v-else>
+        <ul v-if="listItems.length" class="complex-card-list">
+          <li
+            v-for="item in listItems"
+            :key="item.id"
+            :class="['complex-card', { active: item.id === selectedItem?.id }]"
+            :data-testid="`complex-card-${item.id}`"
+            @click="selectComplex(item)"
+          >
+            <div class="complex-card-head">
+              <span class="complex-deal-badge" :class="item.dealType">{{ dealBadge(item.dealType) }}</span>
+              <strong class="complex-name">{{ item.name }}</strong>
+              <span v-if="ageBadge(item.builtYear)" class="complex-age-badge">{{ ageBadge(item.builtYear) }}</span>
+              <span v-if="item.coordSource !== 'geocoded'" class="complex-coord-badge">근사좌표</span>
+            </div>
+            <p class="complex-price" :class="priceTone(item)">{{ item.priceLabel }}</p>
+            <p class="complex-meta">{{ item.gu }} {{ item.region }} · {{ item.areaLabel }}</p>
+            <p class="complex-sub">
+              거래 {{ item.dealCount }}건 · 기준 {{ item.asOf }}
+              <span v-if="item.stale" class="complex-stale">지연 가능</span>
+            </p>
+          </li>
+        </ul>
+        <div v-else class="complex-empty">실좌표 확인 중…</div>
+        <button
+          v-if="pendingItems.length"
+          type="button"
+          class="pending-toggle"
+          :class="{ active: showPending }"
+          data-testid="pending-toggle"
+          @click="showPending = !showPending"
+        >
+          {{ showPending ? '실좌표 미적용 건물 숨기기' : `실좌표 미적용 건물 ${pendingItems.length}건 포함` }}
+        </button>
+      </template>
+    </aside>
+
+    <aside
+      v-if="selectedItem"
+      class="transaction-detail"
+      :class="{ open: isDetailOpen }"
+      data-testid="transaction-detail"
+      aria-label="실거래 상세 정보"
+    >
+      <button class="transaction-detail-close" type="button" aria-label="상세 정보 닫기" @click="closeDetail">×</button>
+      <span class="transaction-detail-badge" :class="selectedItem.dealType">{{ dealBadge(selectedItem.dealType) }}</span>
+      <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
+      <p class="transaction-detail-price">{{ selectedItem.priceLabel }}</p>
+
+      <div class="transaction-trend">
+        <div class="transaction-trend-tabs" role="radiogroup" aria-label="상세 비교 기간">
+          <button
+            v-for="period in trendPeriods"
+            :key="period.id"
+            type="button"
+            class="transaction-trend-tab"
+            role="radio"
+            :aria-checked="activeTrendPeriod === period.id"
+            :class="{ active: activeTrendPeriod === period.id }"
+            :title="period.caption"
+            @click="activeTrendPeriod = period.id"
+          >
+            {{ period.label }}
+          </button>
+        </div>
+        <p v-if="selectedChange !== null" class="transaction-trend-value" :class="selectedChange >= 0 ? 'up' : 'down'">
+          {{ activeTrendCaption }} {{ selectedChange > 0 ? '+' : '' }}{{ selectedChange }}%
+        </p>
+        <p v-else class="transaction-trend-empty" data-testid="transaction-trend-empty">
+          {{ activeTrendCaption }} · 비교데이터 없음 (해당 매물유형/기간은 아직 비교월 데이터가 수집되지 않았습니다)
+        </p>
+      </div>
+      <dl class="transaction-detail-list">
+        <div><dt>위치</dt><dd>{{ selectedItem.gu }} {{ selectedItem.region }}</dd></div>
+        <div><dt>면적</dt><dd>{{ selectedItem.areaLabel }}</dd></div>
+        <div><dt>거래</dt><dd>{{ selectedItem.dealCount }}건</dd></div>
+        <div><dt>준공</dt><dd>{{ selectedItem.builtYear ? `${selectedItem.builtYear}년` : '확인 필요' }}</dd></div>
+        <div><dt>기준일</dt><dd>{{ selectedItem.asOf }}</dd></div>
+      </dl>
+      <p class="transaction-detail-note">국토교통부 실거래 · {{ selectedItem.stale ? '지연 가능' : selectedItem.dataStatus }}</p>
+    </aside>
+    </div>
   </section>
 </template>

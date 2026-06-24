@@ -3889,6 +3889,7 @@ a {
 .complex-map-layout.no-inspector {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
+  margin: 0;
 }
 
 .complex-map-shell {
@@ -11770,42 +11771,106 @@ a {
 }
 
 /* === Complex browse page (네이버식 단지 카테고리) === */
+/* 실거래 지도 페이지는 page-frame의 너비 제한을 풀어 화면에 꽉 맞춘다. */
+body:has(.complex-browse-page) .page-frame {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  transform: none;
+}
+
+/* 실거래 지도: 필터바(정상 흐름)+지도 영역(flex:1)을 세로로 쌓아 100vh를 절대 넘지 않게 한다.
+   지도 영역 안에서만 리스트/상세창이 떠 있는 플로팅 오버레이 구조. */
 .complex-browse-page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px 0 32px;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: calc(100vh - var(--topbar-height));
+  border-radius: 0;
 }
 
-.complex-filter-bar {
+.complex-map-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.complex-map-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 지도 카드 내부의 자체 타이틀 바는 플로팅 필터바와 중복되므로 이 페이지에서는 숨긴다. */
+.complex-map-canvas .section-band-title {
+  display: none;
+}
+
+.complex-map-canvas .complex-map-layout {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* .surface-data-card > :not(.panel-header)의 14px 좌우 마진을 이 페이지에서는 제거(엣지투엣지). */
+.complex-map-canvas > .complex-map-layout.no-inspector {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.complex-map-canvas .complex-map-shell {
+  height: 100%;
+  min-height: 0;
+}
+
+/* 필터바는 더 이상 지도 위에 떠 있지 않고(absolute X) 정상 흐름의 flex item.
+   2줄로 줄바꿈돼도 지도는 그만큼 줄어든 나머지 높이만 차지해 100vh를 넘지 않는다. */
+.complex-filter-bar.floating {
+  position: relative;
+  flex: none;
+  width: 100%;
+  z-index: 25;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 18px;
-  padding: 14px 18px;
+  row-gap: 8px;
+  column-gap: 16px;
+  padding: 10px 16px;
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
+  border-top: none;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
 }
 
-.complex-filter-heading h2 {
-  margin: 2px 0 0;
-  font-size: 20px;
+.overlay-title {
+  flex: none;
+  margin: 0;
+  font-size: 16px;
   font-weight: 860;
   color: var(--ink);
-}
-
-.complex-browse-sub {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--muted);
+  white-space: nowrap;
 }
 
 .complex-filter-groups {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 14px;
+  row-gap: 8px;
+  column-gap: 14px;
   flex: 1;
 }
 
@@ -11889,22 +11954,26 @@ a {
 }
 
 .complex-filter-bar .status-pill {
+  flex: none;
   margin-left: auto;
+  white-space: nowrap;
 }
 
-.complex-browse-layout {
-  display: grid;
-  grid-template-columns: minmax(208px, 248px) minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-}
-
-.complex-list-panel {
-  height: 72vh;
+/* 좌측 매물 리스트: 지도를 밀어내지 않고 지도 위 좌측에 떠 있는 슬림한 오버레이 패널. */
+.complex-list-panel.floating {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  bottom: 0;
+  margin: 5px auto;
+  z-index: 10;
+  width: min(232px, 80%);
   overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
   padding: 8px;
 }
 
@@ -12028,36 +12097,13 @@ a {
   font-weight: 700;
 }
 
-.complex-map-stage {
-  position: relative;
-  height: 72vh;
-  overflow: hidden;
-  border-radius: 16px;
-}
-
-/* 실거래 지도 스테이지 안에서는 지도 컴포넌트가 높이를 꽉 채운다(리스트와 동일 높이). */
-.complex-map-stage .complex-map-panel {
-  height: 100%;
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-.complex-map-stage .complex-map-layout {
-  height: 100%;
-  min-height: 0;
-}
-
-.complex-map-stage .complex-map-shell {
-  height: 100%;
-  min-height: 0;
-}
-
 /* 마커 클릭 시 지도 위에 떠서 오른쪽에서 슬라이드 인 되는 플로팅 상세 팝업 */
 .transaction-detail {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  bottom: 16px;
-  z-index: 30;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -12140,6 +12186,31 @@ a {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--surface-soft);
+}
+
+/* 상세 팝업 내부에서 독립적으로 동작하는 기간(YoY/6개월/MoM) 필터 — 지도 상단 필터와 같은 상태를 공유. */
+.transaction-trend-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.transaction-trend-tab {
+  flex: 1;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: #526071;
+  font-size: 11px;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.transaction-trend-tab.active {
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
 }
 
 .transaction-trend-value {
@@ -12235,12 +12306,12 @@ a {
 }
 
 @media (max-width: 880px) {
-  .complex-browse-layout {
-    grid-template-columns: 1fr;
+  .complex-list-panel.floating {
+    width: min(200px, 72%);
   }
 
-  .complex-list-panel {
-    max-height: none;
+  .transaction-detail {
+    width: min(280px, 88%);
   }
 
   .complex-filter-bar .status-pill {
