@@ -17,6 +17,8 @@
 | Screen ID | Route 정보 | Brief | 상태 | 비고 |
 | --- | --- | --- | --- | --- |
 | `dashboard` | `/dashboard` | `dashboard.md` | active | 메인 대시보드, 지역 인사이트, 뉴스/리포트, 일정/거래 탐색 진입 |
+| `daily-briefing` | `/realestate/daily-briefing` | `realestate-dashboard.md` | active | 대시보드 3줄 브리핑의 상세 본문. 최신 저장 브리핑의 핵심 흐름, 주목 지역, 시장 변수, 관련 뉴스·리포트 표시 |
+| `auth` | `/auth/login`, `/auth/register`, `/auth/find-account` | `auth.md` | active | 세션 로그인, 회원가입, ID/PW 찾기, 상단 계정 상태 진입 |
 | `realestate-map` | `/realestate/map`, `/realestate/map/:regionId` | `realestate-screen-definition.md` | active | 전국 heat map, 시군구 drill-down, 지역 선택 리포트, 향후 단지 drill-down |
 | `newsroom` | `/newsroom?feed=` | `newsroom.md` | active | 뉴스, 리포트, 영상, 블로그·커뮤니티 |
 | `indicators` | `/indicators`, `/indicators/:category` | `indicators.md` | active | 공식 통계·실거래·청약·정책 주요 일정 |

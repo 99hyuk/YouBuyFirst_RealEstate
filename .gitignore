@@ -28,10 +28,12 @@ backend/src/main/resources/application-local.yml
 # Local QA/artifact output
 artifacts/
 output/
+.codex/
 .playwright-mcp/
 /indicators-domestic-snapshot.md
 /dashboard-feed-title-snapshot.md
 /complex-trade-history-card.png
+/daily-briefing-*.png
 
 # Local tunnel binary
 tools/cloudflared/

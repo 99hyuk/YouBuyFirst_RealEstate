@@ -29,7 +29,6 @@ from youbuyfirst_pipeline.realestate_public_data import (
     DATA_GO_SERVICE_KEY_ENV,
     PublicDataProviderError,
     RealEstatePublicDataRawIngestion,
-    build_reb_rone_monthly_price_index_client_from_env,
     build_reb_rone_regional_map_client_from_env,
     build_reb_rone_main_snapshot_client_from_env,
     build_official_apartment_price_raw_ingestions,
@@ -39,7 +38,6 @@ from youbuyfirst_pipeline.realestate_public_data import (
     collect_molit_real_estate_market_facts,
     collect_molit_real_estate_market_facts_from_data_targets,
     collect_reb_rone_main_snapshot_facts,
-    collect_reb_rone_monthly_price_index_change_facts,
     collect_reb_rone_regional_map_facts,
     inspect_official_apartment_price_csv,
     inspect_regional_stat_csv,
@@ -88,11 +86,19 @@ from youbuyfirst_pipeline.realestate_daily_scheduler import (
     RealEstateCommunityComplexSeedRefreshJob,
     RealEstateComplexRegistryRefreshJob,
     RealEstateConfigMissingRefreshJob,
+    RealEstateDailyBriefingRefreshJob,
     RealEstateDailyRefreshJob,
     RealEstateEvidenceLogRefreshJob,
     RealEstateMapLayerRefreshJob,
     RealEstateOfficialStatsRefreshJob,
     RealEstateRecentIssuesRefreshJob,
+)
+from youbuyfirst_pipeline.realestate_daily_briefing import (
+    DEFAULT_DAILY_BRIEFING_MODEL,
+    DEFAULT_DAILY_BRIEFING_PROMPT_VERSION,
+    DEFAULT_GMS_ANTHROPIC_BASE_URL,
+    GmsAnthropicMessagesDailyBriefingClient,
+    GmsOpenAIChatDailyBriefingClient,
 )
 from youbuyfirst_pipeline.realestate_evidence import (
     DEFAULT_EVALUATION_VERSION,
@@ -168,8 +174,6 @@ ACTIVE_COMMANDS = [
     "realestate-market-facts-push",
     "realestate-reb-rone-main-snapshot",
     "realestate-reb-rone-main-snapshot-push",
-    "realestate-reb-rone-monthly-price-index",
-    "realestate-reb-rone-monthly-price-index-push",
     "realestate-reb-rone-regional-map",
     "realestate-reb-rone-regional-map-push",
     "realestate-market-facts-raw-push",
@@ -548,6 +552,33 @@ async def async_main() -> None:
         default=os.getenv("REALESTATE_MAP_LAYER_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
     )
     parser.add_argument(
+        "--enable-realestate-daily-briefing-refresh",
+        action="store_true",
+        default=os.getenv("REALESTATE_DAILY_BRIEFING_REFRESH_ENABLED", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-daily-briefing-curated-json",
+        default=os.getenv("REALESTATE_DAILY_BRIEFING_CURATED_JSON"),
+    )
+    parser.add_argument(
+        "--realestate-daily-briefing-use-gms-llm",
+        action="store_true",
+        default=os.getenv("REALESTATE_DAILY_BRIEFING_USE_GMS_LLM", "false").lower() in {"1", "true", "yes"},
+    )
+    parser.add_argument(
+        "--realestate-daily-briefing-llm-model",
+        default=os.getenv("REALESTATE_DAILY_BRIEFING_LLM_MODEL", DEFAULT_DAILY_BRIEFING_MODEL),
+    )
+    parser.add_argument(
+        "--realestate-daily-briefing-llm-prompt-version",
+        default=os.getenv("REALESTATE_DAILY_BRIEFING_LLM_PROMPT_VERSION", DEFAULT_DAILY_BRIEFING_PROMPT_VERSION),
+    )
+    parser.add_argument(
+        "--realestate-daily-briefing-llm-timeout-seconds",
+        type=float,
+        default=float(os.getenv("REALESTATE_DAILY_BRIEFING_LLM_TIMEOUT_SECONDS", os.getenv("GMS_TIMEOUT_SECONDS", "60"))),
+    )
+    parser.add_argument(
         "--realestate-map-layer-types",
         nargs="+",
         default=_configured_csv_values(os.getenv("REALESTATE_MAP_LAYER_TYPES"), ["sido", "sigungu"]),
@@ -555,7 +586,10 @@ async def async_main() -> None:
     parser.add_argument(
         "--realestate-map-layer-periods",
         nargs="+",
-        default=_configured_csv_values(os.getenv("REALESTATE_MAP_LAYER_PERIODS"), ["month", "quarter", "halfYear"]),
+        default=_configured_csv_values(
+            os.getenv("REALESTATE_MAP_LAYER_PERIODS"),
+            ["week", "month", "quarter", "halfYear", "year"],
+        ),
     )
     parser.add_argument(
         "--realestate-evidence-target-type",
@@ -1302,15 +1336,6 @@ async def async_main() -> None:
         _spring_client().publish_real_estate_market_facts(facts)
         return
 
-    if args.command in {"realestate-reb-rone-monthly-price-index", "realestate-reb-rone-monthly-price-index-push"}:
-        provider = build_reb_rone_monthly_price_index_client_from_env()
-        facts = collect_reb_rone_monthly_price_index_change_facts(provider)
-        if args.command == "realestate-reb-rone-monthly-price-index":
-            print(json.dumps({"items": [fact.to_ingestion_dict() for fact in facts]}, ensure_ascii=False, indent=2))
-            return
-        _spring_client().publish_real_estate_market_facts(facts)
-        return
-
     if args.command == "realestate-market-facts-raw-push":
         spring_client = _spring_client()
         tasks, skipped_completed_run_keys, planned_run_count = _realestate_raw_push_task_selection(
@@ -1788,10 +1813,23 @@ def _build_real_estate_daily_refresh_job(args, pipeline, market_client) -> RealE
                 ),
             )
         )
+    if args.enable_realestate_daily_briefing_refresh:
+        daily_steps.append(
+            (
+                "daily_briefing",
+                RealEstateDailyBriefingRefreshJob(
+                    client=market_client,
+                    curated_pack_path=args.realestate_daily_briefing_curated_json,
+                    llm_generator=_real_estate_daily_briefing_llm_generator_from_args(args),
+                    model_name=args.realestate_daily_briefing_llm_model,
+                    prompt_version=args.realestate_daily_briefing_llm_prompt_version,
+                ),
+            )
+        )
     if not daily_steps:
         raise SystemExit(
             "real-estate daily refresh requires at least one refresh step "
-            "(market facts, official stats, complex registry, community crawl, community complex seed, reaction snapshots, recent issues, evidence logs, or map layers)"
+            "(market facts, official stats, complex registry, community crawl, community complex seed, reaction snapshots, recent issues, evidence logs, map layers, or daily briefing)"
         )
     return RealEstateDailyRefreshJob(daily_steps)
 
@@ -1822,6 +1860,17 @@ def _real_estate_evidence_llm_evaluator_from_args(args):
     return evidence_llm_evaluator
 
 
+def _real_estate_daily_briefing_llm_generator_from_args(args):
+    if not args.realestate_daily_briefing_use_gms_llm:
+        return None
+    daily_briefing_client = _gms_openai_daily_briefing_client(
+        model_name=args.realestate_daily_briefing_llm_model,
+        timeout_seconds=args.realestate_daily_briefing_llm_timeout_seconds,
+    )
+
+    return daily_briefing_client.generate
+
+
 def _validate_real_estate_serve_refresh_flags(args) -> None:
     if args.enable_realestate_official_stats_refresh and not args.enable_realestate_daily_refresh:
         raise SystemExit("--enable-realestate-official-stats-refresh requires --enable-realestate-daily-refresh")
@@ -1837,6 +1886,8 @@ def _validate_real_estate_serve_refresh_flags(args) -> None:
         raise SystemExit("--enable-realestate-evidence-logs-refresh requires --enable-realestate-daily-refresh")
     if args.enable_realestate_map_layer_refresh and not args.enable_realestate_daily_refresh:
         raise SystemExit("--enable-realestate-map-layer-refresh requires --enable-realestate-daily-refresh")
+    if args.enable_realestate_daily_briefing_refresh and not args.enable_realestate_daily_refresh:
+        raise SystemExit("--enable-realestate-daily-briefing-refresh requires --enable-realestate-daily-refresh")
 
 
 def _configured_realestate_datasets(value: str | None) -> list[str]:
@@ -2530,6 +2581,30 @@ def _gms_openai_evaluation_client(
     if not api_key:
         raise SystemExit("GMS_KEY is required")
     return GmsOpenAIChatEvaluationClient(
+        api_key,
+        base_url=os.getenv("GMS_OPENAI_BASE_URL", DEFAULT_GMS_OPENAI_BASE_URL),
+        model_name=model_name,
+        timeout_seconds=timeout_seconds,
+    )
+
+
+def _gms_openai_daily_briefing_client(
+    *,
+    model_name: str = DEFAULT_DAILY_BRIEFING_MODEL,
+    timeout_seconds: float = 60.0,
+) -> GmsOpenAIChatDailyBriefingClient | GmsAnthropicMessagesDailyBriefingClient:
+    api_key = os.getenv("GMS_KEY")
+    if not api_key:
+        raise SystemExit("GMS_KEY is required")
+    if model_name.strip().startswith("claude-"):
+        return GmsAnthropicMessagesDailyBriefingClient(
+            api_key,
+            base_url=os.getenv("GMS_ANTHROPIC_BASE_URL", DEFAULT_GMS_ANTHROPIC_BASE_URL),
+            model_name=model_name,
+            timeout_seconds=timeout_seconds,
+            max_tokens=int(os.getenv("REALESTATE_DAILY_BRIEFING_ANTHROPIC_MAX_TOKENS", "8192")),
+        )
+    return GmsOpenAIChatDailyBriefingClient(
         api_key,
         base_url=os.getenv("GMS_OPENAI_BASE_URL", DEFAULT_GMS_OPENAI_BASE_URL),
         model_name=model_name,

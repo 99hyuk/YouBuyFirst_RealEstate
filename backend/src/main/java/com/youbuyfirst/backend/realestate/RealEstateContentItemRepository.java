@@ -16,6 +16,10 @@ public interface RealEstateContentItemRepository extends JpaRepository<RealEstat
             select item
             from RealEstateContentItem item
             where (:contentType is null or item.contentType = :contentType)
+            and (
+                item.dataStatus in ('curated', 'ok', 'stale')
+                or (item.contentType = 'news' and item.dataStatus = 'candidate')
+            )
             order by case
                 when item.dataStatus in ('curated', 'ok') then 0
                 when item.dataStatus = 'candidate' then 2

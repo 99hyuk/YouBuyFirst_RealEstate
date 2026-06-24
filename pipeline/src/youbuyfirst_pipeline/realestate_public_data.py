@@ -9,7 +9,6 @@ import math
 import os
 import re
 import time
-import urllib.parse
 import xml.etree.ElementTree as ET
 from collections.abc import Callable, Iterable, Iterator, Mapping
 from dataclasses import dataclass
@@ -19,6 +18,7 @@ from typing import Protocol
 import httpx
 
 DATA_GO_SERVICE_KEY_ENV = "DATA_GO_SERVICE_KEY"
+REB_RONE_OPENAPI_KEY_ENV = "REB_RONE_OPENAPI_KEY"
 
 _OK_RESULT_CODES = {"00", "000", "INFO-000"}
 _RETRYABLE_HTTP_STATUS_CODES = {502, 503, 504}
@@ -95,8 +95,7 @@ REB_RONE_MAIN_URL = "https://www.reb.or.kr/r-one/portal/main/indexPage.do"
 REB_RONE_REGIONAL_MAP_DATASET_ID = "reb_rone_regional_price_change"
 REB_RONE_REGIONAL_MAP_URL = "https://www.reb.or.kr/r-one/portal/main/searchRegionalStatusMap.do"
 REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID = "reb_rone_monthly_apt_sale_price_index"
-REB_RONE_EASY_STAT_PAGE_URL = "https://www.reb.or.kr/r-one/portal/stat/easyStatPage/A_2024_00045.do"
-REB_RONE_EASY_STAT_DATA_URL = "https://www.reb.or.kr/r-one/portal/stat/sttsDataPreviewList.do"
+REB_RONE_OPENAPI_DATA_URL = "https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do"
 REB_RONE_APT_SALE_PRICE_STATBL_ID = "A_2024_00045"
 
 _REB_RONE_PROVINCE_BY_CODE_PREFIX = {
@@ -109,16 +108,36 @@ _REB_RONE_PROVINCE_BY_CODE_PREFIX = {
     "31": "울산",
     "36": "세종",
     "41": "경기",
-    "42": "강원",
     "43": "충북",
     "44": "충남",
-    "45": "전북",
     "46": "전남",
     "47": "경북",
     "48": "경남",
     "50": "제주",
     "51": "강원",
     "52": "전북",
+}
+
+_REB_RONE_PROVINCE_FULL_TO_SHORT = {
+    "서울특별시": "서울",
+    "부산광역시": "부산",
+    "대구광역시": "대구",
+    "인천광역시": "인천",
+    "광주광역시": "광주",
+    "대전광역시": "대전",
+    "울산광역시": "울산",
+    "세종특별자치시": "세종",
+    "경기도": "경기",
+    "강원특별자치도": "강원",
+    "강원도": "강원",
+    "충청북도": "충북",
+    "충청남도": "충남",
+    "전북특별자치도": "전북",
+    "전라북도": "전북",
+    "전라남도": "전남",
+    "경상북도": "경북",
+    "경상남도": "경남",
+    "제주특별자치도": "제주",
 }
 
 _REB_RONE_SIDO_TARGETS_BY_NAME = {
@@ -452,61 +471,70 @@ class RebRoneRegionalMapClient:
 class RebRoneMonthlyAptSalePriceIndexClient:
     def __init__(
         self,
-        fetcher: Callable[[str, int], tuple[str, str]] | None = None,
+        fetcher: PublicDataFetcher | None = None,
+        api_key: str | None = None,
         timeout_seconds: float = 20,
         latest_months: int = 13,
     ) -> None:
+        normalized_key = (api_key or "").strip()
+        if not normalized_key:
+            raise ValueError(f"{REB_RONE_OPENAPI_KEY_ENV} is required")
+        self.api_key = normalized_key
         self.timeout_seconds = timeout_seconds
         self.latest_months = max(2, latest_months)
         self.fetcher = fetcher or self._fetch
 
-    def fetch_monthly_price_index_changes(
-        self,
-        now: datetime | None = None,
-    ) -> list[RealEstateMarketFact]:
-        table_json, regional_map_json = self.fetcher(REB_RONE_EASY_STAT_PAGE_URL, self.latest_months)
-        lookup = build_reb_rone_region_lookup_from_regional_map_json(regional_map_json)
-        return parse_reb_rone_monthly_price_index_changes(
-            table_json,
-            ingested_at=now or datetime.now(timezone.utc),
-            region_lookup=lookup,
-        )
+    def fetch_monthly_price_indexes(self, now: datetime | None = None) -> list[RealEstateMarketFact]:
+        ingested_at = now or datetime.now(timezone.utc)
+        regional_map_json = self.fetcher(REB_RONE_REGIONAL_MAP_URL, _reb_rone_regional_map_params())
+        region_lookup = build_reb_rone_region_lookup_from_regional_map_json(regional_map_json)
+        latest_period = _reb_rone_latest_monthly_period_from_regional_map_json(regional_map_json)
+        facts: list[RealEstateMarketFact] = []
+        seen_provider_object_ids: set[str] = set()
+        for period_key in _month_period_window(latest_period, self.latest_months):
+            json_text = self.fetcher(REB_RONE_OPENAPI_DATA_URL, self._openapi_params(period_key))
+            for fact in parse_reb_rone_monthly_price_index_facts(
+                json_text,
+                ingested_at=ingested_at,
+                region_lookup=region_lookup,
+            ):
+                if fact.provider_object_id in seen_provider_object_ids:
+                    continue
+                facts.append(fact)
+                seen_provider_object_ids.add(fact.provider_object_id)
+        if not facts:
+            raise PublicDataProviderError("REB R-ONE monthly price index Open API contained no mapped rows")
+        return facts
 
-    def _fetch(self, url: str, latest_months: int) -> tuple[str, str]:
+    def _openapi_params(self, period_key: str) -> dict[str, str]:
+        return {
+            "KEY": self.api_key,
+            "Type": "json",
+            "STATBL_ID": REB_RONE_APT_SALE_PRICE_STATBL_ID,
+            "DTACYCLE_CD": "MM",
+            "WRTTIME_IDTFR_ID": period_key,
+            "DTADVS_CD": "OD",
+            "pIndex": "1",
+            "pSize": "1000",
+        }
+
+    def _fetch(self, url: str, params: Mapping[str, str]) -> str:
         try:
             with httpx.Client(timeout=self.timeout_seconds, follow_redirects=True) as client:
-                page_response = client.get(url)
-                page_response.raise_for_status()
-                fir_param = _reb_rone_fir_param(page_response.text)
-                params = dict(_parse_query_pairs(fir_param))
-                params["wrttimeLastestVal"] = str(latest_months)
-                data_response = client.post(
-                    REB_RONE_EASY_STAT_DATA_URL,
-                    data=params,
-                    headers={
-                        "Referer": str(page_response.url),
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                )
-                data_response.raise_for_status()
-                regional_map_response = client.post(
-                    REB_RONE_REGIONAL_MAP_URL,
-                    data={
-                        "statblId": REB_RONE_APT_SALE_PRICE_STATBL_ID,
-                        "dtacycleCd": "MM",
-                        "itmDatano": "100001",
-                        "geoCd": "10",
-                        "dtadvsCd": "PR",
-                        "itmTag": "C",
-                        "clsDatano": "",
-                    },
-                    headers={
-                        "Referer": REB_RONE_MAIN_URL,
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                )
-                regional_map_response.raise_for_status()
-            return data_response.text, regional_map_response.text
+                if url == REB_RONE_REGIONAL_MAP_URL:
+                    client.get(REB_RONE_MAIN_URL)
+                    response = client.post(
+                        url,
+                        data=params,
+                        headers={
+                            "Referer": REB_RONE_MAIN_URL,
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                    )
+                else:
+                    response = client.get(url, params=params)
+            response.raise_for_status()
+            return response.text
         except httpx.TimeoutException as exc:
             raise PublicDataProviderError(f"REB R-ONE monthly price index request failed: {url} error=timeout") from exc
         except httpx.HTTPStatusError as exc:
@@ -730,6 +758,21 @@ def build_reb_rone_regional_map_client_from_env() -> RebRoneRegionalMapClient:
     return RebRoneRegionalMapClient(timeout_seconds=timeout_seconds)
 
 
+def build_reb_rone_monthly_price_index_client_from_env() -> RebRoneMonthlyAptSalePriceIndexClient:
+    api_key = os.getenv(REB_RONE_OPENAPI_KEY_ENV) or os.getenv("REB_RONE_API_KEY")
+    timeout_seconds = float(
+        os.getenv("REALESTATE_REB_RONE_TIMEOUT_SECONDS")
+        or os.getenv("REALESTATE_PUBLIC_DATA_TIMEOUT_SECONDS")
+        or "20"
+    )
+    latest_months = int(os.getenv("REALESTATE_REB_RONE_MONTHLY_PRICE_INDEX_MONTHS") or "13")
+    return RebRoneMonthlyAptSalePriceIndexClient(
+        api_key=api_key,
+        timeout_seconds=timeout_seconds,
+        latest_months=latest_months,
+    )
+
+
 def collect_reb_rone_main_snapshot_facts(
     client: RebRoneMainSnapshotClient,
     now: datetime | None = None,
@@ -745,24 +788,11 @@ def collect_reb_rone_regional_map_facts(
     return client.fetch_regional_map(geo_cd=geo_cd, now=now)
 
 
-def build_reb_rone_monthly_price_index_client_from_env() -> RebRoneMonthlyAptSalePriceIndexClient:
-    timeout_seconds = float(
-        os.getenv("REALESTATE_REB_RONE_TIMEOUT_SECONDS")
-        or os.getenv("REALESTATE_PUBLIC_DATA_TIMEOUT_SECONDS")
-        or "20"
-    )
-    latest_months = int(os.getenv("REALESTATE_REB_RONE_MONTHLY_PRICE_INDEX_MONTHS") or "13")
-    return RebRoneMonthlyAptSalePriceIndexClient(
-        timeout_seconds=timeout_seconds,
-        latest_months=latest_months,
-    )
-
-
-def collect_reb_rone_monthly_price_index_change_facts(
+def collect_reb_rone_monthly_price_index_facts(
     client: RebRoneMonthlyAptSalePriceIndexClient,
     now: datetime | None = None,
 ) -> list[RealEstateMarketFact]:
-    return client.fetch_monthly_price_index_changes(now=now)
+    return client.fetch_monthly_price_indexes(now=now)
 
 
 def collect_molit_real_estate_market_facts(
@@ -1258,6 +1288,8 @@ def build_reb_rone_region_lookup_from_regional_map_json(
     for fact in facts:
         payload = fact.to_ingestion_dict()
         value_json = payload.get("valueJson", {})
+        if not isinstance(value_json, Mapping):
+            continue
         region_name = str(value_json.get("regionName") or "").strip()
         legal_dong_code = str(payload.get("legalDongCode") or "").strip()
         if not region_name or not legal_dong_code or region_name == "전국":
@@ -1272,140 +1304,202 @@ def build_reb_rone_region_lookup_from_regional_map_json(
     return lookup
 
 
-def parse_reb_rone_monthly_price_index_changes(
+def parse_reb_rone_monthly_price_index_facts(
     json_text: str,
     *,
     ingested_at: datetime,
     region_lookup: Mapping[tuple[str, str], Mapping[str, str | None]],
 ) -> list[RealEstateMarketFact]:
-    try:
-        payload = json.loads(json_text)
-    except json.JSONDecodeError as exc:
-        raise PublicDataProviderError("REB R-ONE monthly price index response is not JSON") from exc
-
-    rows = payload.get("DATA")
-    if not isinstance(rows, list):
-        raise PublicDataProviderError("REB R-ONE monthly price index response has no DATA rows")
-
+    rows = _reb_rone_openapi_rows(json_text, source_name="monthly price index")
     facts: list[RealEstateMarketFact] = []
     seen_provider_object_ids: set[str] = set()
     for raw_row in rows:
         if not isinstance(raw_row, Mapping):
             continue
         row = {str(key): "" if value is None else str(value) for key, value in raw_row.items()}
-        row_facts = _reb_rone_monthly_price_index_row_facts(
-            row,
-            ingested_at=ingested_at,
-            region_lookup=region_lookup,
-        )
-        for fact in row_facts:
-            if fact.provider_object_id in seen_provider_object_ids:
-                continue
-            facts.append(fact)
-            seen_provider_object_ids.add(fact.provider_object_id)
-
+        fact = _reb_rone_monthly_price_index_fact(row, ingested_at=ingested_at, region_lookup=region_lookup)
+        if fact is None or fact.provider_object_id in seen_provider_object_ids:
+            continue
+        facts.append(fact)
+        seen_provider_object_ids.add(fact.provider_object_id)
     if not facts:
-        raise PublicDataProviderError("REB R-ONE monthly price index table contained no supported rows")
+        raise PublicDataProviderError("REB R-ONE monthly price index Open API contained no mapped rows")
     return facts
 
 
-def _reb_rone_monthly_price_index_row_facts(
+def _reb_rone_monthly_price_index_fact(
     row: Mapping[str, str],
     *,
     ingested_at: datetime,
     region_lookup: Mapping[tuple[str, str], Mapping[str, str | None]],
-) -> list[RealEstateMarketFact]:
-    province_name = str(row.get("CATE1") or "").strip()
-    region_name = _reb_rone_monthly_region_name(row)
-    if not province_name or not region_name:
-        return []
+) -> RealEstateMarketFact | None:
+    stat_id = _row_field(row, "STATBL_ID", "statblId")
+    if stat_id != REB_RONE_APT_SALE_PRICE_STATBL_ID:
+        return None
+    if _row_field(row, "DTACYCLE_CD", "dtacycleCd") not in {"", "MM"}:
+        return None
+    item_name = _row_field(row, "ITM_NM", "itmNm")
+    if item_name and item_name != "지수":
+        return None
+    period_date, period_key = _reb_rone_period(_row_field(row, "WRTTIME_IDTFR_ID", "wrttimeIdtfrId"))
+    index_value = _number_from_text(_row_field(row, "DTA_VAL", "dtaVal"))
+    if index_value is None:
+        return None
 
-    target = region_lookup.get((province_name, region_name))
-    if not target:
-        return []
-
+    target = _reb_rone_monthly_target(row, region_lookup)
+    if target is None:
+        return None
     legal_dong_code = str(target.get("legalDongCode") or "").strip()
     if not legal_dong_code:
-        return []
+        return None
 
-    month_values = _reb_rone_monthly_index_values(row)
-    facts: list[RealEstateMarketFact] = []
-    for index, (period_key, index_value) in enumerate(month_values):
-        if index == 0:
-            continue
-        previous_period_key, previous_index_value = month_values[index - 1]
-        if previous_index_value is None or index_value is None or previous_index_value == 0:
-            continue
-        change_pct = round(((index_value - previous_index_value) / previous_index_value) * 100, 4)
-        observed_at, _ = _reb_rone_period(period_key)
-        provider_object_id = (
+    region_name = _reb_rone_monthly_region_name(row)
+    source_label = "한국부동산원 R-ONE 월간 아파트 매매가격지수"
+    value_json = _without_empty_values(
+        {
+            "regionName": region_name,
+            "metricName": "매매가격지수",
+            "housingType": "아파트",
+            "surveyName": "전국주택가격동향조사",
+            "value": index_value,
+            "indexValue": index_value,
+            "unit": _row_field(row, "UI_NM", "uiNm") or "지수",
+            "periodYm": period_key,
+            "sourceStatblId": stat_id,
+            "sourceLabel": source_label,
+            "sourceUrl": REB_RONE_OPENAPI_DATA_URL,
+            "raw": dict(row),
+        }
+    )
+    return RealEstateMarketFact(
+        fact_type="price_index",
+        provider="reb",
+        provider_dataset=REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID,
+        provider_object_id=(
             f"{REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID}:"
-            f"{REB_RONE_APT_SALE_PRICE_STATBL_ID}:{period_key}:{legal_dong_code}"
-        )
-        source_label = "한국부동산원 R-ONE 월간 아파트 매매가격지수"
-        facts.append(
-            RealEstateMarketFact(
-                fact_type="sale_price_index_change_pct",
-                provider="reb",
-                provider_dataset=REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID,
-                provider_object_id=provider_object_id,
-                legal_dong_code=legal_dong_code,
-                observed_at=observed_at,
-                as_of=observed_at,
-                ingested_at=ingested_at,
-                value_json=_without_empty_values(
-                    {
-                        "regionName": region_name,
-                        "provinceName": province_name,
-                        "metricName": "매매가격지수 변동률",
-                        "housingType": "아파트",
-                        "surveyName": "전국주택가격동향조사",
-                        "value": change_pct,
-                        "unit": "%",
-                        "periodYm": period_key,
-                        "previousPeriodYm": previous_period_key,
-                        "indexValue": index_value,
-                        "previousIndexValue": previous_index_value,
-                        "sourceLabel": source_label,
-                        "sourceUrl": REB_RONE_EASY_STAT_PAGE_URL,
-                        "raw": {
-                            "CATE1": row.get("CATE1"),
-                            "CATE2": row.get("CATE2"),
-                            "CATE3": row.get("CATE3"),
-                            "CATE4": row.get("CATE4"),
-                        },
-                    }
-                ),
-                target_type="region",
-                target_id=target.get("targetId"),
-                data_status="ok",
-            )
-        )
-    return facts
+            f"{stat_id}:{period_key}:{legal_dong_code}"
+        ),
+        legal_dong_code=legal_dong_code,
+        observed_at=period_date,
+        as_of=period_date,
+        ingested_at=ingested_at,
+        value_json=value_json,
+        target_type="region",
+        target_id=target.get("targetId"),
+        data_status="ok",
+    )
+
+
+def _reb_rone_openapi_rows(json_text: str, *, source_name: str) -> list[Mapping]:
+    try:
+        payload = json.loads(json_text)
+    except json.JSONDecodeError as exc:
+        raise PublicDataProviderError(f"REB R-ONE {source_name} response is not JSON") from exc
+
+    data = payload.get("SttsApiTblData")
+    if isinstance(data, list):
+        for item in data:
+            if isinstance(item, Mapping) and isinstance(item.get("row"), list):
+                return item["row"]
+    rows = payload.get("DATA")
+    if isinstance(rows, list):
+        return rows
+    result = payload.get("RESULT")
+    if isinstance(result, Mapping):
+        code = result.get("CODE") or "unknown"
+        message = result.get("MESSAGE") or "unknown provider error"
+        raise PublicDataProviderError(f"REB R-ONE {source_name} failed with {code}: {message}")
+    raise PublicDataProviderError(f"REB R-ONE {source_name} response has no rows")
+
+
+def _reb_rone_monthly_target(
+    row: Mapping[str, str],
+    region_lookup: Mapping[tuple[str, str], Mapping[str, str | None]],
+) -> Mapping[str, str | None] | None:
+    for candidate in _reb_rone_monthly_lookup_candidates(row):
+        target = region_lookup.get(candidate)
+        if target is not None:
+            return target
+    return None
+
+
+def _reb_rone_monthly_lookup_candidates(row: Mapping[str, str]) -> list[tuple[str, str]]:
+    region_name = _reb_rone_monthly_region_name(row)
+    full_name = _row_field(row, "CLS_FULLNM", "clsFullNm", "CLS_FULL_NM")
+    parts = [part.strip() for part in re.split(r"[>\s]+", full_name) if part.strip()]
+    province_names: list[str] = []
+    for part in parts:
+        province_name = _reb_rone_short_province_name(part)
+        if province_name and province_name not in province_names:
+            province_names.append(province_name)
+    direct_province = _reb_rone_short_province_name(region_name)
+    if direct_province and direct_province not in province_names:
+        province_names.append(direct_province)
+
+    region_names = [region_name]
+    if parts:
+        last_part = parts[-1]
+        if last_part not in region_names:
+            region_names.append(last_part)
+
+    candidates: list[tuple[str, str]] = []
+    for province_name in province_names:
+        for name in region_names:
+            if name:
+                candidates.append((province_name, name))
+        if region_name == province_name:
+            candidates.append((province_name, province_name))
+    return candidates
 
 
 def _reb_rone_monthly_region_name(row: Mapping[str, str]) -> str:
-    for key in ("CATE4", "CATE3", "CATE2", "CATE1"):
-        value = str(row.get(key) or "").strip()
-        if value:
-            return value
-    return ""
+    return _row_field(row, "CLS_NM", "clsNm") or _row_field(row, "CATE4", "CATE3", "CATE2", "CATE1")
 
 
-def _reb_rone_monthly_index_values(row: Mapping[str, str]) -> list[tuple[str, float | None]]:
-    values: list[tuple[str, float | None]] = []
-    for key, value in row.items():
-        match = re.match(r"COL_(\d{6})", key)
-        if not match:
-            continue
-        values.append((match.group(1), _number_from_text(value)))
-    return sorted(values, key=lambda item: item[0])
+def _reb_rone_latest_monthly_period_from_regional_map_json(json_text: str) -> str:
+    try:
+        payload = json.loads(json_text)
+    except json.JSONDecodeError as exc:
+        raise PublicDataProviderError("REB R-ONE regional map response is not JSON") from exc
+    rows = payload.get("data")
+    if not isinstance(rows, list):
+        raise PublicDataProviderError("REB R-ONE regional map response has no data rows")
+    periods = [
+        str(row.get("wrttimeIdtfrId") or "").strip()
+        for row in rows
+        if isinstance(row, Mapping) and re.fullmatch(r"\d{6}", str(row.get("wrttimeIdtfrId") or "").strip())
+    ]
+    if not periods:
+        raise PublicDataProviderError("REB R-ONE regional map response has no monthly period")
+    return max(periods)
 
 
-def _reb_rone_province_for_legal_dong_code(legal_dong_code: str) -> str | None:
-    if legal_dong_code == "00000":
-        return None
-    return _REB_RONE_PROVINCE_BY_CODE_PREFIX.get(legal_dong_code[:2])
+def _month_period_window(latest_period_key: str, count: int) -> list[str]:
+    if not re.fullmatch(r"\d{6}", latest_period_key):
+        raise PublicDataProviderError(f"unsupported REB R-ONE period label: {latest_period_key}")
+    year = int(latest_period_key[:4])
+    month = int(latest_period_key[4:])
+    periods: list[str] = []
+    for offset in range(max(1, count)):
+        current_month = month - offset
+        current_year = year
+        while current_month <= 0:
+            current_month += 12
+            current_year -= 1
+        periods.append(f"{current_year:04d}{current_month:02d}")
+    return periods
+
+
+def _reb_rone_regional_map_params(geo_cd: str = "10") -> dict[str, str]:
+    return {
+        "statblId": REB_RONE_APT_SALE_PRICE_STATBL_ID,
+        "dtacycleCd": "MM",
+        "itmDatano": "100001",
+        "geoCd": geo_cd,
+        "dtadvsCd": "PR",
+        "itmTag": "C",
+        "clsDatano": "",
+    }
 
 
 def _reb_rone_regional_map_fact(
@@ -1477,23 +1571,37 @@ def _reb_rone_legal_dong_code(geo_cd: str) -> str:
     return geo_cd
 
 
+def _reb_rone_province_for_legal_dong_code(legal_dong_code: str) -> str | None:
+    if legal_dong_code == "00000":
+        return None
+    return _REB_RONE_PROVINCE_BY_CODE_PREFIX.get(legal_dong_code[:2])
+
+
+def _reb_rone_short_province_name(value: str) -> str | None:
+    normalized = (value or "").strip()
+    if normalized in _REB_RONE_SIDO_TARGETS_BY_NAME:
+        return normalized
+    return _REB_RONE_PROVINCE_FULL_TO_SHORT.get(normalized)
+
+
+def _row_field(row: Mapping[str, str], *names: str) -> str:
+    for name in names:
+        value = row.get(name)
+        if value is not None and str(value).strip():
+            return str(value).strip()
+        lowered_name = name.lower()
+        for key, candidate in row.items():
+            if key.lower() == lowered_name and str(candidate).strip():
+                return str(candidate).strip()
+    return ""
+
+
 def _reb_rone_major_stat_args(html_text: str) -> Iterator[tuple[str, ...]]:
     pattern = re.compile(r"doEvent\.changeMajorStat\((.*?)\)", re.DOTALL)
     for match in pattern.finditer(html_text):
         parsed = _parse_js_string_args(match.group(1))
         if parsed:
             yield parsed
-
-
-def _reb_rone_fir_param(html_text: str) -> str:
-    match = re.search(r'id="firParam"[^>]*value="([^"]+)"', html_text)
-    if not match:
-        raise PublicDataProviderError("REB R-ONE easy stat page has no firParam")
-    return match.group(1)
-
-
-def _parse_query_pairs(value: str) -> list[tuple[str, str]]:
-    return urllib.parse.parse_qsl(value, keep_blank_values=True)
 
 
 def _parse_js_string_args(raw_args: str) -> tuple[str, ...]:

@@ -188,6 +188,71 @@ class RealEstateContentIntegrationTest {
         assertThat(curatedIndex).isLessThan(candidateIndex);
     }
 
+    @Test
+    void newsroomAcceptsUiPluralFeedAliases() throws Exception {
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("contentId", "content-report-ui-alias"),
+                                Map.entry("sourceId", "manual_curated:report"),
+                                Map.entry("contentType", "report"),
+                                Map.entry("title", "KB housing market report"),
+                                Map.entry("snippet", "Curated monthly report"),
+                                Map.entry("url", "https://example.com/reports/kb-202606"),
+                                Map.entry("domain", "www.kbfg.com"),
+                                Map.entry("publishedAt", "2026-06-16T00:00:00Z"),
+                                Map.entry("metricLabel", "monthly report"),
+                                Map.entry("statusLabel", "curated"),
+                                Map.entry("ingestedAt", "2026-06-16T01:00:00Z"),
+                                Map.entry("dataStatus", "curated"),
+                                Map.entry("targets", List.of())
+                        ),
+                        Map.ofEntries(
+                                Map.entry("contentId", "content-video-ui-alias"),
+                                Map.entry("sourceId", "manual_curated:youtube"),
+                                Map.entry("contentType", "video"),
+                                Map.entry("title", "Housing market video"),
+                                Map.entry("snippet", "Curated video"),
+                                Map.entry("url", "https://www.youtube.com/watch?v=demo202606"),
+                                Map.entry("domain", "www.youtube.com"),
+                                Map.entry("publishedAt", "2026-06-15T00:00:00Z"),
+                                Map.entry("metricLabel", "video"),
+                                Map.entry("statusLabel", "curated"),
+                                Map.entry("ingestedAt", "2026-06-15T01:00:00Z"),
+                                Map.entry("dataStatus", "curated"),
+                                Map.entry("targets", List.of())
+                        ),
+                        Map.ofEntries(
+                                Map.entry("contentId", "content-link-ui-alias"),
+                                Map.entry("sourceId", "manual_curated:blog"),
+                                Map.entry("contentType", "link"),
+                                Map.entry("title", "Housing market blog"),
+                                Map.entry("snippet", "Curated blog link"),
+                                Map.entry("url", "https://brunch.co.kr/@demo/1"),
+                                Map.entry("domain", "brunch.co.kr"),
+                                Map.entry("publishedAt", "2026-06-14T00:00:00Z"),
+                                Map.entry("metricLabel", "blog"),
+                                Map.entry("statusLabel", "curated"),
+                                Map.entry("ingestedAt", "2026-06-14T01:00:00Z"),
+                                Map.entry("dataStatus", "curated"),
+                                Map.entry("targets", List.of())
+                        )
+                )
+        );
+
+        ResponseEntity<String> ingest = restTemplate.postForEntity(
+                "/internal/realestate/content-items",
+                request,
+                String.class
+        );
+
+        assertThat(ingest.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(contentIdsForFeed("reports")).contains("content-report-ui-alias");
+        assertThat(contentIdsForFeed("videos")).contains("content-video-ui-alias");
+        assertThat(contentIdsForFeed("links")).contains("content-link-ui-alias");
+    }
+
     private static int indexOfContent(JsonNode items, String contentId) {
         for (int index = 0; index < items.size(); index++) {
             if (contentId.equals(items.get(index).path("contentId").asText())) {
@@ -195,5 +260,17 @@ class RealEstateContentIntegrationTest {
             }
         }
         return -1;
+    }
+
+    private List<String> contentIdsForFeed(String feed) throws Exception {
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/newsroom?feed={feed}&page=1&pageSize=100",
+                String.class,
+                feed
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode items = objectMapper.readTree(response.getBody()).path("items");
+        return items.findValuesAsText("contentId");
     }
 }

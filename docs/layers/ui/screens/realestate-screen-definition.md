@@ -105,10 +105,13 @@
   - 지역/단지 검색 placeholder
   - 검색창 아래 과한 반응 필터와 메타 칩은 표시하지 않음
 - 오늘의 부동산 브리핑
-  - 특정 지역 차트가 아니라 최근 핵심 시장 사실, 공식 지표, 일정, 뉴스/리포트 후보를 짧게 요약
-  - 항목은 소제목과 보조 설명을 나누지 않고 큰 문장 3개만 보여준다.
+  - 특정 지역 차트가 아니라 최신 저장 일일 브리핑의 `summaryHeadlines[3]`를 짧은 명사형 헤드라인으로 보여준다.
+  - 상세 본문은 `/realestate/daily-briefing`에서 `오늘의 핵심 흐름`, `주목할 지역과 이유`, `시장 변수`, `관련 뉴스·리포트`로 표시한다.
+  - 상세 본문 화면은 단순 문단 나열이 아니라 브리핑 보드로 구성한다. 상단 기준 정보, 3개 헤드라인 카드, 핵심 흐름 narrative 패널, 주목 지역 ledger, 시장 변수 list, 관련 뉴스·리포트 ledger를 분리한다.
+  - 관련 뉴스·리포트 영역은 본문 요약을 반복하지 않는다. 실제 `sourceItems`가 있으면 원문 근거 링크를 표시하고, 부족하면 뉴스룸, 리포트, 주요 일정, 전국 지도 같은 내부 확인 화면으로 연결한다.
   - `자세한 분석 보러가기` CTA는 브리핑 제목과 같은 제목선에 두고, 캐주얼한 알약보다 단정한 주요 액션 버튼으로 표시한다.
-  - 개별 항목별 바로가기는 두지 않고 `자세한 분석 보러가기` 단일 CTA로 뉴스룸/상세 분석 흐름에 진입한다.
+  - 개별 항목별 바로가기는 두지 않고 `자세한 분석 보러가기` 단일 CTA로 일일 브리핑 상세 흐름에 진입한다.
+  - 화면에는 내부 분석 렌즈용 기간 구간명을 섹션 제목으로 노출하지 않는다.
 - 지역 시장 흐름 한눈에
   - 실거래 변화, 전세 압력, 거래량, 공급/청약, 정책 민감도 구분
   - 지역별 기준 시각, 공개 지연, 핵심 변화, 근거 링크 후보
@@ -166,7 +169,8 @@
 - 타이틀: 전국 지역 흐름 지도
 - 내부 구현명, 지도 asset 출처, TopoJSON 출처 문구는 화면 헤더에 노출하지 않는다.
 - 헤더 박스는 낮은 높이로 유지하고, 설명은 한 줄 가격·거래 흐름 안내로 제한한다.
-- 헤더 액션: 기간 탭 1개월, 3개월, 6개월만 노출
+- 헤더 액션: 기간 탭 1주, 1개월, 3개월, 6개월, 1년 노출. 기본 선택은 1개월로 둔다. 주간 R-ONE 원천이 아직 적재되지 않은 target은 월간 값으로 숨겨서 대체하지 않고 `자료 없음` 또는 `공식 지수 미공표` 상태를 명확히 표시한다.
+- 지도 박스 우측에는 `UPDATE: YYYY.MM.DD` 형식의 낮은 강조 회색 배지를 둔다. 날짜는 현재 선택한 기간의 공식 period `asOf`를 우선하고, 없으면 지도 layer `asOf`로 fallback한다.
 - 헤더에는 `공공데이터 반영 · 최신 반영 · 기준 시각`처럼 긴 상태 배지를 노출하지 않는다.
 - 지도 본문: 시도별 3D heat layer
 - 지도 stage의 보조 라벨과 제목은 `전국 흐름 지도`, `전국 부동산 흐름`, `지역 상세 지도`, `{지역명} 상세 흐름`처럼 사용자용 한국어로 표시한다.
@@ -177,7 +181,9 @@
 동작:
 
 - 시도를 클릭하면 `/realestate/map/:regionId`로 이동한다.
-- 색상은 `map_layer_snapshots.change_pct`와 `confidence`로 계산한다.
+- 색상 방향은 `map_layer_snapshots.change_pct`로 계산한다. 상승은 빨강, 하락은 파랑, 거의 보합은 회색이다.
+- 색상 진하기는 현재 지도에 보이는 계산값의 기준선 대비 차이로 정한다. 전국 지도는 보이는 시도 계산값의 평균을 기준선으로, 시도 상세 지도는 선택한 시도 계산값을 기준선으로 쓰고 값이 없으면 하위 지역 평균을 쓴다.
+- 공식 상승/하락 값이 있는 지역은 세종처럼 면적이 작은 region에서도 색이 배경에 묻히지 않도록 최소 진하기를 확보한다.
 - 표본이 부족하면 색상보다 표본 부족 배지를 우선한다.
 
 ERD 매핑:
@@ -192,9 +198,10 @@ API:
 - `GET /api/realestate/map/layers?layerType=sido`
 - 응답 root: `layerType`, `asOf`, `sourceLabel`, `mapDataSource`, `dataStatus`, `stale`, `periods[]`, `targets[]`
 - `targets[].targetId`는 `real_estate_targets.id`와 같은 값이다. 지도 route는 `seoul` 같은 화면용 slug보다 `region-seoul`, `region-daejeon` 같은 DB target id를 우선 사용한다.
-- `targets[].periods.month|quarter|halfYear`는 `changePct`, `sampleCount`, `confidence`, `provider`, `asOf`, `dataStatus`, `stale`을 가진다.
+- `targets[].periods.week|month|quarter|halfYear|year`는 `changePct`, `sampleCount`, `confidence`, `provider`, `asOf`, `dataStatus`, `stale`을 가진다.
 - API가 비어 있거나 실패하면 지도 geometry fallback을 사용하되, 화면에는 `지도 레이어 수집 전/insufficient` 또는 `partial/stale` 상태를 표시한다.
-- 최신 snapshot은 backend 내부 `POST /internal/realestate/map/layer-snapshots/refresh`와 pipeline daily scheduler가 생성한다. 이 refresh는 R-ONE 가격지수 또는 실거래 market fact를 읽어 가격지도용 `map_layer_snapshots`에 저장한다.
+- 최신 snapshot은 Spring Batch `rebWeeklyPriceIndexRefreshJob`, R-ONE 월간 Open API 수집, 또는 backend 내부 `POST /internal/realestate/map/layer-snapshots/refresh`가 생성한다. 이 refresh는 저장된 R-ONE 주간/월간 아파트 매매가격지수 fact를 읽어 가격지도용 `map_layer_snapshots`에 저장한다.
+- 지도 화면은 SSE `topic=map-layers`를 받으면 전국/현재 시도 지도 API를 다시 조회해 배치 결과를 반영한다.
 - 지도 색상 API는 `seed/mock`과 `reaction snapshot` row를 가격 데이터로 취급하지 않는다. 공식 가격지수나 실거래 fact가 없으면 해당 period를 비워 두고, 화면은 검정에 가까운 회색 `공식 지수 미공표`/`자료 없음` 상태로 표시한다.
 - 커뮤니티 반응 snapshot은 지도 색상 원천이 아니라 보조 리포트와 EvidenceLog의 참고 근거로만 사용한다. 하위 지역 period snapshot이 없으면 지도 리포트의 변화율, 표본 수, 언급량, 출처 비율, 단지 후보를 임의 계산하지 않는다.
 
@@ -209,25 +216,34 @@ API:
 - 권역 상세 지도에서는 `전국 지도로 돌아가기`와 `{지역명} 전체 권역 보기` 버튼을 세로로 분리해 눌림 영역이 겹치거나 붙어 보이지 않게 한다.
 - 지도 본문: 시군구 boundary와 색상 heat layer
 - 하위 지역 버튼: 실제 시군구 중심점에 표시
+- 세종처럼 시도와 시군구가 사실상 같은 단일 행정계층은 상세 지도에서 단일 하위 region에 부모 시도 R-ONE 공식 period를 그대로 연결하고, 하위 region을 선택해도 리포트와 EvidenceLog 조회 target은 부모 `region-sejong`으로 통일한다.
 - 지도 확대 시 라벨은 지도 확대 배율과 반대로 보정해 글자가 과도하게 커지거나 흐려지지 않게 한다.
 - 경기도처럼 하위 시군구가 많아 라벨이 한 화면에 몰리는 지역은 처음부터 모든 시군구 버튼을 노출하지 않고 `북부`, `서부`, `중부`, `남부` 같은 권역 클러스터를 먼저 보여준다. `동부 1곳`처럼 단독 권역이 생기면 중부 등 인접 권역에 통합한다. 클러스터 초기 화면에서는 땅 polygon 클릭으로 개별 시군구 선택이 열리지 않아야 하며, 클러스터 버튼을 누를 때만 해당 권역 feature만 다시 투영한 권역 상세 지도로 들어간다. 그 안에서 개별 시군구 버튼을 더 크게 노출한다.
 - 인천처럼 섬과 본토 간 거리가 커서 본토가 한쪽에 몰리는 지역은 행정구역 전체 shape을 억지로 늘리거나 찌그러뜨리지 않는다. 상세 지도에서는 과도하게 먼 원거리 섬 polygon 일부만 생략하고, 남은 본토/주요 섬의 실제 위치 관계를 유지한다. 하위 지역 버튼/라벨은 수동 배치하지 않고 각 구·군 경계 내부 중심점에 둔다.
 - 하단 요약: 가장 강한 하위 지역, 하위 지역 수, 다음 단계
 - 선택 리포트 패널
   - 지역 리포트 헤더
-  - 선택한 하위 지역 `targetId` 기준 AI 근거 리포트. 하위 snapshot에 targetId가 있으면 `GET /api/realestate/targets/{targetId}/evidence-logs?limit=2`를 우선 조회하고, 없으면 상위 시도 target EvidenceLog로 fallback한다.
-  - 시장 fact 요약
-  - 출처 비중
-  - 핵심 쟁점
-  - 가격 흐름, 거래 강도, 전세 압력, 공급/청약, 정책/교통, 보조 공개 반응
-  - 단지 좌표 매핑 후보
+  - AI 핵심 브리핑. 선택한 하위 지역 `targetId` 기준 `GET /api/realestate/targets/{targetId}/evidence-logs?limit=1`을 조회하되, 첫 화면에는 raw confidence, `AI 근거`, `insufficient` 같은 내부 상태어를 노출하지 않는다. 없으면 `분석 근거 수집 전`처럼 사용자용 상태로 바꾼다.
+  - 선택 기간 등락률: 지도에 숫자를 직접 올리지 않고, `AI 분석 리포트` 본문 첫머리의 큰 수치 박스로 표시한다. 본문은 이 박스 오른쪽에서 시작하고 문장이 길어지면 박스 아래로 자연스럽게 이어진다. 박스 내부는 `최근 1개월`, `최근 1년`처럼 현재 선택 기간과 큰 등락률 숫자만 표시하고, 하단 보조 라벨은 두지 않는다. 기간 탭은 숫자와 지도 색상 렌즈만 바꾸며 리포트 본문 자체를 새로 만들지 않는다.
+  - 기대 지점/우려 지점: 대표 브리핑 카드 본문 전체 폭을 써서 각각 3줄로 보여준다. 대시보드의 지역·단지 반응 구분을 참고하되, 행동 권유가 아니라 공식 지표와 수집 상태 기준의 관찰 포인트로만 쓴다. 오른쪽 패널에서 읽기 편하도록 본문 글씨는 작은 보조 텍스트처럼 보이지 않게 한다.
+  - AI 분석 리포트: 선택 기간마다 다른 리포트를 만들지 않고, 최신 기준의 종합 평가와 판단을 짧은 본문으로 표시한다. 우측 날짜는 `리포트 업데이트 {시각}`으로 표시하고, 선택 기간의 `asOf`가 아니라 최신 EvidenceLog 또는 고정 리포트 기준일을 사용한다. 선택 기간 등락률은 본문을 보조하는 숫자 렌즈다.
+  - 관련 뉴스·리포트: 대시보드 전체 브리핑 하단처럼 가격지수, 실거래, 뉴스/리포트 원문 근거가 적재되는 ledger로 둔다. 원문이 없으면 `수집 전`, `공식 데이터 없음`, `원문 링크 적재 대기` 상태로 둔다.
+  - 지역 내 비교: 시도에서는 하위 시군구, 시군구에서는 생활권/동/단지 후보를 데이터 있는 항목만 표시
+  - 공급·정책·일정: 청약, 미분양, 통계 발표, 정책/교통 이벤트 후보
+  - 근거 로그와 한계: 첫 화면에서는 기대/우려, AI 분석 리포트, 관련 뉴스·리포트 상태에 흡수하고, 상세 확장에서는 출처, 기준 시각, 갱신 상태, 상위 지역만 반영 여부, 분석 근거 상태를 더 자세히 보여준다.
+  - 보조 반응: 공개 원문/커뮤니티 반응은 하단 참고 신호로만 표시
+  - 단지 좌표 매핑 후보. 없으면 `수집 전` 상태 유지
+  - 시각 구조: `/realestate/daily-briefing` 상세 화면의 narrative panel과 관련 근거 ledger 리듬을 참고하되 동일 컴포넌트처럼 보이지 않게 한다. 처음 보이는 오른쪽 패널은 `AI 핵심 브리핑/기대·우려`, `AI 분석 리포트/선택 기간 등락률`, `관련 뉴스·리포트`만 보여준다. 대표 브리핑 카드는 라벨과 제목을 촘촘한 한 묶음으로 두고, 아래 본문 전체 폭에 기대 지점과 우려 지점을 나란히 배치한다. 등락률은 분석 리포트 본문 첫머리의 큰 수치 박스로 두며, 지역 내 비교/공급·정책·보조 반응/단지 후보는 후속 상세 후보로 둔다.
 
 동작:
 
 - 처음 진입 시 지도는 중앙 정렬이다.
+- 외부 카드에서 특정 시군구를 바로 열 때는 `/realestate/map/:regionId?selectedTargetId=:targetId&selectedRegionCode=:geometryCode&period=week` query를 사용하고, 지도 화면은 해당 시군구 버튼을 선택한 것과 같은 지도+리포트 split 상태로 진입한다.
 - 하위 지역을 클릭하면 지도는 왼쪽으로 줄고 오른쪽에 리포트가 나타난다.
 - 리포트는 갑작스러운 밀림보다 투명도 기반으로 부드럽게 나타난다.
 - 리포트 닫기 후 다시 중앙 지도 상태로 돌아간다.
+- 리포트는 새 report 테이블을 전제로 하지 않는다. UI 우선 단계에서는 지도 layer, target market facts, timeline/content, 최신 EvidenceLog를 조합해 보여주고, backend 후속 단계에서 기존 EvidenceLog의 evidence item을 `market_fact`, `timeline_event`, `content`, `schedule`, `similar_window`, `reaction`으로 구분해 보강한다.
+- 화면 요청 중 AI를 호출하지 않는다. batch/pipeline이 만든 최신 EvidenceLog를 조회하며, 값이 없으면 `공식 데이터 없음`, `수집 전`, `상위 지역만 반영`, `공개 지연 가능` 상태로 둔다.
 
 ERD 매핑:
 
@@ -525,7 +541,7 @@ Route: `/realestate/targets/:targetId`
 - `6개월`
 - `년`
 
-지도는 현재 `1개월`, `3개월`, `6개월`을 쓴다. 부동산 공식 지표가 월간 주기로 제공되는 경우가 많으므로 period key는 `month`, `quarter`, `halfYear`를 우선 사용한다. 연간 snapshot이 필요하면 별도 `year` 산식을 추가한다.
+지도는 `1주`, `1개월`, `3개월`, `6개월`, `1년`을 쓴다. period key는 `week`, `month`, `quarter`, `halfYear`, `year`이며, 기본 선택은 `month`다. `week`는 최신 주간 지수와 직전 주간 지수 비교값이고, `month`/`quarter`/`halfYear`/`year`는 최신 월간 지수와 1/3/6/12개월 전 월간 지수 비교값이다. `week`는 월간 값으로 대체하지 않고, 해당 지수 history가 부족하면 `자료 없음` 또는 `공식 지수 미공표`로 표시한다.
 
 ### 12.3 리포트 패널
 

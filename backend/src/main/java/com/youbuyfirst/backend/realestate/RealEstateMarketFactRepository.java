@@ -153,14 +153,30 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
     @Query("""
             select fact
             from RealEstateMarketFact fact
-            where (fact.targetId = :targetId or fact.legalDongCode in :lookupCodes)
+            where fact.targetId = :targetId
               and fact.factType = :factType
               and fact.providerDataset in :providerDatasets
               and fact.observedAt <= :endDate
             order by fact.observedAt desc, fact.providerObjectId asc
             """)
-    List<RealEstateMarketFact> findLatestOfficialMapLayerFacts(
+    List<RealEstateMarketFact> findLatestOfficialMapLayerFactsByTargetId(
             @Param("targetId") String targetId,
+            @Param("factType") String factType,
+            @Param("providerDatasets") List<String> providerDatasets,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable
+    );
+
+    @Query("""
+            select fact
+            from RealEstateMarketFact fact
+            where fact.legalDongCode in :lookupCodes
+              and fact.factType = :factType
+              and fact.providerDataset in :providerDatasets
+              and fact.observedAt <= :endDate
+            order by fact.observedAt desc, fact.providerObjectId asc
+            """)
+    List<RealEstateMarketFact> findLatestOfficialMapLayerFactsByLegalDongCodeIn(
             @Param("lookupCodes") List<String> lookupCodes,
             @Param("factType") String factType,
             @Param("providerDatasets") List<String> providerDatasets,

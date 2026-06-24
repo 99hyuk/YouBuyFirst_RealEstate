@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { currentAuthUser } from '../lib/auth-session';
+
 type StatusTone = 'up' | 'down' | 'flat';
 
 type SummaryItem = {
@@ -121,6 +123,7 @@ const memoExamples: MemoExample[] = [
 ];
 
 const compareColumns = ['실거래', '전세', '공급', '일정', '근거'];
+const authUser = currentAuthUser;
 </script>
 
 <template>
@@ -131,7 +134,22 @@ const compareColumns = ['실거래', '전세', '공급', '일정', '근거'];
         <h2 id="mypage-title">내 부동산 관찰 보드</h2>
         <span>사용자가 저장한 지역을 관리하고, 지난 방문 이후 바뀐 시장 사실을 확인하는 개인화 공간입니다.</span>
       </div>
-      <button type="button" disabled>로그인 연동 준비 중</button>
+      <RouterLink
+        v-if="!authUser"
+        class="mypage-auth-action"
+        data-testid="mypage-login-link"
+        to="/auth/login"
+      >
+        로그인하고 시작
+      </RouterLink>
+      <RouterLink
+        v-else
+        class="mypage-auth-action"
+        data-testid="mypage-map-link"
+        to="/realestate/map"
+      >
+        저장 대상 찾기
+      </RouterLink>
     </section>
 
     <section class="watchlist-kpi-strip watchlist-target-grid mypage-status-strip" aria-label="마이페이지 상태 요약">
@@ -155,7 +173,7 @@ const compareColumns = ['실거래', '전세', '공급', '일정', '근거'];
         <div class="mypage-empty-card">
           <strong>저장된 지역이나 단지가 아직 없습니다</strong>
           <p>
-            로그인 기능이 연결되면 사용자가 직접 저장한 대상만 이곳에 표시합니다.
+            로그인 후 사용자가 직접 저장한 대상만 이곳에 표시합니다.
             실제 저장 목록처럼 보이는 임시 데이터는 넣지 않습니다.
           </p>
           <div class="mypage-tag-row" aria-label="저장 태그 예시">

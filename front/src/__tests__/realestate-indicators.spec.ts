@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { flushPromises, mount } from '@vue/test-utils';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +13,33 @@ import {
   mergeIndicatorFreshnessRows,
   mergeIndicatorGroups
 } from '../lib/realestate-indicators';
+import { fetchMarketDataSchedules } from '../lib/realestate-schedules';
+
+const testDir = dirname(fileURLToPath(import.meta.url));
+
+class TestEventSource {
+  static instances: TestEventSource[] = [];
+  readonly url: string;
+  private listeners = new Map<string, Array<(event: MessageEvent) => void>>();
+
+  constructor(url: string) {
+    this.url = url;
+    TestEventSource.instances.push(this);
+  }
+
+  addEventListener(type: string, listener: (event: MessageEvent) => void) {
+    this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
+  }
+
+  dispatch(type: string, payload: unknown) {
+    const event = { data: JSON.stringify(payload) } as MessageEvent;
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener(event);
+    }
+  }
+
+  close = vi.fn();
+}
 
 const mountIndicatorsPage = async (path = '/indicators') => {
   const router = createRouter({
@@ -35,6 +65,8 @@ const mountIndicatorsPage = async (path = '/indicators') => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+  TestEventSource.instances = [];
 });
 
 describe('real-estate indicators API adapter', () => {
@@ -273,33 +305,346 @@ describe('real-estate indicators API adapter', () => {
 });
 
 describe('IndicatorsPage schedule calendar', () => {
-  it('renders official schedule calendar and source links without indicator API calls', async () => {
-    const fetcher = vi.fn(async () => new Response(JSON.stringify({})));
+  it('fetches market data schedules by month for the calendar screen', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+      month: '2026-06',
+      scheduleEvents: [],
+      sourceLinks: []
+    })));
+
+    const response = await fetchMarketDataSchedules({ month: '2026-06' }, fetcher);
+
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/market-data-schedules?month=2026-06');
+    expect(response.month).toBe('2026-06');
+  });
+
+  it('renders official schedule calendar and source links from the schedule API', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+      month: '2026-06',
+      scheduleEvents: [
+        {
+          id: 'reb-r-one-weekly-2026-06-03',
+          date: '2026-06-03',
+          title: '주간 아파트 가격동향 확인',
+          category: '가격지수',
+          source: '한국부동산원 R-ONE',
+          summary: '매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.',
+          link: 'https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01',
+          tone: 'market',
+          status: '확인 예정',
+          dataStatus: 'scheduled',
+          stale: false
+        },
+        {
+          id: 'applyhome-published-2026000289',
+          date: '2026-06-23',
+          title: '신제주 동문디이스트 시그니처원Ⅱ 입주자모집공고',
+          category: '청약',
+          source: '청약Home',
+          summary: '모집공고일 2026-06-23, 청약기간 2026-07-03~2026-07-06, 당첨자 발표 2026-07-10인 청약Home 공고입니다.',
+          link: 'https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2026000289&pblancNo=2026000289',
+          tone: 'subscription',
+          status: '공표 확인',
+          dataStatus: 'published',
+          stale: false
+        }
+      ],
+      sourceLinks: [
+        {
+          id: 'reb-r-one',
+          title: '한국부동산원 R-ONE',
+          label: '가격지수·공표일정',
+          link: 'https://www.reb.or.kr/r-one/portal/main/indexPage.do',
+          status: '확인 완료',
+          stale: false
+        },
+        {
+          id: 'applyhome',
+          title: '청약Home',
+          label: '청약·분양',
+          link: 'https://applyhome.co.kr/',
+          status: '확인 완료',
+          stale: false
+        }
+      ]
+    })));
     vi.stubGlobal('fetch', fetcher);
 
     const wrapper = await mountIndicatorsPage();
 
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledWith('/api/realestate/market-data-schedules?month=2026-06');
     expect(wrapper.find('.indicator-calendar-page').exists()).toBe(true);
     expect(wrapper.text()).toContain('주요 일정');
     expect(wrapper.text()).toContain('가격지수, 실거래, 공급, 금리, 청약 일정을 캘린더로 확인합니다.');
+    expect(wrapper.text()).not.toContain('공식 통계 확인');
+    expect(wrapper.find('.calendar-primary-link').exists()).toBe(false);
     expect(wrapper.find('.calendar-agenda-panel').exists()).toBe(false);
     expect(wrapper.text()).toContain('공식 출처');
     expect(wrapper.text()).toContain('한국부동산원 R-ONE');
-    expect(wrapper.text()).toContain('국토교통부 실거래가 공개시스템');
     expect(wrapper.text()).toContain('청약Home');
-    expect(wrapper.findAll('.calendar-event-pill').length).toBeGreaterThanOrEqual(8);
-    expect(wrapper.findAll('.schedule-source-card')).toHaveLength(6);
+    expect(wrapper.findAll('.calendar-event-strip')).toHaveLength(2);
+    expect(wrapper.findAll('.calendar-event-card')).toHaveLength(2);
+    expect(wrapper.text()).not.toContain('주요 공개·점검 일정');
+    expect(wrapper.find('.calendar-tone-legend').exists()).toBe(true);
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('가격지수');
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('실거래');
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('공급');
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('금융');
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('정책');
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('청약');
+    expect(wrapper.find('.calendar-event-strip').text()).toContain('주간 아파트 가격동향 확인');
+    expect(wrapper.find('.calendar-event-strip').text()).toContain('매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.');
+    expect(wrapper.text()).toContain('매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.');
+    expect(wrapper.text()).toContain('모집공고일 2026-06-23, 청약기간 2026-07-03~2026-07-06, 당첨자 발표 2026-07-10인 청약Home 공고입니다.');
+    expect(wrapper.find('.calendar-event-strip[href]').exists()).toBe(false);
+    expect(wrapper.find('.calendar-event-card[href="https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2026000289&pblancNo=2026000289"]').exists()).toBe(true);
+    expect(wrapper.find('.calendar-event-card[href="https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01"]').exists()).toBe(true);
+    expect(wrapper.find('.calendar-event-card[href="https://applyhome.co.kr/"]').exists()).toBe(false);
+    expect(wrapper.findAll('.schedule-source-card')).toHaveLength(2);
     expect(wrapper.text()).not.toContain('지표 반영');
     expect(wrapper.text()).not.toContain('지표와 반응이 엇갈린 지역');
   });
 
+  it('refreshes the visible schedule when the batch pipeline pushes an update event', async () => {
+    vi.stubGlobal('EventSource', TestEventSource);
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        month: '2026-06',
+        scheduleEvents: [],
+        sourceLinks: []
+      })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        month: '2026-06',
+        scheduleEvents: [
+          {
+            id: 'bok-rate-2026-06-12',
+            date: '2026-06-12',
+            title: '금리·통화정책 일정 확인',
+            category: '금융',
+            source: '한국은행',
+            summary: '기준금리와 통화정책 방향을 확인합니다.',
+            link: 'https://www.bok.or.kr/',
+            tone: 'finance',
+            status: '공표 확인',
+            dataStatus: 'published',
+            stale: false
+          }
+        ],
+        sourceLinks: []
+      })));
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountIndicatorsPage();
+
+    expect(TestEventSource.instances[0]?.url).toBe('/api/realestate/batch-updates/stream');
+    expect(wrapper.text()).not.toContain('금리·통화정책 일정 확인');
+
+    TestEventSource.instances[0].dispatch('realestate-batch-update', {
+      topic: 'market-data-schedules',
+      month: '2026-06'
+    });
+    await flushPromises();
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(wrapper.findAll('.calendar-event-strip')).toHaveLength(1);
+    expect(wrapper.findAll('.calendar-event-card')).toHaveLength(1);
+    expect(wrapper.text()).toContain('금리·통화정책 일정 확인');
+    expect(wrapper.find('.calendar-event-strip').text()).toContain('기준금리와 통화정책 방향을 확인합니다.');
+  });
+
+  it('jumps from calendar events to matching list cards while list cards keep source links', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      month: '2026-06',
+      scheduleEvents: [
+        {
+          id: 'reb-r-one-weekly-2026-06-03',
+          date: '2026-06-03',
+          title: '주간 아파트 가격동향 확인',
+          category: '가격지수',
+          source: '한국부동산원 R-ONE',
+          summary: '매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.',
+          link: 'https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01',
+          tone: 'market',
+          status: '확인 예정',
+          dataStatus: 'scheduled',
+          stale: false
+        }
+      ],
+      sourceLinks: []
+    }))));
+
+    const wrapper = await mountIndicatorsPage();
+    const strip = wrapper.get('.calendar-event-strip');
+    const card = wrapper.get('[data-schedule-event-id="reb-r-one-weekly-2026-06-03"]');
+
+    expect(strip.element.tagName).toBe('BUTTON');
+    expect(strip.attributes('href')).toBeUndefined();
+    expect(card.element.tagName).toBe('A');
+    expect(card.attributes('href')).toBe('https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01');
+
+    await strip.trigger('click');
+    await flushPromises();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    expect(card.classes()).toContain('requested');
+  });
+
+  it('moves to adjacent months and refreshes the calendar and schedule list', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        month: '2026-06',
+        scheduleEvents: [
+          {
+            id: 'june-schedule',
+            date: '2026-06-12',
+            title: '6월 금리 일정 확인',
+            category: '금융',
+            source: '한국은행',
+            summary: '6월 기준금리 일정을 확인합니다.',
+            link: 'https://www.bok.or.kr/',
+            tone: 'finance',
+            status: '확인 예정',
+            dataStatus: 'scheduled',
+            stale: false
+          }
+        ],
+        sourceLinks: []
+      })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        month: '2026-07',
+        scheduleEvents: [
+          {
+            id: 'july-schedule',
+            date: '2026-07-05',
+            title: '7월 실거래 데이터 점검',
+            category: '실거래',
+            source: '국토교통부 실거래가 공개시스템',
+            summary: '7월 신고 거래 반영 여부를 확인합니다.',
+            link: 'https://rt.molit.go.kr/',
+            tone: 'deal',
+            status: '확인 예정',
+            dataStatus: 'scheduled',
+            stale: false
+          }
+        ],
+        sourceLinks: []
+      })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        month: '2026-06',
+        scheduleEvents: [
+          {
+            id: 'june-schedule',
+            date: '2026-06-12',
+            title: '6월 금리 일정 확인',
+            category: '금융',
+            source: '한국은행',
+            summary: '6월 기준금리 일정을 확인합니다.',
+            link: 'https://www.bok.or.kr/',
+            tone: 'finance',
+            status: '확인 예정',
+            dataStatus: 'scheduled',
+            stale: false
+          }
+        ],
+        sourceLinks: []
+      })));
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountIndicatorsPage();
+
+    expect(wrapper.text()).toContain('2026.06');
+    expect(wrapper.text()).toContain('6월 금리 일정 확인');
+
+    await wrapper.get('[aria-label="다음 달 일정 보기"]').trigger('click');
+    await flushPromises();
+
+    expect(fetcher).toHaveBeenLastCalledWith('/api/realestate/market-data-schedules?month=2026-07');
+    expect(wrapper.text()).toContain('2026.07');
+    expect(wrapper.text()).toContain('7월 실거래 데이터 점검');
+    expect(wrapper.text()).not.toContain('6월 금리 일정 확인');
+    expect(wrapper.findAll('.calendar-event-strip')).toHaveLength(1);
+    expect(wrapper.findAll('.calendar-event-card')).toHaveLength(1);
+
+    await wrapper.get('[aria-label="이전 달 일정 보기"]').trigger('click');
+    await flushPromises();
+
+    expect(fetcher).toHaveBeenLastCalledWith('/api/realestate/market-data-schedules?month=2026-06');
+    expect(wrapper.text()).toContain('2026.06');
+    expect(wrapper.text()).toContain('6월 금리 일정 확인');
+    expect(wrapper.text()).not.toContain('7월 실거래 데이터 점검');
+  });
+
   it('keeps legacy indicator detail routes on the schedule screen', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      month: '2026-06',
+      scheduleEvents: [],
+      sourceLinks: []
+    }))));
+
     const wrapper = await mountIndicatorsPage('/indicators/price-transaction');
 
     expect(wrapper.text()).toContain('주요 일정');
     expect(wrapper.text()).toContain('월간 일정 캘린더');
     expect(wrapper.text()).toContain('공식 출처');
     expect(wrapper.text()).not.toContain('가격 및 거래량 상세 지표');
+  });
+
+  it('docks official sources to the right half in a three-column grid', async () => {
+    const wrapper = await mountIndicatorsPage();
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(wrapper.find('.schedule-source-section').exists()).toBe(true);
+    expect(wrapper.findAll('.schedule-source-card')).toHaveLength(6);
+    expect(styles).toContain('.schedule-source-section {\n  justify-self: end;\n  width: 33.333%;');
+    expect(styles).toContain('.schedule-source-section .section-title-row {\n  justify-content: flex-end;\n  margin-bottom: 6px;\n  text-align: right;');
+    expect(styles).toContain('.schedule-source-grid {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));');
+    expect(styles).toContain('.schedule-source-card {\n  display: grid;\n  align-content: center;\n  gap: 1px;\n  min-height: 28px;\n  padding: 4px 6px;');
+  });
+
+  it('keeps calendar date schedule strips legible with neutral text and a restrained accent', async () => {
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(styles).toContain('.calendar-event-strip {\n  appearance: none;\n  display: grid;\n  grid-template-columns: 4px minmax(0, 1fr);');
+    expect(styles).toContain('  cursor: pointer;\n  font-family: inherit;');
+    expect(styles).toContain('  background: #ffffff;\n  color: #172033;');
+    expect(styles).toContain('.calendar-event-strip::before {');
+    expect(styles).toContain('.calendar-tone-legend {');
+    expect(styles).toContain('.calendar-tone-key::before {');
+    expect(styles).not.toContain('.calendar-event-strip {\n  color: var(--schedule-tone, #f97316);');
+    expect(styles).not.toContain('background: linear-gradient(\n    180deg,\n    #ffffff 0%,\n    color-mix(in srgb, var(--schedule-tone, #f97316) 7%, #ffffff) 100%\n  );');
+  });
+
+  it('marks requested schedule cards with a restrained attention animation', async () => {
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(styles).toContain('.calendar-event-card.requested {\n  animation: schedule-request-pulse 920ms ease-out;\n}');
+    expect(styles).toContain('@keyframes schedule-request-pulse {');
+  });
+
+  it('nudges month navigation glyphs into visual center inside their boxes', async () => {
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(styles).toContain('.calendar-month-nav span {\n  display: block;\n  line-height: 1;\n  transform: translateY(-1px);\n}');
+  });
+
+  it('centers the month label against the adjacent navigation boxes', async () => {
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(styles).toContain('.calendar-month-title-row h3 {\n  margin: 0;\n  line-height: 30px;\n}');
+  });
+
+  it('keeps the mobile calendar wide enough for readable schedule rows', async () => {
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(styles).toContain('  .calendar-month-card {\n    overflow-x: auto;');
+    expect(styles).toContain('  .calendar-weekdays,\n  .calendar-grid {\n    min-width: 920px;');
+    expect(styles).toContain('  .calendar-event-strip {\n    min-height: 24px;\n    padding: 3px 7px;\n    font-size: 10.5px;');
   });
 });

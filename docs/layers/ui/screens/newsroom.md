@@ -11,11 +11,11 @@
 
 ## 화면 목적
 
-대시보드에 일부만 보이는 부동산 속보, 정책·통계 리포트, 영상, 블로그·커뮤니티를 더 길게 모아봅니다. 특정 지역에 묶이지 않은 전국 이슈도 보여주되, 내용 복제 없이 제목, 출처, 시간, 간단한 지표만 보여주고 원문으로 보냅니다.
+대시보드에 일부만 보이는 부동산 속보, 정책·통계 리포트, 영상, 블로그·커뮤니티를 더 길게 모아봅니다. 뉴스룸 자체는 지역/단지 상세 화면이 아니라 전역 콘텐츠 feed입니다. 내용 복제 없이 제목, 출처, 시간, 간단한 지표만 보여주고 원문으로 보냅니다.
 
 ## 현재 섹션
 
-- 뉴스룸 제목 카드: 영어 kicker나 `콘텐츠 반영` 같은 반복 상태 pill 없이 점 아이콘 옆에 `뉴스룸` 타이틀만 단일 행으로 표시
+- 뉴스룸 상단 제목 박스: 다른 주요 화면의 page hero와 같은 `label + H2 + 짧은 설명` 형식으로 표시하되, 뉴스/콘텐츠 feed에 맞는 살구·로즈 계열 색을 사용합니다. 영어 kicker나 `콘텐츠 반영` 같은 반복 상태 pill은 넣지 않습니다.
 - 종합 화면: 뉴스, 리포트, 영상, 블로그·커뮤니티 4개 카드. 각 카드 헤더는 영어 kicker 없이 점 아이콘 옆 한글 제목으로 표시합니다. 영상과 블로그·커뮤니티도 순위가 아니라 최신 콘텐츠 목록으로 표시하며 번호를 붙이지 않음
 - 특정 feed 화면: 15개 단위 리스트. 상세 feed 헤더도 `feed list` 같은 영어 라벨 없이 선택한 한글 feed명만 표시
 - 페이지네이션: 이전, 번호, 다음
@@ -44,17 +44,20 @@
 현재 구현:
 
 - `feed=all` 종합 화면은 `news`, `report`, `video`, `link`를 각각 조회해 4개 카드가 뉴스 후보 쏠림에 밀리지 않게 합니다. 특정 feed 화면은 해당 feed만 조회합니다.
-- `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답을 지역/단지 상세의 관련 콘텐츠 카드 입력으로 사용합니다.
-- `POST /internal/realestate/content-items`는 내부 수집/수동 등록용 upsert API입니다. `reviewState=approved` target link만 공개 target content와 timeline에 노출합니다.
+- `/newsroom`은 `GET /api/realestate/newsroom?feed=&page=&pageSize=`만 읽는 전역 feed입니다. 지역/단지 매칭은 이 화면의 기본 요구가 아닙니다.
+- `POST /internal/realestate/content-items`는 내부 수집/수동 등록용 upsert API입니다. 뉴스룸 전역 콘텐츠는 `targets: []`로 저장할 수 있습니다.
+- `GET /api/realestate/targets/{targetId}/content?feed=&limit=` 응답은 지역/단지 상세의 관련 콘텐츠 카드 입력으로만 사용합니다. `reviewState=approved` target link만 공개 target content와 timeline에 노출합니다.
+- `newsroomContentRefreshJob`은 RSS/XML 같은 비정형/반정형 source에서 제목, 제한 snippet, URL, 발행시각, domain만 추출해 `content_items`에 upsert합니다. 원문 전문은 저장하지 않습니다.
+- `GET /api/realestate/batch-updates/stream`은 배치 완료 push 채널입니다. `newsroomContentRefreshJob`이 저장을 끝내면 `realestate-batch-update` 이벤트의 `topic=newsroom`을 발행하고, 프론트는 이벤트 본문을 화면 데이터로 쓰지 않고 `/api/realestate/newsroom`을 다시 조회합니다.
 - 콘텐츠 원문 전문은 저장하거나 화면에 복제하지 않고, 제목, 제한 snippet, URL, source/domain, 발행/수집 시각만 사용합니다.
 - 프론트는 `front/src/lib/realestate-content.ts`에서 화면용 `reports/videos/links` query를 백엔드 content type `report/video/link`로 변환합니다.
 - `/newsroom` 화면은 content API 응답이 있으면 live row를 표시합니다. API 요청이 성공했지만 응답이 비어 있으면 mock feed를 섞지 않고 `수집 전/insufficient` 빈 상태를 표시하며, API 실패는 `content API 오류`로 분리합니다.
-- `feed=reports`는 공식/금융/연구기관 도메인에 있는 정책·통계·리서치 자료만 우선 표시합니다. 언론 기사 안에 "보고서", "KB부동산" 같은 단어가 있어도 출처 도메인이 보고서 정본이 아니면 뉴스로 분류합니다.
-- `feed=videos`는 YouTube/youtu.be 직접 링크만 표시합니다. 검색 결과의 채용공고, 일반 기사, 외부 공유 래퍼는 영상 후보에서 제외합니다.
-- `feed=links`는 블로그, 브런치, 티스토리, 카페처럼 원문 링크 성격이 확인되는 도메인을 표시합니다. 단순 검색어에 "블로그"가 들어간 일반 뉴스는 링크로 승격하지 않습니다.
+- `feed=reports`는 KB금융/KB Think, 하나금융연구소, 우리금융경영연구소, 주택금융연구원/HF, 한국금융연구원/KIF, 건설산업연구원, 국토연구원/K-REMAP, 한국은행, HUG, 한국부동산원처럼 금융·연구·공공기관 도메인에 있는 정책·통계·리서치 자료만 우선 표시합니다. 언론 기사 안에 "보고서", "KB부동산" 같은 단어가 있어도 출처 도메인이 보고서 정본이 아니면 뉴스로 분류합니다. 배치는 기관군별 RSS 검색 source를 나눠 한 기관 결과가 전체 리포트 쿼터를 독점하지 않게 합니다.
+- `feed=videos`는 집코노미, 매부리TV, 부읽남TV, 삼프로TV, 스마트튜브, 김작가TV처럼 부동산 분석·토론·인터뷰 맥락이 있는 YouTube 채널 RSS만 수집합니다. Shorts URL은 제외하고, 공개 상세 페이지 또는 YouTube Atom의 `media:description`/`media:statistics`에서 영상 길이 600초 이상 또는 조회수 10,000회 이상 근거가 확인되는 항목만 `부동산 영상`으로 표시합니다. 제목/요약에 주제어가 부족해도 공개 YouTube 상세 메타의 `keywords`나 RSS 설명/해시태그가 부동산 주제와 맞으면 통과 후보로 볼 수 있습니다.
+- `feed=links`는 단순 검색 결과가 아니라 컬럼형 원문 출처를 우선합니다. 배치 기준은 KB Think 부동산 컬럼, 빠숑 네이버 블로그 RSS, 빌딩의 정석 네이버 RSS, Tistory 시장분석 RSS처럼 공개 RSS/XML로 확인되는 출처를 두고, 주식·강의·모집공고·매물·경매물건·홍보·액션형 추천 문구 같은 잡음은 제외합니다.
 - `feed=videos`, `feed=links`는 `1위`, `2위` 같은 순위 라벨 없이 출처 아이콘, 제목, 출처/시간/상태 메타만 보여줍니다.
 - SerpApi 결과는 관심도 점수의 원천이 아니라 최근 이슈 후보입니다. 따라서 검색 잡음으로 확인되는 채용 페이지, 구인/구직 문서, 유튜브 공유 래퍼는 화면과 신규 적재 단계 모두에서 제외합니다.
-- 지역 이슈 브리핑 MVP에서는 뉴스룸이 대시보드와 지역 상세의 근거 feed 역할을 한다. 지역 target이 연결된 콘텐츠는 상세 리포트로 보내고, target이 없지만 중요도가 높은 전국 이슈는 뉴스룸 종합 feed에 남긴다.
+- 뉴스룸 row의 favicon/source icon은 `items[].domain`을 기준으로 렌더링합니다. 배치가 source별 실제 article URL domain을 보존해야 관련 사이트 아이콘이 표시됩니다.
 
 ## 기획자 확인 필요
 
@@ -73,4 +76,9 @@
 - 2026-06-22: 뉴스룸 제목 카드의 `콘텐츠 반영/콘텐츠 확인 필요` 상태 pill을 제거하고, 데이터 상태는 카드별 빈 상태와 행 메타에서만 다룸.
 - 2026-06-22: 뉴스룸 영상, 블로그·커뮤니티 feed에서 순위 번호를 제거하고 최신 콘텐츠 목록으로 표시.
 - 2026-06-22: 뉴스룸 제목/종합 카드/상세 feed 헤더에서 영어 kicker를 제거하고, 기존 점 아이콘 옆에 한글 제목만 단일 행으로 표시.
+- 2026-06-23: 뉴스룸을 지역/단지와 무관한 전역 콘텐츠 feed로 정리하고, `newsroomContentRefreshJob`이 target link 없이 `content_items`를 채우는 기준을 추가.
+- 2026-06-23: 배치 완료 후 `/api/realestate/batch-updates/stream` SSE 이벤트를 받아 현재 뉴스룸 feed를 재조회하는 push 갱신 기준을 추가.
+- 2026-06-23: 뉴스룸 4종 feed(`news`, `report`, `video`, `link`)를 모두 `newsroomContentRefreshJob` 2시간 배치로 연결하고, 영상은 Shorts/짧은 영상/저조회수 컷, 리포트는 허용 기관 도메인 컷, 블로그·커뮤니티는 컬럼형 출처와 제외어 기준을 통과한 글만 적재하도록 기준화.
+- 2026-06-23: 리포트 source를 기관군별로 분리해 KB 쏠림을 줄이고, 블로그·커뮤니티 feed에 공개 RSS 기반 개인 컬럼 출처를 추가. YouTube 영상은 공개 상세 메타의 키워드와 Atom RSS 설명/조회수도 부동산 주제 및 긴 영상 근거로 인정하도록 기준을 확장.
+- 2026-06-24: 뉴스룸 상단 제목을 다른 주요 화면과 같은 page hero 형식으로 맞추고, 뉴스룸 전용 살구·로즈 계열 색을 적용.
 - 2026-05-18: Screen Brief 신규 작성. 4분할 종합과 query 기반 feed 상세 구조를 기준화.

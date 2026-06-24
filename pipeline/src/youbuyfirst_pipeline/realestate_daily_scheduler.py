@@ -23,14 +23,21 @@ from youbuyfirst_pipeline.realestate_recent_issues import (
     build_recent_issue_content_items,
     load_recent_issue_search_targets,
 )
+from youbuyfirst_pipeline.realestate_daily_briefing import (
+    DEFAULT_DAILY_BRIEFING_MODEL,
+    DEFAULT_DAILY_BRIEFING_PROMPT_VERSION,
+    apply_daily_briefing_llm_generation,
+    build_daily_briefing_input_pack,
+    build_rule_based_daily_briefing,
+    load_daily_briefing_curated_pack,
+)
 from youbuyfirst_pipeline.realestate_evidence import build_real_estate_evidence_logs
 from youbuyfirst_pipeline.realestate_public_data import (
-    REB_RONE_MAIN_SNAPSHOT_DATASET_ID,
     REB_RONE_MONTHLY_APT_SALE_PRICE_INDEX_DATASET_ID,
     build_reb_rone_main_snapshot_client_from_env,
     build_reb_rone_monthly_price_index_client_from_env,
     collect_reb_rone_main_snapshot_facts,
-    collect_reb_rone_monthly_price_index_change_facts,
+    collect_reb_rone_monthly_price_index_facts,
 )
 
 logger = logging.getLogger(__name__)
@@ -93,6 +100,15 @@ class RealEstateEvidenceLogRefreshResult:
     timeline_event_count: int
     content_item_count: int
     similar_window_count: int = 0
+    llm_error_count: int = 0
+
+
+@dataclass(frozen=True)
+class RealEstateDailyBriefingRefreshResult:
+    status: str
+    briefing_count: int
+    candidate_count: int
+    source_item_count: int
     llm_error_count: int = 0
 
 
@@ -555,6 +571,116 @@ class RealEstateEvidenceLogRefreshJob:
             return []
 
 
+class RealEstateDailyBriefingRefreshJob:
+    def __init__(
+        self,
+        *,
+        client: SpringIngestionClient,
+        curated_pack_path: str | Path | None = None,
+        llm_generator: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+        model_name: str = DEFAULT_DAILY_BRIEFING_MODEL,
+        prompt_version: str = DEFAULT_DAILY_BRIEFING_PROMPT_VERSION,
+        market_fact_limit: int = 40,
+        map_target_limit: int = 30,
+        content_limit: int = 40,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
+        self.client = client
+        self.curated_pack_path = curated_pack_path
+        self.llm_generator = llm_generator
+        self.model_name = model_name
+        self.prompt_version = prompt_version
+        self.market_fact_limit = market_fact_limit
+        self.map_target_limit = map_target_limit
+        self.content_limit = content_limit
+        self.clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def run_once(self) -> RealEstateDailyBriefingRefreshResult:
+        generated_at = self.clock()
+        market_facts = self._market_facts()
+        map_targets = self._map_targets()
+        content_items = self._content_items()
+        curated_items = load_daily_briefing_curated_pack(self.curated_pack_path)
+        input_pack = build_daily_briefing_input_pack(
+            generated_at=generated_at,
+            market_facts=market_facts,
+            map_targets=map_targets,
+            content_items=content_items,
+            curated_items=curated_items,
+        )
+        if not input_pack["candidates"] and not input_pack["sourceItems"]:
+            return RealEstateDailyBriefingRefreshResult(
+                status="EMPTY",
+                briefing_count=0,
+                candidate_count=0,
+                source_item_count=0,
+            )
+
+        llm_error_count = 0
+        try:
+            if self.llm_generator is None:
+                briefing = build_rule_based_daily_briefing(
+                    input_pack,
+                    model_name="rule-based",
+                    prompt_version=self.prompt_version,
+                )
+            else:
+                briefing = apply_daily_briefing_llm_generation(
+                    input_pack,
+                    self.llm_generator(input_pack),
+                    model_name=self.model_name,
+                    prompt_version=self.prompt_version,
+                )
+        except Exception:
+            llm_error_count = 1
+            logger.exception("real-estate daily briefing LLM generation failed; publishing rule-based fallback")
+            briefing = build_rule_based_daily_briefing(
+                input_pack,
+                model_name="rule-based",
+                prompt_version=self.prompt_version,
+            )
+
+        self.client.publish_real_estate_daily_briefings([briefing])
+        return RealEstateDailyBriefingRefreshResult(
+            status="PARTIAL" if llm_error_count else "OK",
+            briefing_count=1,
+            candidate_count=len(input_pack["candidates"]),
+            source_item_count=len(input_pack["sourceItems"]),
+            llm_error_count=llm_error_count,
+        )
+
+    def _market_facts(self) -> list[dict[str, Any]]:
+        try:
+            return self.client.list_real_estate_market_facts(
+                legal_dong_code="00000",
+                limit=self.market_fact_limit,
+            )
+        except Exception:
+            logger.exception("real-estate daily briefing failed to load national market facts")
+            return []
+
+    def _map_targets(self) -> list[dict[str, Any]]:
+        try:
+            return self.client.list_real_estate_map_layer_targets(
+                layer_type="sido",
+                period="month",
+                limit=self.map_target_limit,
+            )
+        except Exception:
+            logger.exception("real-estate daily briefing failed to load map layer targets")
+            return []
+
+    def _content_items(self) -> list[dict[str, Any]]:
+        list_newsroom_items = getattr(self.client, "list_real_estate_newsroom_items", None)
+        if not callable(list_newsroom_items):
+            return []
+        try:
+            return list_newsroom_items(feed="all", page_size=self.content_limit)
+        except Exception:
+            logger.exception("real-estate daily briefing failed to load newsroom items")
+            return []
+
+
 class RealEstateRecentIssuesRefreshJob:
     def __init__(
         self,
@@ -976,10 +1102,10 @@ def _collect_reb_rone_main_snapshot_facts() -> Sequence[object]:
 
 def _collect_reb_rone_official_stats_facts() -> Sequence[object]:
     main_provider = build_reb_rone_main_snapshot_client_from_env()
-    monthly_provider = build_reb_rone_monthly_price_index_client_from_env()
+    monthly_price_index_provider = build_reb_rone_monthly_price_index_client_from_env()
     return [
         *collect_reb_rone_main_snapshot_facts(main_provider),
-        *collect_reb_rone_monthly_price_index_change_facts(monthly_provider),
+        *collect_reb_rone_monthly_price_index_facts(monthly_price_index_provider),
     ]
 
 

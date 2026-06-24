@@ -3,7 +3,7 @@ import { geoContains, geoMercator, geoPath } from 'd3-geo';
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry, Position } from 'geojson';
 import { feature as topojsonFeature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
-import { computed, onMounted, reactive, ref, shallowRef, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import mapFixture from '../fixtures/realestate-map-targets.json';
@@ -11,12 +11,19 @@ import transactionRegionData from '../fixtures/transaction-regions.json';
 import municipalityTopologyUrl from '../fixtures/skorea-municipalities-2018-topo-simple.json?url';
 import koreaProvincesTopo from '../fixtures/skorea-provinces-2018-topo-simple.json';
 import {
+  buildMapHeatScale,
   fetchRealEstateMapLayer,
+  mapHeatColor,
+  mapHeatTone,
   type PeriodKey,
   type RealEstateMapLayerPeriod,
   type RealEstateMapLayerResponse,
   type RealEstateMapLayerTarget
 } from '../lib/realestate-map';
+import {
+  subscribeRealEstateBatchUpdates,
+  type BatchUpdateSubscription
+} from '../lib/realestate-batch-updates';
 import {
   fetchRealEstateTargetEvidenceLogs,
   type RealEstateEvidenceItem,
@@ -35,6 +42,7 @@ type MapTarget = FixtureMapTarget & {
   asOf?: string | null;
   dataStatus?: string | null;
   layerPeriods?: Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>;
+  periodChanges: Partial<Record<PeriodKey, number>>;
   provider?: string | null;
   sourceLabel?: string | null;
   stale?: boolean;
@@ -79,24 +87,22 @@ type SubregionCluster = {
   id: string;
   label: string;
 };
-type IssueCard = {
-  detail: string;
-  label: string;
-  risk: string;
-};
-
 const route = useRoute();
 const router = useRouter();
 
 const periodOptions: { id: PeriodKey; label: string }[] = [
+  { id: 'week', label: '1주' },
   { id: 'month', label: '1개월' },
   { id: 'quarter', label: '3개월' },
-  { id: 'halfYear', label: '6개월' }
+  { id: 'halfYear', label: '6개월' },
+  { id: 'year', label: '1년' }
 ];
 const periodLabelById: Record<PeriodKey, string> = {
+  week: '최근 1주',
   month: '최근 1개월',
   quarter: '최근 3개월',
-  halfYear: '최근 6개월'
+  halfYear: '최근 6개월',
+  year: '최근 1년'
 };
 const metricLabels: { key: ReportKey; label: string }[] = [
   { label: '가격 흐름', key: 'priceFlow' },
@@ -114,6 +120,7 @@ const reportOpening = ref(false);
 const reportSettled = ref(true);
 let reportOpeningTimer: number | undefined;
 let reportSettledTimer: number | undefined;
+let batchUpdateSubscription: BatchUpdateSubscription | null = null;
 
 const targets = reactive<MapTarget[]>(
   mapFixture.targets.map((target) => ({
@@ -143,6 +150,7 @@ const currentMapSize = computed(() => (selectedRegion.value ? detailMapSize : na
 const minMapZoom = 1;
 const maxMapZoom = 3.2;
 const clusteredSubregionRegionCodes = new Set(['31']);
+const parentOnlyReportTargetIds = new Set(['region-sejong']);
 const gyeonggiSubregionClusterByCode: Record<string, 'center' | 'north' | 'south' | 'west'> = {
   '31011': 'center',
   '31012': 'center',
@@ -409,6 +417,16 @@ const labelNudgeByRegionId: Record<string, { x: number; y: number }> = {
 };
 
 const routeRegionId = computed(() => String(route.params.regionId ?? '').toLowerCase());
+const queryStringValue = (value: unknown) => {
+  const firstValue = Array.isArray(value) ? value[0] : value;
+  return typeof firstValue === 'string' ? firstValue : '';
+};
+const routeSelectedTargetId = computed(() => queryStringValue(route.query.selectedTargetId));
+const routeSelectedRegionCode = computed(() => queryStringValue(route.query.selectedRegionCode));
+const routeSelectedPeriod = computed<PeriodKey | null>(() => {
+  const period = queryStringValue(route.query.period) as PeriodKey;
+  return periodOptions.some((option) => option.id === period) ? period : null;
+});
 const selectedRegion = computed(() => targetByRouteId.value.get(routeRegionId.value) ?? null);
 const layoutMode = computed(() => (selectedReport.value ? 'split' : 'centered'));
 const pageTitle = computed(() => (selectedRegion.value ? `${selectedRegion.value.name} 상세 흐름 지도` : '전국 지역 흐름 지도'));
@@ -544,9 +562,11 @@ const transactionMapLabel = computed(() => {
   const regionLabel = selectedSubregion.value?.name ?? selectedRegion.value?.name ?? '';
   return hasTransactionData.value ? `${regionLabel} 실거래 지도` : '실거래 정보 없음';
 });
+const targetPeriodChangeValue = (target: MapTarget, period: PeriodKey = activePeriod.value) =>
+  target.periodChanges[period] ?? 0;
 const strongestRegion = computed(() =>
   [...targets].sort(
-    (left, right) => Math.abs(right.periodChanges[activePeriod.value]) - Math.abs(left.periodChanges[activePeriod.value])
+    (left, right) => Math.abs(targetPeriodChangeValue(right)) - Math.abs(targetPeriodChangeValue(left))
   )[0]
 );
 const strongestSubregion = computed(() =>
@@ -573,15 +593,21 @@ const usableMapPeriod = (period?: RealEstateMapLayerPeriod | null) => {
 const periodChange = (target: MapTarget) => usableMapPeriod(targetPeriodMeta(target))?.changePct ?? 0;
 const targetSampleCount = (target: MapTarget) => usableMapPeriod(targetPeriodMeta(target))?.sampleCount ?? 0;
 const targetConfidence = (target: MapTarget) => usableMapPeriod(targetPeriodMeta(target))?.confidence ?? 0;
+const subregionLayerTargetForFeature = (feature: SubregionFeature) =>
+  subregionLayerByCode.value.get(feature.code) ?? null;
 const subregionLayerPeriod = (feature: SubregionFeature, period: PeriodKey = activePeriod.value) =>
-  subregionLayerByCode.value.get(feature.code)?.periods?.[period] ?? null;
+  subregionLayerTargetForFeature(feature)?.periods?.[period] ?? null;
 const effectiveSubregionPeriod = (feature: SubregionFeature, period: PeriodKey = activePeriod.value) =>
   usableMapPeriod(subregionLayerPeriod(feature, period));
 const hasSubregionPeriod = (feature: SubregionFeature, period: PeriodKey = activePeriod.value) =>
   Boolean(effectiveSubregionPeriod(feature, period));
 const isSubregionUnavailable = (feature: SubregionFeature) => !hasSubregionPeriod(feature);
 const formatChange = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
-const formatEvidenceConfidence = (value?: number | null) => `${Math.round((value ?? 0) * 100)}%`;
+const confidencePercent = (value?: number | null) => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.round(value <= 1 ? value * 100 : value);
+};
+const formatEvidenceConfidence = (value?: number | null) => `${confidencePercent(value)}%`;
 const formatMapTimestamp = (value?: string | null) => {
   if (!value) return '기준 시각 확인 필요';
   const parsed = new Date(value);
@@ -596,6 +622,18 @@ const formatMapTimestamp = (value?: string | null) => {
     minute: '2-digit',
     hour12: false
   }).format(parsed)} KST`;
+};
+const formatMapUpdateDate = (value?: string | null) => {
+  if (!value) return '확인 필요';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(parsed).replace(/\.\s?/g, '.').replace(/\.$/, '');
 };
 const mapEvidenceQualityLabel = (quality?: string | null) => mapDataStatusLabel(quality);
 const displayMapEvidenceCopy = (text?: string | null) =>
@@ -615,11 +653,7 @@ const displayMapEvidenceCopy = (text?: string | null) =>
     .replace(/\blow_sample\b/g, '표본 부족')
     .replace(/\bsource_skewed\b/g, '출처 편중')
     .replace(/\bstale\b/g, '갱신 지연');
-const changeTone = (value: number) => {
-  if (value > 0.04) return 'up';
-  if (value < -0.04) return 'down';
-  return 'flat';
-};
+const changeTone = (value: number) => mapHeatTone(value);
 const mapDataStatusLabel = (status?: string | null) => {
   const normalized = (status ?? '').toLowerCase();
   if (normalized === 'ok') return '공공데이터 반영';
@@ -647,15 +681,31 @@ const mapSourceLabel = (source?: string | null) => {
   };
   return labels[normalized] ?? normalized.replace(/_/g, ' ');
 };
-const heatColor = (value: number) => {
-  const intensity = Math.min(1, Math.max(0.12, Math.abs(value) / 0.65));
-  if (value > 0.04) return `rgba(255, 54, 88, ${0.3 + intensity * 0.66})`;
-  if (value < -0.04) return `rgba(42, 125, 255, ${0.28 + intensity * 0.62})`;
-  return 'rgba(126, 143, 166, 0.42)';
-};
 const unpublishedHeatColor = 'rgba(10, 15, 24, 0.82)';
 const unpublishedGlowColor = 'rgba(4, 8, 14, 0.72)';
 const missingHeatColor = 'rgba(126, 143, 166, 0.18)';
+const nationalHeatScale = computed(() =>
+  buildMapHeatScale(
+    mapFeatures
+      .map((feature) => usableMapPeriod(targetPeriodMeta(feature.target))?.changePct)
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+  )
+);
+const selectedRegionHeatBaseline = computed(() =>
+  selectedRegion.value ? usableMapPeriod(targetPeriodMeta(selectedRegion.value))?.changePct : undefined
+);
+const subregionHeatScale = computed(() =>
+  buildMapHeatScale(
+    subregionFeatures.value
+      .map((feature) => effectiveSubregionPeriod(feature)?.changePct)
+      .filter((value): value is number => typeof value === 'number' && Number.isFinite(value)),
+    selectedRegionHeatBaseline.value
+  )
+);
+const nationalRegionHeatColor = (target: MapTarget) => {
+  const period = usableMapPeriod(targetPeriodMeta(target));
+  return period ? mapHeatColor(period.changePct, nationalHeatScale.value) : missingHeatColor;
+};
 const subregionPeriodChange = (feature: SubregionFeature, period: PeriodKey = activePeriod.value) => {
   const livePeriod = effectiveSubregionPeriod(feature, period);
   if (livePeriod) return livePeriod.changePct;
@@ -668,14 +718,35 @@ const subregionSampleCount = (feature: SubregionFeature) => {
 };
 const subregionConfidence = (feature: SubregionFeature) =>
   effectiveSubregionPeriod(feature)?.confidence ?? 0;
-const labelButtonStyle = (feature: MapFeature) => ({
-  left: `${((feature.label.x + (labelNudgeByRegionId[feature.target.id]?.x ?? 0)) / nationalMapSize.width) * 100}%`,
-  top: `${((feature.label.y + (labelNudgeByRegionId[feature.target.id]?.y ?? 0)) / nationalMapSize.height) * 100}%`
-});
-const subregionButtonStyle = (feature: SubregionFeature) => ({
-  left: `${(feature.label.x / detailMapSize.width) * 100}%`,
-  top: `${(feature.label.y / detailMapSize.height) * 100}%`
-});
+const mapTransformOrigin = { x: 50, y: 54 };
+const mapLabelPositionStyle = (
+  point: { x: number; y: number },
+  size: { height: number; width: number }
+) => {
+  const leftPct = (point.x / size.width) * 100;
+  const topPct = (point.y / size.height) * 100;
+
+  if (!isMapZoomed.value) {
+    return {
+      left: `${leftPct}%`,
+      top: `${topPct}%`
+    };
+  }
+
+  const zoom = Math.max(mapViewport.scale, 1);
+  const zoomedLeftPct = mapTransformOrigin.x + (leftPct - mapTransformOrigin.x) * zoom;
+  const zoomedTopPct = mapTransformOrigin.y + (topPct - mapTransformOrigin.y) * zoom;
+
+  return {
+    left: `calc(${zoomedLeftPct.toFixed(3)}% + ${mapViewport.panX.toFixed(1)}px)`,
+    top: `calc(${zoomedTopPct.toFixed(3)}% + ${mapViewport.panY.toFixed(1)}px)`
+  };
+};
+const labelButtonStyle = (feature: MapFeature) => mapLabelPositionStyle({
+  x: feature.label.x + (labelNudgeByRegionId[feature.target.id]?.x ?? 0),
+  y: feature.label.y + (labelNudgeByRegionId[feature.target.id]?.y ?? 0)
+}, nationalMapSize);
+const subregionButtonStyle = (feature: SubregionFeature) => mapLabelPositionStyle(feature.label, detailMapSize);
 const shortRegionName = (name: string) =>
   name
     .replace(/특별자치도$/, '')
@@ -750,12 +821,12 @@ const subregionClusters = computed<SubregionCluster[]>(() => {
     })
     .sort((left, right) => left.center.y - right.center.y || left.center.x - right.center.x);
 });
-const subregionClusterButtonStyle = (cluster: SubregionCluster) => ({
-  left: `${((cluster.center.x + (subregionClusterNudgeById[cluster.id]?.x ?? 0)) / detailMapSize.width) * 100}%`,
-  top: `${((cluster.center.y + (subregionClusterNudgeById[cluster.id]?.y ?? 0)) / detailMapSize.height) * 100}%`
-});
+const subregionClusterButtonStyle = (cluster: SubregionCluster) => mapLabelPositionStyle({
+  x: cluster.center.x + (subregionClusterNudgeById[cluster.id]?.x ?? 0),
+  y: cluster.center.y + (subregionClusterNudgeById[cluster.id]?.y ?? 0)
+}, detailMapSize);
 const firstPeriod = (periods: Partial<Record<PeriodKey, RealEstateMapLayerPeriod>>) =>
-  periods.month ?? periods.quarter ?? periods.halfYear ?? Object.values(periods)[0] ?? null;
+  periods.week ?? periods.month ?? periods.quarter ?? periods.halfYear ?? periods.year ?? Object.values(periods)[0] ?? null;
 const mapFeatureChangeLabel = (target: MapTarget) => {
   const period = usableMapPeriod(targetPeriodMeta(target));
   return period ? formatChange(period.changePct) : '자료 없음';
@@ -766,17 +837,31 @@ const subregionChangeLabel = (feature: SubregionFeature) => {
 };
 const subregionHeatColor = (feature: SubregionFeature) => {
   const period = effectiveSubregionPeriod(feature);
-  return period ? heatColor(period.changePct) : unpublishedHeatColor;
+  return period ? mapHeatColor(period.changePct, subregionHeatScale.value) : unpublishedHeatColor;
 };
 const subregionGlowColor = (feature: SubregionFeature) =>
   hasSubregionPeriod(feature) ? subregionHeatColor(feature) : unpublishedGlowColor;
-const subregionRepresentativePeriod = computed(() => {
-  for (const layerTarget of subregionLayerByCode.value.values()) {
-    const period = layerTarget.periods?.[activePeriod.value] ?? firstPeriod(layerTarget.periods ?? {});
+const nationalRepresentativePeriod = computed(() => {
+  for (const target of targets) {
+    const period = usableMapPeriod(targetPeriodMeta(target));
     if (period) return period;
   }
 
   return null;
+});
+const subregionRepresentativePeriod = computed(() => {
+  for (const layerTarget of subregionLayerByCode.value.values()) {
+    const period = usableMapPeriod(layerTarget.periods?.[activePeriod.value]);
+    if (period) return period;
+  }
+
+  return null;
+});
+const mapUpdateBadgeLabel = computed(() => {
+  const asOf = selectedRegion.value
+    ? subregionRepresentativePeriod.value?.asOf
+    : nationalRepresentativePeriod.value?.asOf;
+  return `UPDATE: ${formatMapUpdateDate(asOf ?? mapLayerMeta.asOf)}`;
 });
 const applyTargetLayer = (target: MapTarget, layerTarget: RealEstateMapLayerTarget) => {
   target.targetId = layerTarget.targetId;
@@ -830,6 +915,25 @@ const refreshNationalMapLayer = async () => {
     mapLayerLoadState.value = 'fallback';
   }
 };
+const normalizeGeometryCode = (value?: string | null) => {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  return trimmed.match(/\d{5}$/)?.[0] ?? trimmed;
+};
+const subregionLayerFeatureCodes = (target: RealEstateMapLayerTarget) =>
+  Array.from(new Set([normalizeGeometryCode(target.geometryId), normalizeGeometryCode(target.regionCode)].filter(Boolean) as string[]));
+const buildSubregionLayerIndex = (targets: RealEstateMapLayerTarget[]) => {
+  const index = new Map<string, RealEstateMapLayerTarget>();
+
+  for (const target of targets) {
+    for (const code of subregionLayerFeatureCodes(target)) {
+      index.set(code, target);
+    }
+  }
+
+  return index;
+};
 const refreshSubregionMapLayer = async (region: MapTarget | null) => {
   if (!region) {
     subregionLayerByCode.value = new Map();
@@ -840,7 +944,7 @@ const refreshSubregionMapLayer = async (region: MapTarget | null) => {
   subregionLayerLoadState.value = 'loading';
   try {
     const layer = await fetchRealEstateMapLayer({ layerType: 'sigungu', parentTargetId: region.targetId });
-    subregionLayerByCode.value = new Map(layer.targets.map((target) => [target.regionCode, target]));
+    subregionLayerByCode.value = buildSubregionLayerIndex(layer.targets);
     subregionLayerLoadState.value = layer.targets.length ? 'live' : 'fallback';
   } catch {
     subregionLayerByCode.value = new Map();
@@ -889,70 +993,20 @@ const subregionLayerStatusText = computed(() => {
   return '하위 레이어 수집 전/insufficient';
 });
 
-const issueCopy: Record<string, IssueCard> = {
-  GTX: {
-    label: '교통 기대',
-    detail: 'GTX와 광역 교통망 이슈가 출퇴근 시간 단축 기대와 함께 확산됩니다.',
-    risk: '개통 시점 지연과 역 접근성 차이를 분리해서 봐야 합니다.'
-  },
-  전세: {
-    label: '전세 압력',
-    detail: '전세 매물 감소 체감과 전세가 방어 여부가 커뮤니티에서 반복됩니다.',
-    risk: '실거래 공개 지연 때문에 체감과 신고가를 분리해야 합니다.'
-  },
-  정비사업: {
-    label: '정비사업 기대',
-    detail: '재건축·재개발·정비구역 별칭이 늘며 장기 기대가 붙는 흐름입니다.',
-    risk: '사업 단계가 낮은 기대 언급은 가격 사실로 보지 않습니다.'
-  },
-  '대출 규제': {
-    label: '정책 민감도',
-    detail: '대출 한도와 금리 부담을 두고 관망 댓글이 가격 기대를 압박합니다.',
-    risk: '정책 발표 전후로 반응이 급변할 수 있습니다.'
-  },
-  공급: {
-    label: '공급 부담',
-    detail: '입주 물량과 매물 누적 체감이 가격 반응을 약하게 만드는 축입니다.',
-    risk: '권역 전체보다 생활권 단위로 쪼개서 봐야 합니다.'
-  },
-  매물: {
-    label: '매물 체감',
-    detail: '호가와 매물 증가 체감 사이의 간격을 확인해야 하는 구간입니다.',
-    risk: '호가·매물 데이터는 출처 계약 전까지 실시간 확인이 필요합니다.'
-  },
-  교통: {
-    label: '교통 이벤트',
-    detail: '철도·도로·환승 개선 기대가 특정 생활권 언급량을 바꾸고 있습니다.',
-    risk: '발표와 착공, 개통은 시장 반응 강도가 다릅니다.'
-  },
-  학군: {
-    label: '학군 수요',
-    detail: '학군·생활 인프라 언급이 전세와 매매 반응을 같이 자극합니다.',
-    risk: '계절성과 입학 수요 효과를 분리해야 합니다.'
-  },
-  '입주 물량': {
-    label: '입주 물량',
-    detail: '신규 입주는 전세 매물 출회와 함께 체감에 크게 반영됩니다.',
-    risk: '입주는 동·단지 단위 확인이 필요합니다.'
-  },
-  '표본 부족': {
-    label: '표본 부족',
-    detail: '거래 표본이 얇아 색상보다 갱신 지연·신뢰도 배지를 먼저 봐야 합니다.',
-    risk: '작은 변동률을 방향성으로 해석하지 않습니다.'
-  }
-};
-const issueCard = (issue: string): IssueCard =>
-  issueCopy[issue] ?? {
-    label: issue,
-    detail: `${issue} 이슈가 지역 반응의 설명 변수로 관찰됩니다.`,
-    risk: '커뮤니티 반응과 시장 사실을 분리해서 확인해야 합니다.'
-  };
-const selectedIssueCards = computed(() => selectedReport.value?.issues.map(issueCard) ?? []);
 const selectedEvidenceLayerTarget = computed(() =>
-  selectedSubregion.value ? subregionLayerByCode.value.get(selectedSubregion.value.code) ?? null : null
+  selectedSubregion.value ? subregionLayerTargetForFeature(selectedSubregion.value) : null
+);
+const selectedReportUsesParentTarget = computed(() =>
+  Boolean(
+    selectedRegion.value
+    && selectedSubregion.value
+    && parentOnlyReportTargetIds.has(selectedRegion.value.targetId)
+  )
 );
 const selectedEvidenceTargetId = computed(() =>
-  selectedEvidenceLayerTarget.value?.targetId ?? selectedRegion.value?.targetId ?? null
+  selectedReportUsesParentTarget.value
+    ? selectedRegion.value?.targetId ?? null
+    : selectedEvidenceLayerTarget.value?.targetId ?? selectedRegion.value?.targetId ?? null
 );
 const latestMapEvidenceLog = computed(() => mapEvidenceLogs.value[0] ?? null);
 const mapEvidenceStatusText = computed(() => {
@@ -973,19 +1027,42 @@ const selectedReport = computed(() => {
 
   const feature = selectedSubregion.value;
   const target = selectedRegion.value;
-  const subjectName = feature?.name ?? target.name;
-  const subjectCode = feature?.code ?? target.regionCode;
+  const usesParentTarget = selectedReportUsesParentTarget.value;
+  const subjectName = usesParentTarget ? target.name : feature?.name ?? target.name;
+  const subjectCode = usesParentTarget ? target.regionCode : feature?.code ?? target.regionCode;
   const change = feature ? subregionPeriodChange(feature) : periodChange(target);
   const sampleCount = feature ? subregionSampleCount(feature) : targetSampleCount(target);
   const confidence = feature ? subregionConfidence(feature) : targetConfidence(target);
-  const confidencePct = Math.round(confidence * 100);
+  const confidencePct = confidencePercent(confidence);
   const directSubregionPeriod = feature ? usableMapPeriod(subregionLayerPeriod(feature)) : null;
   const livePeriod = feature ? effectiveSubregionPeriod(feature) : usableMapPeriod(targetPeriodMeta(target));
+  const reportBasePeriod = usesParentTarget || !feature
+    ? usableMapPeriod(targetPeriodMeta(target, 'month'))
+      ?? usableMapPeriod(targetPeriodMeta(target, 'quarter'))
+      ?? usableMapPeriod(targetPeriodMeta(target, 'halfYear'))
+      ?? usableMapPeriod(targetPeriodMeta(target, 'year'))
+      ?? usableMapPeriod(targetPeriodMeta(target, 'week'))
+    : usableMapPeriod(subregionLayerPeriod(feature, 'month'))
+      ?? usableMapPeriod(subregionLayerPeriod(feature, 'quarter'))
+      ?? usableMapPeriod(subregionLayerPeriod(feature, 'halfYear'))
+      ?? usableMapPeriod(subregionLayerPeriod(feature, 'year'))
+      ?? usableMapPeriod(subregionLayerPeriod(feature, 'week'));
   const hasLivePeriod = Boolean(livePeriod);
   const isDerivedSubregionPeriod = Boolean(feature && livePeriod && !directSubregionPeriod);
+  const sourceLabel = livePeriod ? mapSourceLabel(livePeriod.provider ?? livePeriod.sourceLabel) : '출처 확인 필요';
+  const dataStatusLabel = mapDataStatusLabel(livePeriod?.dataStatus) ?? '확인 필요';
+  const asOfLabel = formatMapTimestamp(livePeriod?.asOf);
+  const reportUpdatedAtLabel = formatMapTimestamp(latestMapEvidenceLog.value?.asOf ?? reportBasePeriod?.asOf ?? livePeriod?.asOf);
+  const freshnessLabel = livePeriod
+    ? isDerivedSubregionPeriod
+      ? '상위 지역만 반영'
+      : livePeriod.stale
+        ? '공개 지연 가능'
+        : '최신 반영'
+    : '수집 전';
   const layerStatus = livePeriod
-    ? `${mapSourceLabel(livePeriod.provider ?? livePeriod.sourceLabel)} · ${mapDataStatusLabel(livePeriod.dataStatus)} · ${livePeriod.stale ? '갱신 지연' : '최신 반영'}`
-    : '시장 사실 수집 전/insufficient';
+    ? `${sourceLabel} · ${dataStatusLabel} · ${freshnessLabel}`
+    : '시장 사실 수집 전';
   const mentionCount = hasLivePeriod ? Math.round(sampleCount * (1.18 + Math.abs(change) * 0.72)) : 0;
   const previousMentionCount = hasLivePeriod ? Math.max(1, Math.round(mentionCount / (1.16 + Math.abs(change) * 0.28))) : 0;
   const mentionDeltaPct = hasLivePeriod && previousMentionCount > 0
@@ -999,52 +1076,218 @@ const selectedReport = computed(() => {
     ? evidenceLabels
     : hasLivePeriod
       ? target.issues
-      : ['시장 사실 수집 전', 'AI 근거 확인 필요'];
+      : ['시장 사실 수집 전', '분석 근거 확인 필요'];
   const primaryIssue = reportIssues[0] ?? '지역 반응';
   const secondaryIssue = reportIssues[1] ?? '시장 사실';
-  const insufficientValue = '수집 전/insufficient';
+  const unavailableValue = '수집 전';
+  const priceValue = hasLivePeriod ? `${periodLabelById[activePeriod.value]} ${formatChange(change)}` : '공식 데이터 없음';
+  const reportEvidenceState = latestMapEvidenceLog.value
+    ? '분석 근거 반영'
+    : mapEvidenceLoadState.value === 'loading'
+      ? '분석 근거 확인 중'
+      : mapEvidenceLoadState.value === 'error'
+        ? '분석 근거 확인 필요'
+        : '분석 근거 수집 전';
+  const evidenceValue = latestMapEvidenceLog.value ? '분석 근거 확인' : unavailableValue;
+  const changeDirectionLabel = hasLivePeriod
+    ? change > 0.05
+      ? '상승 흐름'
+      : change < -0.05
+        ? '하락 흐름'
+        : '보합권'
+    : '공식 가격지수 수집 전';
+  const selectedPeriodLabel = periodLabelById[activePeriod.value];
+  const directDataScope = usesParentTarget
+    ? '상위 리포트 기준으로 통합'
+    : isDerivedSubregionPeriod
+      ? '상위 지역만 반영'
+      : feature
+        ? '하위 지역 직접 지표 우선'
+        : '지역 전체 공식 지표 우선';
+  const expectationPoints = [
+    livePeriod ? '공식 가격지수 확인' : '공식 가격지수 수집 전',
+    reportEvidenceState,
+    directDataScope
+  ];
+  const concernPoints = [
+    hasLivePeriod && change < 0
+      ? `${selectedPeriodLabel} 가격지수 ${formatChange(change)} 하락`
+      : '선택 기간 수치만으로 흐름 단정 금지',
+    '매매 실거래 연결 전',
+    '전월세·공급 일정 연결 전'
+  ];
+  const analysisParagraphs = hasLivePeriod
+    ? [
+        `${subjectName} 리포트는 ${reportUpdatedAtLabel} 업데이트 기준으로 정리했습니다. 첫 수치 박스는 현재 지도에서 선택한 ${selectedPeriodLabel} 가격지수 변화 ${formatChange(change)}를 보여주는 렌즈입니다.`,
+        `판단은 ${sourceLabel} 가격지수와 연결된 분석 근거를 우선 보고, 매매 실거래·전월세·공급 일정은 연결 전 항목으로 분리해 해석합니다.`,
+        `기간별 등락률은 지도 색을 읽기 위한 보조 수치입니다. 리포트 본문은 기간 탭마다 새로 쓰지 않고 최신 기준의 기대 지점과 우려 지점을 하나로 유지합니다.`
+      ]
+    : [
+        `${subjectName} 리포트는 ${reportUpdatedAtLabel} 업데이트 기준입니다. 공식 가격지수가 아직 화면에 연결되지 않아 값을 임의 추정하지 않습니다.`,
+        `분석 근거와 공식 시장 사실이 연결되면 최신 기준의 지역 브리핑으로 전환합니다.`,
+        '매매 실거래, 전월세, 공급 일정은 각각 별도 근거로 확인한 뒤 같은 리포트에 적재합니다.'
+      ];
+  const relatedReports = [
+    {
+      label: '가격지수',
+      title: livePeriod ? `${sourceLabel} 가격지수` : '한국부동산원 가격지수',
+      meta: livePeriod ? `${reportUpdatedAtLabel} 업데이트` : '공식 데이터 없음'
+    },
+    {
+      label: '실거래',
+      title: '매매 실거래 공개시스템',
+      meta: '수집 전'
+    },
+    {
+      label: '뉴스·리포트',
+      title: `${subjectName} 관련 뉴스·리포트`,
+      meta: latestMapEvidenceLog.value ? '분석 근거 반영 · 원문 링크 적재 대기' : '수집 전'
+    }
+  ];
 
   return {
     change,
     confidence: confidencePct,
+    dataStatusLabel,
+    asOfLabel,
+    reportUpdatedAtLabel,
+    freshnessLabel,
     hasLivePeriod,
     mentionCount,
     mentionDeltaPct,
     previousMentionCount,
     issues: reportIssues,
     metrics: [
-      { label: '가격 흐름', value: hasLivePeriod ? `${periodLabelById[activePeriod.value]} ${formatChange(change)}` : insufficientValue },
-      { label: '거래 강도', value: hasLivePeriod ? `표본 ${sampleCount}건, ${change > 0 ? '관심 증가' : '관망 우세'}` : insufficientValue },
-      { label: '전세 압력', value: latestMapEvidenceLog.value ? 'AI 근거 항목 확인' : insufficientValue },
-      { label: '공급/청약', value: latestMapEvidenceLog.value ? 'AI 근거 항목 확인' : insufficientValue },
-      { label: '정책/교통', value: latestMapEvidenceLog.value ? 'AI 근거 항목 확인' : insufficientValue },
-      { label: '커뮤니티 언급', value: hasLivePeriod ? `언급 ${mentionCount}건, 전 구간 대비 +${mentionDeltaPct}%` : insufficientValue }
+      { label: '가격 흐름', value: priceValue, meta: '한국부동산원 가격지수' },
+      { label: '실거래', value: unavailableValue, meta: '국토교통부 매매 실거래 연결 전' },
+      { label: '전세 압력', value: evidenceValue, meta: '전월세 실거래와 근거 로그 기준' },
+      { label: '공급·정책', value: evidenceValue, meta: '청약·미분양·정책 일정 기준' }
     ],
-    name: feature ? `${target.name} ${subjectName}` : `${target.name} 전체`,
+    name: feature && !usesParentTarget ? `${target.name} ${subjectName}` : `${target.name} 전체`,
+    regionLevelLabel: feature && !usesParentTarget ? '시군구' : '시도 전체',
     sampleCount,
     sourceMix: [
-      { label: '출처', value: livePeriod ? mapSourceLabel(livePeriod.provider ?? livePeriod.sourceLabel) : insufficientValue },
-      { label: '수집 상태', value: mapDataStatusLabel(livePeriod?.dataStatus) ?? insufficientValue },
-      { label: '기준 시각', value: formatMapTimestamp(livePeriod?.asOf) },
-      { label: '갱신 상태', value: livePeriod ? (isDerivedSubregionPeriod ? '상위 지역 기반' : livePeriod.stale ? '갱신 지연' : '최신 반영') : '수집 전' }
+      { label: '출처', value: livePeriod ? sourceLabel : unavailableValue },
+      { label: '수집 상태', value: dataStatusLabel },
+      { label: '기준 시각', value: asOfLabel },
+      { label: '갱신 상태', value: freshnessLabel }
     ],
-    summary: hasLivePeriod
-      ? `${subjectName} 지역은 ${target.name} 안에서 ${primaryIssue}, ${secondaryIssue} 흐름이 함께 관찰되는 지역입니다. 현재 지도 레이어는 ${layerStatus} 상태라 방향성과 표본 신뢰도를 함께 봅니다.${isDerivedSubregionPeriod ? ' 아직 시군구 직접 지표가 없어 상위 지역 반응을 하위 구역에 분산해 보여주는 임시 레이어입니다.' : ''}`
-      : `${subjectName} 지도 흐름 자료는 아직 수집 전입니다. 이 구간은 값을 임의 추정하지 않고, 상위 지역 AI 근거와 하위 지역 갱신 배치가 연결되면 실제 리포트로 전환됩니다.`,
-    title: change >= 0 ? '언급량 급증' : '우려 언급량 급증',
-    mentionSummary: hasLivePeriod
-      ? `${subjectName} 관련 커뮤니티 언급이 선택 기간에 빠르게 늘었습니다.`
-      : `${subjectName} 언급 자료는 아직 수집 전/insufficient 상태입니다.`,
-    bullets: hasLivePeriod
+    officialFacts: [
+      {
+        label: '가격지수',
+        value: hasLivePeriod ? formatChange(change) : '공식 데이터 없음',
+        meta: livePeriod ? `${sourceLabel} · ${asOfLabel}` : '한국부동산원 지도 레이어 수집 전',
+        status: dataStatusLabel
+      },
+      {
+        label: '매매 실거래',
+        value: unavailableValue,
+        meta: '국토교통부 매매 실거래 연결 전',
+        status: '수집 전'
+      },
+      {
+        label: '전월세',
+        value: unavailableValue,
+        meta: '국토교통부 전월세 실거래 연결 전',
+        status: '수집 전'
+      },
+      {
+        label: '공개 지연',
+        value: livePeriod?.stale ? '공개 지연 가능' : livePeriod ? '최신 반영' : '확인 필요',
+        meta: '원천 기준 시각과 화면 반영 시각을 분리해서 표시',
+        status: freshnessLabel
+      }
+    ],
+    keyChanges: [
+      {
+        label: '가격 흐름',
+        value: hasLivePeriod ? formatChange(change) : '공식 데이터 없음',
+        meta: livePeriod ? `${periodLabelById[activePeriod.value]} · 가격지수 · ${sourceLabel}` : '한국부동산원 지도 레이어 수집 전'
+      },
+      {
+        label: '거래 확인',
+        value: unavailableValue,
+        meta: '국토교통부 매매 실거래 연결 전'
+      },
+      {
+        label: '전세·공급 압력',
+        value: evidenceValue,
+        meta: '전월세 실거래·청약·정책 일정 연결 후 보강'
+      }
+    ],
+    reportCautions: [
+      {
+        label: '공개 기준',
+        value: livePeriod ? `${asOfLabel} · ${freshnessLabel}` : '수집 전'
+      },
+      {
+        label: '자료 범위',
+        value: usesParentTarget
+          ? '단일 행정계층 · 상위 리포트 기준'
+          : isDerivedSubregionPeriod
+            ? '상위 지역만 반영'
+            : '직접 지표 우선 · 없으면 상위 지역만 반영'
+      },
+      {
+        label: '분석 근거',
+        value: reportEvidenceState
+      }
+    ],
+    comparisonRows: feature && !usesParentTarget
       ? [
-          `${subjectName} 관련 언급은 ${previousMentionCount}건에서 ${mentionCount}건으로 늘었습니다.`,
-          `${primaryIssue} 키워드가 먼저 움직이고, ${secondaryIssue} 이슈가 댓글 맥락에서 반복됩니다.`,
-          `신뢰도 ${confidencePct}% 기준의 관찰 요약이며, ${isDerivedSubregionPeriod ? '시군구 직접값이 아니라 상위 지역 기반 보정값입니다.' : '출처와 기준 시각을 함께 확인해야 합니다.'}`
+          {
+            label: '상위 지역',
+            value: `${target.name} 전체`,
+            meta: usableMapPeriod(targetPeriodMeta(target)) ? formatChange(periodChange(target)) : '상위 지역 수집 전'
+          },
+          { label: '생활권·동 후보', value: unavailableValue, meta: 'target graph 연결 후 표시' },
+          { label: '단지 후보', value: unavailableValue, meta: '좌표와 alias 검증 후 표시' }
         ]
       : [
-          `${subjectName} 지도 흐름과 커뮤니티 반응 자료는 아직 충분하지 않습니다.`,
-          `${target.name} 상위 지역 AI 근거가 있으면 우선 표시하고, 하위 구간 값은 임의로 채우지 않습니다.`,
-          '공공데이터, 반응 지표, 근거 링크가 연결되면 이 패널은 실제 수치 리포트로 전환됩니다.'
+          {
+            label: '가장 강한 하위 지역',
+            value: strongestSubregion.value?.name ?? '수집 전',
+            meta: strongestSubregion.value ? formatChange(subregionPeriodChange(strongestSubregion.value)) : '하위 시군구 수집 전'
+          },
+          { label: '시군구 비교', value: `${subregionFeatures.value.length}개 구·시·군`, meta: '지도 레이어 기준' },
+          { label: '생활권·단지 후보', value: unavailableValue, meta: '후속 target graph 연결 대상' }
+        ],
+    scheduleRows: [
+      { label: '청약·공급', value: unavailableValue, meta: '주요 일정 데이터 연결 후 표시' },
+      { label: '미분양·인허가', value: unavailableValue, meta: '공급 선행지표 연결 후 표시' },
+      { label: '정책·교통', value: evidenceValue, meta: 'timeline 이벤트와 공식 일정 기준' }
+    ],
+    evidenceLimits: [
+      { label: '출처', value: livePeriod ? sourceLabel : '수집 전' },
+      { label: '기준 시각', value: asOfLabel },
+      { label: '갱신 상태', value: freshnessLabel },
+      { label: '하위 지역 보정', value: usesParentTarget ? '단일 행정계층 · 상위 리포트 기준' : isDerivedSubregionPeriod ? '상위 지역만 반영' : '직접 지표 우선 · 없으면 상위 지역만 반영' },
+      { label: '분석 근거', value: reportEvidenceState }
+    ],
+    briefingTitle: hasLivePeriod
+      ? `최신 종합 리포트 · 공식 지표 기준`
+      : changeDirectionLabel,
+    summary: hasLivePeriod
+      ? `${subjectName}의 ${periodLabelById[activePeriod.value]} 가격지수 변화는 ${formatChange(change)}입니다. 현재 지도 레이어는 ${layerStatus} 상태이며, 실거래·전월세·공급 일정은 연결 전 항목을 분리해서 확인합니다.${isDerivedSubregionPeriod ? ' 아직 시군구 직접 지표가 없어 상위 지역만 반영한 상태입니다.' : ''}`
+      : `${subjectName} 지도 흐름 자료는 아직 수집 전입니다. 이 구간은 값을 임의 추정하지 않고, 상위 지역 분석 근거와 하위 지역 갱신 배치가 연결되면 실제 리포트로 전환됩니다.`,
+    expectationPoints,
+    concernPoints,
+    analysisParagraphs,
+    relatedReports,
+    title: '보조 반응',
+    mentionSummary: hasLivePeriod
+      ? `${subjectName} 관련 공개 원문 반응은 공식 시장 사실을 해석하는 보조 관찰로만 표시합니다.`
+      : `${subjectName} 보조 반응 자료는 아직 수집 전 상태입니다.`,
+    bullets: hasLivePeriod
+      ? [
+          `공개 원문 언급은 ${previousMentionCount}건에서 ${mentionCount}건으로 관찰됐습니다.`,
+          `${primaryIssue}와 ${secondaryIssue}는 가격 판단이 아니라 이슈 맥락을 보강하는 라벨입니다.`,
+          `표본과 출처 기준의 관찰 요약이며, ${isDerivedSubregionPeriod ? '상위 지역만 반영한 상태입니다.' : '출처와 기준 시각을 함께 확인해야 합니다.'}`
+        ]
+      : [
+          `${subjectName} 지도 흐름과 보조 반응 자료는 아직 충분하지 않습니다.`,
+          `${target.name} 상위 지역 분석 근거가 있으면 우선 표시하고, 하위 구간 값은 임의로 채우지 않습니다.`,
+          '공식 데이터, 근거 링크, 보조 반응이 연결되면 이 패널은 실제 수치 리포트로 전환됩니다.'
         ],
     previewComplexes: [],
     subregionCode: subjectCode,
@@ -1208,6 +1451,38 @@ const selectSubregionFromMap = (code: string) => {
   if (showSubregionClusters.value) return;
   selectSubregion(code);
 };
+const selectableSubregionCode = (code?: string | null) => {
+  const normalized = normalizeGeometryCode(code);
+  if (!normalized) return null;
+
+  const feature = subregionFeatures.value.find((candidate) => candidate.code === normalized);
+  if (!feature || isSubregionUnavailable(feature)) return null;
+
+  return normalized;
+};
+const selectedRouteSubregionCode = () => {
+  const selectedTargetId = routeSelectedTargetId.value;
+  if (selectedTargetId) {
+    const layerTarget = Array.from(new Set(subregionLayerByCode.value.values()))
+      .find((target) => target.targetId === selectedTargetId);
+    if (layerTarget) {
+      for (const code of subregionLayerFeatureCodes(layerTarget)) {
+        const selectableCode = selectableSubregionCode(code);
+        if (selectableCode) return selectableCode;
+      }
+    }
+  }
+
+  return selectableSubregionCode(routeSelectedRegionCode.value);
+};
+const syncSelectedSubregionFromRoute = () => {
+  if (!selectedRegion.value) return;
+
+  const code = selectedRouteSubregionCode();
+  if (!code || selectedSubregionCode.value === code) return;
+
+  selectSubregion(code);
+};
 const resetReportState = () => {
   selectedSubregionCode.value = null;
   reportOpening.value = false;
@@ -1241,6 +1516,20 @@ watch(
   }
 );
 watch(
+  routeSelectedPeriod,
+  (period) => {
+    if (period && activePeriod.value !== period) {
+      activePeriod.value = period;
+    }
+  },
+  { immediate: true }
+);
+watch(
+  [routeSelectedTargetId, routeSelectedRegionCode, selectedRegion, subregionFeatures, subregionLayerByCode],
+  syncSelectedSubregionFromRoute,
+  { immediate: true }
+);
+watch(
   selectedRegion,
   (region) => {
     if (region) {
@@ -1259,6 +1548,19 @@ watch(
 );
 onMounted(() => {
   void refreshNationalMapLayer();
+  batchUpdateSubscription = subscribeRealEstateBatchUpdates((event) => {
+    if (event.topic !== 'map-layers') {
+      return;
+    }
+    void refreshNationalMapLayer();
+    if (selectedRegion.value) {
+      void refreshSubregionMapLayer(selectedRegion.value);
+    }
+  });
+});
+onBeforeUnmount(() => {
+  batchUpdateSubscription?.close();
+  batchUpdateSubscription = null;
 });
 </script>
 
@@ -1279,9 +1581,9 @@ onMounted(() => {
         <h2 id="realestate-map-title">{{ pageTitle }}</h2>
         <p>{{ pageDescription }}</p>
       </div>
-      <div class="map-header-actions">
+      <div v-if="selectedRegion" class="map-header-actions">
         <RouterLink
-          v-if="selectedRegion && hasTransactionData"
+          v-if="hasTransactionData"
           class="transaction-map-cta"
           :to="transactionMapLink"
           data-testid="region-transaction-map-link"
@@ -1289,24 +1591,13 @@ onMounted(() => {
           🗺️ {{ transactionMapLabel }}
         </RouterLink>
         <span
-          v-else-if="selectedRegion"
+          v-else
           class="transaction-map-cta is-empty"
           data-testid="region-transaction-map-empty"
           aria-disabled="true"
         >
           {{ transactionMapLabel }}
         </span>
-        <div class="period-tabs" aria-label="지도 기간 선택">
-          <button
-            v-for="period in periodOptions"
-            :key="period.id"
-            type="button"
-            :class="{ active: activePeriod === period.id }"
-            @click="activePeriod = period.id"
-          >
-            {{ period.label }}
-          </button>
-        </div>
       </div>
     </header>
 
@@ -1319,17 +1610,31 @@ onMounted(() => {
         <div class="map-stage-toolbar">
           <div>
             <p class="label">{{ selectedRegion ? '지역 상세 지도' : '전국 흐름 지도' }}</p>
-            <h3 id="korea-map-title">
-              {{
-                focusedSubregionClusterLabel
-                  ? `${focusedSubregionClusterLabel} 상세 흐름`
-                  : selectedRegion
-                    ? `${selectedRegion.name} 상세 흐름`
-                    : '전국 부동산 흐름'
-              }}
-            </h3>
+            <div class="map-stage-heading-line">
+              <h3 id="korea-map-title">
+                {{
+                  focusedSubregionClusterLabel
+                    ? `${focusedSubregionClusterLabel} 상세 흐름`
+                    : selectedRegion
+                      ? `${selectedRegion.name} 상세 흐름`
+                      : '전국 부동산 흐름'
+                }}
+              </h3>
+              <div class="period-tabs map-period-tabs" aria-label="지도 기간 선택">
+                <button
+                  v-for="period in periodOptions"
+                  :key="period.id"
+                  type="button"
+                  :class="{ active: activePeriod === period.id }"
+                  @click="activePeriod = period.id"
+                >
+                  {{ period.label }}
+                </button>
+              </div>
+            </div>
           </div>
           <div class="map-toolbar-right">
+            <span class="map-update-badge" data-testid="map-update-badge">{{ mapUpdateBadgeLabel }}</span>
             <div class="map-legend" aria-label="지역 색상 범례">
               <span><i class="up"></i>상승</span>
               <span><i class="down"></i>하락</span>
@@ -1373,114 +1678,116 @@ onMounted(() => {
             :style="mapBoardStyle"
             data-testid="korea-map-board"
           >
-            <svg
-              v-if="!selectedRegion"
-              class="korea-region-map"
-              :viewBox="`0 0 ${currentMapSize.width} ${currentMapSize.height}`"
-              role="img"
-              aria-label="전국 시도별 상승 하락 지도"
-            >
-              <path class="korea-outline" :d="countryPath" />
-              <g class="region-extrusion" aria-hidden="true">
-                <path
-                  v-for="feature in mapFeatures"
-                  :key="`${feature.code}-depth`"
-                  :d="feature.path"
-                  :transform="feature.depthTransform"
-                />
-              </g>
-              <g class="region-glow-layer" aria-hidden="true">
-                <path
-                  v-for="feature in mapFeatures"
-                  :key="`${feature.code}-glow`"
-                  :d="feature.path"
-                  :transform="feature.pathTransform"
-                  :class="['region-glow', changeTone(periodChange(feature.target))]"
-                  :style="{ stroke: usableMapPeriod(targetPeriodMeta(feature.target)) ? heatColor(periodChange(feature.target)) : missingHeatColor }"
-                />
-              </g>
-              <g>
-                <path
-                  v-for="feature in mapFeatures"
-                  :key="feature.target.id"
-                  :d="feature.path"
-                  :class="['region-shape', changeTone(periodChange(feature.target))]"
-                  :style="{ fill: usableMapPeriod(targetPeriodMeta(feature.target)) ? heatColor(periodChange(feature.target)) : missingHeatColor }"
-                  :transform="feature.pathTransform"
-                  :aria-label="`${feature.target.name} ${mapFeatureChangeLabel(feature.target)}`"
-                  @click="navigateToRegion(feature.target)"
-                  @mouseenter="hoveredRegionCode = feature.code"
-                  @mouseleave="hoveredRegionCode = null"
-                />
-              </g>
-              <g class="region-labels" aria-hidden="true">
-                <text
-                  v-for="feature in mapFeatures"
-                  :key="`${feature.target.id}-label`"
-                  :x="feature.label.x"
-                  :y="feature.label.y"
-                >
-                  {{ feature.target.name }}
-                </text>
-              </g>
-              <g class="complex-preview-pins" aria-label="단지 좌표 샘플 레이어">
-                <circle
-                  v-for="feature in samplePins"
-                  :key="`${feature.target.id}-pin`"
-                  :cx="feature.label.x"
-                  :cy="feature.label.y"
-                  r="4.5"
-                />
-              </g>
-              <g v-if="dokdoSeodo && dokdoDongdo" :class="['dokdo-marker', { glow: hoveredRegionCode === '37' }]" aria-label="독도">
-                <ellipse class="dokdo-dot seodo" :cx="dokdoSeodo.x" :cy="dokdoSeodo.y" rx="2.2" ry="3.4" :transform="`rotate(-20 ${dokdoSeodo.x} ${dokdoSeodo.y})`" />
-                <ellipse class="dokdo-dot dongdo" :cx="dokdoDongdo.x" :cy="dokdoDongdo.y" rx="1.8" ry="2.4" :transform="`rotate(10 ${dokdoDongdo.x} ${dokdoDongdo.y})`" />
-              </g>
-            </svg>
+            <div class="map-surface-layer">
+              <svg
+                v-if="!selectedRegion"
+                class="korea-region-map"
+                :viewBox="`0 0 ${currentMapSize.width} ${currentMapSize.height}`"
+                role="img"
+                aria-label="전국 시도별 상승 하락 지도"
+              >
+                <path class="korea-outline" :d="countryPath" />
+                <g class="region-extrusion" aria-hidden="true">
+                  <path
+                    v-for="feature in mapFeatures"
+                    :key="`${feature.code}-depth`"
+                    :d="feature.path"
+                    :transform="feature.depthTransform"
+                  />
+                </g>
+                <g class="region-glow-layer" aria-hidden="true">
+                  <path
+                    v-for="feature in mapFeatures"
+                    :key="`${feature.code}-glow`"
+                    :d="feature.path"
+                    :transform="feature.pathTransform"
+                    :class="['region-glow', changeTone(periodChange(feature.target))]"
+                    :style="{ stroke: nationalRegionHeatColor(feature.target) }"
+                  />
+                </g>
+                <g>
+                  <path
+                    v-for="feature in mapFeatures"
+                    :key="feature.target.id"
+                    :d="feature.path"
+                    :class="['region-shape', changeTone(periodChange(feature.target))]"
+                    :style="{ fill: nationalRegionHeatColor(feature.target) }"
+                    :transform="feature.pathTransform"
+                    :aria-label="`${feature.target.name} ${mapFeatureChangeLabel(feature.target)}`"
+                    @click="navigateToRegion(feature.target)"
+                    @mouseenter="hoveredRegionCode = feature.code"
+                    @mouseleave="hoveredRegionCode = null"
+                  />
+                </g>
+                <g class="region-labels" aria-hidden="true">
+                  <text
+                    v-for="feature in mapFeatures"
+                    :key="`${feature.target.id}-label`"
+                    :x="feature.label.x"
+                    :y="feature.label.y"
+                  >
+                    {{ feature.target.name }}
+                  </text>
+                </g>
+                <g class="complex-preview-pins" aria-label="단지 좌표 샘플 레이어">
+                  <circle
+                    v-for="feature in samplePins"
+                    :key="`${feature.target.id}-pin`"
+                    :cx="feature.label.x"
+                    :cy="feature.label.y"
+                    r="4.5"
+                  />
+                </g>
+                <g v-if="dokdoSeodo && dokdoDongdo" :class="['dokdo-marker', { glow: hoveredRegionCode === '37' }]" aria-label="독도">
+                  <ellipse class="dokdo-dot seodo" :cx="dokdoSeodo.x" :cy="dokdoSeodo.y" rx="2.2" ry="3.4" :transform="`rotate(-20 ${dokdoSeodo.x} ${dokdoSeodo.y})`" />
+                  <ellipse class="dokdo-dot dongdo" :cx="dokdoDongdo.x" :cy="dokdoDongdo.y" rx="1.8" ry="2.4" :transform="`rotate(10 ${dokdoDongdo.x} ${dokdoDongdo.y})`" />
+                </g>
+              </svg>
 
-            <svg
-              v-else
-              class="korea-region-map subregion-map"
-              :viewBox="`0 0 ${currentMapSize.width} ${currentMapSize.height}`"
-              role="img"
-              :aria-label="`${selectedRegion.name} 구·시·군 상승 하락 지도`"
-            >
-              <path class="korea-outline region-detail-outline" :d="detailOutlinePath" />
-              <g class="region-extrusion" aria-hidden="true">
-                <path
-                  v-for="feature in subregionFeatures"
-                  :key="`${feature.code}-depth`"
-                  :d="feature.path"
-                  :transform="detailExtrusionTransform"
-                />
-              </g>
-              <g class="region-glow-layer" aria-hidden="true">
-                <path
-                  v-for="feature in subregionFeatures"
-                  :key="`${feature.code}-glow`"
-                  :d="feature.path"
-                  :class="['region-glow', hasSubregionPeriod(feature) ? changeTone(subregionPeriodChange(feature)) : 'unavailable']"
-                  :style="{ stroke: subregionGlowColor(feature) }"
-                />
-              </g>
-              <g>
-                <path
-                  v-for="feature in subregionFeatures"
-                  :key="feature.code"
-                  :d="feature.path"
-                  :class="[
-                    'region-shape',
-                    'subregion-shape',
-                    hasSubregionPeriod(feature) ? changeTone(subregionPeriodChange(feature)) : 'unavailable',
-                    { active: selectedSubregion?.code === feature.code }
-                  ]"
-                  :data-testid="`subregion-shape-${feature.code}`"
-                  :style="{ fill: subregionHeatColor(feature) }"
-                  :aria-label="`${feature.name} ${subregionChangeLabel(feature)}`"
-                  @click="selectSubregionFromMap(feature.code)"
-                />
-              </g>
-            </svg>
+              <svg
+                v-else
+                class="korea-region-map subregion-map"
+                :viewBox="`0 0 ${currentMapSize.width} ${currentMapSize.height}`"
+                role="img"
+                :aria-label="`${selectedRegion.name} 구·시·군 상승 하락 지도`"
+              >
+                <path class="korea-outline region-detail-outline" :d="detailOutlinePath" />
+                <g class="region-extrusion" aria-hidden="true">
+                  <path
+                    v-for="feature in subregionFeatures"
+                    :key="`${feature.code}-depth`"
+                    :d="feature.path"
+                    :transform="detailExtrusionTransform"
+                  />
+                </g>
+                <g class="region-glow-layer" aria-hidden="true">
+                  <path
+                    v-for="feature in subregionFeatures"
+                    :key="`${feature.code}-glow`"
+                    :d="feature.path"
+                    :class="['region-glow', hasSubregionPeriod(feature) ? changeTone(subregionPeriodChange(feature)) : 'unavailable']"
+                    :style="{ stroke: subregionGlowColor(feature) }"
+                  />
+                </g>
+                <g>
+                  <path
+                    v-for="feature in subregionFeatures"
+                    :key="feature.code"
+                    :d="feature.path"
+                    :class="[
+                      'region-shape',
+                      'subregion-shape',
+                      hasSubregionPeriod(feature) ? changeTone(subregionPeriodChange(feature)) : 'unavailable',
+                      { active: selectedSubregion?.code === feature.code }
+                    ]"
+                    :data-testid="`subregion-shape-${feature.code}`"
+                    :style="{ fill: subregionHeatColor(feature) }"
+                    :aria-label="`${feature.name} ${subregionChangeLabel(feature)}`"
+                    @click="selectSubregionFromMap(feature.code)"
+                  />
+                </g>
+              </svg>
+            </div>
 
             <div v-if="!selectedRegion" class="map-target-buttons" aria-label="시도 선택 버튼">
               <a
@@ -1619,98 +1926,89 @@ onMounted(() => {
           </button>
         </div>
 
-        <div class="report-lead">
-          <strong :class="changeTone(selectedReport.change)">{{ formatChange(selectedReport.change) }}</strong>
-          <p>{{ selectedReport.summary }}</p>
-          <div>
-            <span class="status-pill subtle">표본 {{ selectedReport.sampleCount }}건</span>
-            <span class="status-pill subtle">신뢰도 {{ selectedReport.confidence }}%</span>
-          </div>
-        </div>
-
-        <section class="issue-report-section map-ai-report-section" aria-labelledby="map-ai-report-title">
-          <div class="report-section-title">
-            <p class="label">AI evidence</p>
-            <h4 id="map-ai-report-title">지역 AI 근거 리포트</h4>
-            <span>{{ mapEvidenceStatusText }}</span>
-          </div>
-          <article v-if="latestMapEvidenceLog" class="map-ai-report-card">
-            <strong>{{ displayMapEvidenceCopy(latestMapEvidenceLog.subtitle) || '근거 기반 지역 평가' }}</strong>
-            <p>{{ displayMapEvidenceCopy(latestMapEvidenceLog.summary) }}</p>
-            <div>
-              <span class="status-pill subtle">{{ latestMapEvidenceLog.modelName || '모델 확인 필요' }}</span>
-              <span class="status-pill subtle">{{ mapEvidenceQualityLabel(latestMapEvidenceLog.dataQuality) }}</span>
-              <span class="status-pill subtle">신뢰 {{ formatEvidenceConfidence(latestMapEvidenceLog.confidence) }}</span>
+        <section class="map-briefing-report-layout" aria-label="선택 지역 요약 리포트">
+          <article
+            class="map-report-card featured"
+            data-testid="report-section-ai-briefing"
+            aria-labelledby="map-ai-report-title"
+          >
+            <div class="map-report-card-header">
+              <div class="map-report-title-stack">
+                <p>AI 핵심 브리핑</p>
+                <h4 id="map-ai-report-title">
+                  {{ selectedReport.briefingTitle }}
+                </h4>
+              </div>
             </div>
-            <ul v-if="visibleMapEvidenceItems.length" class="community-bullet-list">
-              <li v-for="item in visibleMapEvidenceItems" :key="item.evidenceItemId">
-                {{ item.label }} · {{ item.valueText || item.evidenceType || '값 확인 필요' }}
-              </li>
-            </ul>
+            <div class="map-report-card-body">
+              <div class="map-report-hero-grid">
+                <div class="map-report-outlook-grid" aria-label="기대와 우려 요약">
+                  <section class="map-report-outlook-panel expectation" aria-label="기대 지점">
+                    <p>기대 지점</p>
+                    <ul>
+                      <li v-for="point in selectedReport.expectationPoints" :key="point" class="map-report-outlook-row">
+                        {{ point }}
+                      </li>
+                    </ul>
+                  </section>
+                  <section class="map-report-outlook-panel concern" aria-label="우려 지점">
+                    <p>우려 지점</p>
+                    <ul>
+                      <li v-for="point in selectedReport.concernPoints" :key="point" class="map-report-outlook-row">
+                        {{ point }}
+                      </li>
+                    </ul>
+                  </section>
+                </div>
+              </div>
+            </div>
           </article>
-          <p v-else class="newsroom-empty-state">
-            {{ mapEvidenceStatusText }} 상태입니다. 크롤링, 최근 이슈, AI 평가 배치가 해당 지역 근거를 만들면 이곳에 표시됩니다.
-          </p>
-        </section>
 
-        <section class="community-pulse-board" aria-labelledby="community-pulse-title">
-          <div class="report-section-title">
-            <p class="label">community pulse</p>
-            <h4 id="community-pulse-title">{{ selectedReport.title }}</h4>
-          </div>
-          <div class="mention-delta-card">
-            <strong>{{ selectedReport.hasLivePeriod ? `+${selectedReport.mentionDeltaPct}%` : '수집 전' }}</strong>
-            <span>{{ selectedReport.previousMentionCount }}건 → {{ selectedReport.mentionCount }}건</span>
-            <p>{{ selectedReport.mentionSummary }}</p>
-          </div>
-          <div class="community-source-mix">
-            <article v-for="source in selectedReport.sourceMix" :key="source.label">
-              <span>{{ source.label }}</span>
-              <strong>{{ source.value }}</strong>
-            </article>
-          </div>
-          <ul class="community-bullet-list">
-            <li v-for="bullet in selectedReport.bullets" :key="bullet">{{ bullet }}</li>
-          </ul>
-        </section>
+          <section
+            class="map-report-card analysis"
+            data-testid="report-section-ai-analysis"
+            aria-labelledby="map-briefing-analysis-title"
+          >
+            <div class="map-report-card-header">
+              <div>
+                <p>AI 분석 리포트</p>
+                <h4 id="map-briefing-analysis-title">최신 종합 리포트</h4>
+              </div>
+              <span data-testid="report-updated-at">리포트 업데이트 {{ selectedReport.reportUpdatedAtLabel }}</span>
+            </div>
+            <div class="map-report-card-body map-report-analysis-copy">
+              <div class="map-report-delta-block analysis-delta">
+                <span>{{ periodLabelById[activePeriod] }}</span>
+                <strong :class="['map-report-delta-value', changeTone(selectedReport.change)]">
+                  {{ selectedReport.hasLivePeriod ? formatChange(selectedReport.change) : '자료 없음' }}
+                </strong>
+              </div>
+              <p v-for="paragraph in selectedReport.analysisParagraphs" :key="paragraph">
+                {{ paragraph }}
+              </p>
+            </div>
+          </section>
 
-        <section class="issue-report-section" aria-labelledby="issue-report-title">
-          <div class="report-section-title">
-            <p class="label">issue matrix</p>
-            <h4 id="issue-report-title">핵심 쟁점</h4>
-          </div>
-          <div class="issue-card-grid">
-            <article v-for="issue in selectedIssueCards" :key="issue.label">
-              <span>{{ issue.label }}</span>
-              <strong>{{ issue.detail }}</strong>
-              <em>{{ issue.risk }}</em>
-            </article>
-          </div>
-        </section>
-
-        <div class="report-metric-grid">
-          <article v-for="metric in selectedReport.metrics" :key="metric.label">
-            <span>{{ metric.label }}</span>
-            <strong>{{ metric.value }}</strong>
-          </article>
-        </div>
-
-        <section class="report-chip-section" aria-label="주요 쟁점">
-          <span v-for="issue in selectedReport.issues" :key="issue">{{ issue }}</span>
-        </section>
-
-        <section class="sample-complex-list" aria-labelledby="sample-complex-title">
-          <div class="section-band-title compact">
-            <p class="label">complex preview</p>
-            <h4 id="sample-complex-title">다음 연결 후보</h4>
-          </div>
-          <article v-for="complex in selectedReport.previewComplexes" :key="complex">
-            <strong>{{ complex }}</strong>
-            <span>좌표·별칭 매핑 후 단지 리포트로 연결</span>
-          </article>
-          <p v-if="!selectedReport.previewComplexes.length" class="newsroom-empty-state">
-            단지 좌표와 alias 매핑이 아직 수집 전/insufficient 상태입니다.
-          </p>
+          <section
+            class="map-report-card sources"
+            data-testid="report-section-related-reports"
+            aria-labelledby="map-briefing-related-title"
+          >
+            <div class="map-report-card-header">
+              <div>
+                <p>관련 뉴스·리포트</p>
+                <h4 id="map-briefing-related-title">근거 적재소</h4>
+              </div>
+              <span>{{ selectedReport.relatedReports.length }}개</span>
+            </div>
+            <div class="map-report-card-body map-related-report-ledger">
+              <article v-for="item in selectedReport.relatedReports" :key="item.label" class="map-related-report-row">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.title }}</strong>
+                <em>{{ item.meta }}</em>
+              </article>
+            </div>
+          </section>
         </section>
       </aside>
     </section>

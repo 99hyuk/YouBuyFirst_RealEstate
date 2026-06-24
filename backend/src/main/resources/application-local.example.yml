@@ -5,6 +5,11 @@ spring:
 
 app:
   realestate:
+    batch:
+      # R-ONE weekly apartment sale price index change-rate refresh.
+      reb-weekly-price-index-url: "https://www.reb.or.kr/r-one/portal/stat/easyStatPage/T244183132827305.do"
+      reb-weekly-price-index-cron: "0 30 8 * * THU"
+      reb-weekly-price-index-latest-weeks: 60
     public-data:
       # Copy this file to application-local.yml and keep the real key out of git.
       data-go-service-key: "put-your-data-go-service-key-here"

@@ -7,6 +7,11 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:youbuyfirst}
   flyway:
     enabled: true
+  batch:
+    job:
+      enabled: false
+    jdbc:
+      initialize-schema: never
   jpa:
     hibernate:
       ddl-auto: none
@@ -24,12 +29,205 @@ springdoc:
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      timeout: ${SERVER_SESSION_TIMEOUT:30m}
+      cookie:
+        http-only: true
+        secure: ${SERVER_SESSION_COOKIE_SECURE:false}
+        same-site: lax
 
 app:
   retention:
     post-days: ${POST_RETENTION_DAYS:30}
     cleanup-cron: ${POST_RETENTION_CLEANUP_CRON:0 15 3 * * *}
   realestate:
+    batch:
+      scheduling-enabled: ${REALESTATE_BATCH_SCHEDULING_ENABLED:true}
+      newsroom-cron: ${REALESTATE_NEWSROOM_BATCH_CRON:0 20 */2 * * *}
+      schedule-cron: ${REALESTATE_SCHEDULE_BATCH_CRON:0 10 4 * * *}
+      reb-weekly-price-index-cron: ${REALESTATE_REB_WEEKLY_PRICE_INDEX_BATCH_CRON:0 30 8 * * THU}
+      reb-weekly-price-index-url: ${REALESTATE_REB_WEEKLY_PRICE_INDEX_URL:https://www.reb.or.kr/r-one/portal/stat/easyStatPage/T244183132827305.do}
+      reb-weekly-price-index-latest-weeks: ${REALESTATE_REB_WEEKLY_PRICE_INDEX_LATEST_WEEKS:60}
+      zone: ${REALESTATE_BATCH_ZONE:Asia/Seoul}
+    newsroom:
+      sources:
+        - id: google-news-realestate
+          feed: news
+          source-id: google_news_rss
+          url: https://news.google.com/rss/search?q=%EB%B6%80%EB%8F%99%EC%82%B0+when:7d&hl=ko&gl=KR&ceid=KR:ko
+          status-label: 수집 확인
+          data-status: ok
+        - id: kb-research-report-search
+          feed: report
+          source-id: report:kb-research
+          url: https://news.google.com/rss/search?q=(site%3Akbfg.com%2Fkbresearch%2Freport+OR+site%3Akbthink.com%2Fmain%2Freal-estate)+(%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EC%A3%BC%ED%83%9D+OR+%EC%A0%84%EC%84%B8+OR+%EC%95%84%ED%8C%8C%ED%8A%B8)+(%EC%A3%BC%ED%83%9D%EC%8B%9C%EC%9E%A5+OR+%EB%A6%AC%ED%8F%AC%ED%8A%B8+OR+%EB%B3%B4%EA%B3%A0%EC%84%9C+OR+%EC%A0%84%EB%A7%9D+OR+%EC%A7%80%EC%88%98+OR+%ED%86%B5%EA%B3%84)+when%3A180d&hl=ko&gl=KR&ceid=KR:ko
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 4
+          max-age-days: 180
+          allowed-domains: [www.kbfg.com, kbfg.com, kbthink.com]
+          required-terms: [KB주택시장리뷰, KB주택시장 리뷰, 주택시장 리뷰, 부동산 보고서, 리포트, 보고서, 시장동향, 시장 동향, 월간동향, 주간동향, 가격지수, 통계]
+          required-topic-terms: [부동산, 주택, 아파트, 전세, 매매, 주거, 주거복지, 건설, 분양, 청약]
+          excluded-terms: [뉴스 기사, 보도자료, 채용, 모집공고, 단순 기사, 인터뷰 기사, 미리보기, 경제지표]
+        - id: hana-report-search
+          feed: report
+          source-id: report:hanaif
+          url: https://news.google.com/rss/search?q=site%3Ahanaif.re.kr+(%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EC%A3%BC%ED%83%9D+OR+%EC%A0%84%EC%84%B8+OR+PF)+(%EB%A6%AC%ED%8F%AC%ED%8A%B8+OR+%EB%B3%B4%EA%B3%A0%EC%84%9C+OR+%EC%A0%84%EB%A7%9D+OR+%EC%9D%B4%EC%8A%88+OR+Knowledge)+when%3A365d&hl=ko&gl=KR&ceid=KR:ko
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 4
+          max-age-days: 365
+          allowed-domains: [www.hanaif.re.kr, hanaif.re.kr]
+          required-terms: [부동산, 주택, 전세, PF, 리포트, 보고서, 전망, 이슈, Knowledge]
+          required-topic-terms: [부동산, 주택, 아파트, 전세, 매매, 주거, PF, 건설, 분양, 청약]
+          excluded-terms: [뉴스 기사, 보도자료, 채용, 모집공고, 공지사항, 단순 기사, 금융시장 -, 금융경영브리프, 경제 브리프, 일일 금융시장]
+        - id: woori-report-search
+          feed: report
+          source-id: report:wfri
+          url: https://news.google.com/rss/search?q=site%3Awfri.re.kr+(%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EC%A3%BC%ED%83%9D%EC%8B%9C%EC%9E%A5+OR+%EC%A3%BC%ED%83%9D%EA%B8%88%EC%9C%B5+OR+PF)+(%EB%B3%B4%EA%B3%A0%EC%84%9C+OR+%EB%8F%99%ED%96%A5+OR+%EC%A0%84%EB%A7%9D+OR+%EB%A6%AC%ED%8F%AC%ED%8A%B8)+when%3A365d&hl=ko&gl=KR&ceid=KR:ko
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 4
+          max-age-days: 365
+          allowed-domains: [www.wfri.re.kr, wfri.re.kr]
+          required-terms: [부동산, 주택시장, 주택금융, PF, 보고서, 동향, 전망, 리포트]
+          required-topic-terms: [부동산, 주택, 아파트, 전세, 매매, 주거, PF, 건설, 분양, 청약]
+          excluded-terms: [뉴스 기사, 보도자료, 채용, 모집공고, 공지사항, 단순 기사, 경제 브리프, 금융경제 브리프, 카드뉴스]
+        - id: housing-finance-report-search
+          feed: report
+          source-id: report:hf-kif
+          url: https://news.google.com/rss/search?q=(site%3Aresearcher.hf.go.kr+OR+site%3Akif.re.kr)+(%EC%A3%BC%ED%83%9D%EC%8B%9C%EC%9E%A5+OR+%EC%A3%BC%ED%83%9D%EA%B8%88%EC%9C%B5+OR+%EC%A0%84%EC%84%B8+OR+%EB%B6%80%EB%8F%99%EC%82%B0)+(%EC%97%B0%EA%B5%AC%EB%B3%B4%EA%B3%A0%EC%84%9C+OR+%EC%9D%B4%EC%8A%88%EB%A6%AC%ED%8F%AC%ED%8A%B8+OR+%EB%B6%84%EC%84%9D+OR+%EC%A0%84%EB%A7%9D+OR+Navigator)+when%3A365d&hl=ko&gl=KR&ceid=KR:ko
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 5
+          max-age-days: 365
+          allowed-domains: [researcher.hf.go.kr, www.kif.re.kr, kif.re.kr]
+          required-terms: [주택시장, 주택금융, 전세, 부동산, 연구보고서, 이슈리포트, 분석, 전망, Navigator]
+          required-topic-terms: [부동산, 주택, 아파트, 전세, 매매, 주거, 주거복지, 주택금융, PF]
+          excluded-terms: [뉴스 기사, 보도자료, 채용, 모집공고, 공지사항, 단순 기사, 직원안내, 직원 안내, 조직도, 부서안내]
+        - id: official-research-report-search
+          feed: report
+          source-id: report:official-research
+          url: https://news.google.com/rss/search?q=(site%3Acerik.re.kr+OR+site%3Akrihs.re.kr+OR+site%3Abok.or.kr+OR+site%3Akhug.or.kr+OR+site%3Areb.or.kr)+(%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EC%A3%BC%ED%83%9D+OR+%EC%A0%84%EC%84%B8+OR+%EA%B1%B4%EC%84%A4)+(%EB%A6%AC%ED%8F%AC%ED%8A%B8+OR+%EB%B3%B4%EA%B3%A0%EC%84%9C+OR+%EC%A0%84%EB%A7%9D+OR+%EC%A7%80%EC%88%98+OR+%ED%86%B5%EA%B3%84+OR+%EC%8B%9C%EC%9E%A5%EB%8F%99%ED%96%A5)+when%3A180d&hl=ko&gl=KR&ceid=KR:ko
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 6
+          max-age-days: 180
+          allowed-domains: [www.cerik.re.kr, cerik.re.kr, www.krihs.re.kr, kremap.krihs.re.kr, www.bok.or.kr, www.khug.or.kr, www.reb.or.kr]
+          required-terms: [부동산시장 주간동향, 부동산시장, 리포트, 보고서, 연구보고서, 통계차트, 가격지수, 주택가격지수, 시장동향, 시장 동향, 월간동향, 주간동향, 세미나]
+          required-topic-terms: [부동산, 주택, 아파트, 전세, 매매, 주거, 주거복지, 건설, 분양, 청약]
+          excluded-terms: [뉴스 기사, 보도자료, 채용, 모집공고, 공지사항, 단순 기사, 인터뷰 기사, 미리보기]
+        - id: kbthink-column-latest
+          feed: link
+          source-id: kbthink_column_search
+          url: https://news.google.com/rss/search?q=site%3Akbthink.com%2Frealestate+(%EB%B6%80%EB%8F%99%EC%82%B0+OR+%EC%A3%BC%ED%83%9D+OR+%EC%95%84%ED%8C%8C%ED%8A%B8+OR+%EC%A0%84%EC%84%B8)+when%3A30d&hl=ko&gl=KR&ceid=KR:ko
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 8
+          max-age-days: 60
+          allowed-domains: [kbthink.com]
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 시장, 전망, 분석, 가격, 정책, 세금, 대출, 금리, 리뷰]
+          excluded-terms: [주택시장 리뷰, 리포트, 보고서, 미리보기, 통계차트, 가격지수, 청약소식, 모집공고, 입주자모집공고, 매물, 월세, 경매 방법, 상가건물, 분양 정보]
+        - id: naver-ppassong-column-rss
+          feed: link
+          source-id: naver_blog:ppassong
+          url: https://rss.blog.naver.com/ppassong.xml
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 4
+          max-age-days: 30
+          allowed-domains: [blog.naver.com]
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 정비사업, 직주근접, 인프라, 오피스텔, 집값, 분양, 재건축, 재개발]
+          excluded-terms: [주식, 코스피, 코스닥, 배당, 비트코인, 여행, 맛집, 강의, 수업, 세미나, 특강, 모집, 이벤트, 광고, 협찬, 매물, 경매, 공매, 토지, 전원주택, 사야, 사세요, 추격 매수, 무조건]
+        - id: naver-building-column-rss
+          feed: link
+          source-id: naver_blog:building-standard
+          url: https://rss.blog.naver.com/to_jinwoo.xml
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 3
+          max-age-days: 30
+          allowed-domains: [blog.naver.com]
+          required-terms: [꼬마빌딩, 빌딩, 상권, 건물주, 수익형 부동산, 상가, 역세권, 매매, 임대수익]
+          excluded-terms: [가짜뉴스, 치어리더, 스트리머, 포켓몬, 송지효, 러브버그, 드라마, 아나운서, 비키니, 연예, 야구, 주식, 코인, 사세요, 추천, 매물 홍보, 급매, 광고, 협찬]
+        - id: tistory-market-column-rss
+          feed: link
+          source-id: tistory:auctionguide
+          url: https://auctionguide.tistory.com/rss
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 4
+          max-age-days: 90
+          allowed-domains: [auctionguide.tistory.com]
+          required-terms: [부동산 시장 분석, 주택시장, 아파트, 전세, 매매, 시장 분석, 시장 동향, 통합 리포트]
+          excluded-terms: [경매 물건, 입찰, 낙찰, 농지, 전원주택, 토지, 공매, 매물, 홍보, 사야, 사세요, 추천, 무조건, 급매, 투자전략]
+        - id: youtube-maeburi
+          feed: video
+          source-id: youtube:maeburitv
+          url: https://www.youtube.com/feeds/videos.xml?channel_id=UCCt6iN6nJemSe_OHRihYBAQ
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 3
+          min-duration-seconds: 600
+          min-view-count: 10000
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 재건축, 재개발, 청약, 분양, 집값, 전월세, 월세, 주담대, 대출, 공급, 규제, 임대차]
+          excluded-terms: [분양 정보, 모집공고, 모델하우스, 매물, 랜선집들이, 삼성전자, 삼전, 하이닉스, 증시, 주식, 코스피, 코스닥, 반도체, 엔비디아, 비트코인, 코인, 사세요, 무조건, 추격 매수, 급등주, 영양제, 건강]
+        - id: youtube-jipconomy
+          feed: video
+          source-id: youtube:jipconomy
+          url: https://www.youtube.com/feeds/videos.xml?channel_id=UCAVdqlngIAxHtwlCA2hjv3A
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 5
+          min-duration-seconds: 600
+          min-view-count: 10000
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 재건축, 재개발, 청약, 분양, 집값, 전월세, 월세, 주담대, 대출, 공급, 규제, 임대차, 집코노미 타임즈, 총총견문록, 흥청망청, 연두부]
+          excluded-terms: [분양 정보, 모집공고, 모델하우스, 매물, 랜선집들이, 삼성전자, 삼전, 하이닉스, 증시, 주식, 코스피, 코스닥, 반도체, 엔비디아, 비트코인, 코인, 사세요, 무조건, 추격 매수, 급등주, 영양제, 건강]
+        - id: youtube-buiknam
+          feed: video
+          source-id: youtube:buiknam
+          url: https://www.youtube.com/feeds/videos.xml?channel_id=UC2QeHNJFfuQWB4cy3M-745g
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 3
+          min-duration-seconds: 600
+          min-view-count: 10000
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 재건축, 재개발, 청약, 분양, 집값, 전월세, 월세, 주담대, 대출, 공급, 규제, 임대차]
+          excluded-terms: [분양 정보, 모집공고, 모델하우스, 매물, 랜선집들이, 삼성전자, 삼전, 하이닉스, 증시, 주식, 코스피, 코스닥, 반도체, 엔비디아, 비트코인, 코인, 사세요, 무조건, 추격 매수, 급등주, 영양제, 건강]
+        - id: youtube-3protv
+          feed: video
+          source-id: youtube:3protv
+          url: https://www.youtube.com/feeds/videos.xml?channel_id=UChlv4GSd7OQl3js-jkLOnFA
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 3
+          min-duration-seconds: 600
+          min-view-count: 10000
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 재건축, 재개발, 청약, 분양, 집값, 전월세, 월세, 주담대, 대출, 공급, 규제, 임대차]
+          excluded-terms: [분양 정보, 모집공고, 모델하우스, 매물, 랜선집들이, 삼성전자, 삼전, 하이닉스, 증시, 주식, 코스피, 코스닥, 반도체, 엔비디아, 비트코인, 코인, 사세요, 무조건, 추격 매수, 급등주, 영양제, 건강]
+        - id: youtube-smarttube
+          feed: video
+          source-id: youtube:smarttube
+          url: https://www.youtube.com/feeds/videos.xml?channel_id=UCKosTo5bqKm4v264z2zDnFQ
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 3
+          min-duration-seconds: 600
+          min-view-count: 10000
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 재건축, 재개발, 청약, 분양, 집값, 전월세, 월세, 주담대, 대출, 공급, 규제, 임대차, 빠숑, 김학렬]
+          excluded-terms: [분양 정보, 모집공고, 모델하우스, 매물, 랜선집들이, 삼성전자, 삼전, 하이닉스, 증시, 주식, 코스피, 코스닥, 반도체, 엔비디아, 비트코인, 코인, 사세요, 무조건, 추격 매수, 급등주, 영양제, 건강]
+        - id: youtube-kimjagga
+          feed: video
+          source-id: youtube:kimjagga
+          url: https://www.youtube.com/feeds/videos.xml?channel_id=UCvil4OAt-zShzkKHsg9EQAw
+          status-label: 수집 확인
+          data-status: ok
+          max-items: 2
+          min-duration-seconds: 600
+          min-view-count: 10000
+          required-terms: [부동산, 주택, 아파트, 전세, 매매, 재건축, 재개발, 청약, 분양, 집값, 전월세, 월세, 주담대, 대출, 공급, 규제, 임대차, 박원갑, 빠숑, 김학렬]
+          excluded-terms: [분양 정보, 모집공고, 모델하우스, 매물, 랜선집들이, 삼성전자, 삼전, 하이닉스, 증시, 주식, 코스피, 코스닥, 반도체, 엔비디아, 비트코인, 코인, 사세요, 무조건, 추격 매수, 급등주, 영양제, 건강, 핵 잠수함, 국방부, 전쟁]
     public-data:
       data-go-service-key: ${DATA_GO_SERVICE_KEY:}
     kakao:

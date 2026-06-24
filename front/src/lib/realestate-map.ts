@@ -1,6 +1,6 @@
 import { repairMojibake } from './text-encoding';
 
-export type PeriodKey = 'month' | 'quarter' | 'halfYear';
+export type PeriodKey = 'week' | 'month' | 'quarter' | 'halfYear' | 'year';
 
 export type RealEstateMapLayerPeriod = {
   changePct: number;
@@ -44,6 +44,13 @@ export type FetchRealEstateMapLayerParams = {
   parentTargetId?: string;
 };
 
+export type MapHeatTone = 'up' | 'down' | 'flat';
+
+export type MapHeatScale = {
+  baselineChangePct: number;
+  maxDeltaPct: number;
+};
+
 type Fetcher = (input: string) => Promise<Response>;
 
 export async function fetchRealEstateMapLayer(
@@ -75,10 +82,10 @@ export async function fetchRealEstateMapLayer(
 }
 
 function normalizePeriods(periods: unknown): PeriodKey[] {
-  if (!Array.isArray(periods)) return ['month', 'quarter', 'halfYear'];
-  const allowed = new Set<PeriodKey>(['month', 'quarter', 'halfYear']);
+  if (!Array.isArray(periods)) return ['week', 'month', 'quarter', 'halfYear', 'year'];
+  const allowed = new Set<PeriodKey>(['week', 'month', 'quarter', 'halfYear', 'year']);
   const normalized = periods.filter((period): period is PeriodKey => allowed.has(period as PeriodKey));
-  return normalized.length ? normalized : ['month', 'quarter', 'halfYear'];
+  return normalized.length ? normalized : ['week', 'month', 'quarter', 'halfYear', 'year'];
 }
 
 function normalizeTarget(target: RealEstateMapLayerTarget): RealEstateMapLayerTarget | null {
@@ -118,4 +125,46 @@ function normalizeLayerPeriods(
 
 function isMapLayerTarget(target: RealEstateMapLayerTarget | null): target is RealEstateMapLayerTarget {
   return target !== null;
+}
+
+export function buildMapHeatScale(values: number[], baselineChangePct?: number): MapHeatScale {
+  const usableValues = values.filter((value) => Number.isFinite(value));
+  const baseline = Number.isFinite(baselineChangePct)
+    ? baselineChangePct as number
+    : average(usableValues);
+  const maxDelta = usableValues.reduce(
+    (currentMax, value) => Math.max(currentMax, Math.abs(value - baseline)),
+    0
+  );
+
+  return {
+    baselineChangePct: baseline,
+    maxDeltaPct: Math.max(0.01, maxDelta)
+  };
+}
+
+export function mapHeatTone(changePct: number): MapHeatTone {
+  if (changePct > 0.04) return 'up';
+  if (changePct < -0.04) return 'down';
+  return 'flat';
+}
+
+export function mapHeatColor(changePct: number, scale: MapHeatScale = buildMapHeatScale([changePct], 0)): string {
+  const tone = mapHeatTone(changePct);
+  if (tone === 'flat') return 'rgba(126, 143, 166, 0.420)';
+
+  const delta = Math.abs(changePct - scale.baselineChangePct);
+  const intensity = Math.min(1, Math.max(0.12, delta / scale.maxDeltaPct));
+  const minimumVisibleAlpha = 0.56;
+  if (tone === 'up') return `rgba(255, 54, 88, ${formatAlpha(Math.max(minimumVisibleAlpha, 0.3 + intensity * 0.66))})`;
+  return `rgba(42, 125, 255, ${formatAlpha(Math.max(minimumVisibleAlpha, 0.28 + intensity * 0.62))})`;
+}
+
+function average(values: number[]): number {
+  if (!values.length) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function formatAlpha(value: number): string {
+  return value.toFixed(3);
 }

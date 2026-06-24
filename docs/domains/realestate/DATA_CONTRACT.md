@@ -2,6 +2,18 @@
 
 이 문서는 부동산 프로젝트의 데이터 이름과 경계를 맞추는 기준입니다. 코드, DB, crawler, UI, agent가 모두 이 문서를 기준으로 같은 말을 쓰게 만드는 것이 목적입니다.
 
+## 공식 가격 지표 기준
+
+지역 분석 지도와 대시보드의 가격 흐름 대표 지표는 `docs/domains/realestate/OFFICIAL_PRICE_INDEX_DICTIONARY.md`를 정본으로 둡니다.
+
+- 1순위 지도 지표는 metricCode `reb_weekly_apt_sale_price_index_region`과 `reb_monthly_apt_sale_price_index_region`입니다.
+- DB 적재 dataset은 주간 `reb_rone_weekly_apt_sale_price_index_region`, 월간 `reb_rone_monthly_apt_sale_price_index`입니다.
+- 공식명은 `전국주택가격동향조사_주간아파트동향_매매가격지수(지역별)`입니다.
+- 가격지수는 `factType=price_index`로 지수 원값을 저장합니다. 지도용 `changePct`는 저장된 최신 지수와 기준 시점 지수를 비교해 snapshot 생성 시 산출합니다.
+- 지도 색상 진하기는 같은 지표의 기준 시점 index 비교값에 비례해야 하며, 임의 seed 색상을 공식값처럼 쓰지 않습니다.
+- `official_missing`, `ingestion_missing`, `mapping_unresolved`를 분리해 저장합니다. 화면에서 검게 보이는 지역은 공식 원천에 실제로 없는지 먼저 확인해야 합니다.
+- 주간 운영 수집은 Spring Batch job, 월간 운영 수집은 R-ONE Open API 기반 pipeline 수집기로 구현합니다. R-ONE 지역 현황 지도 응답은 최신 월과 지역 코드 매핑 보조로만 사용합니다.
+
 ## 현재 확인한 공공데이터 후보
 
 확인일: 2026-06-01
@@ -225,11 +237,13 @@ pipeline roll-up 기준:
 
 ### `content_items`, `content_target_links`
 
-`content_items`는 뉴스, 리포트, 영상, 블로그/커뮤니티 링크처럼 외부 원문으로 보내야 하는 콘텐츠 카드의 정본입니다. 원문 전문을 복제하지 않고 제목, 제한 snippet, URL, 발행/수집 시각, 상태 라벨만 저장합니다. `content_target_links`는 콘텐츠와 지역/단지 target의 다대다 연결입니다. `reviewState=approved`인 연결만 target 상세 content 목록과 timeline에 노출합니다.
+`content_items`는 뉴스, 리포트, 영상, 블로그/커뮤니티 링크처럼 외부 원문으로 보내야 하는 콘텐츠 카드의 정본입니다. 원문 전문을 복제하지 않고 제목, 제한 snippet, URL, 발행/수집 시각, 상태 라벨만 저장합니다. 뉴스룸 전역 feed 항목은 지역/단지와 무관하므로 `targets: []`로 저장할 수 있습니다. `content_target_links`는 콘텐츠와 지역/단지 target의 다대다 연결이 필요할 때만 사용합니다. `reviewState=approved`인 연결만 target 상세 content 목록과 timeline에 노출합니다.
 
 SerpApi 같은 검색 API로 발견한 최근 이슈 후보도 공개 원문 링크 후보라면 `content_items` 또는 후속 `recent_issue_candidates` 계열로 관리합니다. 검색 결과 수, 검색 순위, 노출량은 관심도 지표나 반응 방향의 원천으로 쓰지 않습니다. 저장 범위는 제목, 출처, 날짜, 링크, 관련 키워드, 검색 provider/query, target 후보 confidence 정도로 제한합니다.
 
 현재 MVP 구현은 별도 `recent_issue_candidates` 테이블을 만들기 전 단계로, SerpApi 후보를 `content_items`에 저장합니다. `sourceId=serpapi:google_news`, `metricLabel=query: ...`, `statusLabel=search_candidate`, `dataStatus=candidate`, `content_target_links.linkType=search_candidate`, `reviewState=candidate`를 사용합니다. 후보 링크는 운영자 검수로 `approved`가 되기 전까지 target timeline 정본으로 보지 않습니다.
+
+`newsroomContentRefreshJob`은 프론트 `/newsroom`용 전역 feed 적재 Job입니다. RSS/XML 또는 후속 검색/API adapter에서 제목, 제한 snippet, URL, domain, 발행 시각만 추출해 `content_items`에 upsert하고 target link는 만들지 않습니다. 검색 순위나 노출량은 관심도 지표로 쓰지 않습니다. 저장 성공 후에는 SSE `topic=newsroom` 업데이트를 발행해 열린 프론트 화면이 뉴스룸 API를 재조회하게 합니다.
 
 `content_items` 필드:
 
@@ -266,6 +280,42 @@ SerpApi 같은 검색 API로 발견한 최근 이슈 후보도 공개 원문 링
 | `linkType` | `mentioned`, `context`, `source_focus`, `search_candidate`, `excluded` |
 | `confidence` | 0.0-1.0 |
 | `reviewState` | `candidate`, `approved`, `rejected`, `ambiguous` |
+
+### `market_data_sources`, `market_data_schedules`
+
+`market_data_sources`와 `market_data_schedules`는 `/indicators` 주요 일정 화면의 정본입니다. 지역/단지별 일정이 아니라 전국 단위 공식 발표, 공식 공표일, 청약 모집공고, 정책 보도자료 일정입니다. `marketDataScheduleRefreshJob`은 한국부동산원 R-ONE 보도자료, 국토부 보도자료, 청약Home APT 모집공고처럼 실제 공표 목록에서 확인한 행을 `published` row로 저장합니다. 통계누리 다음공표일과 한국은행 통화정책방향 결정회의처럼 공식 일정 페이지에서 확인한 행은 `scheduled`이되 `status=공식 일정`으로 저장합니다. 공식 원천에서 해당 월 날짜가 확인되지 않은 일반 점검/체크리스트 row는 만들지 않습니다. 같은 월을 다시 갱신할 때는 이번 배치에서 확인된 row로 월별 일정을 replace해서 원천에서 사라진 과거 row가 계속 노출되지 않게 합니다. 출처 URL 확인 결과는 `lastCheckedAt`, `stale`, `status`로 저장합니다. 저장 성공 후에는 SSE `topic=market-data-schedules`, `month=YYYY-MM` 업데이트를 발행해 열린 프론트 화면이 해당 월 일정 API를 재조회하게 합니다.
+
+`market_data_sources` 필드:
+
+| 필드 | 기준 |
+| --- | --- |
+| `id` | 안정 source id. 예: `reb-r-one`, `applyhome` |
+| `title` | 화면에 표시할 공식 출처명 |
+| `label` | 출처가 담당하는 데이터 종류 |
+| `provider` | `reb`, `molit`, `bok`, `applyhome`, `hug` 등 |
+| `sourceUrl` | 사용자가 이동할 공식 출처 URL |
+| `category` | 가격지수, 실거래, 공급, 금융, 청약, 정책 등 |
+| `tone` | 캘린더 일정 줄 색상 후보 |
+| `lastCheckedAt` | 배치가 해당 출처를 마지막으로 확인한 시각 |
+| `stale` | 출처 확인 실패 또는 지연 표시 여부 |
+| `status` | `확인 완료`, `확인 필요` 등 |
+
+`market_data_schedules` 필드:
+
+| 필드 | 기준 |
+| --- | --- |
+| `id` | source와 날짜를 포함한 안정 일정 id |
+| `sourceId` | `market_data_sources.id` |
+| `scheduleDate` | 캘린더에 표시할 날짜 |
+| `title` | 사용자에게 보일 일정명. 실제 공표명, 모집공고명, 공식 일정명을 우선 사용 |
+| `category` | 가격지수, 실거래, 공급, 금융, 청약, 정책, 보증 등 |
+| `sourceTitle` | 공식 출처명 |
+| `summary` | 짧은 설명 |
+| `sourceUrl` | 대표 홈페이지가 아니라 실제 공표 상세 URL, 청약 모집공고 상세, 통계 세부 화면, 통화정책 일정 화면처럼 해당 일정 맥락을 바로 확인할 수 있는 공식 URL |
+| `provider` | source provider |
+| `status`, `dataStatus`, `stale` | `공표 확인/published`, `공식 일정/scheduled`, `출처 확인 필요/source_error`를 구분 |
+| `lastCheckedAt` | 배치 확인 시각 |
+| `asOf` | 일정 row 기준일 |
 
 ### `real_estate_mentions`
 
@@ -468,6 +518,38 @@ pipeline EvidenceLog 조립:
 - `realestate-evidence-logs-push`는 생성된 `logs[]`를 `POST /internal/realestate/evidence-logs`로 전송합니다.
 - 현재 baseline은 룰 기반 요약이며, LLM provider가 붙어도 DB 저장 shape와 `evidenceItems[]` 참조 구조는 유지합니다.
 
+## Daily Briefing
+
+`daily_briefings`는 대시보드 3줄 요약과 상세 브리핑 본문이 공유하는 저장 결과입니다. 화면은 저장된 최신 브리핑을 읽고, 배치가 새 결과를 발행하기 전에는 대시보드가 mock 문장을 조합하지 않습니다.
+
+필드 기준:
+
+| 필드 | 기준 |
+| --- | --- |
+| `briefingId` | `daily-briefing-YYYYMMDD-vN` 형식의 upsert key |
+| `briefingDate` | 브리핑 기준일 |
+| `title` | 상세 화면 제목 |
+| `summaryHeadlines[]` | 대시보드에 그대로 표시하는 짧은 명사형 헤드라인. 정확히 3개 |
+| `sections[]` | `오늘의 핵심 흐름`, `주목할 지역과 이유`, `시장 변수`, `관련 뉴스·리포트` 본문 섹션 |
+| `focusRegions[]` | 주목 지역 보조 표시용 배열. `targetId`, `label`, `reason`, `displayOrder` 권장 |
+| `sourceItems[]` | 관련 뉴스·리포트 링크 후보. 관심도 점수나 결론 근거로 단독 승격하지 않음 |
+| `modelName` | 예: `claude opus 4 8`. 룰 fallback이면 `rule-based` |
+| `promptVersion` | 예: `daily-briefing-v1` |
+| `generatedAt` | 배치 생성 시각 |
+
+구현된 백엔드 계약:
+
+- `POST /internal/realestate/daily-briefings`는 `briefings[]`를 받아 `briefingId` 기준으로 브리핑, 본문 섹션, source item을 upsert합니다.
+- `GET /api/realestate/daily-briefings/latest`는 최신 `generatedAt desc` 브리핑 1건을 반환합니다. 저장 결과가 없으면 `204 No Content`입니다.
+- 저장 단계에서 `summaryHeadlines`가 3개가 아니거나, 본문 섹션 제목이 누락되거나, 화면용 시간 구간 제목/행동 권유 문구가 들어가면 `400`으로 거부합니다.
+
+pipeline Daily Briefing 조립:
+
+- `realestate-daily-refresh --enable-realestate-daily-briefing-refresh`는 market fact, map layer, newsroom, 수동 curated pack을 input pack으로 묶고 `POST /internal/realestate/daily-briefings`로 발행합니다.
+- `--realestate-daily-briefing-use-gms-llm`을 켜면 GMS OpenAI-compatible chat endpoint를 사용합니다. 기본 모델은 전체 시장 브리핑 품질을 위해 `claude opus 4 8`입니다.
+- LLM 호출이 실패하거나 응답 shape가 맞지 않으면 배치는 룰 기반 fallback 브리핑을 발행하고 step 상태를 `PARTIAL`로 남깁니다.
+- input pack과 프롬프트는 `오늘`, `최근`, `중기 흐름`을 사용자-facing 섹션으로 나누지 않고 내부 렌즈로만 사용합니다. 상세 화면도 `24시간`, `7일`, `1개월`, `3개월` 같은 구간 제목을 표시하지 않습니다.
+
 ## API 후보
 
 ```text
@@ -484,7 +566,10 @@ GET /api/realestate/targets/{targetId}/evidence-logs?limit=
 GET /api/realestate/targets/{targetId}/timeline?eventType=&limit=
 GET /api/realestate/market-facts?targetId=&legalDongCode=&factType=&limit=&page=
 GET /api/realestate/dashboard/market-summary?legalDongCode=
+GET /api/realestate/daily-briefings/latest
 GET /api/realestate/indicators?legalDongCode=&period=
+GET /api/realestate/market-data-schedules?month=
+GET /api/realestate/batch-updates/stream
 GET /api/realestate/map/layers?layerType=sido
 GET /api/realestate/map/layers?layerType=sigungu&parentTargetId=
 GET /api/realestate/newsroom?feed=&page=&pageSize=
@@ -503,6 +588,7 @@ POST /internal/realestate/aliases/candidates
 POST /internal/realestate/target-edges
 POST /internal/realestate/policy-events
 POST /internal/realestate/content-items
+POST /internal/realestate/daily-briefings
 POST /internal/realestate/evidence-logs
 POST /internal/realestate/market-facts
 POST /internal/realestate/public-data/raw-ingestions
@@ -515,9 +601,13 @@ POST /internal/community/crawl-sources
 
 `GET /api/realestate/indicators`는 주요 지표 화면의 API 우선 입력입니다. 현재는 별도 지표 통계 테이블이 생기기 전 단계이므로 `real_estate_market_facts`의 최신 `apt_trade`, `apt_rent`를 `가격 및 거래량` 그룹으로 요약합니다. 응답은 `period`, `dataStatus`, `asOf`, `groups[]`, `freshnessRows[]`를 포함하고, 각 group에는 `dataStatus`, `stale`, `provider`, `asOf`를 내려 UI가 실제 공공데이터와 `mock fallback`을 같은 위치에서 구분하게 합니다. 공급/수급, 수요/심리, 거시/금융 그룹은 후속 통계 원천이 연결될 때 같은 endpoint에 추가합니다.
 
-`GET /api/realestate/map/layers`는 자체 도식화 지도 heat layer 입력입니다. `layerType=sido`는 전국 시도, `layerType=sigungu&parentTargetId=region-seoul`은 특정 시도 하위 시군구를 반환합니다. 응답은 `targets[].targetId`를 정본 식별자로 쓰고, 각 기간 값에 `provider`, `asOf`, `dataStatus`, `stale`, `changePct`, `sampleCount`, `confidence`를 포함합니다. 가격지도 기간은 `month`, `quarter`, `halfYear`를 사용하며, R-ONE `sale_price_index_change_pct` 월별 원표가 있으면 최신 1개월, 최근 3개월, 최근 6개월 누적 변동률을 내려줍니다. 공식 지수 provider에 없는 target은 임의값을 만들지 않고 snapshot을 생성하지 않으므로 UI는 해당 도형을 `공식 지수 미공표` 또는 `자료 없음` 상태로 표시해야 합니다. 실제 데이터 집계 전 seed 값은 `dataStatus=mock`, `stale=true`로 표시합니다.
+`GET /api/realestate/market-data-schedules`는 `/indicators` 주요 일정 화면의 API 입력입니다. `month=YYYY-MM`을 받으며 응답은 `month`, `scheduleEvents[]`, `sourceLinks[]`를 포함합니다. `scheduleEvents[]`는 `id`, `date`, `title`, `category`, `source`, `summary`, `link`, `tone`, `provider`, `status`, `dataStatus`, `stale`, `lastCheckedAt`, `asOf`를 내려 캘린더 일정 줄과 공식 출처 이동을 구성합니다. `scheduleEvents[].link`는 source 대표 URL이 아니라 청약캘린더, 통계공표일정, 세부 통계 화면, 보도자료/공표보고서 목록/상세처럼 해당 일정 성격에 맞는 공식 세부 화면이어야 합니다. `sourceLinks[]`는 하단 공식 출처 링크를 구성하며, 일정이 비어 있어도 사용자가 공식 출처를 확인할 수 있게 유지합니다.
 
-`POST /internal/realestate/map/layer-snapshots/refresh`는 배치가 호출하는 내부 API입니다. 요청은 `layerType`, `periods[]`, `asOf`를 받고, backend는 해당 layer의 `map_features`를 순회해 target별 공식 가격지수 fact를 우선 `map_layer_snapshots`로 요약합니다. 현재 가격지도 우선순위는 `reb_rone_monthly_apt_sale_price_index`의 `sale_price_index_change_pct`, 그 다음 `reb_rone_regional_price_change`이며, `quarter`와 `halfYear`는 월간 변동률을 누적 곱으로 계산합니다. 공식 지수 history가 부족한 경우에만 실거래 `apt_trade` market fact fallback을 시도하고, `reaction snapshot`은 가격지도 색상 계산에 사용하지 않습니다. 거래 표본이 부족하거나 같은 관측일만 있으면 해당 target/period는 건너뛰며, 기존 seed/mock snapshot을 삭제하지 않습니다. 실거래 표본 평균 비교에서 절대 변화율이 50%를 넘으면 값은 보존하되 `dataStatus=partial`, `stale=true`, 표본 기반 confidence로 낮춰 표시합니다. 응답은 `layerType`, `periods[]`, `asOf`, `acceptedSnapshots`, `skippedTargets`입니다.
+`GET /api/realestate/batch-updates/stream`은 프론트가 배치 완료를 받는 SSE push 채널입니다. 서버는 event name `realestate-batch-update`로 `topic`, `month`, `acceptedItems`, `refreshedAt`만 보냅니다. `topic=newsroom`이면 `/api/realestate/newsroom`을, `topic=market-data-schedules`이면 `GET /api/realestate/market-data-schedules?month=YYYY-MM`을, `topic=map-layers`이면 `GET /api/realestate/map/layers`를 다시 조회합니다. 이벤트 payload는 화면 row 정본이 아니며, 데이터 정본은 DB-backed REST API 응답입니다.
+
+`GET /api/realestate/map/layers`는 자체 도식화 지도 heat layer 입력입니다. `layerType=sido`는 전국 시도, `layerType=sigungu&parentTargetId=region-seoul`은 특정 시도 하위 시군구를 반환합니다. 응답은 `targets[].targetId`를 정본 식별자로 씁니다. 가격지도 기간은 `week`, `month`, `quarter`, `halfYear`, `year`를 지원합니다. `week`는 `reb_rone_weekly_apt_sale_price_index_region`의 최신 주간 지수와 직전 주간 지수 2개를 비교합니다. 주간 지수 조회는 R-ONE 원천의 지역 코드 단위 차이를 보정하기 위해 현재 법정동코드, 구 단위 지역의 상위 시 코드, 강원 `51xxx`->`42xxx`, 전북 `52xxx`->`45xxx`, 시도 대표 법정동코드를 후보로 사용합니다. `month`/`quarter`/`halfYear`/`year`는 `reb_rone_monthly_apt_sale_price_index`의 최신 월간 지수와 1/3/6/12개월 전 지수를 비교합니다. 원천 fact는 `factType=price_index`, `unit=지수`로 저장하고, 계산된 변동률은 `map_layer_snapshots.changePct`에만 저장합니다. 공식 지수 provider에 없는 target은 임의값을 만들지 않고 snapshot을 생성하지 않으므로 UI는 해당 도형을 `공식 지수 미공표` 또는 `자료 없음` 상태로 표시해야 합니다. 실제 데이터 집계 전 seed 값은 `dataStatus=mock`, `stale=true`로 표시합니다.
+
+`POST /internal/realestate/map/layer-snapshots/refresh`는 배치가 호출하는 내부 API입니다. 요청은 `layerType`, `periods[]`, `asOf`를 받고, backend는 해당 layer의 `map_features`를 순회해 target별 공식 가격지수 fact를 우선 `map_layer_snapshots`로 요약합니다. 현재 가격지도 우선순위는 period별로 분리되어 `week`는 주간 지수 2개, `month`/`quarter`/`halfYear`/`year`는 월간 지수 2/4/7/13개가 필요합니다. 필요한 공식 index history가 부족하면 해당 target/period는 건너뛰며, `reaction snapshot`은 가격지도 색상 계산에 사용하지 않습니다. 거래 표본이 부족하거나 같은 관측일만 있으면 해당 target/period는 건너뛰며, 기존 seed/mock snapshot을 공식 데이터처럼 승격하지 않습니다. 실거래 표본 평균 비교에서 절대 변화율이 50%를 넘으면 값은 보존하되 `dataStatus=partial`, `stale=true`, 표본 기반 confidence로 낮춰 표시합니다. refresh가 성공하면 SSE `topic=map-layers`를 발행해 열려 있는 지도 화면이 최신 layer API를 다시 조회하게 합니다. 응답은 `layerType`, `periods[]`, `asOf`, `acceptedSnapshots`, `skippedTargets`입니다.
 
 동/단지 상세의 내장 지도는 `GET /api/realestate/targets/{targetId}/nearby-complexes`를 우선 조회합니다. 응답은 `items[]`에 `targetId`, `name`, `address`, `region`, `latitude`, `longitude`, `tone`, `price`, `change`, `reaction`, `provider`, `asOf`, `dataStatus`, `stale`, `note`, `legalDongCode`, `coordinateProvider`, `coordinateStatus`를 포함합니다. API가 실패하거나 좌표가 없는 row만 내려오면 front fixture marker로 fallback하되, 좌표가 검증 전이면 값을 숨기지 않고 `dataStatus=mock|candidate|unknown`, `stale=true`로 표시합니다.
 

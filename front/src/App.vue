@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import {
   fetchRealEstateReactionRankingWithFallback,
   type RealEstateReactionRankingItem
 } from './lib/realestate-reactions';
+import { currentAuthUser, loadCurrentUser, logout } from './lib/auth-session';
 
 const railItems = [
   { id: 'watch', label: '관심', shortcut: 'W' },
@@ -19,7 +20,10 @@ const railExpanded = ref(false);
 const newsroomMenuDismissed = ref(false);
 const shellRankingItems = ref<RealEstateReactionRankingItem[]>([]);
 const shellReactionState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+const authState = ref<'checking' | 'guest' | 'authenticated'>('checking');
 const route = useRoute();
+const router = useRouter();
+const authUser = currentAuthUser;
 const activeRailLabel = computed(() => railItems.find((item) => item.id === activeRailItem.value)?.label ?? '관심');
 const newsroomFeeds = [
   { label: '뉴스', feed: 'news' },
@@ -45,8 +49,20 @@ const loadShellSignals = async () => {
   }
 };
 
+const loadAuthState = async () => {
+  authState.value = 'checking';
+  try {
+    const user = await loadCurrentUser();
+    authState.value = user ? 'authenticated' : 'guest';
+  } catch {
+    currentAuthUser.value = null;
+    authState.value = 'guest';
+  }
+};
+
 onMounted(() => {
   void loadShellSignals();
+  void loadAuthState();
 });
 
 const shellStatusLabel = computed(() => {
@@ -110,6 +126,14 @@ const dismissNewsroomMenu = () => {
     }
   }, 0);
 };
+
+const handleLogout = async () => {
+  await logout();
+  authState.value = 'guest';
+  if (route.path === '/realestate/mypage') {
+    void router.push('/auth/login');
+  }
+};
 </script>
 
 <template>
@@ -151,7 +175,26 @@ const dismissNewsroomMenu = () => {
 
         <div class="topbar-status topbar-actions" aria-label="서비스 상태와 계정">
           <span>KST</span>
-          <button class="login-button" type="button">로그인</button>
+          <span v-if="authUser" class="auth-greeting" data-testid="auth-greeting">
+            {{ authUser.displayName }}님 안녕하세요
+          </span>
+          <button
+            v-if="authUser"
+            class="login-button"
+            data-testid="logout-button"
+            type="button"
+            @click="handleLogout"
+          >
+            로그아웃
+          </button>
+          <RouterLink
+            v-else
+            class="login-button"
+            data-testid="auth-entry"
+            to="/auth/login"
+          >
+            로그인
+          </RouterLink>
         </div>
       </div>
 
@@ -187,7 +230,7 @@ const dismissNewsroomMenu = () => {
 
           <section class="footer-column" aria-labelledby="footer-features-title">
             <h3 id="footer-features-title">서비스 특징</h3>
-            <span>Today 3줄 브리핑</span>
+            <span>Daily briefing</span>
             <span>실거래·전세 흐름 확인</span>
             <span>전국·지역 지도 탐색</span>
             <span>주요 일정·뉴스·리포트 정리</span>

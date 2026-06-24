@@ -11,6 +11,7 @@ describe('real-estate mypage', () => {
       history: createMemoryHistory(),
       routes: [
         { path: '/realestate/mypage', component: WatchlistPage },
+        { path: '/auth/login', component: { template: '<div />' } },
         { path: '/realestate/map', component: { template: '<div />' } }
       ]
     });
@@ -26,6 +27,7 @@ describe('real-estate mypage', () => {
     expect(wrapper.text()).toContain('내 부동산 관찰 보드');
     expect(wrapper.text()).toContain('사용자가 저장한 지역을 관리하고');
     expect(wrapper.text()).toContain('저장된 지역이나 단지가 아직 없습니다');
+    expect(wrapper.get('[data-testid="mypage-login-link"]').attributes('href')).toBe('/auth/login');
     expect(wrapper.text()).toContain('지난 방문 이후 바뀐 것');
     expect(wrapper.text()).toContain('내 알림 조건');
     expect(wrapper.text()).toContain('지역별 관찰 메모');
