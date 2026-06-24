@@ -16,7 +16,9 @@ import java.util.Set;
 
 /**
  * 서비스 오픈 전(또는 대량 신규 지역 유입 전) 한 번 돌리는 사전 적재 배치.
- * 평소 기동 시에는 동작하지 않고, 실행 인자에 --geocode-preload 가 있을 때만 동작한다.
+ * 다음 두 경우에 동작한다.
+ *  1) 실행 인자에 --geocode-preload 가 있는 경우 (수동 트리거)
+ *  2) 지오코딩 캐시 테이블(real_estate_geocode)이 비어 있는 경우 (최초 기동 시 자동 트리거)
  *
  * 예) java -jar app.jar --geocode-preload
  */
@@ -28,6 +30,7 @@ public class RealEstateGeocodePreloadRunner implements CommandLineRunner {
     private static final int PAGE_SIZE = 2000;
 
     private final RealEstateMarketFactRepository marketFactRepository;
+    private final RealEstateGeocodeRepository geocodeRepository;
     private final RealEstateGuNameLookup guNameLookup;
     private final RealEstateGeocodeBatchService batchService;
     private final ObjectMapper objectMapper;
@@ -38,6 +41,7 @@ public class RealEstateGeocodePreloadRunner implements CommandLineRunner {
 
     public RealEstateGeocodePreloadRunner(
             RealEstateMarketFactRepository marketFactRepository,
+            RealEstateGeocodeRepository geocodeRepository,
             RealEstateGuNameLookup guNameLookup,
             RealEstateGeocodeBatchService batchService,
             ObjectMapper objectMapper,
@@ -46,6 +50,7 @@ public class RealEstateGeocodePreloadRunner implements CommandLineRunner {
             @Value("${app.realestate.geocode.preload.max-queries:20000}") int maxQueries
     ) {
         this.marketFactRepository = marketFactRepository;
+        this.geocodeRepository = geocodeRepository;
         this.guNameLookup = guNameLookup;
         this.batchService = batchService;
         this.objectMapper = objectMapper;
@@ -56,8 +61,15 @@ public class RealEstateGeocodePreloadRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (!Arrays.asList(args).contains(TRIGGER_ARG)) {
+        boolean explicitlyTriggered = Arrays.asList(args).contains(TRIGGER_ARG);
+        if (!explicitlyTriggered && geocodeRepository.count() > 0) {
             return;
+        }
+
+        if (explicitlyTriggered) {
+            log.info("geocode preload triggered manually via {}", TRIGGER_ARG);
+        } else {
+            log.info("geocode cache table is empty, triggering preload automatically");
         }
 
         log.info("geocode preload triggered: collecting candidate addresses (max {})", maxQueries);
