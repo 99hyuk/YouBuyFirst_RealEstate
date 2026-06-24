@@ -44,6 +44,24 @@ services:
     restart: "no"
     command: ["bash", "/workspace/scripts/seed-realestate.sh"]
 
+  # 실거래(MOLIT) "현재월"을 주기적으로 재수집(지각 신고 반영). 기본 하루 1회.
+  # 실거래는 월 단위라 분 단위 폴링이 불필요 → 하루 1회로 충분. 과거 비교월은 고정.
+  realestate-refresh:
+    build:
+      context: ./pipeline
+    environment:
+      SPRING_BASE_URL: http://backend:8080
+      DATA_GO_SERVICE_KEY: ${DATA_GO_SERVICE_KEY:-}
+      REALESTATE_REFRESH_INTERVAL_MINUTES: ${REALESTATE_REFRESH_INTERVAL_MINUTES:-1440}
+      REALESTATE_CURRENT_DEAL_YM: ${REALESTATE_CURRENT_DEAL_YM:-202605}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    command: ["bash", "/workspace/scripts/refresh-realestate.sh"]
+
+  # 커뮤니티 반응 크롤링/분석 스케줄러. 변동이 빠른 영역이라 6시간 주기.
+  # 크롤링은 SERPAPI/NAVER 키, LLM 분석(reaction/daily refresh)은 GMS 키가 필요하므로
+  # ENABLE 플래그는 .env에서 켠다(키 없으면 끈 채로 두기).
   pipeline:
     build:
       context: ./pipeline
@@ -51,11 +69,17 @@ services:
       SPRING_BASE_URL: http://backend:8080
       DATA_GO_SERVICE_KEY: ${DATA_GO_SERVICE_KEY:-}
       REALESTATE_DEAL_YM: ${REALESTATE_DEAL_YM:-}
+      # 실거래 빌트인 갱신은 realestate-refresh 서비스로 대체 → 기본 비활성.
       REALESTATE_MARKET_FACT_REFRESH_ENABLED: ${REALESTATE_MARKET_FACT_REFRESH_ENABLED:-false}
-      REALESTATE_MARKET_FACT_REFRESH_INTERVAL_MINUTES: ${REALESTATE_MARKET_FACT_REFRESH_INTERVAL_MINUTES:-360}
+      REALESTATE_MARKET_FACT_REFRESH_INTERVAL_MINUTES: ${REALESTATE_MARKET_FACT_REFRESH_INTERVAL_MINUTES:-1440}
+      # 커뮤니티 반응/분석: 6시간(360분) 주기.
+      REALESTATE_REACTION_SNAPSHOT_REFRESH_ENABLED: ${REALESTATE_REACTION_SNAPSHOT_REFRESH_ENABLED:-false}
+      REALESTATE_REACTION_SNAPSHOT_REFRESH_INTERVAL_MINUTES: ${REALESTATE_REACTION_SNAPSHOT_REFRESH_INTERVAL_MINUTES:-360}
+      REALESTATE_DAILY_REFRESH_ENABLED: ${REALESTATE_DAILY_REFRESH_ENABLED:-false}
+      REALESTATE_DAILY_REFRESH_INTERVAL_MINUTES: ${REALESTATE_DAILY_REFRESH_INTERVAL_MINUTES:-360}
       SPRING_CLIENT_TIMEOUT_SECONDS: 60
       CRAWL_RUNTIME_ENV: local
-      CRAWL_INTERVAL_MINUTES: 30
+      CRAWL_INTERVAL_MINUTES: ${CRAWL_INTERVAL_MINUTES:-360}
       LOG_LEVEL: INFO
     depends_on:
       - backend
