@@ -908,6 +908,29 @@ def test_realestate_daily_refresh_command_keeps_running_when_serpapi_key_is_miss
     assert payload["steps"][2]["status"] == "OK"
 
 
+def test_realestate_daily_refresh_map_layer_default_periods_include_week_and_year(monkeypatch, capsys):
+    spring_client = _DailyRefreshSpringClient()
+
+    monkeypatch.setattr(pipeline_main, "build_pipeline", lambda: _FakePipeline())
+    monkeypatch.setattr(pipeline_main, "_spring_client", lambda: spring_client)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "youbuyfirst-pipeline",
+            "realestate-daily-refresh",
+            "--enable-realestate-map-layer-refresh",
+        ],
+    )
+
+    asyncio.run(pipeline_main.async_main())
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "OK"
+    assert spring_client.map_layer_calls
+    assert spring_client.map_layer_calls[0]["periods"] == ["week", "month", "quarter", "halfYear", "year"]
+
+
 def test_realestate_top10_readiness_command_reads_backend_chain_state(monkeypatch, capsys):
     monkeypatch.setattr(pipeline_main, "_spring_client", lambda: _ReadinessSpringClient())
     monkeypatch.setattr(

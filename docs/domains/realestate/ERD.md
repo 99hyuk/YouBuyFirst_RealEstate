@@ -22,7 +22,10 @@ erDiagram
     CHAR36 id PK
     VARCHAR255 email
     VARCHAR255 display_name
+    VARCHAR255 password_hash
     VARCHAR255 auth_provider
+    VARCHAR255 role
+    VARCHAR255 status
     DATETIME created_at
     DATETIME last_seen_at
   }

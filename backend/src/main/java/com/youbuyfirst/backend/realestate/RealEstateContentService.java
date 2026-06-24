@@ -202,7 +202,12 @@ public class RealEstateContentService {
         if (normalized == null || "all".equalsIgnoreCase(normalized)) {
             return null;
         }
-        return normalizeLower(normalized);
+        return switch (normalizeLower(normalized)) {
+            case "reports" -> "report";
+            case "videos", "youtube" -> "video";
+            case "links", "blog", "community" -> "link";
+            default -> normalizeLower(normalized);
+        };
     }
 
     private static String filterType(String value) {

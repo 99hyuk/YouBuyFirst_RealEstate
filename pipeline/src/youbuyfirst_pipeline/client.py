@@ -281,6 +281,20 @@ class SpringIngestionClient:
             response = client.post(f"{self.base_url}/internal/realestate/evidence-logs", json=payload)
             response.raise_for_status()
 
+    def publish_real_estate_daily_briefings(self, briefings: Iterable[object]) -> None:
+        payload_briefings = [
+            briefing.to_request_dict() if hasattr(briefing, "to_request_dict") else briefing
+            for briefing in briefings
+        ]
+        if not payload_briefings:
+            return
+        payload = {
+            "briefings": payload_briefings,
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.post(f"{self.base_url}/internal/realestate/daily-briefings", json=payload)
+            response.raise_for_status()
+
     def refresh_real_estate_map_layer_snapshots(
         self,
         *,
@@ -406,6 +420,24 @@ class SpringIngestionClient:
                 f"{self.base_url}/internal/realestate/targets/{target_id}/content",
                 params=params,
             )
+            response.raise_for_status()
+            data = response.json()
+        items = data.get("items", []) if isinstance(data, dict) else []
+        return [item for item in items if isinstance(item, dict)]
+
+    def list_real_estate_newsroom_items(
+        self,
+        *,
+        feed: str = "all",
+        page_size: int = 50,
+    ) -> list[dict]:
+        params = {
+            "feed": feed,
+            "page": "1",
+            "pageSize": str(page_size),
+        }
+        with httpx.Client(timeout=self.timeout_seconds) as client:
+            response = client.get(f"{self.base_url}/api/realestate/newsroom", params=params)
             response.raise_for_status()
             data = response.json()
         items = data.get("items", []) if isinstance(data, dict) else []

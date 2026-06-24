@@ -8,8 +8,18 @@ import {
   type NewsroomFeedItem
 } from '../lib/realestate-content';
 import {
-  dashboardReturnModes
+  subscribeRealEstateBatchUpdates,
+  type BatchUpdateSubscription
+} from '../lib/realestate-batch-updates';
+import {
+  fetchLatestRealEstateDailyBriefing,
+  type RealEstateDailyBriefing
+} from '../lib/realestate-daily-briefing';
+import {
+  buildRegionalMomentumRows,
+  type DashboardRegionalMomentumRow
 } from '../lib/realestate-dashboard';
+import { fetchRealEstateMapLayer } from '../lib/realestate-map';
 import {
   fetchRealEstateReactionRankingWithFallback,
   type RealEstateReactionRanking,
@@ -24,10 +34,13 @@ import {
 } from '../lib/realestate-market-facts';
 import { sourceIconUrl } from '../lib/source-icons';
 
-const returnTimeModes = dashboardReturnModes;
 const marketIndicators = ref<RealEstateMarketIndicatorCard[]>([]);
 const dashboardContentItems = ref<NewsroomFeedItem[]>([]);
 const dashboardContentLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+const latestDailyBriefing = ref<RealEstateDailyBriefing | null>(null);
+const dailyBriefingLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+const weeklyPriceRows = ref<DashboardRegionalMomentumRow[]>([]);
+const weeklyPriceRiserLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const dashboardContentFeeds: NewsroomCategory[] = ['news', 'reports', 'videos', 'links'];
 const dashboardContentPageSize = 100;
 const isRefreshing = ref(false);
@@ -65,10 +78,68 @@ type ReactionMetric = 'bullish' | 'bearish';
 type DailyBriefingItem = {
   id: string;
   text: string;
-  tone: string;
+  role: string;
 };
+const headlineRoles = ['핵심 신호', '지역 흐름', '시장 변수'];
 
-const topRiser = computed(() => dashboardReactionItems.value[0] ?? null);
+const topWeeklyPriceGainer = computed(() =>
+  weeklyPriceRows.value.find((row) => row.changePct > 0) ?? null
+);
+const topWeeklyPriceDecliner = computed(() =>
+  [...weeklyPriceRows.value].reverse().find((row) => row.changePct < 0) ?? null
+);
+const parentTargetIdByRegionCodePrefix: Record<string, string> = {
+  '11': 'region-seoul',
+  '21': 'region-busan',
+  '22': 'region-daegu',
+  '23': 'region-incheon',
+  '24': 'region-gwangju',
+  '25': 'region-daejeon',
+  '26': 'region-busan',
+  '27': 'region-daegu',
+  '28': 'region-incheon',
+  '29': 'region-gwangju',
+  '30': 'region-daejeon',
+  '31': 'region-gyeonggi',
+  '32': 'region-gangwon',
+  '33': 'region-chungbuk',
+  '34': 'region-chungnam',
+  '35': 'region-jeonbuk',
+  '36': 'region-sejong',
+  '37': 'region-gyeongbuk',
+  '38': 'region-gyeongnam',
+  '39': 'region-jeju',
+  '41': 'region-gyeonggi',
+  '43': 'region-chungbuk',
+  '44': 'region-chungnam',
+  '46': 'region-jeonnam',
+  '47': 'region-gyeongbuk',
+  '48': 'region-gyeongnam',
+  '50': 'region-jeju',
+  '51': 'region-gangwon',
+  '52': 'region-jeonbuk'
+};
+const inferParentTargetId = (row: DashboardRegionalMomentumRow) => {
+  const regionPrefix = row.regionCode.slice(0, 2);
+  const parentFromRegionCode = parentTargetIdByRegionCodePrefix[regionPrefix];
+  if (parentFromRegionCode) return parentFromRegionCode;
+
+  const [type, sido] = row.targetId.split('-');
+  if (type === 'region' && sido) return `region-${sido}`;
+
+  return 'region-seoul';
+};
+const targetReportPath = (row: DashboardRegionalMomentumRow) => {
+  const parentTargetId = row.parentTargetId ?? inferParentTargetId(row);
+  const selectedRegionCode = row.geometryId ?? row.regionCode;
+  const params = new URLSearchParams({
+    selectedTargetId: row.targetId,
+    selectedRegionCode,
+    period: 'week'
+  });
+
+  return `/realestate/map/${encodeURIComponent(parentTargetId)}?${params.toString()}`;
+};
 const reactionSignalScore = (item: DashboardReactionItem, metric: ReactionMetric) =>
   Math.round(item.mentionCount * item.reactionDirectionRatio[metric]);
 const buildReactionGroup = (id: 'positive' | 'negative', label: string, caption: string, metric: ReactionMetric) => ({
@@ -108,47 +179,27 @@ const objectParticle = (word: string) => {
 };
 
 const dailyBriefingItems = computed<DailyBriefingItem[]>(() => {
-  const issues = topBriefingIssues.value;
-  const topTarget = topRiser.value;
-  const issuePhrase = issues.length ? `${issues.join('·')} 쟁점의 ` : '';
-  const newsCount = dashboardNewsItems.value.length;
-  const reportCount = dashboardReportItems.value.length;
-  const videoCount = dashboardVideoItems.value.length;
-  const contentSummary = dashboardContentLoadState.value === 'loading'
-    ? '최근 뉴스와 리포트 후보를 불러오는 중입니다.'
-    : dashboardContentLoadState.value === 'error'
-      ? '뉴스룸 수집 상태 확인이 필요합니다.'
-      : newsCount + reportCount + videoCount
-        ? `뉴스 ${newsCount}건, 리포트 ${reportCount}건, 영상 ${videoCount}건을 우선 확인합니다.`
-        : '최근 이슈 후보가 아직 충분히 분리되지 않았습니다.';
-
-  return [
-    {
-      id: 'reaction',
-      text: topTarget
-        ? `${topTarget.name}${objectParticle(topTarget.name)} 중심으로 ${issuePhrase}반응이 모이고 있습니다.`
-        : '지역 반응 데이터가 아직 충분하지 않아 오늘의 쟁점 후보를 더 모아야 합니다.',
-      tone: 'reaction'
-    },
-    {
-      id: 'indicator',
-      text: marketIndicators.value.length
-        ? `공식 지표는 ${marketIndicators.value.slice(0, 2).map((indicator) => `${indicator.label} ${indicator.value}`).join(', ')} 흐름을 함께 봐야 합니다.`
-        : '공식 지표 수집이 아직 대기 중이라 가격 흐름 판단은 보류해야 합니다.',
-      tone: 'indicator'
-    },
-    {
-      id: 'issue',
-      text: contentSummary,
-      tone: 'issue'
-    }
-  ];
+  if (latestDailyBriefing.value?.summaryHeadlines.length === 3) {
+    return latestDailyBriefing.value.summaryHeadlines.map((headline, index) => ({
+      id: `daily-briefing-${index + 1}`,
+      text: headline,
+      role: headlineRoles[index] ?? '핵심'
+    }));
+  }
+  if (dailyBriefingLoadState.value === 'loading') {
+    return [{ id: 'daily-briefing-loading', text: '브리핑 생성 대기', role: '대기' }];
+  }
+  if (dailyBriefingLoadState.value === 'error') {
+    return [{ id: 'daily-briefing-error', text: '브리핑 갱신 확인 필요', role: '확인 필요' }];
+  }
+  return [{ id: 'daily-briefing-empty', text: '브리핑 생성 대기', role: '대기' }];
 });
 
 const currentSlide = ref(0);
 const isPaused = ref(false);
 const totalSlides = computed(() => Math.max(dashboardReactionItems.value.length, 1));
 let autoSlideTimer: ReturnType<typeof setInterval> | undefined;
+let batchUpdateSubscription: BatchUpdateSubscription | null = null;
 
 const startTimer = () => {
   if (autoSlideTimer) clearInterval(autoSlideTimer);
@@ -160,6 +211,18 @@ const refreshMarketSummary = async () => {
     marketIndicators.value = buildMarketSummaryIndicators(summary, realEstateMarketIndicatorFallbacks);
   } catch {
     marketIndicators.value = [];
+  }
+};
+const refreshWeeklyPriceRiser = async () => {
+  weeklyPriceRiserLoadState.value = 'loading';
+  weeklyPriceRows.value = [];
+  try {
+    const layer = await fetchRealEstateMapLayer({ layerType: 'sigungu' });
+    weeklyPriceRows.value = buildRegionalMomentumRows(layer, 'week', Number.MAX_SAFE_INTEGER);
+    weeklyPriceRiserLoadState.value = weeklyPriceRows.value.length ? 'live' : 'empty';
+  } catch {
+    weeklyPriceRows.value = [];
+    weeklyPriceRiserLoadState.value = 'error';
   }
 };
 const reactionKeywordFromIssue = (issue: RealEstateReactionIssue, index: number): ReactionKeyword => ({
@@ -258,21 +321,42 @@ const refreshDashboardReactions = async () => {
 const refreshDashboardContent = async () => {
   dashboardContentLoadState.value = 'loading';
   dashboardContentItems.value = [];
-  try {
-    const groupedItems = await Promise.all(
-      dashboardContentFeeds.map(async (feed) => {
+  const groupedItems = await Promise.all(
+    dashboardContentFeeds.map(async (feed) => {
+      try {
         const contentItems = await fetchRealEstateNewsroom({ feed, page: 1, pageSize: dashboardContentPageSize });
-        return buildNewsroomFeedItems(contentItems)
-          .filter((item) => item.category === feed)
-          .slice(0, 5);
-      })
-    );
-    const mappedItems = ensureNewsroomCategoryCoverage(groupedItems.flat());
-    dashboardContentItems.value = mappedItems;
-    dashboardContentLoadState.value = mappedItems.length ? 'live' : 'empty';
+        return {
+          failed: false,
+          items: buildNewsroomFeedItems(contentItems)
+            .filter((item) => item.category === feed)
+            .slice(0, 5)
+        };
+      } catch {
+        return {
+          failed: true,
+          items: [] as NewsroomFeedItem[]
+        };
+      }
+    })
+  );
+  const mappedItems = ensureNewsroomCategoryCoverage(groupedItems.flatMap((group) => group.items));
+  const failedFeedCount = groupedItems.filter((group) => group.failed).length;
+  dashboardContentItems.value = mappedItems;
+  dashboardContentLoadState.value = mappedItems.length
+    ? 'live'
+    : failedFeedCount === dashboardContentFeeds.length
+      ? 'error'
+      : 'empty';
+};
+const refreshDailyBriefing = async () => {
+  dailyBriefingLoadState.value = 'loading';
+  try {
+    const briefing = await fetchLatestRealEstateDailyBriefing();
+    latestDailyBriefing.value = briefing;
+    dailyBriefingLoadState.value = briefing?.summaryHeadlines.length === 3 ? 'live' : 'empty';
   } catch {
-    dashboardContentItems.value = [];
-    dashboardContentLoadState.value = 'error';
+    latestDailyBriefing.value = null;
+    dailyBriefingLoadState.value = 'error';
   }
 };
 const resetTimer = () => { if (!isPaused.value) startTimer(); };
@@ -345,7 +429,9 @@ const refreshAll = async () => {
   isRefreshing.value = true;
   try {
     await Promise.allSettled([
+      refreshDailyBriefing(),
       refreshDashboardReactions(),
+      refreshWeeklyPriceRiser(),
       refreshMarketSummary(),
       refreshDashboardContent()
     ]);
@@ -358,8 +444,23 @@ const refreshAll = async () => {
 onMounted(() => {
   startTimer();
   void refreshAll();
+  batchUpdateSubscription = subscribeRealEstateBatchUpdates((event) => {
+    if (event.topic === 'newsroom') {
+      void refreshDashboardContent();
+    }
+    if (event.topic === 'daily_briefing') {
+      void refreshDailyBriefing();
+    }
+    if (event.topic === 'map-layers') {
+      void refreshWeeklyPriceRiser();
+    }
+  });
 });
-onUnmounted(() => clearInterval(autoSlideTimer));
+onUnmounted(() => {
+  clearInterval(autoSlideTimer);
+  batchUpdateSubscription?.close();
+  batchUpdateSubscription = null;
+});
 
 const refreshButtonLabel = computed(() => (isRefreshing.value ? '불러오는 중…' : '실시간 데이터 불러오기'));
 const lastRefreshedLabel = computed(() => {
@@ -368,7 +469,18 @@ const lastRefreshedLabel = computed(() => {
   return `${lastRefreshedAt.value.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} 기준`;
 });
 
-const formatPct = (value: number | null) => value === null ? '최신' : `${value > 0 ? '+' : ''}${value}%`;
+const formatSignedPct = (value: number) => {
+  const rounded = Math.round(value * 100) / 100;
+  const text = Number.isInteger(rounded)
+    ? rounded.toLocaleString('ko-KR')
+    : rounded.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  return `${rounded > 0 ? '+' : ''}${text}%`;
+};
+const formatDateOnly = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return '기준일 확인 필요';
+  return trimmed.includes('T') ? trimmed.slice(0, 10) : trimmed;
+};
 const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
 const coverageStatusLabel = (status: string) => {
   if (status === 'source_skewed') return '출처 편중';
@@ -379,6 +491,15 @@ const coverageStatusLabel = (status: string) => {
   if (status === 'stale') return '갱신 지연';
   return status || '확인 필요';
 };
+const weeklyPriceReferenceLabel = computed(() => {
+  const referenceRow = topWeeklyPriceGainer.value ?? topWeeklyPriceDecliner.value;
+  return referenceRow ? `최근 1주 · ${formatDateOnly(referenceRow.asOf)} 기준` : '최근 1주 · 기준일 확인 필요';
+});
+const weeklyPriceRiserEmptyText = computed(() => {
+  if (weeklyPriceRiserLoadState.value === 'loading') return '주간 가격 상승 세부지역을 불러오는 중입니다.';
+  if (weeklyPriceRiserLoadState.value === 'error') return '주간 가격 데이터를 불러오지 못했습니다. 지도 layer 배치 상태 확인이 필요합니다.';
+  return '주간 가격 상승·하락 세부지역이 아직 없습니다. 수집 전/insufficient 상태입니다.';
+});
 const dashboardReactionEmptyText = computed(() => {
   if (reactionRankingLoadState.value === 'loading') return '지역 반응 TOP10을 불러오는 중입니다.';
   if (reactionRankingLoadState.value === 'error') return '지역 반응 데이터를 불러오지 못했습니다. 크롤링/반응 집계 배치 상태 확인이 필요합니다.';
@@ -437,25 +558,28 @@ const hideBrokenIcon = (event: Event) => {
           <article class="daily-briefing-card" aria-labelledby="daily-briefing-title">
             <div class="daily-briefing-header">
               <div>
-                <p class="label">AI briefing</p>
-                <h3 id="daily-briefing-title">
-                  <span class="briefing-title-accent">Today</span> 3줄 브리핑
-                </h3>
+                <p class="label">Daily briefing</p>
+                <h3 id="daily-briefing-title">3줄 브리핑</h3>
               </div>
-              <RouterLink class="daily-briefing-cta" to="/newsroom">자세한 분석 보러가기 →</RouterLink>
+              <RouterLink class="daily-briefing-cta" to="/realestate/daily-briefing">
+                <span>전체 브리핑</span>
+                <strong>자세한 분석 보러가기</strong>
+              </RouterLink>
             </div>
 
-            <div class="daily-briefing-body" aria-label="오늘의 핵심 부동산 상황 요약">
-              <ol class="daily-briefing-list">
-                <li
-                  v-for="item in dailyBriefingItems"
-                  :key="item.id"
-                  :class="['daily-briefing-item', item.tone]"
-                >
+            <section class="daily-briefing-headline-grid daily-briefing-dashboard-headlines" aria-label="오늘의 핵심 부동산 상황 요약">
+              <article
+                v-for="(item, index) in dailyBriefingItems"
+                :key="item.id"
+                class="daily-briefing-headline-card"
+              >
+                <span class="daily-briefing-headline-index">{{ dailyBriefingItems.length === 3 ? String(index + 1).padStart(2, '0') : '—' }}</span>
+                <div>
+                  <small>{{ item.role }}</small>
                   <strong>{{ item.text }}</strong>
-                </li>
-              </ol>
-            </div>
+                </div>
+              </article>
+            </section>
 
           </article>
 
@@ -464,19 +588,6 @@ const hideBrokenIcon = (event: Event) => {
               <div>
                 <p class="label">지금 뜨는 반응</p>
                 <h3 id="mood-title">지역·단지 반응 한눈에</h3>
-              </div>
-              <div class="section-actions">
-                <div class="period-tabs mood-period-tabs" aria-label="지역·단지별 반응 비교 기간">
-                  <button
-                    v-for="period in returnTimeModes"
-                    :key="`mood-${period.id}`"
-                    type="button"
-                    :class="{ active: period.id === 'month' }"
-                  >
-                    {{ period.label }}
-                  </button>
-                </div>
-                <RouterLink class="detail-link" to="/realestate/targets/region-seoul-mapo">자세히 보기 →</RouterLink>
               </div>
             </div>
 
@@ -779,39 +890,50 @@ const hideBrokenIcon = (event: Event) => {
 
       <aside class="side-drawer" aria-label="오른쪽 빠른 패널">
         <section class="drawer-tab-screen drawer-reaction-screen">
-          <div v-if="topRiser" class="drawer-card hot-region-panel" aria-labelledby="hot-region-title">
-            <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
-            <h3 id="hot-region-title">{{ topRiser.name }}</h3>
-            <strong>{{ formatPct(topRiser.mentionDeltaPct) }}</strong>
-            <span>{{ topRiser.targetId }} · 언급 {{ topRiser.previousMentionCount }} → {{ topRiser.mentionCount }}</span>
-            <div class="hot-region-metrics">
-              <div>
-                <span>열기</span>
-                <em>{{ topRiser.heatScore }}</em>
+          <div class="hot-region-shell">
+            <div v-if="topWeeklyPriceGainer || topWeeklyPriceDecliner" class="drawer-card hot-region-panel" aria-labelledby="hot-region-title">
+              <p id="hot-region-title" class="hot-region-title-band">라이브 패널 · 주간 가격 흐름</p>
+              <div class="hot-region-movement-grid">
+                <RouterLink
+                  v-if="topWeeklyPriceGainer"
+                  class="hot-region-movement hot-region-movement-up"
+                  :to="targetReportPath(topWeeklyPriceGainer)"
+                  :aria-label="`${topWeeklyPriceGainer.name} 지역 분석 보고서 보기`"
+                >
+                  <span>이번주 가장 많이 상승한 지역</span>
+                  <h3>{{ topWeeklyPriceGainer.name }}</h3>
+                  <strong>{{ formatSignedPct(topWeeklyPriceGainer.changePct) }}</strong>
+                </RouterLink>
+                <div v-else class="hot-region-movement hot-region-movement-up hot-region-movement-empty" aria-disabled="true">
+                  <span>이번주 가장 많이 상승한 지역</span>
+                  <h3>확인 필요</h3>
+                  <strong>수집 전</strong>
+                </div>
+                <div class="hot-region-divider" aria-hidden="true"></div>
+                <RouterLink
+                  v-if="topWeeklyPriceDecliner"
+                  class="hot-region-movement hot-region-movement-down"
+                  :to="targetReportPath(topWeeklyPriceDecliner)"
+                  :aria-label="`${topWeeklyPriceDecliner.name} 지역 분석 보고서 보기`"
+                >
+                  <span>이번주 가장 많이 하락한 지역</span>
+                  <h3>{{ topWeeklyPriceDecliner.name }}</h3>
+                  <strong>{{ formatSignedPct(topWeeklyPriceDecliner.changePct) }}</strong>
+                </RouterLink>
+                <div v-else class="hot-region-movement hot-region-movement-down hot-region-movement-empty" aria-disabled="true">
+                  <span>이번주 가장 많이 하락한 지역</span>
+                  <h3>확인 필요</h3>
+                  <strong>수집 전</strong>
+                </div>
               </div>
-              <div>
-                <span>시장</span>
-                <em>{{ topRiser.market }}</em>
-              </div>
+              <span class="hot-region-reference">{{ weeklyPriceReferenceLabel }}</span>
             </div>
-            <div class="hot-region-drivers" aria-label="이 지역 반응이 움직인 이유">
-              <p>왜 움직였나</p>
-              <div>
-                <span v-for="driver in topRiser.reactionDrivers" :key="`${driver.type}-${driver.label}`" class="hot-region-driver">
-                  <small>{{ driver.type }}</small>
-                  {{ driver.label }}
-                </span>
-              </div>
+            <div v-else class="drawer-card hot-region-panel" aria-labelledby="hot-region-title-empty">
+              <p id="hot-region-title-empty" class="hot-region-title-band">라이브 패널 · 주간 가격 흐름</p>
+              <h3>수집 전</h3>
+              <strong>insufficient</strong>
+              <span>{{ weeklyPriceRiserEmptyText }}</span>
             </div>
-            <ul class="movement-reasons">
-              <li v-for="reason in topRiser.movementReasons" :key="reason">{{ reason }}</li>
-            </ul>
-          </div>
-          <div v-else class="drawer-card hot-region-panel" aria-labelledby="hot-region-title-empty">
-            <p class="label">라이브 패널 · 지금 언급 급상승 지역</p>
-            <h3 id="hot-region-title-empty">수집 전</h3>
-            <strong>insufficient</strong>
-            <span>{{ dashboardReactionEmptyText }}</span>
           </div>
         </section>
       </aside>

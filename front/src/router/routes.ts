@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 
+import DailyBriefingPage from '../pages/DailyBriefingPage.vue';
 import DashboardPage from '../pages/DashboardPage.vue';
 import IndicatorsPage from '../pages/IndicatorsPage.vue';
 import NewsroomPage from '../pages/NewsroomPage.vue';
@@ -15,6 +16,26 @@ export const routes: RouteRecordRaw[] = [
     path: '/dashboard',
     name: 'dashboard',
     component: DashboardPage
+  },
+  {
+    path: '/realestate/daily-briefing',
+    name: 'realestate-daily-briefing',
+    component: DailyBriefingPage
+  },
+  {
+    path: '/auth/login',
+    name: 'auth-login',
+    component: () => import('../pages/AuthPage.vue')
+  },
+  {
+    path: '/auth/register',
+    name: 'auth-register',
+    component: () => import('../pages/RegisterPage.vue')
+  },
+  {
+    path: '/auth/find-account',
+    name: 'auth-find-account',
+    component: () => import('../pages/FindAccountPage.vue')
   },
   {
     path: '/realestate/map',

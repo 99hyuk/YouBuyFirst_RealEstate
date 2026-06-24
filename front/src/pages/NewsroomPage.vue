@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
+import {
+  subscribeRealEstateBatchUpdates,
+  type BatchUpdateSubscription
+} from '../lib/realestate-batch-updates';
 import {
   buildNewsroomFeedItems,
   ensureNewsroomCategoryCoverage,
@@ -57,6 +61,7 @@ const activeFilter = computed<NewsroomFilter>(() => {
 });
 const feedItems = ref<NewsroomFeedItem[]>([]);
 const newsroomLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+let batchUpdateSubscription: BatchUpdateSubscription | null = null;
 
 const activeTab = computed(() => filterLabels[activeFilter.value]);
 const activeItems = computed(() =>
@@ -190,6 +195,16 @@ const refreshNewsroomContent = async () => {
 
 onMounted(() => {
   void refreshNewsroomContent();
+  batchUpdateSubscription = subscribeRealEstateBatchUpdates((event) => {
+    if (event.topic === 'newsroom') {
+      void refreshNewsroomContent();
+    }
+  });
+});
+
+onBeforeUnmount(() => {
+  batchUpdateSubscription?.close();
+  batchUpdateSubscription = null;
 });
 
 watch(activeFilter, () => {
@@ -199,12 +214,11 @@ watch(activeFilter, () => {
 
 <template>
   <section class="newsroom-page">
-    <section class="panel content-feed-card newsroom-title-card" aria-labelledby="newsroom-title">
-      <div class="panel-header newsroom-title-header">
-        <div class="feed-title-wrap">
-          <span class="feed-title-dot" aria-hidden="true"></span>
-          <h2 id="newsroom-title" class="feed-panel-title">뉴스룸</h2>
-        </div>
+    <section class="newsroom-hero" aria-labelledby="newsroom-title">
+      <div>
+        <p class="label">콘텐츠 피드</p>
+        <h2 id="newsroom-title">뉴스룸</h2>
+        <span>뉴스·리포트·영상·블로그·커뮤니티를 원문 링크 기준으로 모아봅니다.</span>
       </div>
     </section>
 

@@ -4,6 +4,9 @@ export type DashboardReturnMode = PeriodKey | 'year';
 
 export type DashboardRegionalMomentumRow = {
   targetId: string;
+  parentTargetId?: string | null;
+  regionCode: string;
+  geometryId?: string | null;
   name: string;
   changePct: number;
   sampleCount: number;
@@ -31,11 +34,14 @@ export function buildRegionalMomentumRows(
   if (!layer || period === 'year') return [];
 
   const rows = layer.targets
-    .map((target) => {
+    .flatMap((target) => {
       const periodMeta = target.periods[period];
-      if (!isPriceMomentumPeriod(periodMeta)) return null;
-      return {
+      if (!isPriceMomentumPeriod(periodMeta)) return [];
+      const row: DashboardRegionalMomentumRow = {
         targetId: target.targetId,
+        parentTargetId: target.parentTargetId,
+        regionCode: target.regionCode,
+        geometryId: target.geometryId,
         name: target.displayName,
         changePct: roundTwo(periodMeta.changePct),
         sampleCount: periodMeta.sampleCount,
@@ -46,9 +52,9 @@ export function buildRegionalMomentumRows(
         stale: Boolean(periodMeta.stale ?? layer.stale),
         barPct: 0,
         tone: periodMeta.changePct >= 0 ? 'up' : 'down'
-      } satisfies DashboardRegionalMomentumRow;
+      };
+      return [row];
     })
-    .filter((row): row is DashboardRegionalMomentumRow => row !== null)
     .sort((left, right) => right.changePct - left.changePct)
     .slice(0, limit);
 
@@ -80,6 +86,8 @@ function dashboardProviderLabel(provider?: string | null): string {
     map_layer_snapshots: '지도 흐름 자료',
     market_facts: '시장 사실',
     molit: '국토교통부',
+    reb: '한국부동산원',
+    reb_rone_weekly_apt_sale_price_index_region: '한국부동산원',
     reb_stat: '한국부동산원'
   };
   return labels[normalized] ?? normalized.replace(/_/g, ' ');

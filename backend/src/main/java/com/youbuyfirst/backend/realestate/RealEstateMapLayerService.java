@@ -20,8 +20,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -33,21 +35,48 @@ import java.util.Optional;
 @Service
 public class RealEstateMapLayerService {
 
-    private static final List<String> PERIOD_ORDER = List.of("month", "quarter", "halfYear");
+    private static final List<String> PERIOD_ORDER = List.of("week", "month", "quarter", "halfYear", "year");
     private static final String MAP_REFRESH_PROVIDER = "real_estate_map_layer_refresh";
     private static final String MAP_REFRESH_SOURCE_LABEL = "실거래 market facts + 반응 snapshot";
     private static final String REACTION_ONLY_PROVIDER = "real_estate_reaction_snapshots";
     private static final String REACTION_ONLY_SOURCE_LABEL = "커뮤니티 반응 heat · market fact 수집 전";
-    private static final String OFFICIAL_PRICE_INDEX_FACT_TYPE = "sale_price_index_change_pct";
+    private static final String OFFICIAL_PRICE_INDEX_FACT_TYPE = "price_index";
+    private static final String OFFICIAL_PRICE_INDEX_WEEKLY_DATASET = "reb_rone_weekly_apt_sale_price_index_region";
     private static final String OFFICIAL_PRICE_INDEX_MONTHLY_DATASET = "reb_rone_monthly_apt_sale_price_index";
-    private static final String OFFICIAL_PRICE_INDEX_REGIONAL_MAP_DATASET = "reb_rone_regional_price_change";
-    private static final List<String> OFFICIAL_PRICE_INDEX_PROVIDER_DATASETS = List.of(
-            OFFICIAL_PRICE_INDEX_MONTHLY_DATASET,
-            OFFICIAL_PRICE_INDEX_REGIONAL_MAP_DATASET
+    private static final List<String> OFFICIAL_PRICE_INDEX_WEEKLY_PROVIDER_DATASETS = List.of(
+            OFFICIAL_PRICE_INDEX_WEEKLY_DATASET
+    );
+    private static final List<String> OFFICIAL_PRICE_INDEX_MONTHLY_PROVIDER_DATASETS = List.of(
+            OFFICIAL_PRICE_INDEX_MONTHLY_DATASET
     );
     private static final String OFFICIAL_PRICE_INDEX_SOURCE_LABEL =
-            "한국부동산원 R-ONE 전국주택가격동향조사 매매가격지수 변동률";
+            "한국부동산원 R-ONE 전국주택가격동향조사 매매가격지수";
     private static final BigDecimal EXTREME_CHANGE_THRESHOLD_PCT = BigDecimal.valueOf(50);
+    private static final Map<String, String> RONE_MONTHLY_SINGLE_TIER_LEGAL_DONG_CODES_BY_REGION_CODE = Map.of(
+            "29010", "36"
+    );
+    private static final Map<String, String> RONE_WEEKLY_SINGLE_TIER_LEGAL_DONG_CODES_BY_REGION_CODE = Map.of(
+            "29010", "36000"
+    );
+    private static final Map<String, String> RONE_WEEKLY_SIDO_LEGAL_DONG_CODES_BY_REGION_CODE = Map.ofEntries(
+            Map.entry("11", "11000"),
+            Map.entry("21", "26000"),
+            Map.entry("22", "27000"),
+            Map.entry("23", "28000"),
+            Map.entry("24", "29000"),
+            Map.entry("25", "30000"),
+            Map.entry("26", "31000"),
+            Map.entry("29", "36000"),
+            Map.entry("31", "41000"),
+            Map.entry("32", "42000"),
+            Map.entry("33", "43000"),
+            Map.entry("34", "44000"),
+            Map.entry("35", "45000"),
+            Map.entry("36", "46000"),
+            Map.entry("37", "47000"),
+            Map.entry("38", "48000"),
+            Map.entry("39", "50000")
+    );
 
     private final MapFeatureRepository mapFeatureRepository;
     private final MapLayerSnapshotRepository mapLayerSnapshotRepository;
@@ -144,7 +173,14 @@ public class RealEstateMapLayerService {
                 }
                 MapLayerComputation value = computation.get();
                 String id = mapRefreshId(layerType, feature.getTargetId(), period, value.asOf());
-                MapLayerSnapshot snapshot = mapLayerSnapshotRepository.findById(id)
+                MapLayerSnapshot snapshot = mapLayerSnapshotRepository
+                        .findByTargetIdAndLayerTypeAndPeriodKeyAndAsOf(
+                                feature.getTargetId(),
+                                layerType,
+                                period,
+                                value.asOf()
+                        )
+                        .or(() -> mapLayerSnapshotRepository.findById(id))
                         .orElseGet(() -> new MapLayerSnapshot(id));
                 snapshot.update(
                         feature.getTargetId(),
@@ -179,7 +215,8 @@ public class RealEstateMapLayerService {
         if (officialPriceIndex.isPresent()) {
             return officialPriceIndex;
         }
-        boolean priceIndexPeriod = officialPriceIndexWindowMonths(period).isPresent();
+        boolean priceIndexPeriod = officialPriceIndexWindowWeeks(period).isPresent()
+                || officialPriceIndexWindowMonths(period).isPresent();
 
         LocalDate endDate = LocalDate.ofInstant(asOf, ZoneOffset.UTC);
         LocalDate startDate = endDate.minusDays(periodDays(period));
@@ -256,19 +293,25 @@ public class RealEstateMapLayerService {
             String period,
             Instant asOf
     ) {
+        Optional<MapLayerComputation> weeklySnapshot = computeWeeklyOfficialPriceIndexSnapshot(feature, period, asOf);
+        if (weeklySnapshot.isPresent()) {
+            return weeklySnapshot;
+        }
+
         Optional<Integer> windowMonths = officialPriceIndexWindowMonths(period);
         if (windowMonths.isEmpty()) {
             return Optional.empty();
         }
         LocalDate endDate = LocalDate.ofInstant(asOf, ZoneOffset.UTC);
-        List<String> lookupCodes = officialPriceIndexLookupCodes(feature);
-        List<RealEstateMarketFact> facts = marketFactRepository.findLatestOfficialMapLayerFacts(
-                        feature.getTargetId(),
+        List<String> lookupCodes = officialPriceIndexLookupCodes(feature, false);
+        int requiredPoints = windowMonths.get() + 1;
+        List<RealEstateMarketFact> facts = findLatestOfficialPriceIndexFacts(
+                        feature,
                         lookupCodes,
                         OFFICIAL_PRICE_INDEX_FACT_TYPE,
-                        OFFICIAL_PRICE_INDEX_PROVIDER_DATASETS,
+                        OFFICIAL_PRICE_INDEX_MONTHLY_PROVIDER_DATASETS,
                         endDate,
-                        PageRequest.of(0, Math.max(8, windowMonths.get() * OFFICIAL_PRICE_INDEX_PROVIDER_DATASETS.size() * 3))
+                        PageRequest.of(0, Math.max(16, requiredPoints * OFFICIAL_PRICE_INDEX_MONTHLY_PROVIDER_DATASETS.size() * 3))
                 ).stream()
                 .filter(fact -> "ok".equals(fact.getDataStatus()))
                 .collect(java.util.stream.Collectors.toMap(
@@ -279,24 +322,107 @@ public class RealEstateMapLayerService {
                 ))
                 .values()
                 .stream()
-                .limit(windowMonths.get())
+                .limit(requiredPoints)
                 .toList();
-        if (facts.size() < windowMonths.get()) {
+        if (facts.size() < requiredPoints || !hasMonthlyWindow(facts, windowMonths.get())) {
             return Optional.empty();
         }
 
-        BigDecimal cumulativeMultiplier = BigDecimal.ONE;
-        for (RealEstateMarketFact fact : facts) {
-            Optional<BigDecimal> changePct = marketFactDecimalValue(fact, "value");
-            if (changePct.isEmpty()) {
-                return Optional.empty();
-            }
-            cumulativeMultiplier = cumulativeMultiplier.multiply(
-                    BigDecimal.ONE.add(changePct.get().divide(BigDecimal.valueOf(100), 8, RoundingMode.HALF_UP))
-            );
+        return buildOfficialPriceIndexComputation(facts, windowMonths.get());
+    }
+
+    private Optional<MapLayerComputation> computeWeeklyOfficialPriceIndexSnapshot(
+            MapFeature feature,
+            String period,
+            Instant asOf
+    ) {
+        Optional<Integer> windowWeeks = officialPriceIndexWindowWeeks(period);
+        if (windowWeeks.isEmpty()) {
+            return Optional.empty();
+        }
+        LocalDate endDate = LocalDate.ofInstant(asOf, ZoneOffset.UTC);
+        List<String> lookupCodes = officialPriceIndexLookupCodes(feature, true);
+        int requiredPoints = windowWeeks.get() + 1;
+        List<RealEstateMarketFact> facts = findLatestOfficialPriceIndexFacts(
+                        feature,
+                        lookupCodes,
+                        OFFICIAL_PRICE_INDEX_FACT_TYPE,
+                        OFFICIAL_PRICE_INDEX_WEEKLY_PROVIDER_DATASETS,
+                        endDate,
+                        PageRequest.of(0, Math.max(8, requiredPoints * 3))
+                ).stream()
+                .filter(fact -> "ok".equals(fact.getDataStatus()))
+                .collect(java.util.stream.Collectors.toMap(
+                        RealEstateMarketFact::getObservedAt,
+                        fact -> fact,
+                        this::preferOfficialPriceIndexFact,
+                        LinkedHashMap::new
+                ))
+                .values()
+                .stream()
+                .limit(requiredPoints)
+                .toList();
+        if (facts.size() < requiredPoints || !hasWeeklyWindow(facts, windowWeeks.get())) {
+            return Optional.empty();
         }
 
+        return buildOfficialPriceIndexComputation(facts, windowWeeks.get());
+    }
+
+    private List<RealEstateMarketFact> findLatestOfficialPriceIndexFacts(
+            MapFeature feature,
+            List<String> lookupCodes,
+            String factType,
+            List<String> providerDatasets,
+            LocalDate endDate,
+            PageRequest pageRequest
+    ) {
+        Map<String, RealEstateMarketFact> facts = new LinkedHashMap<>();
+        String targetId = trimToNull(feature.getTargetId());
+        if (targetId != null) {
+            marketFactRepository.findLatestOfficialMapLayerFactsByTargetId(
+                    targetId,
+                    factType,
+                    providerDatasets,
+                    endDate,
+                    pageRequest
+            ).forEach(fact -> facts.putIfAbsent(officialFactLookupKey(fact), fact));
+        }
+
+        List<String> usableLookupCodes = lookupCodes.stream()
+                .filter(code -> !"__none__".equals(code))
+                .toList();
+        if (!usableLookupCodes.isEmpty()) {
+            marketFactRepository.findLatestOfficialMapLayerFactsByLegalDongCodeIn(
+                    usableLookupCodes,
+                    factType,
+                    providerDatasets,
+                    endDate,
+                    pageRequest
+            ).forEach(fact -> facts.putIfAbsent(officialFactLookupKey(fact), fact));
+        }
+
+        return facts.values().stream()
+                .sorted(Comparator.comparing(RealEstateMarketFact::getObservedAt)
+                        .reversed()
+                        .thenComparing(RealEstateMarketFact::getProviderObjectId))
+                .toList();
+    }
+
+    private Optional<MapLayerComputation> buildOfficialPriceIndexComputation(
+            List<RealEstateMarketFact> facts,
+            int windowSize
+    ) {
         RealEstateMarketFact latestFact = facts.get(0);
+        RealEstateMarketFact baselineFact = facts.get(windowSize);
+        Optional<BigDecimal> latestIndex = marketFactDecimalValue(latestFact, "indexValue")
+                .or(() -> marketFactDecimalValue(latestFact, "value"));
+        Optional<BigDecimal> baselineIndex = marketFactDecimalValue(baselineFact, "indexValue")
+                .or(() -> marketFactDecimalValue(baselineFact, "value"));
+        if (latestIndex.isEmpty() || baselineIndex.isEmpty() || baselineIndex.get().signum() <= 0) {
+            return Optional.empty();
+        }
+
         BigDecimal confidence = facts.stream()
                 .map(this::marketFactConfidence)
                 .min(Comparator.naturalOrder())
@@ -305,8 +431,11 @@ public class RealEstateMapLayerService {
         int sampleCount = facts.stream()
                 .mapToInt(this::marketFactSampleCount)
                 .sum();
-        BigDecimal changePct = cumulativeMultiplier.subtract(BigDecimal.ONE)
+
+        BigDecimal changePct = latestIndex.get()
+                .subtract(baselineIndex.get())
                 .multiply(BigDecimal.valueOf(100))
+                .divide(baselineIndex.get(), 4, RoundingMode.HALF_UP)
                 .setScale(4, RoundingMode.HALF_UP);
 
         return Optional.of(new MapLayerComputation(
@@ -321,15 +450,65 @@ public class RealEstateMapLayerService {
         ));
     }
 
-    private List<String> officialPriceIndexLookupCodes(MapFeature feature) {
+    private List<String> officialPriceIndexLookupCodes(MapFeature feature, boolean includeWeeklyFallbacks) {
         List<String> lookupCodes = new ArrayList<>();
         regionRepository.findById(feature.getTargetId()).ifPresent(region -> {
-            addLookupCode(lookupCodes, region.getLegalDongCode());
+            String legalDongCode = region.getLegalDongCode();
+            String regionCode = trimToNull(region.getRegionCode());
+            addLookupCode(lookupCodes, legalDongCode);
+            addLookupCode(
+                    lookupCodes,
+                    RONE_MONTHLY_SINGLE_TIER_LEGAL_DONG_CODES_BY_REGION_CODE.get(regionCode)
+            );
+            if (includeWeeklyFallbacks) {
+                addWeeklyOfficialPriceIndexFallbackCodes(lookupCodes, legalDongCode);
+                addLookupCode(
+                        lookupCodes,
+                        RONE_WEEKLY_SIDO_LEGAL_DONG_CODES_BY_REGION_CODE.get(regionCode)
+                );
+                addLookupCode(
+                        lookupCodes,
+                        RONE_WEEKLY_SINGLE_TIER_LEGAL_DONG_CODES_BY_REGION_CODE.get(regionCode)
+                );
+            }
         });
         if (lookupCodes.isEmpty()) {
             lookupCodes.add("__none__");
         }
         return lookupCodes;
+    }
+
+    private static void addWeeklyOfficialPriceIndexFallbackCodes(List<String> lookupCodes, String legalDongCode) {
+        String parentSigunguCode = parentSigunguLegalDongCode(legalDongCode);
+        addLookupCode(lookupCodes, parentSigunguCode);
+        addLookupCode(lookupCodes, legacyGangwonLegalDongCode(legalDongCode));
+        addLookupCode(lookupCodes, legacyGangwonLegalDongCode(parentSigunguCode));
+        addLookupCode(lookupCodes, legacyJeonbukLegalDongCode(legalDongCode));
+        addLookupCode(lookupCodes, legacyJeonbukLegalDongCode(parentSigunguCode));
+    }
+
+    private static String parentSigunguLegalDongCode(String value) {
+        String trimmed = trimToNull(value);
+        if (trimmed != null && trimmed.length() == 5 && !trimmed.endsWith("0")) {
+            return trimmed.substring(0, 4) + "0";
+        }
+        return null;
+    }
+
+    private static String legacyGangwonLegalDongCode(String value) {
+        String trimmed = trimToNull(value);
+        if (trimmed != null && trimmed.startsWith("51") && trimmed.length() >= 5) {
+            return "42" + trimmed.substring(2);
+        }
+        return null;
+    }
+
+    private static String legacyJeonbukLegalDongCode(String value) {
+        String trimmed = trimToNull(value);
+        if (trimmed != null && trimmed.startsWith("52") && trimmed.length() >= 5) {
+            return "45" + trimmed.substring(2);
+        }
+        return null;
     }
 
     private static void addLookupCode(List<String> lookupCodes, String value) {
@@ -344,6 +523,14 @@ public class RealEstateMapLayerService {
             case "month" -> Optional.of(1);
             case "quarter" -> Optional.of(3);
             case "halfYear" -> Optional.of(6);
+            case "year" -> Optional.of(12);
+            default -> Optional.empty();
+        };
+    }
+
+    private static Optional<Integer> officialPriceIndexWindowWeeks(String period) {
+        return switch (period) {
+            case "week" -> Optional.of(1);
             default -> Optional.empty();
         };
     }
@@ -360,14 +547,40 @@ public class RealEstateMapLayerService {
         return candidate.getIngestedAt().isAfter(current.getIngestedAt()) ? candidate : current;
     }
 
+    private static String officialFactLookupKey(RealEstateMarketFact fact) {
+        return "%s|%s|%s".formatted(
+                fact.getProvider(),
+                fact.getProviderDataset(),
+                fact.getProviderObjectId()
+        );
+    }
+
     private static int officialPriceIndexDatasetPriority(String providerDataset) {
+        if (OFFICIAL_PRICE_INDEX_WEEKLY_DATASET.equals(providerDataset)) {
+            return 0;
+        }
         if (OFFICIAL_PRICE_INDEX_MONTHLY_DATASET.equals(providerDataset)) {
             return 0;
         }
-        if (OFFICIAL_PRICE_INDEX_REGIONAL_MAP_DATASET.equals(providerDataset)) {
-            return 1;
-        }
         return 9;
+    }
+
+    private static boolean hasMonthlyWindow(List<RealEstateMarketFact> facts, int windowMonths) {
+        if (facts.isEmpty() || facts.size() <= windowMonths) {
+            return false;
+        }
+        YearMonth latestMonth = YearMonth.from(facts.get(0).getObservedAt());
+        YearMonth baselineMonth = YearMonth.from(facts.get(windowMonths).getObservedAt());
+        return baselineMonth.plusMonths(windowMonths).equals(latestMonth);
+    }
+
+    private static boolean hasWeeklyWindow(List<RealEstateMarketFact> facts, int windowWeeks) {
+        if (facts.isEmpty() || facts.size() <= windowWeeks) {
+            return false;
+        }
+        LocalDate latestDate = facts.get(0).getObservedAt();
+        LocalDate baselineDate = facts.get(windowWeeks).getObservedAt();
+        return ChronoUnit.WEEKS.between(baselineDate, latestDate) == windowWeeks;
     }
 
     private List<RealEstateMarketFact> findMapLayerOkFacts(
@@ -539,9 +752,11 @@ public class RealEstateMapLayerService {
 
     private static long periodDays(String period) {
         return switch (period) {
+            case "week" -> 7L;
             case "month" -> 31L;
             case "quarter" -> 92L;
             case "halfYear" -> 183L;
+            case "year" -> 366L;
             default -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Unsupported map period: " + period
@@ -561,14 +776,37 @@ public class RealEstateMapLayerService {
         if (trimmed == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Map period is required");
         }
-        if ("halfyear".equals(trimmed.toLowerCase(Locale.ROOT))) {
+        String normalized = trimmed.toLowerCase(Locale.ROOT);
+        if ("1week".equals(normalized)
+                || "1weeks".equals(normalized)
+                || "oneweek".equals(normalized)
+                || "oneweeks".equals(normalized)) {
+            return "week";
+        }
+        if ("1month".equals(normalized)
+                || "1months".equals(normalized)
+                || "onemonth".equals(normalized)
+                || "onemonths".equals(normalized)) {
+            return "month";
+        }
+        if ("halfyear".equals(normalized)
+                || "6month".equals(normalized)
+                || "6months".equals(normalized)) {
             return "halfYear";
         }
-        if ("3month".equals(trimmed.toLowerCase(Locale.ROOT))
-                || "3months".equals(trimmed.toLowerCase(Locale.ROOT))
-                || "threemonth".equals(trimmed.toLowerCase(Locale.ROOT))
-                || "threemonths".equals(trimmed.toLowerCase(Locale.ROOT))) {
+        if ("3month".equals(normalized)
+                || "3months".equals(normalized)
+                || "threemonth".equals(normalized)
+                || "threemonths".equals(normalized)) {
             return "quarter";
+        }
+        if ("12month".equals(normalized)
+                || "12months".equals(normalized)
+                || "1year".equals(normalized)
+                || "1years".equals(normalized)
+                || "oneyear".equals(normalized)
+                || "oneyears".equals(normalized)) {
+            return "year";
         }
         if (!PERIOD_ORDER.contains(trimmed)) {
             throw new ResponseStatusException(

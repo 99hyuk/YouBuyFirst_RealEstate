@@ -2,6 +2,25 @@
 
 작성일: 2026-06-13
 
+## 2026-06-23 추가 결정: R-ONE 가격지수 원천 저장과 직접 계산
+
+- 지역 분석 지도와 대시보드 가격 흐름의 1순위 지표를 주간 `reb_weekly_apt_sale_price_index_region`, 월간 `reb_monthly_apt_sale_price_index_region`으로 정했습니다.
+- 공식 원천 이름은 `전국주택가격동향조사_주간아파트동향_매매가격지수(지역별)`입니다.
+- 지도 대표 색상은 period별로 저장된 지수값을 비교해 계산합니다. `1주`는 최신 주간 지수와 직전 주간 지수, `1개월`/`3개월`/`6개월`/`1년`은 최신 월간 지수와 1/3/6/12개월 전 월간 지수를 비교합니다.
+- 주간 운영 수집은 Spring Batch job으로, 월간 운영 수집은 R-ONE Open API 기반 pipeline 수집기로 구현합니다. R-ONE 지역 현황 지도 `dtadvsCd=PR` 응답은 최신 월과 지역 코드 매핑 보조로만 사용합니다.
+- 가평, 양평처럼 지도에서 미공표처럼 보이는 지역은 DB만 보지 않고 공식 원천 CSV/API에 행이 있는지 먼저 검증합니다. 원천에 있으면 `ingestion_missing` 또는 `mapping_unresolved`, 원천에도 없으면 `official_missing`으로 분리합니다.
+- 상세 기준은 `docs/domains/realestate/OFFICIAL_PRICE_INDEX_DICTIONARY.md`에 기록했습니다.
+
+### 현재 구현과 남은 검증
+
+- `rebWeeklyPriceIndexRefreshJob`는 주간 지수 컬럼을 `factType=price_index`, `providerDataset=reb_rone_weekly_apt_sale_price_index_region`, `unit=지수`로 적재합니다.
+- `RealEstateOfficialStatsRefreshJob`의 R-ONE 월간 수집은 Open API `SttsApiTblData.do`, `STATBL_ID=A_2024_00045`, `DTACYCLE_CD=MM` 응답의 `DTA_VAL` 지수값을 `reb_rone_monthly_apt_sale_price_index`로 적재합니다. Open API 인증키는 `REB_RONE_OPENAPI_KEY` 환경변수로 주입합니다.
+- 지도 snapshot은 `week=2개`, `month=2개`, `quarter=4개`, `halfYear=7개`, `year=13개` 지수 history가 있어야 생성합니다. 부족하면 해당 target/period를 건너뜁니다.
+- 주간 R-ONE 원천은 일부 시도 대표값을 `region-busan` 같은 지도 target이 아니라 `26000` 같은 코드형 target/법정동코드로 제공합니다. 지도 snapshot refresh는 `week` 계산에 한해 현재 법정동코드, 구 단위 지역의 상위 시 코드, 강원 `51xxx`->`42xxx`, 전북 `52xxx`->`45xxx`, 시도 `regionCode`의 R-ONE 대표 법정동코드를 후보로 함께 조회합니다. 로컬 확인 기준 세종은 주간 원천 행이 없어 시도 `week`가 없고, 시군구 174개는 모두 `week` snapshot을 생성합니다.
+- `map_layer_snapshots`는 unique key 기준으로 기존 seed/mock 행을 덮어써서 중복 snapshot을 만들지 않습니다.
+- 경기 가평/양평 등 주요 미공표 의심 지역 coverage audit
+- `/indicators` 주요 일정 배치는 한국부동산원 R-ONE 보도자료 API, 국토부 보도자료, 청약Home APT 모집공고, 통계누리 다음공표일, 한국은행 통화정책방향 결정회의를 일정 row로 적재하고, 프론트는 달력 칸 안에서도 `제목 · 요약` 한 줄과 직접 공식 링크를 표시합니다.
+
 ## 이번에 확정한 것
 
 - 공공데이터 1차 provider catalog를 코드와 문서에 고정했습니다.
@@ -122,9 +141,10 @@
 - 2026-06-16 전국 시군구 `map_features`를 KOSTAT 2018 TopoJSON 기준 250개로 확장했습니다. 이때 `region_code`는 프론트 도형 매칭용 KOSTAT code, `legal_dong_code`는 R-ONE/MOLIT 현재 code로 분리했습니다.
 - 2026-06-16 R-ONE 지역 현황 지도 row와 시군구 도형을 parent region+지역명 기준으로 매칭해 174개 시군구 월간 변동률 snapshot을 생성했습니다. 로컬 확인 기준 `/api/realestate/map/layers?layerType=sigungu&parentTargetId=region-gyeonggi`는 `region-gyeonggi-paju`를 `경기도 파주시`, `regionCode=31200`, `legalDongCode=41480`, `changePct=-0.15`, `provider=reb`, `dataStatus=ok`로 반환합니다.
 - 2026-06-16 프론트 상세 지도에서 시군구 live snapshot이 없을 때 부모 지역 값으로 임의 파생 색상을 만드는 fallback을 제거했습니다. 따라서 시군구 색상은 실제 API snapshot이 있을 때만 상승/하락으로 칠하고, 없으면 표본 부족/수집 전 상태로 남깁니다.
-- 2026-06-16 R-ONE 월별 아파트 매매가격지수 원표(`A_2024_00045`)를 추가 수집해 `month`, `quarter`, `halfYear` 지도 snapshot을 공식 지수 기반으로 생성하도록 보강했습니다. `quarter`와 `halfYear`는 최근 3개월/6개월의 월간 변동률을 누적 곱으로 계산하며, `reaction-only` 값은 가격지도 색상에 섞지 않습니다.
-- 2026-06-16 로컬 확인 기준 `/api/realestate/map/layers?layerType=sido`는 17개 시도 모두 `month`, `quarter`, `halfYear` 값을 `provider=reb`, `dataStatus=ok`로 반환합니다. 강원/전북은 R-ONE 현재 코드(`51`, `52`)를 추가 매핑해 누락을 보정했습니다.
-- 2026-06-16 시군구 refresh는 R-ONE 월별 원표와 매칭되는 174개 시군구에 대해 3개 기간, 총 522개 snapshot을 생성했습니다. `서천군`처럼 R-ONE 월간/주간 지역별 아파트 매매가격지수 원표에 행이 없는 군 단위는 임의값을 만들지 않고 `공식 지수 미공표`/`자료 없음`으로 다루는 것이 현재 기준입니다.
+- 2026-06-23 R-ONE 월별 아파트 매매가격지수 원표(`reb_rone_monthly_apt_sale_price_index`)는 다시 운영 원천으로 사용합니다. 단, 계산된 전월 대비 변동률 fact를 별도로 저장하지 않고, 지수 원값만 `price_index`로 저장합니다.
+- 2026-06-23 이전 `reb_rone_regional_price_change` 기반 월간 snapshot은 전환 전 상태입니다. 이후 refresh는 저장된 월간 지수 history가 충분할 때 `month`/`quarter`/`halfYear`/`year` snapshot을 다시 생성합니다.
+- 2026-06-23 시군구 refresh는 R-ONE 지역 현황 지도 PR row가 아니라 월간 Open API 지수 row와 지역 코드 매핑이 가능한 지역만 공식 지수 snapshot 대상으로 삼습니다. 매핑이 없는 군 단위는 임의값을 만들지 않고 `공식 지수 미공표`/`자료 없음`으로 다루는 것이 현재 기준입니다.
+- 2026-06-23 주요 일정 배치는 반복 점검 row와 실제 공표 row를 분리했습니다. 실제 상세 공표 수집은 현재 한국부동산원 R-ONE 보도자료, 국토부 보도자료, 청약Home APT 모집공고까지이며, 한국은행 결정문/의사록, 통계누리 공표 완료 row, HUG/LH/SH/GH 공급 공고, 금융위/금감원/기재부 부동산 금융정책은 추가 연결 대상입니다. 따라서 `/indicators`는 아직 모든 부동산 중요 발표를 싹 모은 상태가 아닙니다.
 - 2026-06-16 MVP 5개 공개 source 기준 daily refresh를 실행했습니다. 대상은 `PPOMPPU:house`, `DCINSIDE:immovables`, `FMKOREA:realestate`, `CLIEN:park`, `COOK82:freeboard`이며, 로컬 실행 결과 source 5개, 확인 게시글 39건, 신규 저장 9건, reaction observation 127건, reaction snapshot 2건을 생성했습니다.
 - 2026-06-16 발표/시연용 1주일 백필 모드로 `CRAWLER_IGNORE_WATERMARK=true`, `CRAWLER_LATEST_LOOKBACK_HOURS=168`, `CRAWLER_MAX_PAGES_PER_RUN=30`을 적용해 5개 공개 source를 다시 실행했습니다. 결과는 확인 게시글 1,980건, 신규 수용 915건입니다. `PPOMPPU`와 `DCINSIDE`는 30페이지 한도까지 도달해 아직 더 읽을 수 있고, `FMKOREA`는 430 rate-limit/block 신호로 backoff 처리됐습니다.
 - 같은 백필 데이터로 `REALESTATE_DAILY_REACTION_WINDOW_MINUTES=10080` 기준 7일 반응 snapshot을 재계산했습니다. 결과는 observation 85건, snapshot 14건이며, `GET /api/realestate/reactions/rankings?type=region&windowMinutes=10080&limit=20` 기준 서울 35건, 대구 14건, 부산 10건, 경기 5건, 인천 5건 등 14개 시도 target이 순수 커뮤니티 반응으로 잡힙니다.
@@ -143,8 +163,8 @@
 | `molit_apt_rent` | 아파트 전월세 실거래가 | 백필 대상 |
 | `molit_official_apartment_price_csv` | 공동주택 호별 공시가격 대용량 CSV | 백필 대상 |
 | `reb_real_estate_statistics` | 한국부동산원 가격지수/거래현황 | 백필 대상 |
-| `reb_rone_regional_price_change` | 한국부동산원 R-ONE 지역별 아파트 매매가격지수 변동률 | 지도 색상 월간 지표 연결 |
-| `reb_rone_monthly_apt_sale_price_index` | 한국부동산원 R-ONE 월별 아파트 매매가격지수 원표 | 지도 색상 1/3/6개월 공식 지표 연결 |
+| `reb_rone_regional_price_change` | 한국부동산원 R-ONE 지역별 아파트 매매가격지수 변동률 | 최신 월/지역 코드 매핑 보조. 지도 대표 fact로는 사용 중지 |
+| `reb_rone_monthly_apt_sale_price_index` | 한국부동산원 R-ONE 월별 아파트 매매가격지수 원표 | 1개월/3개월/6개월/1년 지도 계산용 `price_index` 원천 |
 | `molit_unsold_housing_stat` | 미분양/준공 후 미분양 | 백필 대상 |
 | `molit_housing_permit_stat` | 주택 인허가 실적 | 백필 대상 |
 | `molit_buildinghub_housing_approval` | 주택건설사업계획승인/공급 이벤트 후보 | 보조/검증 대상 |
@@ -500,7 +520,7 @@ cd C:\agents\YouBuyFirst_RealEstate\pipeline
 $env:CRAWL_RUNTIME_ENV="local"
 $env:SERPAPI_API_KEY="..."
 $env:GMS_KEY="..."
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-daily-refresh --enable-realestate-market-facts-refresh --realestate-deal-ym 202606 --enable-realestate-complex-registry-refresh --enable-realestate-daily-crawl-refresh --enable-realestate-community-complex-seed-refresh --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-community-posts --enable-realestate-recent-issues-refresh --realestate-recent-issues-ranking-limit 10 --enable-realestate-evidence-logs-refresh --evidence-use-gms-llm --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods month quarter halfYear
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main realestate-daily-refresh --enable-realestate-market-facts-refresh --realestate-deal-ym 202606 --enable-realestate-complex-registry-refresh --enable-realestate-daily-crawl-refresh --enable-realestate-community-complex-seed-refresh --enable-realestate-reaction-snapshots-refresh --realestate-use-backend-community-posts --enable-realestate-recent-issues-refresh --realestate-recent-issues-ranking-limit 10 --enable-realestate-evidence-logs-refresh --evidence-use-gms-llm --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods week month quarter halfYear year
 ```
 
 이 명령은 `market_facts -> complex_registry -> community_crawl -> community_complex_seed -> reaction_snapshots -> recent_issues -> evidence_logs -> map_layers` 순서로 한 번 실행하고 summary JSON을 출력한 뒤 종료합니다. `complex_registry`가 켜져 있으면 reaction snapshot step은 방금 갱신된 backend 단지 alias와 target edge를 자동으로 사용합니다. `community_complex_seed`가 켜져 있으면 커뮤니티에서 관측된 아파트명을 backend alias registry와 비교해 공식 target을 우선 재사용합니다. `CRAWL_RUNTIME_ENV=local`은 정책 검토 전 공개 게시판 source를 로컬 연구/시연 범위에서만 실행하기 위한 값입니다. public runtime에서는 해당 source가 skip될 수 있습니다. 서버처럼 계속 켜 둘 때만 같은 옵션에 `serve --enable-realestate-daily-refresh`를 사용합니다.
@@ -566,10 +586,10 @@ GMS LLM으로 일일 EvidenceLog summary를 보강하려면 같은 명령에 `--
 
 ```powershell
 cd C:\agents\YouBuyFirst_RealEstate\pipeline
-C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods month quarter halfYear
+C:\Users\JYH\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m youbuyfirst_pipeline.main serve --enable-realestate-daily-refresh --enable-realestate-map-layer-refresh --realestate-map-layer-types sido sigungu --realestate-map-layer-periods week month quarter halfYear year
 ```
 
-이 step은 backend의 `POST /internal/realestate/map/layer-snapshots/refresh`를 호출합니다. 지도 기간은 부동산 공시/지수 주기에 맞춰 `month`, `quarter`, `halfYear`를 사용합니다. `sale_price_index_change_pct` R-ONE 월간 지표가 있으면 `month`는 최신 월, `quarter`와 `halfYear`는 각각 최근 3개월/6개월 월간 변동률을 누적해 생성합니다. 해당 기간의 월간 history가 부족하면 실거래 fact fallback까지만 시도하고, 그래도 부족하면 새 가격지도 snapshot을 만들지 않습니다. `seed/mock`과 `reaction snapshot`은 가격지도 색상 API에서 제외되므로 화면에서는 `자료 없음`/`표본 부족`으로 드러납니다.
+이 step은 backend의 `POST /internal/realestate/map/layer-snapshots/refresh`를 호출합니다. 지도 기간은 부동산 공시/지수 주기에 맞춰 `week`, `month`, `quarter`, `halfYear`, `year`를 사용합니다. `price_index` R-ONE 지수 history가 있으면 `week`는 최신/직전 주간 지수, 월간 period는 최신 월간 지수와 1/3/6/12개월 전 지수를 비교해 생성합니다. 해당 기간의 지수 history가 부족하면 새 가격지도 snapshot을 만들지 않습니다. `seed/mock`과 `reaction snapshot`은 가격지도 색상 API에서 제외되므로 화면에서는 `자료 없음`/`표본 부족`으로 드러납니다.
 ## 2026-06-17 아파트 후보-지도 연결 보정
 
 - 아파트 관심 후보와 실제 단지 지도 marker 연결을 보강했습니다. `GET /api/realestate/targets/search?q=`는 이제 승인된 `real_estate_aliases`도 함께 검색하므로 `마래푸` 같은 커뮤니티식 별칭이 단지 target으로 연결됩니다.

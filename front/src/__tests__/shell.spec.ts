@@ -51,6 +51,52 @@ beforeAll(() => {
         });
       }
 
+      if (url.includes('/api/realestate/map/layers') && url.includes('layerType=sido')) {
+        return new Response(JSON.stringify({
+          layerType: 'sido',
+          asOf: '2026-06-18T00:00:00Z',
+          sourceLabel: 'map_layer_snapshots',
+          mapDataSource: 'KOSTAT 2018',
+          dataStatus: 'ok',
+          stale: false,
+          periods: ['week', 'month', 'quarter', 'halfYear', 'year'],
+          targets: [
+            {
+              targetId: 'region-seoul',
+              targetType: 'region',
+              displayName: '서울',
+              regionLevel: 'sido',
+              regionCode: '11',
+              periods: {
+                week: {
+                  changePct: 0.12,
+                  sampleCount: 2,
+                  confidence: 1,
+                  asOf: '2026-06-18T00:00:00Z',
+                  provider: 'reb',
+                  sourceLabel: 'map_layer_snapshots',
+                  dataStatus: 'ok',
+                  stale: false
+                },
+                month: {
+                  changePct: -0.08,
+                  sampleCount: 2,
+                  confidence: 1,
+                  asOf: '2026-05-01T00:00:00Z',
+                  provider: 'reb',
+                  sourceLabel: 'map_layer_snapshots',
+                  dataStatus: 'ok',
+                  stale: false
+                }
+              }
+            }
+          ]
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
       if (url.includes('/api/realestate/map/layers') && url.includes('layerType=sigungu') && url.includes('region-daejeon')) {
         return new Response(JSON.stringify({
           layerType: 'sigungu',
@@ -60,7 +106,7 @@ beforeAll(() => {
           mapDataSource: 'KOSTAT 2018',
           dataStatus: 'ok',
           stale: false,
-          periods: ['month', 'quarter', 'halfYear'],
+          periods: ['week', 'month', 'quarter', 'halfYear', 'year'],
           targets: [
             {
               targetId: 'region-daejeon-yuseong',
@@ -70,7 +116,7 @@ beforeAll(() => {
               regionCode: '25040',
               parentTargetId: 'region-daejeon',
               periods: {
-                month: {
+                week: {
                   changePct: 0.31,
                   sampleCount: 42,
                   confidence: 77,
@@ -79,10 +125,122 @@ beforeAll(() => {
                   sourceLabel: 'map_layer_snapshots',
                   dataStatus: 'ok',
                   stale: false
+                },
+                month: {
+                  changePct: 0.31,
+                  sampleCount: 42,
+                  confidence: 77,
+                  asOf: '2026-05-01T00:00:00Z',
+                  provider: 'reb_stat',
+                  sourceLabel: 'map_layer_snapshots',
+                  dataStatus: 'ok',
+                  stale: false
                 }
               }
             }
           ]
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      if (url.includes('/api/realestate/map/layers') && url.includes('layerType=sigungu') && url.includes('region-sejong')) {
+        return new Response(JSON.stringify({
+          layerType: 'sigungu',
+          parentTargetId: 'region-sejong',
+          asOf: '2026-05-01T00:00:00Z',
+          sourceLabel: 'map_layer_snapshots',
+          mapDataSource: 'KOSTAT 2018',
+          dataStatus: 'ok',
+          stale: false,
+          periods: ['month', 'quarter', 'halfYear', 'year'],
+          targets: [
+            {
+              targetId: 'region-sejong-sejongsi',
+              targetType: 'region',
+              displayName: 'Sejong-si',
+              regionLevel: 'sigungu',
+              regionCode: '29010',
+              parentTargetId: 'region-sejong',
+              periods: {
+                month: {
+                  changePct: -0.18,
+                  sampleCount: 1,
+                  confidence: 1,
+                  asOf: '2026-05-01T00:00:00Z',
+                  provider: 'reb',
+                  sourceLabel: 'map_layer_snapshots',
+                  dataStatus: 'ok',
+                  stale: false
+                }
+              }
+            }
+          ]
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      if (url.includes('/api/realestate/targets/region-sejong/evidence-logs')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              evidenceLogId: 'evidence-region-sejong-20260624',
+              targetId: 'region-sejong',
+              summary: 'Sejong parent evidence summary',
+              subtitle: 'Sejong parent report',
+              confidence: 0.82,
+              asOf: '2026-05-01T00:00:00Z',
+              evidenceItems: []
+            }
+          ]
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      if (url.includes('/api/realestate/targets/region-daejeon-yuseong/evidence-logs')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              evidenceLogId: 'evidence-region-daejeon-yuseong-20260624',
+              targetId: 'region-daejeon-yuseong',
+              summary: '관찰: 커뮤니티 반응은 확대되어 있음(언급 2건). 시장지표도 일부 소폭 변동을 보입니다.',
+              subtitle: '언급 2건, 직전 대비 신규, 주요 쟁점: 확인 필요',
+              confidence: 0.77,
+              asOf: '2026-05-01T00:00:00Z',
+              evidenceItems: []
+            }
+          ]
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      if (url.includes('/api/realestate/targets/') && url.includes('/evidence-logs')) {
+        return new Response(JSON.stringify({ items: [] }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      if (url.includes('/api/realestate/daily-briefings/latest')) {
+        return new Response(JSON.stringify({
+          briefingId: 'daily-briefing-20260624-v1',
+          briefingDate: '2026-06-24',
+          title: '오늘의 부동산 시장 브리핑',
+          summaryHeadlines: [
+            '수도권 전세 압력 재부각',
+            '서울 동남권 거래 회복 흐름',
+            '경기 남부 공급·정책 이슈 집중'
+          ],
+          sections: [],
+          focusRegions: [],
+          sourceItems: []
         }), {
           headers: { 'Content-Type': 'application/json' },
           status: 200
@@ -121,6 +279,10 @@ describe('front dashboard shell', () => {
     expect(routePaths).toEqual([
       '/',
       '/dashboard',
+      '/realestate/daily-briefing',
+      '/auth/login',
+      '/auth/register',
+      '/auth/find-account',
       '/realestate/map',
       '/realestate/map/:regionId',
       '/realestate/complexes',
@@ -149,6 +311,7 @@ describe('front dashboard shell', () => {
 
   it('renders the dashboard briefing and shell chrome', async () => {
     const wrapper = await mountAt('/dashboard');
+    await flushPromises();
 
     expect(wrapper.get('[data-testid="app-title"]').text()).toContain('YouBuyFirst');
     expect(wrapper.get('[data-testid="app-title"]').attributes('href')).toBe('/dashboard');
@@ -164,10 +327,13 @@ describe('front dashboard shell', () => {
     expect(wrapper.find('[data-testid="nav-agents"]').exists()).toBe(false);
     expect(wrapper.get('[data-testid="nav-watchlist"]').text()).toContain('마이페이지');
     expect(wrapper.get('[data-testid="nav-watchlist"]').attributes('href')).toBe('/realestate/mypage');
+    expect(wrapper.get('[data-testid="auth-entry"]').text()).toContain('로그인');
+    expect(wrapper.get('[data-testid="auth-entry"]').attributes('href')).toBe('/auth/login');
     expect(wrapper.find('.topbar .live-strip').exists()).toBe(true);
     const footer = wrapper.get('.site-footer');
     expect(footer.text()).toContain('실거래·전세 흐름');
-    expect(footer.text()).toContain('Today 3줄 브리핑');
+    expect(footer.text()).toContain('Daily briefing');
+    expect(footer.text()).not.toContain('Today 3줄 브리핑');
     expect(footer.text()).toContain('주요 일정·뉴스·리포트 정리');
     expect(footer.text()).not.toContain('커뮤니티 반응');
     expect(footer.text()).not.toContain('지역·단지 언급량');
@@ -194,24 +360,31 @@ describe('front dashboard shell', () => {
     expect(wrapper.text()).not.toContain('research feed');
     expect(wrapper.text()).not.toContain('outside links');
     expect(wrapper.text()).not.toContain('columns · community');
-    expect(wrapper.text()).toContain('Today 3줄 브리핑');
-    expect(wrapper.find('.briefing-title-accent').text()).toBe('Today');
+    expect(wrapper.text()).toContain('Daily briefing');
+    expect(wrapper.text()).toContain('3줄 브리핑');
+    expect(wrapper.find('.briefing-title-accent').exists()).toBe(false);
     expect(wrapper.text()).not.toContain('핵심 요약');
     const briefing = wrapper.get('.daily-briefing-card');
+    expect(briefing.get('.label').text()).toBe('Daily briefing');
+    expect(briefing.find('.daily-briefing-headline-grid').exists()).toBe(true);
     expect(briefing.text()).not.toContain('AI 요약');
+    expect(briefing.text()).not.toContain('AI briefing');
     expect(briefing.text()).not.toContain('전체보기');
     expect(briefing.text()).toContain('자세한 분석 보러가기');
     expect(briefing.find('.status-pill').exists()).toBe(false);
     expect(briefing.find('.daily-briefing-cta').exists()).toBe(true);
-    expect(briefing.text()).toContain('공식 지표');
-    expect(briefing.text()).toContain('뉴스와 리포트');
+    expect(briefing.find('.daily-briefing-cta').attributes('href')).toBe('/realestate/daily-briefing');
+    expect(briefing.findAll('.daily-briefing-headline-card strong').map((item) => item.text())).toEqual([
+      '수도권 전세 압력 재부각',
+      '서울 동남권 거래 회복 흐름',
+      '경기 남부 공급·정책 이슈 집중'
+    ]);
     expect(wrapper.text()).not.toContain('핵심 지역별 상승률');
     expect(wrapper.text()).not.toContain('지도 레이어 확인 중');
     expect(wrapper.find('.dashboard-content-flow > .indicator-section').exists()).toBe(false);
     expect(briefing.classes()).toContain('daily-briefing-card');
-    expect(wrapper.findAll('.daily-briefing-item')).toHaveLength(3);
-    expect(briefing.findAll('.daily-briefing-item p')).toHaveLength(0);
-    expect(briefing.findAll('.daily-briefing-item em')).toHaveLength(0);
+    expect(briefing.findAll('.daily-briefing-headline-card')).toHaveLength(3);
+    expect(wrapper.findAll('.daily-briefing-item')).toHaveLength(0);
     expect(wrapper.find('.side-drawer .drawer-tabs').exists()).toBe(false);
     expect(wrapper.find('[aria-label="라이브 패널 탭"]').exists()).toBe(false);
     expect(wrapper.find('.drawer-reaction-screen > .drawer-feed').exists()).toBe(false);
@@ -299,6 +472,10 @@ describe('front dashboard shell', () => {
     await flushPromises();
 
     expect(newsroomAll.text()).toContain('뉴스룸');
+    expect(newsroomAll.find('.newsroom-hero').exists()).toBe(true);
+    expect(newsroomAll.find('.newsroom-title-card').exists()).toBe(false);
+    expect(newsroomAll.text()).toContain('콘텐츠 피드');
+    expect(newsroomAll.text()).toContain('원문 링크 기준으로 모아봅니다');
     expect(newsroomAll.findAll('.nav-submenu a.active')).toHaveLength(0);
     expect(newsroomAll.text()).toContain('블로그·커뮤니티');
     expect(newsroomAll.find('.newsroom-switch').exists()).toBe(false);
@@ -320,7 +497,7 @@ describe('front dashboard shell', () => {
       '부동산 영상',
       '블로그·커뮤니티'
     ]);
-    expect(newsroomAll.findAll('.feed-title-wrap .feed-title-dot').length).toBeGreaterThanOrEqual(5);
+    expect(newsroomAll.findAll('.feed-title-wrap .feed-title-dot')).toHaveLength(4);
     expect(newsroomAll.text()).not.toContain('newsroom');
     expect(newsroomAll.text()).not.toContain('live feed');
     expect(newsroomAll.text()).not.toContain('research feed');
@@ -347,7 +524,8 @@ describe('front dashboard shell', () => {
     expect(indicators.text()).toContain('공식 출처');
     expect(indicators.text()).toContain('한국부동산원 R-ONE');
     expect(indicators.text()).toContain('국토교통부 실거래가 공개시스템');
-    expect(indicators.findAll('.calendar-event-pill').length).toBeGreaterThan(0);
+    expect(indicators.findAll('.calendar-event-strip').length).toBeGreaterThan(0);
+    expect(indicators.findAll('.calendar-event-card').length).toBeGreaterThan(0);
     expect(indicators.findAll('.schedule-source-card')).toHaveLength(6);
     expect(indicators.text()).not.toContain('주요 부동산 지표');
     expect(indicators.text()).not.toContain('지표와 반응이 엇갈린 지역');
@@ -378,10 +556,17 @@ describe('front dashboard shell', () => {
 
   it('opens a full regional drilldown map from the national map', async () => {
     const wrapper = await mountAt('/realestate/map');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain('전국 지역 흐름 지도');
     expect(wrapper.find('[data-testid="map-report-panel"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="realestate-map-layout"]').classes()).toContain('centered');
+    expect(wrapper.get('[data-testid="map-update-badge"]').text()).toBe('UPDATE: 2026.05.01');
+    const periodButtons = wrapper.findAll('.map-period-tabs button');
+    expect(periodButtons).toHaveLength(5);
+    expect(periodButtons[1].classes()).toContain('active');
+    expect(periodButtons[0].classes()).not.toContain('active');
     expect(wrapper.get('[data-testid="map-zoom-percent"]').text()).toBe('100%');
 
     wrapper.get('[data-testid="korea-map-shell"]').element.dispatchEvent(new WheelEvent('wheel', {
@@ -396,6 +581,17 @@ describe('front dashboard shell', () => {
     expect(wrapper.get('[data-testid="korea-map-shell"]').classes()).toContain('is-map-zoomed');
     expect(wrapper.get('[data-testid="korea-map-board"]').attributes('style')).toContain('--map-zoom: 2.');
     expect(wrapper.get('[data-testid="korea-map-board"]').attributes('style')).toContain('--map-label-scale: 0.');
+    const mapPageSource = readFileSync(resolve(testDir, '../pages/RealEstateMapPage.vue'), 'utf8');
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+    const scopedBoardRule = /\.realestate-map-page \.korea-map-board\s*{[\s\S]*?}/.exec(styles)?.[0] ?? '';
+    const targetButtonRule = /\.map-target-buttons button,\s*\n\.map-target-buttons \.map-target-link\s*{[\s\S]*?}/.exec(styles)?.[0] ?? '';
+
+    expect(wrapper.find('.map-surface-layer').exists()).toBe(true);
+    expect(mapPageSource).toContain('class="map-surface-layer"');
+    expect(styles).toMatch(/\.realestate-map-page \.map-surface-layer\s*{[\s\S]*scale\(var\(--map-zoom, 1\)/);
+    expect(scopedBoardRule).toContain('transform: none;');
+    expect(scopedBoardRule).not.toContain('scale(var(--map-zoom');
+    expect(targetButtonRule).not.toContain('scale(var(--map-label-scale');
 
     await wrapper.get('button[aria-label="지도 확대 초기화"]').trigger('click');
 
@@ -415,7 +611,7 @@ describe('front dashboard shell', () => {
     expect(drilldown.find('[data-testid="map-zoom-percent"]').exists()).toBe(true);
     expect(drilldown.text()).toContain('동구');
     expect(drilldown.text()).toContain('유성구');
-    expect(drilldown.get('[data-testid="subregion-layer-status"]').text()).toContain('한국부동산원 · 공공데이터 반영 · 최신 반영 · 2026. 06. 15. 09:00 KST');
+    expect(drilldown.get('[data-testid="subregion-layer-status"]').text()).toContain('한국부동산원 · 공공데이터 반영 · 최신 반영 · 2026. 05. 01. 09:00 KST');
 
     const unavailableButton = drilldown.findAll('[data-testid^="subregion-button-"]')
       .find((button) => button.attributes('data-testid') !== 'subregion-button-25040');
@@ -433,19 +629,151 @@ describe('front dashboard shell', () => {
     expect(unavailableShape.classes()).not.toContain('active');
 
     await drilldown.get('[data-testid="subregion-button-25040"]').trigger('click');
+    await flushPromises();
 
     expect(drilldown.find('[data-testid="realestate-map-layout"]').classes()).toContain('split');
-    expect(drilldown.get('[data-testid="map-report-panel"]').text()).toContain('유성구');
-    expect(drilldown.get('[data-testid="map-report-panel"]').text()).toContain('가격 흐름');
-    expect(drilldown.get('[data-testid="map-report-panel"]').text()).toContain('커뮤니티 언급');
-    expect(drilldown.get('[data-testid="map-report-panel"]').text()).toContain('언급량 급증');
-    expect(drilldown.get('[data-testid="map-report-panel"]').text()).toContain('핵심 쟁점');
+    const reportPanel = drilldown.get('[data-testid="map-report-panel"]');
+    const reportText = reportPanel.text();
+    expect(reportText).toContain('유성구');
+    expect(reportText).toContain('AI 핵심 브리핑');
+    expect(reportText).not.toContain('최근 변화율');
+    expect(reportText).toContain('기대 지점');
+    expect(reportText).toContain('우려 지점');
+    expect(reportText).toContain('AI 분석 리포트');
+    expect(reportText).toContain('관련 뉴스·리포트');
+    expect(reportText).not.toContain('핵심 변화');
+    expect(reportText).not.toContain('주의해서 볼 점');
+    expect(reportText).not.toContain('핵심 확인');
+    expect(reportText).not.toContain('공식 근거');
+    expect(reportText).not.toContain('근거와 한계');
+    expect(reportText).not.toContain('핵심 수치');
+    expect(reportText).not.toContain('공식 시장 사실');
+    expect(reportText).not.toContain('지역 내 비교');
+    expect(reportText).not.toContain('공급·정책·일정');
+    expect(reportText).not.toContain('보조 반응');
+    expect(reportText).not.toContain('다음 연결 후보');
+    expect(reportText).not.toContain('market facts');
+    expect(reportText).not.toContain('official facts');
+    expect(reportText).not.toContain('secondary signal');
+    expect(reportText).not.toContain('언급량 급증');
+    expect(reportText).not.toContain('언급');
+    expect(reportText).not.toContain('community pulse');
+    expect(reportText).not.toContain('신뢰도');
+    expect(reportText).not.toContain('공공데이터 반영');
+    expect(reportText).not.toContain('AI 근거');
+    expect(reportText).not.toContain('insufficient');
+    expect(reportText).not.toContain('시군구 ·');
+    expect(reportPanel.find('.map-briefing-report-layout').exists()).toBe(true);
+    expect(reportPanel.find('.map-report-card.featured').exists()).toBe(true);
+    expect(reportPanel.find('.map-report-delta-block').exists()).toBe(true);
+    const deltaBlockText = reportPanel.get('.map-report-delta-block').text();
+    expect(deltaBlockText).toContain('최근 1개월');
+    expect(deltaBlockText).not.toContain('가격지수 변화');
+    expect(deltaBlockText.match(/최근 1개월/g) ?? []).toHaveLength(1);
+    expect(reportPanel.find('.map-report-card.featured > .map-report-card-header .map-report-delta-block').exists()).toBe(false);
+    expect(reportPanel.find('[data-testid="report-section-ai-analysis"] .map-report-analysis-copy > .map-report-delta-block.analysis-delta').exists()).toBe(true);
+    expect(reportPanel.find('.map-report-card.featured .map-report-card-body > .map-report-hero-grid > .map-report-delta-block').exists()).toBe(false);
+    const deltaValue = reportPanel.get('.map-report-delta-value');
+    expect(deltaValue.text()).toMatch(/[+-]?\d+\.\d{2}%/);
+    expect(deltaValue.classes().some((className) => ['up', 'down', 'flat'].includes(className))).toBe(true);
+    const outlookPanel = reportPanel.get('.map-report-outlook-grid');
+    expect(outlookPanel.text()).toContain('기대 지점');
+    expect(outlookPanel.text()).toContain('우려 지점');
+    expect(outlookPanel.findAll('.map-report-outlook-row')).toHaveLength(6);
+    expect(reportPanel.find('.map-briefing-primary-panel').exists()).toBe(false);
+    const reportCards = reportPanel.findAll('.map-report-card');
+    expect(reportCards).toHaveLength(3);
+    for (const card of reportCards) {
+      expect(card.find('.map-report-card-header').exists()).toBe(true);
+      expect(card.find('.map-report-card-body').exists()).toBe(true);
+    }
+    expect(reportPanel.findAll('.map-report-card-row')).toHaveLength(0);
+    expect(reportPanel.findAll('.map-report-row-index')).toHaveLength(0);
+    expect(reportPanel.find('.map-briefing-focus-list').exists()).toBe(false);
+    expect(reportPanel.find('.map-briefing-source-ledger').exists()).toBe(false);
+    expect(reportPanel.find('.map-briefing-limit-ledger').exists()).toBe(false);
+    expect(reportPanel.find('.map-report-briefing-board').exists()).toBe(false);
+    expect(reportPanel.find('.report-plain-briefing').exists()).toBe(false);
+    expect(reportPanel.find('.regional-briefing-headline-card').exists()).toBe(false);
+    expect(reportPanel.find('.regional-briefing-index').exists()).toBe(false);
+    expect(reportPanel.find('.regional-briefing-chipline').exists()).toBe(false);
+    expect(reportPanel.find('.report-mini-metric-grid').exists()).toBe(false);
+    expect(reportPanel.find('.report-evidence-mini-grid').exists()).toBe(false);
+    expect(reportPanel.find('.report-kpi-lines').exists()).toBe(false);
+    expect(reportPanel.find('.report-ledger-columns').exists()).toBe(false);
+    expect(reportPanel.findAll('.status-pill')).toHaveLength(0);
+    expect(reportPanel.find('.daily-briefing-card').exists()).toBe(false);
+    expect(reportPanel.find('.daily-briefing-headline-card').exists()).toBe(false);
+    expect(reportPanel.findAll('.issue-report-section')).toHaveLength(0);
+    expect(reportPanel.findAll('.report-compact-ledger').length).toBeLessThanOrEqual(1);
+    expect(reportPanel.get('[data-testid="report-section-ai-analysis"]').text()).toContain('최신 종합 리포트');
+    const reportUpdatedAt = reportPanel.get('[data-testid="report-updated-at"]').text();
+    expect(reportUpdatedAt).toContain('리포트 업데이트');
+    expect(reportUpdatedAt).toContain('2026. 05. 01. 09:00 KST');
+    expect(reportPanel.get('[data-testid="report-section-ai-analysis"]').text()).toContain('매매 실거래');
+    expect(reportPanel.get('[data-testid="report-section-related-reports"]').text()).toContain('가격지수');
+    expect(reportPanel.get('[data-testid="report-section-related-reports"]').text()).toContain('수집 전');
+
+    const weekTab = drilldown.findAll('.map-period-tabs button').find((button) => button.text() === '1주');
+    expect(weekTab).toBeTruthy();
+    await weekTab!.trigger('click');
+    await flushPromises();
+
+    const updatedReportPanel = drilldown.get('[data-testid="map-report-panel"]');
+    expect(updatedReportPanel.get('[data-testid="report-updated-at"]').text()).toBe(reportUpdatedAt);
+    expect(updatedReportPanel.get('.map-report-delta-block').text()).toContain('최근 1주');
 
     await drilldown.get('[data-testid="close-map-report"]').trigger('click');
 
     expect(drilldown.find('[data-testid="map-report-panel"]').exists()).toBe(true);
     expect(drilldown.get('[data-testid="map-report-panel"]').text()).toContain('대전 전체');
     expect(drilldown.find('[data-testid="realestate-map-layout"]').classes()).toContain('split');
+  }, 15000);
+
+  it('opens the map report panel for a selected municipality from route query', async () => {
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockClear();
+
+    const wrapper = await mountAt('/realestate/map/region-daejeon?selectedTargetId=region-daejeon-yuseong&selectedRegionCode=25040&period=week');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.vm.$route.path).toBe('/realestate/map/region-daejeon');
+    expect(wrapper.vm.$route.query.selectedTargetId).toBe('region-daejeon-yuseong');
+    expect(wrapper.vm.$route.query.period).toBe('week');
+    expect(wrapper.find('[data-testid="realestate-map-layout"]').classes()).toContain('split');
+    expect(wrapper.get('[data-testid="subregion-button-25040"]').classes()).toContain('active');
+    expect(wrapper.get('[data-testid="map-report-panel"] .map-report-header > div > span').text()).toContain('25040');
+
+    const evidenceUrls = fetchMock.mock.calls
+      .map(([input]) => String(input))
+      .filter((url) => url.includes('/evidence-logs'));
+
+    expect(evidenceUrls.some((url) => url.includes('/api/realestate/targets/region-daejeon-yuseong/evidence-logs?limit=1'))).toBe(true);
+  }, 15000);
+
+  it('uses the parent Sejong report when selecting the single Sejong city subregion', async () => {
+    const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
+    const sejongTarget = mapTargetsFixture.targets.find((target) => target.targetId === 'region-sejong');
+    fetchMock.mockClear();
+
+    expect(sejongTarget).toBeTruthy();
+
+    const wrapper = await mountAt('/realestate/map/region-sejong');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    await wrapper.get('[data-testid="subregion-button-29010"]').trigger('click');
+    await flushPromises();
+    await wrapper.vm.$nextTick();
+
+    const evidenceUrls = fetchMock.mock.calls
+      .map(([input]) => String(input))
+      .filter((url) => url.includes('/evidence-logs'));
+
+    expect(evidenceUrls.some((url) => url.includes('/api/realestate/targets/region-sejong/evidence-logs?limit=1'))).toBe(true);
+    expect(evidenceUrls.some((url) => url.includes('/api/realestate/targets/region-sejong-sejongsi/evidence-logs'))).toBe(false);
+    expect(wrapper.get('[data-testid="map-report-panel"] .map-report-header > div > span').text()).toBe(`${sejongTarget!.regionCode} \u00b7 ${sejongTarget!.regionCode}`);
   }, 15000);
 
   it('opens a focused Gyeonggi municipal map from dense cluster markers', async () => {

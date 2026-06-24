@@ -35,7 +35,11 @@ public class RealEstateMarketFactService {
     private static final Map<String, List<String>> OFFICIAL_PROVIDER_DATASETS_BY_FACT_TYPE = Map.of(
             "apt_trade", List.of("molit_apt_trade"),
             "apt_rent", List.of("molit_apt_rent"),
-            "official_apartment_price", List.of("molit_official_apartment_price_csv")
+            "official_apartment_price", List.of("molit_official_apartment_price_csv"),
+            "price_index", List.of(
+                    "reb_rone_weekly_apt_sale_price_index_region",
+                    "reb_rone_monthly_apt_sale_price_index"
+            )
     );
 
     private final RealEstateMarketFactRepository repository;
