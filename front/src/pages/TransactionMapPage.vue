@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import RealEstateTransactionMap, { type TransactionMapMarker } from '../components/RealEstateTransactionMap.vue';
 import { geocodeTransactionItems } from '../lib/kakao-geocode';
+import { formatDistance } from '../lib/geo-distance';
+import { fetchNearbyFacilities, type NearbyFacilities } from '../lib/kakao-nearby-places';
 import {
   computeTransactionChange,
+  computeTransactionPriceTrend,
   dealTypeLabel,
   fetchTransactions,
   filterTransactions,
@@ -97,6 +100,27 @@ const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(geoc
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? null
 );
+// 선택 매물 주변(1km 이내) 지하철역/버스정류장/편의점·마트 검색. 선택이 바뀔 때마다 재검색.
+const nearbyState = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
+const nearbyFacilities = ref<NearbyFacilities | null>(null);
+watch(selectedId, async (id) => {
+  const target = selectedItem.value;
+  if (!id || !target) {
+    nearbyState.value = 'idle';
+    nearbyFacilities.value = null;
+    return;
+  }
+  nearbyState.value = 'loading';
+  const result = await fetchNearbyFacilities({ lat: target.lat, lng: target.lng });
+  if (selectedId.value !== id) return; // 검색 도중 다른 매물이 선택된 경우 결과 무시.
+  if (!result) {
+    nearbyState.value = 'unavailable';
+    nearbyFacilities.value = null;
+    return;
+  }
+  nearbyFacilities.value = result;
+  nearbyState.value = 'ready';
+});
 const statusLabel = computed(() => {
   if (loadState.value === 'loading') return '실거래 데이터 불러오는 중';
   if (loadState.value === 'live') return `국토교통부 실거래 · ${regionName.value} · ${visibleItems.value.length}곳`;
@@ -174,9 +198,9 @@ const activeTrendPeriod = ref<TrendPeriod>('yoy');
 const activeTrendCaption = computed(
   () => trendPeriods.find((period) => period.id === activeTrendPeriod.value)?.caption ?? ''
 );
-// 선택 단지의 기간별 평단가 변동률. 비교 월 데이터가 있으면 계산, 없으면 null(비교데이터 없음).
-const selectedChange = computed<number | null>(() =>
-  computeTransactionChange(selectedItem.value, activeTrendPeriod.value)
+// 선택 단지의 활성 기간(YoY/6개월/MoM) ▲/▼ 변동률 + 이전→현재 가격. 비교 데이터 없으면 null.
+const selectedPriceTrend = computed(() =>
+  computeTransactionPriceTrend(selectedItem.value, activeTrendPeriod.value)
 );
 
 // 리스트 가격 색: 선택한 비교 기간(YoY/6개월/MoM) 변동이 있으면 상승=빨강/하락=파랑, 없으면 기본색.
@@ -367,9 +391,20 @@ onMounted(() => {
             {{ period.label }}
           </button>
         </div>
-        <p v-if="selectedChange !== null" class="transaction-trend-value" :class="selectedChange >= 0 ? 'up' : 'down'">
-          {{ activeTrendCaption }} {{ selectedChange > 0 ? '+' : '' }}{{ selectedChange }}%
-        </p>
+        <template v-if="selectedPriceTrend">
+          <p
+            class="transaction-trend-mom-rate"
+            :class="selectedPriceTrend.changePercent > 0 ? 'up' : selectedPriceTrend.changePercent < 0 ? 'down' : 'flat'"
+            data-testid="transaction-trend-rate"
+          >
+            {{ activeTrendCaption }}
+            {{ selectedPriceTrend.changePercent > 0 ? '▲' : selectedPriceTrend.changePercent < 0 ? '▼' : '–' }}
+            {{ Math.abs(selectedPriceTrend.changePercent) }}%
+          </p>
+          <p class="transaction-trend-mom-prices" data-testid="transaction-trend-prices">
+            {{ selectedPriceTrend.previousLabel }} → {{ selectedPriceTrend.currentLabel }}
+          </p>
+        </template>
         <p v-else class="transaction-trend-empty" data-testid="transaction-trend-empty">
           {{ activeTrendCaption }} · 비교데이터 없음 (해당 매물유형/기간은 아직 비교월 데이터가 수집되지 않았습니다)
         </p>
@@ -381,6 +416,36 @@ onMounted(() => {
         <div><dt>준공</dt><dd>{{ selectedItem.builtYear ? `${selectedItem.builtYear}년` : '확인 필요' }}</dd></div>
         <div><dt>기준일</dt><dd>{{ selectedItem.asOf }}</dd></div>
       </dl>
+
+      <div class="transaction-nearby" data-testid="transaction-nearby">
+        <p class="transaction-nearby-title">주변 시설</p>
+        <ul v-if="nearbyState === 'ready' && nearbyFacilities" class="transaction-nearby-list">
+          <li v-if="nearbyFacilities.subway" class="transaction-nearby-item">
+            <span class="transaction-nearby-icon" aria-hidden="true">🚇</span>
+            <span class="transaction-nearby-name">{{ nearbyFacilities.subway.name }}</span>
+            <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.subway.distanceMeters) }}</span>
+          </li>
+          <li v-if="nearbyFacilities.bus" class="transaction-nearby-item">
+            <span class="transaction-nearby-icon" aria-hidden="true">🚌</span>
+            <span class="transaction-nearby-name">{{ nearbyFacilities.bus.name }}</span>
+            <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.bus.distanceMeters) }}</span>
+          </li>
+          <li v-if="nearbyFacilities.store" class="transaction-nearby-item">
+            <span class="transaction-nearby-icon" aria-hidden="true">🏪</span>
+            <span class="transaction-nearby-name">{{ nearbyFacilities.store.name }}</span>
+            <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.store.distanceMeters) }}</span>
+          </li>
+          <li
+            v-if="!nearbyFacilities.subway && !nearbyFacilities.bus && !nearbyFacilities.store"
+            class="transaction-nearby-empty"
+          >
+            주변 1km 이내 시설 정보 없음
+          </li>
+        </ul>
+        <p v-else-if="nearbyState === 'loading'" class="transaction-nearby-empty">주변 시설 검색 중…</p>
+        <p v-else class="transaction-nearby-empty">주변 시설 정보 없음</p>
+      </div>
+
       <p class="transaction-detail-note">국토교통부 실거래 · {{ selectedItem.stale ? '지연 가능' : selectedItem.dataStatus }}</p>
     </aside>
     </div>

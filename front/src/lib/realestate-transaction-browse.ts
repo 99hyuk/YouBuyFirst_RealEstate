@@ -288,14 +288,20 @@ function shiftMonth(ym: string, deltaMonths: number): string {
   return `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, '0')}`;
 }
 
+export type TransactionPriceTrend = {
+  changePercent: number;
+  previousLabel: string;
+  currentLabel: string;
+};
+
 /**
- * 선택 단지의 기간별 평단가 변동률(%)을 계산한다. 최신 월 대비 기간만큼 이전 월과 비교하며,
- * 두 시점 모두 데이터가 있어야 한다. 비교 데이터가 없으면 null(=비교 데이터 없음).
+ * 선택 단지의 기간별 평단가 변동률(%)과 이전/현재 가격 라벨을 계산한다. 최신 월 대비
+ * 기간만큼 이전 월과 비교하며, 두 시점 모두 데이터가 있어야 한다. 비교 데이터가 없으면 null.
  */
-export function computeTransactionChange(
+export function computeTransactionPriceTrend(
   item: Pick<TransactionItem, 'pricePerAreaByMonth'> | null | undefined,
   period: TransactionTrendPeriod
-): number | null {
+): TransactionPriceTrend | null {
   const byMonth = item?.pricePerAreaByMonth;
   if (!byMonth) return null;
   const months = Object.keys(byMonth).sort();
@@ -305,7 +311,21 @@ export function computeTransactionChange(
   const current = byMonth[currentYm];
   const previous = byMonth[compareYm];
   if (current == null || previous == null || previous === 0) return null;
-  return Math.round(((current - previous) / previous) * 1000) / 10;
+  return {
+    changePercent: Math.round(((current - previous) / previous) * 1000) / 10,
+    previousLabel: formatManwonAsEok(previous),
+    currentLabel: formatManwonAsEok(current)
+  };
+}
+
+/**
+ * 선택 단지의 기간별 평단가 변동률(%)을 계산한다. 비교 데이터가 없으면 null(=비교 데이터 없음).
+ */
+export function computeTransactionChange(
+  item: Pick<TransactionItem, 'pricePerAreaByMonth'> | null | undefined,
+  period: TransactionTrendPeriod
+): number | null {
+  return computeTransactionPriceTrend(item, period)?.changePercent ?? null;
 }
 
 function areaLabel(minArea: number | null, maxArea: number | null): string {

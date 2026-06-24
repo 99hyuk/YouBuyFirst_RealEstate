@@ -12213,24 +12213,35 @@ body:has(.complex-browse-page) .page-frame {
   color: var(--brand-strong);
 }
 
-.transaction-trend-value {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.transaction-trend-value.up {
-  color: var(--market-up);
-}
-
-.transaction-trend-value.down {
-  color: var(--market-down);
-}
-
 .transaction-trend-empty {
   margin: 0;
   font-size: 12px;
   color: var(--muted-2);
+}
+
+.transaction-trend-mom-rate {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 860;
+}
+
+.transaction-trend-mom-rate.up {
+  color: var(--market-up);
+}
+
+.transaction-trend-mom-rate.down {
+  color: var(--market-down);
+}
+
+.transaction-trend-mom-rate.flat {
+  color: var(--muted-2);
+}
+
+.transaction-trend-mom-prices {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 .transaction-detail-list {
@@ -12256,6 +12267,71 @@ body:has(.complex-browse-page) .page-frame {
   color: var(--ink);
   font-weight: 700;
   text-align: right;
+}
+
+.transaction-nearby {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.transaction-nearby-title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 760;
+  color: var(--muted);
+}
+
+.transaction-nearby-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transaction-nearby-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 16px;
+  background: var(--surface-soft);
+  font-size: 12px;
+  text-align: center;
+}
+
+.transaction-nearby-icon {
+  flex: none;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.transaction-nearby-name {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.transaction-nearby-distance {
+  flex: none;
+  color: var(--brand-strong);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.transaction-nearby-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-2);
 }
 
 .transaction-detail-note {
