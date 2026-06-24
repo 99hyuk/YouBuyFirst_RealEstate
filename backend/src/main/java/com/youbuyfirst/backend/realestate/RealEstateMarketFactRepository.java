@@ -181,4 +181,17 @@ public interface RealEstateMarketFactRepository extends JpaRepository<RealEstate
             @Param("factType") String factType,
             @Param("endDate") LocalDate endDate
     );
+
+    @Query("""
+            select fact.legalDongCode as legalDongCode, fact.valueJson as valueJson
+            from RealEstateMarketFact fact
+            order by fact.id asc
+            """)
+    List<AddressProjection> findAddressProjections(Pageable pageable);
+
+    interface AddressProjection {
+        String getLegalDongCode();
+
+        String getValueJson();
+    }
 }

@@ -4,14 +4,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 단지 검색 문자열을 좌표로 일괄 해석한다. DB 캐시를 먼저 보고, 미캐시 건만 카카오에
@@ -45,18 +44,14 @@ public class RealEstateGeocodeService {
             return List.of();
         }
 
-        Map<String, RealEstateGeocode> known = repository.findByQueryKeyIn(distinct).stream()
-                .collect(Collectors.toMap(RealEstateGeocode::getQueryKey, Function.identity(), (a, b) -> a));
+        Map<String, RealEstateGeocode> known = findKnown(distinct);
 
         List<String> misses = distinct.stream()
                 .filter(query -> !known.containsKey(query))
                 .toList();
 
         if (!misses.isEmpty() && kakaoClient.isEnabled()) {
-            Instant now = Instant.now();
-            List<RealEstateGeocode> resolved = geocodeInParallel(misses, now);
-            repository.saveAll(resolved);
-            for (RealEstateGeocode entity : resolved) {
+            for (RealEstateGeocode entity : geocodeAndSave(misses)) {
                 known.put(entity.getQueryKey(), entity);
             }
         }
@@ -69,6 +64,31 @@ public class RealEstateGeocodeService {
             }
         }
         return results;
+    }
+
+    /**
+     * 주어진 쿼리 중 이미 DB에 캐시된 항목만 조회한다(1순위 캐시 조회). 대량 호출 시
+     * SQL IN절 크기를 제한하기 위해 청크 단위로 나눠 조회한다.
+     */
+    public Map<String, RealEstateGeocode> findKnown(List<String> distinctQueries) {
+        Map<String, RealEstateGeocode> known = new HashMap<>();
+        int chunkSize = 500;
+        for (int from = 0; from < distinctQueries.size(); from += chunkSize) {
+            List<String> chunk = distinctQueries.subList(from, Math.min(from + chunkSize, distinctQueries.size()));
+            for (RealEstateGeocode entity : repository.findByQueryKeyIn(chunk)) {
+                known.put(entity.getQueryKey(), entity);
+            }
+        }
+        return known;
+    }
+
+    /**
+     * 캐시 미스 건만 카카오에 병렬로 질의하고, 결과를 즉시 DB에 저장한다(2순위 Write-Through 캐싱).
+     */
+    public List<RealEstateGeocode> geocodeAndSave(List<String> misses) {
+        List<RealEstateGeocode> resolved = geocodeInParallel(misses, Instant.now());
+        repository.saveAll(resolved);
+        return resolved;
     }
 
     private List<RealEstateGeocode> geocodeInParallel(List<String> misses, Instant now) {

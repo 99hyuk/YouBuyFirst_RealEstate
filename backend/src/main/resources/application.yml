@@ -34,3 +34,8 @@ app:
       data-go-service-key: ${DATA_GO_SERVICE_KEY:}
     kakao:
       rest-api-key: ${KAKAO_REST_API_KEY:}
+    geocode:
+      preload:
+        batch-size: ${REALESTATE_GEOCODE_PRELOAD_BATCH_SIZE:8}
+        delay-ms: ${REALESTATE_GEOCODE_PRELOAD_DELAY_MS:1100}
+        max-queries: ${REALESTATE_GEOCODE_PRELOAD_MAX_QUERIES:20000}
