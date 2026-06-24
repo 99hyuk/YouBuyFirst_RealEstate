@@ -4,7 +4,16 @@ import { useRoute } from 'vue-router';
 import RealEstateTransactionMap, { type TransactionMapMarker } from '../components/RealEstateTransactionMap.vue';
 import { geocodeTransactionItems } from '../lib/kakao-geocode';
 import { formatDistance } from '../lib/geo-distance';
-import { fetchNearbyFacilities, type NearbyFacilities } from '../lib/kakao-nearby-places';
+import {
+  fetchNearbyFacilities,
+  kakaoMapDirectionsUrl,
+  type KakaoMapDirectionsPoint,
+  type NearbyFacilities
+} from '../lib/kakao-nearby-places';
+import { fetchRealEstateTargetIdByName } from '../lib/realestate-target-lookup';
+import { fetchRealEstateTargetReactionSnapshot, type RealEstateReactionSnapshotDetail } from '../lib/realestate-reactions';
+import { buildNewsroomFeedItems, fetchRealEstateTargetContent, type NewsroomFeedItem } from '../lib/realestate-content';
+import { fetchRealEstateTargetTimeline, type RealEstateTimelineEvent } from '../lib/realestate-timeline';
 import {
   computeTransactionChange,
   computeTransactionPriceTrend,
@@ -100,26 +109,65 @@ const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(geoc
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? null
 );
-// 선택 매물 주변(1km 이내) 지하철역/버스정류장/편의점·마트 검색. 선택이 바뀔 때마다 재검색.
+// 선택 매물 주변(1km 이내) 지하철역/버스정류장/편의점·마트/학교 검색. 선택이 바뀔 때마다 재검색.
 const nearbyState = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
 const nearbyFacilities = ref<NearbyFacilities | null>(null);
+
+// 단지명으로 targetId를 찾아 커뮤니티 반응/관련 콘텐츠/정책 타임라인을 조회한다.
+// 등록된 단지 타겟이 없으면(검색 미매칭) '데이터 없음'으로 표시한다.
+const relatedState = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
+const reactionSnapshot = ref<RealEstateReactionSnapshotDetail | null>(null);
+const relatedContent = ref<NewsroomFeedItem[]>([]);
+const relatedTimeline = ref<RealEstateTimelineEvent[]>([]);
+
 watch(selectedId, async (id) => {
   const target = selectedItem.value;
   if (!id || !target) {
     nearbyState.value = 'idle';
     nearbyFacilities.value = null;
+    relatedState.value = 'idle';
+    reactionSnapshot.value = null;
+    relatedContent.value = [];
+    relatedTimeline.value = [];
     return;
   }
+
   nearbyState.value = 'loading';
-  const result = await fetchNearbyFacilities({ lat: target.lat, lng: target.lng });
-  if (selectedId.value !== id) return; // 검색 도중 다른 매물이 선택된 경우 결과 무시.
-  if (!result) {
-    nearbyState.value = 'unavailable';
-    nearbyFacilities.value = null;
-    return;
+  relatedState.value = 'loading';
+
+  void fetchNearbyFacilities({ lat: target.lat, lng: target.lng }).then((result) => {
+    if (selectedId.value !== id) return; // 검색 도중 다른 매물이 선택된 경우 결과 무시.
+    if (!result) {
+      nearbyState.value = 'unavailable';
+      nearbyFacilities.value = null;
+      return;
+    }
+    nearbyFacilities.value = result;
+    nearbyState.value = 'ready';
+  });
+
+  try {
+    const targetId = await fetchRealEstateTargetIdByName(target.name);
+    if (selectedId.value !== id) return;
+    if (!targetId) {
+      relatedState.value = 'unavailable';
+      return;
+    }
+
+    const [snapshot, content, timeline] = await Promise.all([
+      fetchRealEstateTargetReactionSnapshot(targetId).catch(() => null),
+      fetchRealEstateTargetContent(targetId, { limit: 3 }).catch(() => []),
+      fetchRealEstateTargetTimeline(targetId, { limit: 5 }).catch(() => [])
+    ]);
+    if (selectedId.value !== id) return;
+    reactionSnapshot.value = snapshot;
+    relatedContent.value = buildNewsroomFeedItems(content).slice(0, 3);
+    relatedTimeline.value = timeline;
+    relatedState.value = 'ready';
+  } catch {
+    if (selectedId.value !== id) return;
+    relatedState.value = 'unavailable';
   }
-  nearbyFacilities.value = result;
-  nearbyState.value = 'ready';
 });
 const statusLabel = computed(() => {
   if (loadState.value === 'loading') return '실거래 데이터 불러오는 중';
@@ -202,6 +250,27 @@ const activeTrendCaption = computed(
 const selectedPriceTrend = computed(() =>
   computeTransactionPriceTrend(selectedItem.value, activeTrendPeriod.value)
 );
+
+const SQUARE_METERS_PER_PYEONG = 3.3058;
+// pricePerAreaByMonth의 최신 월 값(만원/㎡)을 평(3.3058㎡) 기준으로 환산한 평당가.
+const selectedPricePerPyeong = computed(() => {
+  const byMonth = selectedItem.value?.pricePerAreaByMonth;
+  if (!byMonth) return null;
+  const months = Object.keys(byMonth).sort();
+  if (!months.length) return null;
+  const latest = byMonth[months[months.length - 1]];
+  if (!latest) return null;
+  return Math.round(latest * SQUARE_METERS_PER_PYEONG);
+});
+const selectedPricePerPyeongLabel = computed(() => {
+  const value = selectedPricePerPyeong.value;
+  return value === null ? '확인 필요' : `평당 ${value.toLocaleString('ko-KR')}만원`;
+});
+// 주변 시설 길찾기 링크의 출발지(=선택 단지) 좌표.
+const selectedDirectionsOrigin = computed<KakaoMapDirectionsPoint | null>(() => {
+  const item = selectedItem.value;
+  return item ? { name: item.name, lat: item.lat, lng: item.lng } : null;
+});
 
 // 리스트 가격 색: 선택한 비교 기간(YoY/6개월/MoM) 변동이 있으면 상승=빨강/하락=파랑, 없으면 기본색.
 const priceTone = (item: TransactionItem): '' | 'up' | 'down' => {
@@ -412,6 +481,7 @@ onMounted(() => {
       <dl class="transaction-detail-list">
         <div><dt>위치</dt><dd>{{ selectedItem.gu }} {{ selectedItem.region }}</dd></div>
         <div><dt>면적</dt><dd>{{ selectedItem.areaLabel }}</dd></div>
+        <div><dt>평단가</dt><dd>{{ selectedPricePerPyeongLabel }}</dd></div>
         <div><dt>거래</dt><dd>{{ selectedItem.dealCount }}건</dd></div>
         <div><dt>준공</dt><dd>{{ selectedItem.builtYear ? `${selectedItem.builtYear}년` : '확인 필요' }}</dd></div>
         <div><dt>기준일</dt><dd>{{ selectedItem.asOf }}</dd></div>
@@ -420,23 +490,60 @@ onMounted(() => {
       <div class="transaction-nearby" data-testid="transaction-nearby">
         <p class="transaction-nearby-title">주변 시설</p>
         <ul v-if="nearbyState === 'ready' && nearbyFacilities" class="transaction-nearby-list">
-          <li v-if="nearbyFacilities.subway" class="transaction-nearby-item">
-            <span class="transaction-nearby-icon" aria-hidden="true">🚇</span>
-            <span class="transaction-nearby-name">{{ nearbyFacilities.subway.name }}</span>
-            <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.subway.distanceMeters) }}</span>
+          <li v-if="nearbyFacilities.subway">
+            <a
+              class="transaction-nearby-item"
+              :href="selectedDirectionsOrigin ? kakaoMapDirectionsUrl(selectedDirectionsOrigin, nearbyFacilities.subway) : undefined"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="`${nearbyFacilities.subway.name}까지 카카오맵 길찾기`"
+            >
+              <span class="transaction-nearby-icon" aria-hidden="true">🚇</span>
+              <span class="transaction-nearby-name">{{ nearbyFacilities.subway.name }}</span>
+              <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.subway.distanceMeters) }}</span>
+            </a>
           </li>
-          <li v-if="nearbyFacilities.bus" class="transaction-nearby-item">
-            <span class="transaction-nearby-icon" aria-hidden="true">🚌</span>
-            <span class="transaction-nearby-name">{{ nearbyFacilities.bus.name }}</span>
-            <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.bus.distanceMeters) }}</span>
+          <li v-if="nearbyFacilities.bus">
+            <a
+              class="transaction-nearby-item"
+              :href="selectedDirectionsOrigin ? kakaoMapDirectionsUrl(selectedDirectionsOrigin, nearbyFacilities.bus) : undefined"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="`${nearbyFacilities.bus.name}까지 카카오맵 길찾기`"
+            >
+              <span class="transaction-nearby-icon" aria-hidden="true">🚌</span>
+              <span class="transaction-nearby-name">{{ nearbyFacilities.bus.name }}</span>
+              <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.bus.distanceMeters) }}</span>
+            </a>
           </li>
-          <li v-if="nearbyFacilities.store" class="transaction-nearby-item">
-            <span class="transaction-nearby-icon" aria-hidden="true">🏪</span>
-            <span class="transaction-nearby-name">{{ nearbyFacilities.store.name }}</span>
-            <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.store.distanceMeters) }}</span>
+          <li v-if="nearbyFacilities.store">
+            <a
+              class="transaction-nearby-item"
+              :href="selectedDirectionsOrigin ? kakaoMapDirectionsUrl(selectedDirectionsOrigin, nearbyFacilities.store) : undefined"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="`${nearbyFacilities.store.name}까지 카카오맵 길찾기`"
+            >
+              <span class="transaction-nearby-icon" aria-hidden="true">🏪</span>
+              <span class="transaction-nearby-name">{{ nearbyFacilities.store.name }}</span>
+              <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.store.distanceMeters) }}</span>
+            </a>
+          </li>
+          <li v-if="nearbyFacilities.school">
+            <a
+              class="transaction-nearby-item"
+              :href="selectedDirectionsOrigin ? kakaoMapDirectionsUrl(selectedDirectionsOrigin, nearbyFacilities.school) : undefined"
+              target="_blank"
+              rel="noopener noreferrer"
+              :title="`${nearbyFacilities.school.name}까지 카카오맵 길찾기`"
+            >
+              <span class="transaction-nearby-icon" aria-hidden="true">🏫</span>
+              <span class="transaction-nearby-name">{{ nearbyFacilities.school.name }}</span>
+              <span class="transaction-nearby-distance">{{ formatDistance(nearbyFacilities.school.distanceMeters) }}</span>
+            </a>
           </li>
           <li
-            v-if="!nearbyFacilities.subway && !nearbyFacilities.bus && !nearbyFacilities.store"
+            v-if="!nearbyFacilities.subway && !nearbyFacilities.bus && !nearbyFacilities.store && !nearbyFacilities.school"
             class="transaction-nearby-empty"
           >
             주변 1km 이내 시설 정보 없음
@@ -444,6 +551,51 @@ onMounted(() => {
         </ul>
         <p v-else-if="nearbyState === 'loading'" class="transaction-nearby-empty">주변 시설 검색 중…</p>
         <p v-else class="transaction-nearby-empty">주변 시설 정보 없음</p>
+      </div>
+
+      <div class="transaction-related" data-testid="transaction-reaction">
+        <p class="transaction-related-title">커뮤니티 반응</p>
+        <template v-if="relatedState === 'ready' && reactionSnapshot && reactionSnapshot.mentionCount > 0">
+          <div class="transaction-reaction-bar">
+            <span
+              class="transaction-reaction-segment expectation"
+              :style="{ width: `${Math.round(reactionSnapshot.reactionDirectionRatio.expectation * 100)}%` }"
+            ></span>
+            <span
+              class="transaction-reaction-segment concern"
+              :style="{ width: `${Math.round(reactionSnapshot.reactionDirectionRatio.concern * 100)}%` }"
+            ></span>
+          </div>
+          <p class="transaction-related-meta">
+            기대 {{ Math.round(reactionSnapshot.reactionDirectionRatio.expectation * 100) }}% · 우려 {{ Math.round(reactionSnapshot.reactionDirectionRatio.concern * 100) }}% · 언급 {{ reactionSnapshot.mentionCount }}건
+          </p>
+        </template>
+        <p v-else-if="relatedState === 'loading'" class="transaction-related-empty">반응 데이터 불러오는 중…</p>
+        <p v-else class="transaction-related-empty">커뮤니티 반응 데이터 없음</p>
+      </div>
+
+      <div class="transaction-related" data-testid="transaction-content">
+        <p class="transaction-related-title">관련 뉴스/콘텐츠</p>
+        <ul v-if="relatedState === 'ready' && relatedContent.length" class="transaction-content-list">
+          <li v-for="item in relatedContent" :key="item.id">
+            <a :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+            <span class="transaction-related-meta">{{ item.source }} · {{ item.meta }}</span>
+          </li>
+        </ul>
+        <p v-else-if="relatedState === 'loading'" class="transaction-related-empty">관련 콘텐츠 불러오는 중…</p>
+        <p v-else class="transaction-related-empty">관련 콘텐츠 없음</p>
+      </div>
+
+      <div class="transaction-related" data-testid="transaction-timeline">
+        <p class="transaction-related-title">정책 타임라인</p>
+        <ul v-if="relatedState === 'ready' && relatedTimeline.length" class="transaction-timeline-list">
+          <li v-for="event in relatedTimeline" :key="event.id">
+            <span class="transaction-timeline-date">{{ (event.occurredAt ?? '').slice(0, 10) || '날짜 확인 필요' }}</span>
+            <span class="transaction-timeline-title">{{ event.title }}</span>
+          </li>
+        </ul>
+        <p v-else-if="relatedState === 'loading'" class="transaction-related-empty">정책 타임라인 불러오는 중…</p>
+        <p v-else class="transaction-related-empty">정책 이벤트 없음</p>
       </div>
 
       <p class="transaction-detail-note">국토교통부 실거래 · {{ selectedItem.stale ? '지연 가능' : selectedItem.dataStatus }}</p>

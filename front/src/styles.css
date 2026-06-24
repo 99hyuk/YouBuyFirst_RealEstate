@@ -12284,7 +12284,7 @@ body:has(.complex-browse-page) .page-frame {
 
 .transaction-nearby-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
   gap: 10px;
   margin: 0;
   padding: 0;
@@ -12301,6 +12301,13 @@ body:has(.complex-browse-page) .page-frame {
   background: var(--surface-soft);
   font-size: 12px;
   text-align: center;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.transaction-nearby-item:hover {
+  background: var(--surface-hover, var(--surface-soft));
 }
 
 .transaction-nearby-icon {
@@ -12338,6 +12345,91 @@ body:has(.complex-browse-page) .page-frame {
   margin: 8px 0 0;
   font-size: 11px;
   color: var(--muted-2);
+}
+
+.transaction-related {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.transaction-related-title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 760;
+  color: var(--muted);
+}
+
+.transaction-related-meta {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted-2);
+}
+
+.transaction-related-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+
+.transaction-reaction-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.transaction-reaction-segment.expectation {
+  background: var(--market-up);
+}
+
+.transaction-reaction-segment.concern {
+  background: var(--market-down);
+}
+
+.transaction-content-list,
+.transaction-timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transaction-content-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.transaction-content-list a {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.transaction-content-list a:hover {
+  text-decoration: underline;
+}
+
+.transaction-timeline-list li {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.transaction-timeline-date {
+  flex: none;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.transaction-timeline-title {
+  color: var(--ink);
 }
 
 /* 실좌표 미적용 건물 포함 토글(필터 버튼처럼 동작) */

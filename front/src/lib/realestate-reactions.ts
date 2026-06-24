@@ -55,6 +55,23 @@ export type FetchRealEstateReactionRankingParams = {
   limit?: number;
 };
 
+export type RealEstateReactionSnapshotDetail = {
+  targetId: string;
+  targetType: string;
+  displayName: string;
+  mentionCount: number;
+  reactionDirectionRatio: {
+    expectation: number;
+    concern: number;
+    neutral: number;
+  };
+  heatScore: number;
+};
+
+export type FetchRealEstateTargetReactionSnapshotParams = {
+  windowMinutes?: number;
+};
+
 export type RegionReactionRankingRow = {
   rank: number;
   name: string;
@@ -130,6 +147,37 @@ export async function fetchRealEstateReactionRankingWithFallback(
     requestedWindowMinutes: fallbackWindowMinutes,
     fallbackFromWindowMinutes: requestedWindowMinutes,
     usedFallbackWindow: true
+  };
+}
+
+/**
+ * 단일 단지/지역의 최근 커뮤니티 반응 스냅샷(기대/우려 비율, 언급량)을 조회한다.
+ * 데이터가 없으면 mentionCount=0인 빈 스냅샷이 돌아온다(에러 아님).
+ */
+export async function fetchRealEstateTargetReactionSnapshot(
+  targetId: string,
+  params: FetchRealEstateTargetReactionSnapshotParams = {},
+  fetcher: Fetcher = fetch
+): Promise<RealEstateReactionSnapshotDetail> {
+  const query = new URLSearchParams();
+  query.set('windowMinutes', String(params.windowMinutes ?? DEFAULT_REACTION_WINDOW_MINUTES));
+
+  const response = await fetcher(`/api/realestate/targets/${encodeURIComponent(targetId)}/reaction-snapshot?${query.toString()}`);
+  if (!response.ok) {
+    throw new Error(`target reaction snapshot request failed: ${response.status}`);
+  }
+  const payload = await response.json() as Partial<RealEstateReactionSnapshotDetail>;
+  return {
+    targetId: payload.targetId ?? targetId,
+    targetType: repairMojibake(payload.targetType),
+    displayName: repairMojibake(payload.displayName),
+    mentionCount: payload.mentionCount ?? 0,
+    reactionDirectionRatio: {
+      expectation: payload.reactionDirectionRatio?.expectation ?? 0,
+      concern: payload.reactionDirectionRatio?.concern ?? 0,
+      neutral: payload.reactionDirectionRatio?.neutral ?? 0
+    },
+    heatScore: payload.heatScore ?? 0
   };
 }
 
