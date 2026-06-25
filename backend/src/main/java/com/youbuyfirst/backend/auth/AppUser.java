@@ -85,6 +85,28 @@ public class AppUser {
         );
     }
 
+    public static AppUser oauth(
+            String username,
+            String email,
+            String displayName,
+            String passwordHash,
+            String authProvider,
+            Instant now
+    ) {
+        return new AppUser(
+                UUID.randomUUID().toString(),
+                username,
+                email,
+                displayName,
+                passwordHash,
+                authProvider,
+                "USER",
+                "active",
+                now,
+                now
+        );
+    }
+
     public void markSeen(Instant now) {
         this.lastSeenAt = now;
     }

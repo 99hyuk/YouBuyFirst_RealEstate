@@ -310,6 +310,19 @@ class RealEstateBatchIntegrationTest {
                         </tbody></table>
                         """);
             }
+            if ("https://www.reb.or.kr/r-one/portal/compose/scheduleStatsPage.do".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <table><tbody>
+                          <tr>
+                            <td id="20260630">
+                              <p class="ac calLink eventColorRENT" title="부동산거래(주택) 새창열림" data-relId="7000022">
+                                <a href="javascript:goStatPage('7000022');" title="부동산거래(주택) 새창 열림">부동산거래(주택)</a>
+                              </p>
+                            </td>
+                          </tr>
+                        </tbody></table>
+                        """);
+            }
             if ("https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancListView.do".equals(url)) {
                 return RealEstateExternalFetchResult.ok("""
                         <table><tbody>
@@ -317,7 +330,19 @@ class RealEstateBatchIntegrationTest {
                             <td>제주</td><td>민영</td><td>분양주택</td>
                             <td class="txt_l"><a href="#b" class="txt_l_b"><b>신제주 동문디이스트 시그니처원Ⅱ</b></a></td>
                             <td>동문건설 주식회사</td><td>1811-8838</td>
-                            <td>2026-06-23</td><td>2026-07-03 ~ 2026-07-06</td><td>2026-07-10</td>
+                            <td>2026-06-23</td><td>2026-06-24 ~ 2026-06-25</td><td>2026-06-30</td>
+                          </tr>
+                        </tbody></table>
+                        """);
+            }
+            if ("https://khug.or.kr/houstar/web/p01/03/p010301.jsp?currentPage=1".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <table><tbody>
+                          <tr>
+                            <td class="txt_l">
+                              <a href="/houstar/web/p01/03/p010301.jsp?articleId=37252&amp;currentPage=1&amp;mode=S">2026년 5월 민간아파트 분양가격 동향</a>
+                            </td>
+                            <td>2026.06.16</td>
                           </tr>
                         </tbody></table>
                         """);
@@ -341,6 +366,16 @@ class RealEstateBatchIntegrationTest {
                         <table><tbody>
                           <tr><th scope="row">06월 25일(목)</th><td></td><td class="tal"></td></tr>
                           <tr><th scope="row">07월 16일(목)</th><td></td><td class="tal"></td></tr>
+                        </tbody></table>
+                        """);
+            }
+            if ("https://www.bok.or.kr/portal/stats/statsPublictSchdul/listCldr.do?date=2026-06&menuNo=200775".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <table><tbody>
+                          <tr><th>공표일</th><th>시각</th><th>대상통계</th><th>비고</th></tr>
+                          <tr><td>2026-06-25</td><td>12:00</td><td>2026년 5월 금융기관 가중평균금리</td><td></td></tr>
+                          <tr><td>2026-06-26</td><td>6:00</td><td>2026년 6월 소비자동향조사 결과</td><td></td></tr>
+                          <tr><td>2026-06-27</td><td>8:00</td><td>2026년 5월 국제수지(잠정)</td><td></td></tr>
                         </tbody></table>
                         """);
             }
@@ -380,6 +415,17 @@ class RealEstateBatchIntegrationTest {
         assertThat(rebPublished.path("status").asText()).isEqualTo("공표 확인");
         assertThat(rebPublished.path("dataStatus").asText()).isEqualTo("published");
 
+        JsonNode rebSchedule = firstItemWithId(events, "reb-r-one-schedule-7000022-2026-06-30");
+        assertThat(rebSchedule).isNotNull();
+        assertThat(rebSchedule.path("date").asText()).isEqualTo("2026-06-30");
+        assertThat(rebSchedule.path("title").asText()).isEqualTo("부동산거래(주택) 공표 예정");
+        assertThat(rebSchedule.path("summary").asText())
+                .isEqualTo("R-ONE 통계공표일정 2026-06-30 기준 부동산거래(주택) 공식 공표 일정입니다.");
+        assertThat(rebSchedule.path("link").asText())
+                .isEqualTo("https://www.reb.or.kr/r-one/portal/stat/easyStatPage.do?cateId=7000022");
+        assertThat(rebSchedule.path("status").asText()).isEqualTo("공식 일정");
+        assertThat(rebSchedule.path("dataStatus").asText()).isEqualTo("scheduled");
+
         JsonNode molitStatSchedule = firstItemWithId(events, "molit-stat-schedule-32-2026-06-28");
         assertThat(molitStatSchedule).isNotNull();
         assertThat(molitStatSchedule.path("title").asText()).isEqualTo("미분양주택현황 공표 예정");
@@ -398,16 +444,58 @@ class RealEstateBatchIntegrationTest {
         assertThat(bokSchedule.path("status").asText()).isEqualTo("공식 일정");
         assertThat(bokSchedule.path("dataStatus").asText()).isEqualTo("scheduled");
 
+        JsonNode bokWeightedRate = firstItemWithTitle(events, "2026년 5월 금융기관 가중평균금리 공표 예정");
+        assertThat(bokWeightedRate).isNotNull();
+        assertThat(bokWeightedRate.path("date").asText()).isEqualTo("2026-06-25");
+        assertThat(bokWeightedRate.path("category").asText()).isEqualTo("금융");
+        assertThat(bokWeightedRate.path("source").asText()).isEqualTo("한국은행 경제통계");
+        assertThat(bokWeightedRate.path("summary").asText())
+                .isEqualTo("한국은행 월간통계 공표일정 기준 2026-06-25 12:00 공개 예정인 금융·거시 통계입니다.");
+        assertThat(bokWeightedRate.path("link").asText())
+                .isEqualTo("https://www.bok.or.kr/portal/stats/statsPublictSchdul/listCldr.do?date=2026-06&menuNo=200775");
+        assertThat(bokWeightedRate.path("status").asText()).isEqualTo("공식 일정");
+        assertThat(bokWeightedRate.path("dataStatus").asText()).isEqualTo("scheduled");
+        assertThat(firstItemWithTitle(events, "2026년 5월 국제수지(잠정) 공표 예정")).isNull();
+
         JsonNode applyHomePublished = firstItemWithId(events, "applyhome-published-2026000289");
         assertThat(applyHomePublished).isNotNull();
         assertThat(applyHomePublished.path("date").asText()).isEqualTo("2026-06-23");
         assertThat(applyHomePublished.path("title").asText()).isEqualTo("신제주 동문디이스트 시그니처원Ⅱ 입주자모집공고");
         assertThat(applyHomePublished.path("summary").asText())
-                .isEqualTo("모집공고일 2026-06-23, 청약기간 2026-07-03~2026-07-06, 당첨자 발표 2026-07-10인 청약Home 공고입니다.");
+                .isEqualTo("모집공고일 2026-06-23, 청약기간 2026-06-24~2026-06-25, 당첨자 발표 2026-06-30인 청약Home 공고입니다.");
         assertThat(applyHomePublished.path("link").asText())
                 .isEqualTo("https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2026000289&pblancNo=2026000289");
         assertThat(applyHomePublished.path("status").asText()).isEqualTo("공표 확인");
         assertThat(applyHomePublished.path("dataStatus").asText()).isEqualTo("published");
+
+        JsonNode applyHomeStart = firstItemWithId(events, "applyhome-application-start-2026000289-2026-06-24");
+        assertThat(applyHomeStart).isNotNull();
+        assertThat(applyHomeStart.path("title").asText()).isEqualTo("신제주 동문디이스트 시그니처원Ⅱ 청약 접수 시작");
+        assertThat(applyHomeStart.path("link").asText()).isEqualTo(applyHomePublished.path("link").asText());
+        assertThat(applyHomeStart.path("dataStatus").asText()).isEqualTo("scheduled");
+
+        JsonNode applyHomeEnd = firstItemWithId(events, "applyhome-application-end-2026000289-2026-06-25");
+        assertThat(applyHomeEnd).isNotNull();
+        assertThat(applyHomeEnd.path("title").asText()).isEqualTo("신제주 동문디이스트 시그니처원Ⅱ 청약 접수 마감");
+        assertThat(applyHomeEnd.path("link").asText()).isEqualTo(applyHomePublished.path("link").asText());
+        assertThat(applyHomeEnd.path("dataStatus").asText()).isEqualTo("scheduled");
+
+        JsonNode applyHomeWinner = firstItemWithId(events, "applyhome-winner-2026000289-2026-06-30");
+        assertThat(applyHomeWinner).isNotNull();
+        assertThat(applyHomeWinner.path("title").asText()).isEqualTo("신제주 동문디이스트 시그니처원Ⅱ 당첨자 발표");
+        assertThat(applyHomeWinner.path("link").asText()).isEqualTo(applyHomePublished.path("link").asText());
+        assertThat(applyHomeWinner.path("dataStatus").asText()).isEqualTo("scheduled");
+
+        JsonNode hugPublished = firstItemWithId(events, "hug-market-published-37252");
+        assertThat(hugPublished).isNotNull();
+        assertThat(hugPublished.path("date").asText()).isEqualTo("2026-06-16");
+        assertThat(hugPublished.path("title").asText()).isEqualTo("2026년 5월 민간아파트 분양가격 동향");
+        assertThat(hugPublished.path("summary").asText())
+                .isEqualTo("HUG 주택도시보증공사 분양시장 공표자료: 2026년 5월 민간아파트 분양가격 동향");
+        assertThat(hugPublished.path("link").asText())
+                .isEqualTo("https://khug.or.kr/houstar/web/p01/03/p010301.jsp?articleId=37252&currentPage=1&mode=S");
+        assertThat(hugPublished.path("status").asText()).isEqualTo("공표 확인");
+        assertThat(hugPublished.path("dataStatus").asText()).isEqualTo("published");
 
         JsonNode molitPublished = firstItemWithId(events, "molit-policy-published-95092134");
         assertThat(molitPublished).isNotNull();
@@ -426,14 +514,180 @@ class RealEstateBatchIntegrationTest {
         assertThat(applyHome).isNotNull();
         assertThat(applyHome.path("title").asText()).isEqualTo("청약Home");
         assertThat(applyHome.path("label").asText()).isEqualTo("청약·분양");
+        assertThat(applyHome.path("status").asText()).isEqualTo("확인 완료");
+        assertThat(applyHome.path("dataStatus").asText()).isEqualTo("ok");
         assertThat(applyHome.path("stale").asBoolean()).isFalse();
         assertThat(applyHome.path("lastCheckedAt").asText()).isNotBlank();
+        JsonNode bokStat = firstItemWithId(sources, "bok-stat");
+        assertThat(bokStat).isNotNull();
+        assertThat(bokStat.path("title").asText()).isEqualTo("한국은행 경제통계");
+        assertThat(bokStat.path("dataStatus").asText()).isEqualTo("ok");
+        assertEveryScheduleHasContextLink(events);
         verify(batchUpdatePublisher).publish(argThat((RealEstateBatchUpdateEvent event) ->
                 "market-data-schedules".equals(event.topic())
                         && "2026-06".equals(event.month())
                         && event.acceptedItems() > 0
                         && event.refreshedAt() != null
         ));
+    }
+
+    @Test
+    void marketDataScheduleRefreshJobCollectsPublicSupplyFinanceAndOfficialPriceRows() throws Exception {
+        when(externalFetchClient.postForm(anyString(), anyMap(), anyMap()))
+                .thenReturn(RealEstateExternalFetchResult.ok("{\"data\":[]}"));
+        when(externalFetchClient.fetch(anyString())).thenAnswer(invocation -> {
+            String url = invocation.getArgument(0, String.class);
+            if ("https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1027".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <table><tbody>
+                          <tr>
+                            <td>
+                              <button type="button" class="wrtancInfoBtn" data-id1="2026040001" data-id2="01" data-id3="05" data-id4="05">상세</button>
+                              <a href="#none">고양창릉 A-4BL 공공분양주택 입주자모집공고</a>
+                            </td>
+                            <td>공공분양</td><td>경기</td><td>2026.04.15</td><td>2026.04.30</td><td>공고중</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <button type="button" class="wrtancInfoBtn" data-id1="2015122300020064" data-id2="01" data-id3="05" data-id4="05">상세</button>
+                              <a href="#none">분양주택</a>
+                            </td>
+                            <td>분양주택</td><td>경남</td><td>2026.04.09</td><td>2026.04.30</td><td>공고중</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <button type="button" class="wrtancInfoBtn" data-id1="2015122300020098" data-id2="01" data-id3="05" data-id4="05">상세</button>
+                              <a href="#none">창원시 매입임대 잔여주택 일반매각 선착순 동호지정 공고</a>
+                            </td>
+                            <td>매입임대</td><td>경남</td><td>2026.04.10</td><td>2026.04.30</td><td>공고중</td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <button type="button" class="wrtancInfoBtn" data-id1="2015122300020155" data-id2="01" data-id3="05" data-id4="05">상세</button>
+                              <a href="#none">[정정공고]광주첨단 H-1,2BL 행복주택 예비입주자 모집</a>
+                            </td>
+                            <td>행복주택</td><td>광주</td><td>2026.04.15</td><td>2026.04.30</td><td>공고중</td>
+                          </tr>
+                        </tbody></table>
+                        """);
+            }
+            if ("https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026".equals(url)) {
+                return RealEstateExternalFetchResult.ok("<table><tbody></tbody></table>");
+            }
+            if ("https://housing.seoul.go.kr/site/main/sh/publicLease/07/list".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <ul>
+                          <li>
+                            <a href="/site/main/sh/publicLease/07/view?seq=sh202604">서울 장기전세주택 입주자모집공고</a>
+                            <span>2026.04.16</span>
+                          </li>
+                        </ul>
+                        """);
+            }
+            if ("https://www.gh.or.kr/gh/announcement-of-salerental001.do".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <table><tbody>
+                          <tr>
+                            <td>주택</td>
+                            <td><a href="/gh/announcement-of-salerental001.do?articleNo=2231">광명학온 공공주택 분양 공고</a></td>
+                            <td>주택사업부</td><td>26.04.17</td>
+                          </tr>
+                        </tbody></table>
+                        """);
+            }
+            if ("https://www.ih.co.kr/main/sale_lease/notice.jsp".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <ul>
+                          <li>
+                            <a href="/main/sale_lease/notice_view.jsp?seq=77">검단 행복주택 예비입주자 모집공고</a>
+                            <span>2026.04.18</span>
+                          </li>
+                        </ul>
+                        """);
+            }
+            if ("https://www.ih.co.kr/main/sale_lease/board/house_notice.jsp".equals(url)) {
+                return RealEstateExternalFetchResult.ok("<ul></ul>");
+            }
+            if ("https://www.fsc.go.kr/no010101".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <ul>
+                          <li>
+                            <a href="/no010101/86606?curPage=1">부동산 시장과 금융의 절연을 위한 - 26년도 가계부채 관리방안 발표</a>
+                            <div class="day">2026-04-01</div>
+                          </li>
+                        </ul>
+                        """);
+            }
+            if ("https://www.realtyprice.kr/notice/board/boardListAll.board".equals(url)) {
+                return RealEstateExternalFetchResult.ok("""
+                        <table><tbody>
+                          <tr>
+                            <td>11</td><td><span class="cate cate01">공동</span></td>
+                            <td><a href="javascript:goDetail( 36 )">2026년 1월 1일 기준 공동주택가격 결정·공시 및 이의신청</a></td>
+                            <td>2026-04-30</td>
+                          </tr>
+                        </tbody></table>
+                        """);
+            }
+            return RealEstateExternalFetchResult.ok("<html>ok</html>");
+        });
+
+        jobLauncher.run(marketDataScheduleRefreshJob, new JobParametersBuilder(uniqueParameters("schedule-p2"))
+                .addString("month", "2026-04")
+                .toJobParameters());
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/market-data-schedules?month=2026-04",
+                String.class
+        );
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode root = objectMapper.readTree(response.getBody());
+        JsonNode events = root.path("scheduleEvents");
+
+        JsonNode lhSupply = firstItemWithId(events, "lh-apply-published-2026040001-2026-04-15");
+        assertThat(lhSupply).isNotNull();
+        assertThat(lhSupply.path("title").asText()).isEqualTo("고양창릉 A-4BL 공공분양주택 입주자모집공고");
+        assertThat(lhSupply.path("link").asText())
+                .isEqualTo("https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2026040001&ccrCnntSysDsCd=01&uppAisTpCd=05&aisTpCd=05");
+        assertThat(lhSupply.path("dataStatus").asText()).isEqualTo("published");
+        assertThat(firstItemWithId(events, "lh-apply-published-2015122300020064-2026-04-09")).isNull();
+        assertThat(firstItemWithId(events, "lh-apply-published-2015122300020098-2026-04-10")).isNull();
+        assertThat(firstItemWithId(events, "lh-apply-published-2015122300020155-2026-04-15")).isNull();
+
+        JsonNode shSupply = firstItemWithId(events, "sh-housing-published-sh202604-2026-04-16");
+        assertThat(shSupply).isNotNull();
+        assertThat(shSupply.path("link").asText())
+                .isEqualTo("https://housing.seoul.go.kr/site/main/sh/publicLease/07/view?seq=sh202604");
+
+        JsonNode ghSupply = firstItemWithId(events, "gh-supply-published-2231-2026-04-17");
+        assertThat(ghSupply).isNotNull();
+        assertThat(ghSupply.path("link").asText())
+                .isEqualTo("https://www.gh.or.kr/gh/announcement-of-salerental001.do?articleNo=2231");
+
+        JsonNode ihSupply = firstItemWithId(events, "ih-supply-published-77-2026-04-18");
+        assertThat(ihSupply).isNotNull();
+        assertThat(ihSupply.path("link").asText())
+                .isEqualTo("https://www.ih.co.kr/main/sale_lease/notice_view.jsp?seq=77");
+
+        JsonNode fscPolicy = firstItemWithId(events, "fsc-policy-published-86606");
+        assertThat(fscPolicy).isNotNull();
+        assertThat(fscPolicy.path("category").asText()).isEqualTo("금융");
+        assertThat(fscPolicy.path("link").asText()).isEqualTo("https://www.fsc.go.kr/no010101/86606?curPage=1");
+
+        JsonNode realtyPrice = firstItemWithId(events, "realty-price-published-36");
+        assertThat(realtyPrice).isNotNull();
+        assertThat(realtyPrice.path("category").asText()).isEqualTo("공시가격");
+        assertThat(realtyPrice.path("link").asText())
+                .isEqualTo("https://www.realtyprice.kr/notice/board/boardDetailAll.board?seq=36");
+
+        JsonNode sources = root.path("sourceLinks");
+        assertThat(firstItemWithId(sources, "lh-apply")).isNotNull();
+        assertThat(firstItemWithId(sources, "sh-housing")).isNotNull();
+        assertThat(firstItemWithId(sources, "gh-supply")).isNotNull();
+        assertThat(firstItemWithId(sources, "ih-supply")).isNotNull();
+        assertThat(firstItemWithId(sources, "fsc-policy")).isNotNull();
+        assertThat(firstItemWithId(sources, "realty-price")).isNotNull();
+        assertEveryScheduleHasContextLink(events);
     }
 
     @Test
@@ -459,6 +713,43 @@ class RealEstateBatchIntegrationTest {
         assertThat(scheduleResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode events = objectMapper.readTree(scheduleResponse.getBody()).path("scheduleEvents");
         assertThat(events).isEmpty();
+    }
+
+    @Test
+    void marketDataScheduleRefreshJobMarksFailedSourcesSeparatelyFromEmptyMonths() throws Exception {
+        when(externalFetchClient.fetch(anyString())).thenAnswer(invocation -> {
+            String url = invocation.getArgument(0, String.class);
+            if ("https://stat.molit.go.kr/".equals(url)
+                    || "https://stat.molit.go.kr/portal/notice/scheduleList.do".equals(url)) {
+                return RealEstateExternalFetchResult.failed(503, "provider unavailable");
+            }
+            return RealEstateExternalFetchResult.ok("<html>ok</html>");
+        });
+
+        jobLauncher.run(marketDataScheduleRefreshJob, new JobParametersBuilder(uniqueParameters("schedule-source-error"))
+                .addString("month", "2026-10")
+                .toJobParameters());
+
+        ResponseEntity<String> response = restTemplate.getForEntity(
+                "/api/realestate/market-data-schedules?month=2026-10",
+                String.class
+        );
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode root = objectMapper.readTree(response.getBody());
+        assertThat(root.path("scheduleEvents")).isEmpty();
+
+        JsonNode sources = root.path("sourceLinks");
+        JsonNode molitStat = firstItemWithId(sources, "molit-stat");
+        assertThat(molitStat).isNotNull();
+        assertThat(molitStat.path("status").asText()).isEqualTo("확인 필요");
+        assertThat(molitStat.path("dataStatus").asText()).isEqualTo("error");
+        assertThat(molitStat.path("stale").asBoolean()).isTrue();
+
+        JsonNode applyHome = firstItemWithId(sources, "applyhome");
+        assertThat(applyHome).isNotNull();
+        assertThat(applyHome.path("status").asText()).isEqualTo("확인 완료");
+        assertThat(applyHome.path("dataStatus").asText()).isEqualTo("ok");
+        assertThat(applyHome.path("stale").asBoolean()).isFalse();
     }
 
     @Test
@@ -613,6 +904,30 @@ class RealEstateBatchIntegrationTest {
             }
         }
         return null;
+    }
+
+    private static void assertEveryScheduleHasContextLink(JsonNode items) {
+        for (JsonNode item : items) {
+            String id = item.path("id").asText();
+            String link = item.path("link").asText();
+            assertThat(link).describedAs(id + " link").isNotBlank();
+            assertThat(link).describedAs(id + " context link").matches(".*("
+                    + "selectBulletinPage\\.do"
+                    + "|easyStatPage\\.do\\?cateId="
+                    + "|viewChk\\.do"
+                    + "|selectAPTLttotPblancDetail\\.do"
+                    + "|selectWrtancInfo\\.do"
+                    + "|articleId="
+                    + "|/site/main/sh/publicLease/07/view"
+                    + "|announcement-of-salerental001\\.do\\?articleNo="
+                    + "|/main/sale_lease/notice_view\\.jsp"
+                    + "|/no010101/"
+                    + "|boardDetailAll\\.board\\?seq="
+                    + "|/USR/NEWS/.*/dtl\\.jsp"
+                    + "|listYear\\.do\\?menuNo=200755&mtgSe=A"
+                    + "|statsPublictSchdul/listCldr\\.do\\?date="
+                    + ").*");
+        }
     }
 
     private static JsonNode firstTargetWithId(JsonNode targets, String targetId) {

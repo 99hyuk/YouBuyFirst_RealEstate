@@ -24,6 +24,7 @@ export type MarketDataSourceLink = {
   link: string;
   provider?: string | null;
   status?: string | null;
+  dataStatus?: string | null;
   stale?: boolean | null;
   lastCheckedAt?: string | null;
 };

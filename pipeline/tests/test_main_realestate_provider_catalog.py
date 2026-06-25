@@ -25,10 +25,11 @@ def test_realestate_public_data_providers_command_prints_catalog(monkeypatch, ca
     payload = json.loads(capsys.readouterr().out)
     dataset_ids = [item["datasetId"] for item in payload["items"]]
 
-    assert dataset_ids[:3] == [
+    assert dataset_ids[:4] == [
         "molit_apt_trade",
         "molit_apt_rent",
-        "molit_official_apartment_price_csv",
+        "molit_offi_trade",
+        "molit_offi_rent",
     ]
     assert "serviceKey" not in str(payload)
 

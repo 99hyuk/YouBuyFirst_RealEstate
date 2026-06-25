@@ -22,108 +22,27 @@ const calendarMonthLabel = computed(() => calendarMonth.value.replace('-', '.'))
 const todayIso = new Date().toISOString().slice(0, 10);
 const weekdayLabels = ['월', '화', '수', '목', '금', '토', '일'];
 const scheduleToneLegend = [
-  { tone: 'market', label: '가격지수' },
-  { tone: 'deal', label: '실거래' },
+  { tone: 'market', label: '가격·공시' },
+  { tone: 'deal', label: '거래현황' },
   { tone: 'supply', label: '공급' },
   { tone: 'finance', label: '금융' },
   { tone: 'policy', label: '정책' },
   { tone: 'subscription', label: '청약' }
 ];
 
-const fallbackScheduleEvents: ScheduleEvent[] = [
-  {
-    id: 'r-one-weekly',
-    date: '2026-06-03',
-    title: '주간 아파트 가격동향 확인',
-    category: '가격지수',
-    source: '한국부동산원 R-ONE',
-    summary: '매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.',
-    link: 'https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01',
-    tone: 'market'
-  },
-  {
-    id: 'rt-molit',
-    date: '2026-06-05',
-    title: '실거래가 공개 데이터 점검',
-    category: '실거래',
-    source: '국토교통부 실거래가 공개시스템',
-    summary: '최근 신고된 매매·전월세 거래가 들어왔는지 확인합니다.',
-    link: 'https://rt.molit.go.kr/',
-    tone: 'deal'
-  },
-  {
-    id: 'molit-unsold',
-    date: '2026-06-10',
-    title: '미분양·공급 통계 확인',
-    category: '공급',
-    source: '국토교통 통계누리',
-    summary: '미분양, 준공 후 미분양, 인허가 흐름을 함께 봅니다.',
-    link: 'https://stat.molit.go.kr/portal/notice/scheduleList.do',
-    tone: 'supply'
-  },
-  {
-    id: 'bok-rate',
-    date: '2026-06-12',
-    title: '금리·통화정책 일정 확인',
-    category: '금융',
-    source: '한국은행',
-    summary: '기준금리, 통화정책방향, 의사록 일정을 대출 민감도와 함께 확인합니다.',
-    link: 'https://www.bok.or.kr/portal/singl/crncyPolicyDrcMtg/listYear.do?menuNo=200755&mtgSe=A',
-    tone: 'finance'
-  },
-  {
-    id: 'applyhome',
-    date: '2026-06-16',
-    title: '청약·분양 일정 확인',
-    category: '청약',
-    source: '청약Home',
-    summary: '청약 접수, 당첨자 발표, 경쟁률 공개 일정을 확인합니다.',
-    link: 'https://www.applyhome.co.kr/ai/aib/selectSubscrptCalenderView.do',
-    tone: 'subscription'
-  },
-  {
-    id: 'molit-policy',
-    date: '2026-06-20',
-    title: '정책·보도자료 확인',
-    category: '정책',
-    source: '국토교통부',
-    summary: '공급, 대출, 정비사업, 교통 발표가 있는지 확인합니다.',
-    link: 'https://www.molit.go.kr/USR/NEWS/m_71/lst.jsp',
-    tone: 'policy'
-  },
-  {
-    id: 'hug-market',
-    date: '2026-06-25',
-    title: '보증·주택시장 자료 확인',
-    category: '보증',
-    source: 'HUG 주택도시보증공사',
-    summary: '분양보증, 전세보증, 주택시장 참고 자료를 확인합니다.',
-    link: 'https://www.khug.or.kr/houstar/web/p01/03/p010301.jsp',
-    tone: 'supply'
-  },
-  {
-    id: 'month-close',
-    date: '2026-06-30',
-    title: '월말 시장 데이터 마감 점검',
-    category: '월마감',
-    source: '공식 통계 묶음',
-    summary: '가격지수, 실거래, 공급, 금리 이슈를 월간 리포트 후보로 묶습니다.',
-    link: 'https://www.reb.or.kr/r-one/portal/compose/scheduleStatsPage.do',
-    tone: 'market'
-  }
-];
+const fallbackScheduleEvents: ScheduleEvent[] = [];
 
 const fallbackSourceLinks: SourceLink[] = [
   {
     id: 'reb-r-one',
     title: '한국부동산원 R-ONE',
-    label: '가격지수·공표일정',
-    link: 'https://www.reb.or.kr/r-one/portal/main/indexPage.do'
+    label: '가격지수·거래현황 공표일정',
+    link: 'https://www.reb.or.kr/r-one/portal/compose/scheduleStatsPage.do'
   },
   {
     id: 'rt-molit',
     title: '국토교통부 실거래가 공개시스템',
-    label: '매매·전월세 거래',
+    label: '상시 공개·freshness 확인',
     link: 'https://rt.molit.go.kr/'
   },
   {
@@ -149,6 +68,48 @@ const fallbackSourceLinks: SourceLink[] = [
     title: '국토교통부',
     label: '정책·보도자료',
     link: 'https://www.molit.go.kr/'
+  },
+  {
+    id: 'hug-market',
+    title: 'HUG 주택도시보증공사',
+    label: '분양가격·분양시장',
+    link: 'https://khug.or.kr/houstar/web/p01/03/p010301.jsp?currentPage=1'
+  },
+  {
+    id: 'lh-apply',
+    title: 'LH청약플러스',
+    label: '공공분양·공공임대',
+    link: 'https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1027'
+  },
+  {
+    id: 'sh-housing',
+    title: '서울주거포털 SH',
+    label: '공공임대',
+    link: 'https://housing.seoul.go.kr/site/main/sh/publicLease/07/list'
+  },
+  {
+    id: 'gh-supply',
+    title: '경기주택도시공사 GH',
+    label: '분양·임대 공고',
+    link: 'https://www.gh.or.kr/gh/announcement-of-salerental001.do'
+  },
+  {
+    id: 'ih-supply',
+    title: '인천도시공사 iH',
+    label: '분양·임대 공고',
+    link: 'https://www.ih.co.kr/main/sale_lease/notice.jsp'
+  },
+  {
+    id: 'fsc-policy',
+    title: '금융위원회',
+    label: '부동산 금융정책',
+    link: 'https://www.fsc.go.kr/no010101'
+  },
+  {
+    id: 'realty-price',
+    title: '부동산공시가격 알리미',
+    label: '공시가격',
+    link: 'https://www.realtyprice.kr/notice/board/boardListAll.board'
   }
 ];
 
@@ -224,7 +185,7 @@ const scheduleSummaryLine = (event: ScheduleEvent) => {
 
 const eventStatusLabel = (event: ScheduleEvent) => {
   if (event.status) return event.status;
-  return isPublishedSchedule(event) ? '공표 확인' : '확인 예정';
+  return isPublishedSchedule(event) ? '공표 확인' : '공식 일정';
 };
 
 const eventDateLabel = (date: string) => date.slice(5).replace('-', '.');
@@ -299,7 +260,7 @@ onBeforeUnmount(() => {
       <div>
         <p class="label">공식 일정 보드</p>
         <h2 id="indicators-title">주요 일정</h2>
-        <span>가격지수, 실거래, 공급, 금리, 청약 일정을 캘린더로 확인합니다.</span>
+        <span>가격·거래현황, 공급, 금융, 청약, 정책·공시 일정을 캘린더로 확인합니다.</span>
       </div>
     </section>
 
@@ -370,6 +331,14 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="calendar-event-list" aria-label="월간 공식 일정 요약">
+          <article v-if="!visibleScheduleEvents.length" class="calendar-event-card empty">
+            <time :datetime="`${calendarMonth}-01`">{{ calendarMonthLabel }}</time>
+            <span class="calendar-event-card-body">
+              <strong>공식 일정 수집 전</strong>
+              <span>이 달에 공식 원천에서 날짜가 확인된 일정이 아직 없습니다.</span>
+            </span>
+            <em>공식 출처 · insufficient</em>
+          </article>
           <component
             :is="scheduleLinkFor(event) ? 'a' : 'article'"
             v-for="event in visibleScheduleEvents"

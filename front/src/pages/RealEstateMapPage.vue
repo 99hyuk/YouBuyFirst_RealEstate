@@ -29,6 +29,20 @@ import {
   type RealEstateEvidenceItem,
   type RealEstateEvidenceLog
 } from '../lib/realestate-evidence-logs';
+import {
+  fetchRealEstateRegionalReport,
+  type RealEstateRegionalReport
+} from '../lib/realestate-regional-reports';
+import { currentAuthUser } from '../lib/auth-session';
+import { recordRecentRealEstateView } from '../lib/realestate-recent-views';
+import {
+  isUserWatchTargetSaved,
+  loadUserWatchTargets,
+  removeUserWatchTarget,
+  safeWatchTargetTestId,
+  saveUserWatchTarget,
+  type UserWatchTargetPayload
+} from '../lib/user-watch-targets';
 
 type ReportKey =
   | 'priceFlow'
@@ -48,6 +62,16 @@ type MapTarget = FixtureMapTarget & {
   stale?: boolean;
   targetId: string;
 };
+type ChatAttachmentPayload = {
+  type: 'region' | 'complex';
+  targetId: string;
+  title: string;
+  subtitle: string;
+  metricLabel?: string;
+  metricValue?: string;
+  metricTone?: 'up' | 'down' | 'flat';
+  landingPath: string;
+};
 type ProvinceProperties = {
   base_year: string;
   code: string;
@@ -63,6 +87,11 @@ type KoreaTopology = Topology<{
 type MunicipalityTopology = Topology<{
   skorea_municipalities_2018_geo: GeometryCollection<MunicipalityProperties>;
 }>;
+type ReportAnalysisSegment = {
+  key: string;
+  label: '평가' | '전망' | null;
+  text: string;
+};
 type MapFeature = {
   code: string;
   depthTransform: string;
@@ -114,6 +143,11 @@ const metricLabels: { key: ReportKey; label: string }[] = [
 ];
 
 const activePeriod = ref<PeriodKey>('month');
+const activePeriodIndex = computed(() => Math.max(0, periodOptions.findIndex((period) => period.id === activePeriod.value)));
+const periodSliderStyle = computed<Record<string, string>>(() => ({
+  '--period-active-index': String(activePeriodIndex.value),
+  '--period-count': String(periodOptions.length)
+}));
 const selectedSubregionCode = ref<string | null>(null);
 const selectedSubregionClusterId = ref<string | null>(null);
 const reportOpening = ref(false);
@@ -136,6 +170,8 @@ const subregionLayerLoadState = ref<'idle' | 'loading' | 'live' | 'fallback'>('i
 const subregionLayerByCode = shallowRef<Map<string, RealEstateMapLayerTarget>>(new Map());
 const mapEvidenceLogs = ref<RealEstateEvidenceLog[]>([]);
 const mapEvidenceLoadState = ref<'idle' | 'loading' | 'live' | 'empty' | 'error'>('idle');
+const regionalReport = ref<RealEstateRegionalReport | null>(null);
+const regionalReportLoadState = ref<'idle' | 'loading' | 'live' | 'empty' | 'error'>('idle');
 const mapLayerMeta = reactive({
   asOf: mapFixture.asOf as string | null,
   dataStatus: 'mock' as string | null,
@@ -564,16 +600,20 @@ const transactionMapLabel = computed(() => {
 });
 const targetPeriodChangeValue = (target: MapTarget, period: PeriodKey = activePeriod.value) =>
   target.periodChanges[period] ?? 0;
+const highestGainRegion = computed(() =>
+  [...targets].sort(
+    (left, right) => targetPeriodChangeValue(right) - targetPeriodChangeValue(left)
+  )[0]
+);
+const largestDeclineRegion = computed(() =>
+  [...targets].sort(
+    (left, right) => targetPeriodChangeValue(left) - targetPeriodChangeValue(right)
+  )[0]
+);
 const strongestRegion = computed(() =>
   [...targets].sort(
     (left, right) => Math.abs(targetPeriodChangeValue(right)) - Math.abs(targetPeriodChangeValue(left))
   )[0]
-);
-const strongestSubregion = computed(() =>
-  [...subregionFeatures.value.filter((feature) => hasSubregionPeriod(feature))].sort(
-    (left, right) =>
-      Math.abs(subregionPeriodChange(right, activePeriod.value)) - Math.abs(subregionPeriodChange(left, activePeriod.value))
-  )[0] ?? null
 );
 
 const targetPeriodMeta = (target: MapTarget, period: PeriodKey = activePeriod.value) => target.layerPeriods?.[period] ?? null;
@@ -711,6 +751,27 @@ const subregionPeriodChange = (feature: SubregionFeature, period: PeriodKey = ac
   if (livePeriod) return livePeriod.changePct;
   return 0;
 };
+const subregionFeaturesWithPeriod = computed(() =>
+  subregionFeatures.value.filter((feature) => hasSubregionPeriod(feature))
+);
+const highestGainSubregion = computed(() =>
+  [...subregionFeaturesWithPeriod.value].sort(
+    (left, right) =>
+      subregionPeriodChange(right, activePeriod.value) - subregionPeriodChange(left, activePeriod.value)
+  )[0] ?? null
+);
+const largestDeclineSubregion = computed(() =>
+  [...subregionFeaturesWithPeriod.value].sort(
+    (left, right) =>
+      subregionPeriodChange(left, activePeriod.value) - subregionPeriodChange(right, activePeriod.value)
+  )[0] ?? null
+);
+const strongestSubregion = computed(() =>
+  [...subregionFeaturesWithPeriod.value].sort(
+    (left, right) =>
+      Math.abs(subregionPeriodChange(right, activePeriod.value)) - Math.abs(subregionPeriodChange(left, activePeriod.value))
+  )[0] ?? null
+);
 const subregionSampleCount = (feature: SubregionFeature) => {
   const livePeriod = effectiveSubregionPeriod(feature);
   if (livePeriod) return livePeriod.sampleCount;
@@ -968,6 +1029,23 @@ const refreshMapEvidenceLogs = async (targetId: string | null) => {
     mapEvidenceLoadState.value = 'error';
   }
 };
+const refreshRegionalReport = async (targetId: string | null) => {
+  regionalReport.value = null;
+  if (!targetId) {
+    regionalReportLoadState.value = 'idle';
+    return;
+  }
+
+  regionalReportLoadState.value = 'loading';
+  try {
+    const report = await fetchRealEstateRegionalReport(targetId);
+    regionalReport.value = report;
+    regionalReportLoadState.value = report ? 'live' : 'empty';
+  } catch {
+    regionalReport.value = null;
+    regionalReportLoadState.value = 'error';
+  }
+};
 const mapLayerStatusText = computed(() => {
   if (mapLayerLoadState.value === 'loading') return `loading · ${mapFixture.asOf}`;
   if (mapLayerLoadState.value === 'fallback') return `mock fallback · ${mapFixture.asOf}`;
@@ -980,17 +1058,7 @@ const dokdoDongdo = computed(() => { const p = nationalProjection([131.8684, 37.
 const subregionLayerStatusText = computed(() => {
   if (!selectedRegion.value) return '전국';
   if (subregionLayerLoadState.value === 'loading') return '하위 레이어 로딩';
-
-  const period = subregionRepresentativePeriod.value;
-  if (period) {
-    const provider = mapSourceLabel(period.provider ?? period.sourceLabel);
-    const status = mapDataStatusLabel(period.dataStatus);
-    const freshness = period.stale ? '갱신 지연' : '최신 반영';
-    const asOf = formatMapTimestamp(period.asOf);
-    return `${provider} · ${status} · ${freshness} · ${asOf}`;
-  }
-
-  return '하위 레이어 수집 전/insufficient';
+  return '하위지역 기준';
 });
 
 const selectedEvidenceLayerTarget = computed(() =>
@@ -1009,6 +1077,9 @@ const selectedEvidenceTargetId = computed(() =>
     : selectedEvidenceLayerTarget.value?.targetId ?? selectedRegion.value?.targetId ?? null
 );
 const latestMapEvidenceLog = computed(() => mapEvidenceLogs.value[0] ?? null);
+const latestRegionalReport = computed(() =>
+  regionalReport.value?.targetId === selectedEvidenceTargetId.value ? regionalReport.value : null
+);
 const mapEvidenceStatusText = computed(() => {
   if (!selectedRegion.value) return '지역 선택 전';
   if (mapEvidenceLoadState.value === 'loading') return 'AI 근거 로그 확인 중';
@@ -1048,11 +1119,13 @@ const selectedReport = computed(() => {
       ?? usableMapPeriod(subregionLayerPeriod(feature, 'year'))
       ?? usableMapPeriod(subregionLayerPeriod(feature, 'week'));
   const hasLivePeriod = Boolean(livePeriod);
+  const storedReport = latestRegionalReport.value;
+  const storedReportParagraphs = reportBodyParagraphs(storedReport?.body);
   const isDerivedSubregionPeriod = Boolean(feature && livePeriod && !directSubregionPeriod);
   const sourceLabel = livePeriod ? mapSourceLabel(livePeriod.provider ?? livePeriod.sourceLabel) : '출처 확인 필요';
   const dataStatusLabel = mapDataStatusLabel(livePeriod?.dataStatus) ?? '확인 필요';
   const asOfLabel = formatMapTimestamp(livePeriod?.asOf);
-  const reportUpdatedAtLabel = formatMapTimestamp(latestMapEvidenceLog.value?.asOf ?? reportBasePeriod?.asOf ?? livePeriod?.asOf);
+  const reportUpdatedAtLabel = formatMapTimestamp(storedReport?.publishedAt ?? latestMapEvidenceLog.value?.asOf ?? reportBasePeriod?.asOf ?? livePeriod?.asOf);
   const freshnessLabel = livePeriod
     ? isDerivedSubregionPeriod
       ? '상위 지역만 반영'
@@ -1088,6 +1161,13 @@ const selectedReport = computed(() => {
       : mapEvidenceLoadState.value === 'error'
         ? '분석 근거 확인 필요'
         : '분석 근거 수집 전';
+  const latestReportEvidenceState = storedReport
+    ? '최신 리포트 DB 반영'
+    : regionalReportLoadState.value === 'loading'
+      ? '최신 리포트 확인 중'
+      : regionalReportLoadState.value === 'error'
+        ? '최신 리포트 확인 필요'
+        : reportEvidenceState;
   const evidenceValue = latestMapEvidenceLog.value ? '분석 근거 확인' : unavailableValue;
   const changeDirectionLabel = hasLivePeriod
     ? change > 0.05
@@ -1104,19 +1184,27 @@ const selectedReport = computed(() => {
       : feature
         ? '하위 지역 직접 지표 우선'
         : '지역 전체 공식 지표 우선';
-  const expectationPoints = [
+  const fallbackExpectationPoints = [
     livePeriod ? '공식 가격지수 확인' : '공식 가격지수 수집 전',
-    reportEvidenceState,
+    latestReportEvidenceState,
     directDataScope
   ];
-  const concernPoints = [
+  const expectationPoints = storedReport?.expectationPoints.length
+    ? storedReport.expectationPoints
+    : fallbackExpectationPoints;
+  const fallbackConcernPoints = [
     hasLivePeriod && change < 0
       ? `${selectedPeriodLabel} 가격지수 ${formatChange(change)} 하락`
       : '선택 기간 수치만으로 흐름 단정 금지',
     '매매 실거래 연결 전',
     '전월세·공급 일정 연결 전'
   ];
-  const analysisParagraphs = hasLivePeriod
+  const concernPoints = storedReport?.concernPoints.length
+    ? storedReport.concernPoints
+    : fallbackConcernPoints;
+  const analysisParagraphs = storedReportParagraphs.length
+    ? storedReportParagraphs
+    : hasLivePeriod
     ? [
         `${subjectName} 리포트는 ${reportUpdatedAtLabel} 업데이트 기준으로 정리했습니다. 첫 수치 박스는 현재 지도에서 선택한 ${selectedPeriodLabel} 가격지수 변화 ${formatChange(change)}를 보여주는 렌즈입니다.`,
         `판단은 ${sourceLabel} 가격지수와 연결된 분석 근거를 우선 보고, 매매 실거래·전월세·공급 일정은 연결 전 항목으로 분리해 해석합니다.`,
@@ -1127,23 +1215,34 @@ const selectedReport = computed(() => {
         `분석 근거와 공식 시장 사실이 연결되면 최신 기준의 지역 브리핑으로 전환합니다.`,
         '매매 실거래, 전월세, 공급 일정은 각각 별도 근거로 확인한 뒤 같은 리포트에 적재합니다.'
       ];
-  const relatedReports = [
-    {
-      label: '가격지수',
-      title: livePeriod ? `${sourceLabel} 가격지수` : '한국부동산원 가격지수',
-      meta: livePeriod ? `${reportUpdatedAtLabel} 업데이트` : '공식 데이터 없음'
-    },
-    {
-      label: '실거래',
-      title: '매매 실거래 공개시스템',
-      meta: '수집 전'
-    },
-    {
-      label: '뉴스·리포트',
-      title: `${subjectName} 관련 뉴스·리포트`,
-      meta: latestMapEvidenceLog.value ? '분석 근거 반영 · 원문 링크 적재 대기' : '수집 전'
-    }
-  ];
+  const analysisSegments = reportAnalysisSegments(analysisParagraphs);
+  const relatedReports = storedReport?.sources.length
+    ? storedReport.sources.map((source) => ({
+        label: source.label,
+        title: source.title,
+        meta: regionalReportSourceMeta(source),
+        url: source.url ?? null
+      }))
+    : [
+        {
+          label: '가격지수',
+          title: livePeriod ? `${sourceLabel} 가격지수` : '한국부동산원 가격지수',
+          meta: livePeriod ? `${reportUpdatedAtLabel} 업데이트` : '공식 데이터 없음',
+          url: null
+        },
+        {
+          label: '실거래',
+          title: '매매 실거래 공개시스템',
+          meta: '수집 전',
+          url: null
+        },
+        {
+          label: '뉴스·리포트',
+          title: `${subjectName} 관련 뉴스·리포트`,
+          meta: latestMapEvidenceLog.value ? '분석 근거 반영 · 원문 링크 적재 대기' : '수집 전',
+          url: null
+        }
+      ];
 
   return {
     change,
@@ -1230,7 +1329,7 @@ const selectedReport = computed(() => {
       },
       {
         label: '분석 근거',
-        value: reportEvidenceState
+        value: latestReportEvidenceState
       }
     ],
     comparisonRows: feature && !usesParentTarget
@@ -1262,17 +1361,15 @@ const selectedReport = computed(() => {
       { label: '기준 시각', value: asOfLabel },
       { label: '갱신 상태', value: freshnessLabel },
       { label: '하위 지역 보정', value: usesParentTarget ? '단일 행정계층 · 상위 리포트 기준' : isDerivedSubregionPeriod ? '상위 지역만 반영' : '직접 지표 우선 · 없으면 상위 지역만 반영' },
-      { label: '분석 근거', value: reportEvidenceState }
+      { label: '분석 근거', value: latestReportEvidenceState }
     ],
-    briefingTitle: hasLivePeriod
-      ? `최신 종합 리포트 · 공식 지표 기준`
-      : changeDirectionLabel,
-    summary: hasLivePeriod
+    summary: storedReport?.summary ?? (hasLivePeriod
       ? `${subjectName}의 ${periodLabelById[activePeriod.value]} 가격지수 변화는 ${formatChange(change)}입니다. 현재 지도 레이어는 ${layerStatus} 상태이며, 실거래·전월세·공급 일정은 연결 전 항목을 분리해서 확인합니다.${isDerivedSubregionPeriod ? ' 아직 시군구 직접 지표가 없어 상위 지역만 반영한 상태입니다.' : ''}`
-      : `${subjectName} 지도 흐름 자료는 아직 수집 전입니다. 이 구간은 값을 임의 추정하지 않고, 상위 지역 분석 근거와 하위 지역 갱신 배치가 연결되면 실제 리포트로 전환됩니다.`,
+      : `${subjectName} 지도 흐름 자료는 아직 수집 전입니다. 이 구간은 값을 임의 추정하지 않고, 상위 지역 분석 근거와 하위 지역 갱신 배치가 연결되면 실제 리포트로 전환됩니다.`),
     expectationPoints,
     concernPoints,
     analysisParagraphs,
+    analysisSegments,
     relatedReports,
     title: '보조 반응',
     mentionSummary: hasLivePeriod
@@ -1302,6 +1399,122 @@ const reportPanelStyle = computed(() =>
         transition: 'none'
       }
     : undefined
+);
+
+const selectedRegionRecentView = computed(() => {
+  const region = selectedRegion.value;
+  if (!region) return null;
+
+  const subregion = selectedSubregion.value;
+  if (!subregion) {
+    return {
+      id: region.targetId,
+      kind: 'region' as const,
+      label: region.name,
+      meta: `지역 분석 · ${periodLabelById[activePeriod.value]}`,
+      href: `/realestate/map/${region.targetId}`
+    };
+  }
+
+  const params = new URLSearchParams();
+  const selectedTargetId = selectedEvidenceLayerTarget.value?.targetId ?? selectedEvidenceTargetId.value;
+  if (selectedTargetId) {
+    params.set('selectedTargetId', selectedTargetId);
+  }
+  params.set('selectedRegionCode', subregion.code);
+  params.set('period', activePeriod.value);
+
+  return {
+    id: selectedTargetId ?? `${region.targetId}-${subregion.code}`,
+    kind: 'region' as const,
+    label: selectedReport.value?.name ?? `${region.name} ${subregion.name}`,
+    meta: `지역 분석 · ${region.name} · ${periodLabelById[activePeriod.value]}`,
+    href: `/realestate/map/${region.targetId}?${params.toString()}`
+  };
+});
+const selectedRegionWatchTarget = computed<UserWatchTargetPayload | null>(() => {
+  const view = selectedRegionRecentView.value;
+  if (!view) return null;
+
+  return {
+    targetType: 'region',
+    targetId: view.id,
+    displayName: view.label,
+    landingPath: view.href
+  };
+});
+const isSelectedRegionWatched = computed(() => {
+  const target = selectedRegionWatchTarget.value;
+  return target ? isUserWatchTargetSaved(target.targetType, target.targetId) : false;
+});
+const selectedRegionWatchTestId = computed(() => {
+  const target = selectedRegionWatchTarget.value;
+  return target ? `watch-toggle-region-${safeWatchTargetTestId(target.targetId)}` : 'watch-toggle-region';
+});
+const selectedRegionWatchLabel = computed(() => {
+  const target = selectedRegionWatchTarget.value;
+  if (!target) return '관심 저장';
+  return isSelectedRegionWatched.value ? `${target.displayName} 관심 해제` : `${target.displayName} 관심 저장`;
+});
+const selectedRegionChatAttachment = computed<ChatAttachmentPayload | null>(() => {
+  const target = selectedRegionWatchTarget.value;
+  const report = selectedReport.value;
+  if (!target || !report) return null;
+
+  return {
+    type: 'region',
+    targetId: target.targetId,
+    title: target.displayName,
+    subtitle: `지역 분석 · ${periodLabelById[activePeriod.value]}`,
+    metricLabel: periodLabelById[activePeriod.value],
+    metricValue: report.hasLivePeriod ? formatChange(report.change) : '자료 없음',
+    metricTone: report.hasLivePeriod ? changeTone(report.change) : 'flat',
+    landingPath: target.landingPath
+  };
+});
+const selectedRegionChatTestId = computed(() => {
+  const target = selectedRegionChatAttachment.value;
+  return target ? `chat-attach-region-${safeWatchTargetTestId(target.targetId)}` : 'chat-attach-region';
+});
+const selectedRegionChatLabel = computed(() => {
+  const target = selectedRegionChatAttachment.value;
+  return target ? `${target.title} 채팅에 첨부` : '지역 리포트 채팅에 첨부';
+});
+
+const dispatchChatAttachment = (attachment: ChatAttachmentPayload) => {
+  window.dispatchEvent(new CustomEvent('ybf-chat-attach', { detail: attachment }));
+};
+
+const attachSelectedRegionToChat = () => {
+  const attachment = selectedRegionChatAttachment.value;
+  if (!attachment) return;
+  dispatchChatAttachment(attachment);
+};
+
+const toggleSelectedRegionWatch = async () => {
+  const target = selectedRegionWatchTarget.value;
+  if (!target) return;
+
+  if (!currentAuthUser.value) {
+    await router.push('/auth/login');
+    return;
+  }
+
+  if (isSelectedRegionWatched.value) {
+    await removeUserWatchTarget(target.targetType, target.targetId);
+  } else {
+    await saveUserWatchTarget(target);
+  }
+};
+
+watch(
+  selectedRegionRecentView,
+  (view) => {
+    if (view) {
+      recordRecentRealEstateView(view);
+    }
+  },
+  { immediate: true }
 );
 
 const clampMapPan = (scale: number, panX: number, panY: number, shell?: HTMLElement) => {
@@ -1416,6 +1629,56 @@ function mapEvidenceIssueLabel(item: RealEstateEvidenceItem): string {
   if (item.evidenceType === 'timeline_event') return '타임라인 이벤트';
   if (item.evidenceType === 'similar_window') return '유사 과거 사례';
   return item.label;
+}
+
+function reportBodyParagraphs(body?: string | null): string[] {
+  return (body ?? '')
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
+}
+
+function reportAnalysisSegments(paragraphs: string[]): ReportAnalysisSegment[] {
+  const segments = paragraphs.flatMap((paragraph, paragraphIndex) => {
+    const normalized = paragraph.replace(/\s+/g, ' ').trim();
+    if (!normalized) return [];
+
+    const matches = Array.from(normalized.matchAll(/(평가|전망)\s*:/g));
+    if (!matches.length) {
+      return [{
+        key: `paragraph-${paragraphIndex}`,
+        label: null,
+        text: normalized
+      }];
+    }
+
+    const parsed = matches
+      .map((match, matchIndex) => {
+        const start = (match.index ?? 0) + match[0].length;
+        const nextStart = matches[matchIndex + 1]?.index ?? normalized.length;
+        return {
+          key: `${match[1]}-${paragraphIndex}-${matchIndex}`,
+          label: match[1] as '평가' | '전망',
+          text: normalized.slice(start, nextStart).trim()
+        };
+      })
+      .filter((segment) => segment.text.length > 0);
+
+    const leadingText = normalized.slice(0, matches[0]?.index ?? 0).trim();
+    return leadingText
+      ? [{ key: `lead-${paragraphIndex}`, label: null, text: leadingText }, ...parsed]
+      : parsed;
+  });
+
+  return segments.length ? segments : [{ key: 'empty', label: null, text: '분석 리포트 본문 수집 전입니다.' }];
+}
+
+function regionalReportSourceMeta(source: RealEstateRegionalReport['sources'][number]): string {
+  return [
+    source.sourceName,
+    source.dataStatus,
+    formatMapTimestamp(source.publishedAt)
+  ].filter((value): value is string => Boolean(value && value !== '기준 시각 확인 필요')).join(' · ') || '근거 확인 필요';
 }
 
 const navigateToRegion = (target: MapTarget) => {
@@ -1543,10 +1806,14 @@ watch(
   selectedEvidenceTargetId,
   (targetId) => {
     void refreshMapEvidenceLogs(targetId);
+    void refreshRegionalReport(targetId);
   },
   { immediate: true }
 );
 onMounted(() => {
+  if (currentAuthUser.value) {
+    void loadUserWatchTargets();
+  }
   void refreshNationalMapLayer();
   batchUpdateSubscription = subscribeRealEstateBatchUpdates((event) => {
     if (event.topic !== 'map-layers') {
@@ -1608,9 +1875,9 @@ onBeforeUnmount(() => {
     >
       <article class="realestate-map-stage" aria-labelledby="korea-map-title">
         <div class="map-stage-toolbar">
-          <div>
-            <p class="label">{{ selectedRegion ? '지역 상세 지도' : '전국 흐름 지도' }}</p>
-            <div class="map-stage-heading-line">
+          <div class="map-stage-heading-line">
+            <div class="map-stage-title-stack">
+              <p class="label">{{ selectedRegion ? '지역 상세 지도' : '전국 흐름 지도' }}</p>
               <h3 id="korea-map-title">
                 {{
                   focusedSubregionClusterLabel
@@ -1620,15 +1887,20 @@ onBeforeUnmount(() => {
                       : '전국 부동산 흐름'
                 }}
               </h3>
-              <div class="period-tabs map-period-tabs" aria-label="지도 기간 선택">
+            </div>
+            <div class="map-period-control" aria-label="지도 기간 선택">
+              <div class="map-period-tabs map-period-slider" role="radiogroup" :style="periodSliderStyle">
+                <span class="map-period-slider-thumb" aria-hidden="true"></span>
                 <button
                   v-for="period in periodOptions"
                   :key="period.id"
                   type="button"
-                  :class="{ active: activePeriod === period.id }"
+                  role="radio"
+                  :aria-checked="activePeriod === period.id"
+                  :class="['map-period-option', { active: activePeriod === period.id }]"
                   @click="activePeriod = period.id"
                 >
-                  {{ period.label }}
+                  <span class="map-period-option-label">{{ period.label }}</span>
                 </button>
               </div>
             </div>
@@ -1879,31 +2151,43 @@ onBeforeUnmount(() => {
 
         <div class="map-stage-footer">
           <article>
-            <span>{{ selectedRegion ? '가장 강한 하위 지역' : '가장 강한 변동' }}</span>
-            <strong>{{ selectedRegion ? strongestSubregion?.name : strongestRegion.name }}</strong>
+            <span>가장 높은 상승</span>
+            <strong>{{ selectedRegion ? highestGainSubregion?.name ?? '수집 전' : highestGainRegion.name }}</strong>
             <em
               :class="
-                selectedRegion && strongestSubregion
-                  ? changeTone(subregionPeriodChange(strongestSubregion))
-                  : changeTone(periodChange(strongestRegion))
+                selectedRegion && highestGainSubregion
+                  ? changeTone(subregionPeriodChange(highestGainSubregion))
+                  : changeTone(periodChange(highestGainRegion))
               "
             >
               {{
-                selectedRegion && strongestSubregion
-                  ? formatChange(subregionPeriodChange(strongestSubregion))
-                  : formatChange(periodChange(strongestRegion))
+                selectedRegion && highestGainSubregion
+                  ? formatChange(subregionPeriodChange(highestGainSubregion))
+                  : formatChange(periodChange(highestGainRegion))
               }}
             </em>
           </article>
           <article>
-            <span>{{ selectedRegion ? '하위 지역' : '지역 단위' }}</span>
-            <strong>{{ selectedRegion ? `${subregionFeatures.length}개 구·시·군` : '17개 시도' }}</strong>
-            <em data-testid="subregion-layer-status">{{ selectedRegion ? subregionLayerStatusText : '지도 흐름 자료 우선' }}</em>
+            <span>가장 많은 하락</span>
+            <strong>{{ selectedRegion ? largestDeclineSubregion?.name ?? '수집 전' : largestDeclineRegion.name }}</strong>
+            <em
+              :class="
+                selectedRegion && largestDeclineSubregion
+                  ? changeTone(subregionPeriodChange(largestDeclineSubregion))
+                  : changeTone(periodChange(largestDeclineRegion))
+              "
+            >
+              {{
+                selectedRegion && largestDeclineSubregion
+                  ? formatChange(subregionPeriodChange(largestDeclineSubregion))
+                  : formatChange(periodChange(largestDeclineRegion))
+              }}
+            </em>
           </article>
           <article>
-            <span>다음 단계</span>
-            <strong>{{ selectedRegion ? '단지 좌표 매핑' : '시군구 drilldown' }}</strong>
-            <em>{{ selectedRegion ? '아파트 상세 연결 후보' : '지역 클릭으로 진입' }}</em>
+            <span>{{ selectedRegion ? '하위지역' : '지역 단위' }}</span>
+            <strong>{{ selectedRegion ? `${subregionFeatures.length}개 구·시·군` : '17개 시도' }}</strong>
+            <em data-testid="subregion-layer-status">{{ selectedRegion ? subregionLayerStatusText : '시도 기준' }}</em>
           </article>
         </div>
       </article>
@@ -1916,9 +2200,34 @@ onBeforeUnmount(() => {
         aria-labelledby="map-report-title"
       >
         <div class="map-report-header">
-          <div>
+          <div class="map-report-heading">
             <p class="label">지역 리포트</p>
-            <h3 id="map-report-title">{{ selectedReport.name }}</h3>
+            <div class="map-report-title-row">
+              <h3 id="map-report-title">{{ selectedReport.name }}</h3>
+              <button
+                class="watch-heart-button report-watch-button"
+                :class="{ active: isSelectedRegionWatched }"
+                type="button"
+                :data-testid="selectedRegionWatchTestId"
+                :aria-label="selectedRegionWatchLabel"
+                :aria-pressed="isSelectedRegionWatched"
+                @click="toggleSelectedRegionWatch"
+              >{{ isSelectedRegionWatched ? '♥' : '♡' }}</button>
+              <button
+                v-if="selectedRegionChatAttachment"
+                class="chat-attach-button report-chat-button"
+                type="button"
+                :data-testid="selectedRegionChatTestId"
+                :aria-label="selectedRegionChatLabel"
+                @click="attachSelectedRegionToChat"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M7 8.5h10" />
+                  <path d="M7 12h6" />
+                  <path d="M5.5 4.5h13A2.5 2.5 0 0 1 21 7v8a2.5 2.5 0 0 1-2.5 2.5H12L7 21v-3.5H5.5A2.5 2.5 0 0 1 3 15V7a2.5 2.5 0 0 1 2.5-2.5Z" />
+                </svg>
+              </button>
+            </div>
             <span>{{ selectedRegion?.regionCode }} · {{ selectedReport.subregionCode }}</span>
           </div>
           <button class="icon-button" data-testid="close-map-report" type="button" aria-label="지역 리포트 닫기" @click="closeReport">
@@ -1930,14 +2239,11 @@ onBeforeUnmount(() => {
           <article
             class="map-report-card featured"
             data-testid="report-section-ai-briefing"
-            aria-labelledby="map-ai-report-title"
+            aria-labelledby="map-ai-briefing-label"
           >
             <div class="map-report-card-header">
               <div class="map-report-title-stack">
-                <p>AI 핵심 브리핑</p>
-                <h4 id="map-ai-report-title">
-                  {{ selectedReport.briefingTitle }}
-                </h4>
+                <p id="map-ai-briefing-label">AI 핵심 브리핑</p>
               </div>
             </div>
             <div class="map-report-card-body">
@@ -1983,9 +2289,16 @@ onBeforeUnmount(() => {
                   {{ selectedReport.hasLivePeriod ? formatChange(selectedReport.change) : '자료 없음' }}
                 </strong>
               </div>
-              <p v-for="paragraph in selectedReport.analysisParagraphs" :key="paragraph">
-                {{ paragraph }}
-              </p>
+              <div class="map-report-analysis-sections">
+                <article
+                  v-for="segment in selectedReport.analysisSegments"
+                  :key="segment.key"
+                  :class="['map-report-analysis-segment', { labeled: segment.label }]"
+                >
+                  <strong v-if="segment.label">{{ segment.label }}</strong>
+                  <p>{{ segment.text }}</p>
+                </article>
+              </div>
             </div>
           </section>
 
@@ -2002,11 +2315,24 @@ onBeforeUnmount(() => {
               <span>{{ selectedReport.relatedReports.length }}개</span>
             </div>
             <div class="map-report-card-body map-related-report-ledger">
-              <article v-for="item in selectedReport.relatedReports" :key="item.label" class="map-related-report-row">
-                <span>{{ item.label }}</span>
-                <strong>{{ item.title }}</strong>
-                <em>{{ item.meta }}</em>
-              </article>
+              <template v-for="item in selectedReport.relatedReports" :key="item.label">
+                <a
+                  v-if="item.url"
+                  class="map-related-report-row"
+                  :href="item.url"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.title }}</strong>
+                  <em>{{ item.meta }}</em>
+                </a>
+                <article v-else class="map-related-report-row">
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.title }}</strong>
+                  <em>{{ item.meta }}</em>
+                </article>
+              </template>
             </div>
           </section>
         </section>

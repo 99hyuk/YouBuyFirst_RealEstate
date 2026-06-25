@@ -22,3 +22,21 @@ app:
       # Embeddings use the Gemini-compatible GMS path, not the OpenAI-compatible path.
       gemini-base-url: "https://gms.ssafy.io/gmsapi/generativelanguage.googleapis.com"
       embedding-model: "gemini-embedding-2"
+  auth:
+    oauth:
+      success-redirect: "http://127.0.0.1:5173/dashboard"
+      failure-redirect: "http://127.0.0.1:5173/auth/login?oauth=failed"
+      # Optional: use environment variables instead in local runs.
+      # Redirect URI: http://127.0.0.1:8080/login/oauth2/code/{provider}
+      # Public tunnel proxy demo: set redirect-base-url to the public frontend origin.
+      redirect-base-url: ""
+      google:
+        client-id: ""
+        client-secret: ""
+      naver:
+        client-id: ""
+        client-secret: ""
+      kakao:
+        client-id: ""
+        # Kakao client secret is optional unless enabled in the Kakao app settings.
+        client-secret: ""

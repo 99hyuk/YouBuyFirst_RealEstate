@@ -143,6 +143,14 @@ def test_realestate_market_facts_backfill_plan_command_can_use_backend_targets(m
     ]
 
 
+def test_spring_client_default_uses_loopback_ip(monkeypatch):
+    monkeypatch.delenv("SPRING_BASE_URL", raising=False)
+
+    client = pipeline_main._spring_client()
+
+    assert client.base_url == "http://127.0.0.1:8080"
+
+
 def test_realestate_market_facts_backfill_plan_command_can_skip_completed_runs(monkeypatch, capsys):
     fake_client = _FakeSpringClient()
     monkeypatch.setattr(pipeline_main, "_spring_client", lambda: fake_client)

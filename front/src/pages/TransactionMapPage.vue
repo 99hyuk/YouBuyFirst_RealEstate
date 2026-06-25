@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import RealEstateTransactionMap, { type TransactionMapMarker } from '../components/RealEstateTransactionMap.vue';
 import { geocodeTransactionItems } from '../lib/kakao-geocode';
 import { formatDistance } from '../lib/geo-distance';
@@ -10,10 +10,6 @@ import {
   type KakaoMapDirectionsPoint,
   type NearbyFacilities
 } from '../lib/kakao-nearby-places';
-import { fetchRealEstateTargetIdByName } from '../lib/realestate-target-lookup';
-import { fetchRealEstateTargetReactionSnapshot, type RealEstateReactionSnapshotDetail } from '../lib/realestate-reactions';
-import { buildNewsroomFeedItems, fetchRealEstateTargetContent, type NewsroomFeedItem } from '../lib/realestate-content';
-import { fetchRealEstateTargetTimeline, type RealEstateTimelineEvent } from '../lib/realestate-timeline';
 import {
   computeTransactionChange,
   computeTransactionPriceTrend,
@@ -27,11 +23,40 @@ import {
   type DealType,
   type PropertyType
 } from '../lib/realestate-transaction-browse';
+import { currentAuthUser } from '../lib/auth-session';
+import { recordRecentRealEstateView } from '../lib/realestate-recent-views';
+import {
+  isUserWatchTargetSaved,
+  loadUserWatchTargets,
+  removeUserWatchTarget,
+  safeWatchTargetTestId,
+  saveUserWatchTarget,
+  type UserWatchTargetPayload
+} from '../lib/user-watch-targets';
 import regionData from '../fixtures/transaction-regions.json';
 
 type DealFilter = DealType | 'all';
+type TransactionRegionGroup = { sido: string; items: { code: string; name: string }[] };
+type SidoOption = TransactionRegionGroup & { code: string };
+type ChatAttachmentPayload = {
+  type: 'region' | 'complex';
+  targetId: string;
+  title: string;
+  subtitle: string;
+  metricLabel?: string;
+  metricValue?: string;
+  metricTone?: 'up' | 'down' | 'flat';
+  landingPath: string;
+};
 
-const regionGroups = regionData.groups as { sido: string; items: { code: string; name: string }[] }[];
+const regionGroups = regionData.groups as TransactionRegionGroup[];
+const sidoOptions: SidoOption[] = regionGroups
+  .map((group) => ({ ...group, code: group.items[0]?.code.slice(0, 2) ?? '' }))
+  .filter((group) => group.code);
+const regionGroupBySido = new Map(sidoOptions.map((group) => [group.code, group]));
+const sidoByRegionCode = new Map(
+  sidoOptions.flatMap((group) => group.items.map((item) => [item.code, group.code] as const))
+);
 const regionNameByCode = new Map(regionGroups.flatMap((group) => group.items.map((item) => [item.code, item.name])));
 const regionCodes = [...regionNameByCode.keys()];
 
@@ -47,7 +72,22 @@ function resolveInitialRegion(requested: unknown): string {
   return '11680';
 }
 
+function queryStringValue(value: unknown): string {
+  return String((Array.isArray(value) ? value[0] : value) ?? '').trim();
+}
+
+function resolveInitialPropertyType(requested: unknown): PropertyType {
+  const value = queryStringValue(requested);
+  return propertyTypeChips.some((chip) => chip.value === value) ? value as PropertyType : 'apt';
+}
+
+function resolveInitialDealFilter(requested: unknown): DealFilter {
+  const value = queryStringValue(requested);
+  return dealFilters.some((deal) => deal.id === value) ? value as DealFilter : 'all';
+}
+
 const route = useRoute();
+const router = useRouter();
 
 // 매물유형 카테고리. value가 있으면 실데이터 연결(활성).
 // 단독·다가구는 단지명이 없어 지번 주소로 라벨링한다. 재건축/재개발은 수집 데이터가 없어 준비중.
@@ -73,15 +113,20 @@ const sortOptions: { id: TransactionSort; label: string }[] = [
 
 const items = ref<TransactionItem[]>([]);
 let loadToken = 0;
+let lastAutoSelectedRouteQuery = '';
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
-const activePropertyType = ref<PropertyType>('apt');
+const activePropertyType = ref<PropertyType>(resolveInitialPropertyType(route.query.property));
 const activeRegion = ref<string>(resolveInitialRegion(route.query.region));
-const activeDealFilter = ref<DealFilter>('all');
+const activeSido = ref<string>(sidoByRegionCode.get(activeRegion.value) ?? activeRegion.value.slice(0, 2));
+const activeDealFilter = ref<DealFilter>(resolveInitialDealFilter(route.query.deal));
 const activeSort = ref<TransactionSort>('price-desc');
-const query = ref('');
+const routeSearchQuery = computed(() => queryStringValue(route.query.q));
+const query = ref(routeSearchQuery.value);
 const selectedId = ref('');
 const isDetailOpen = ref(false);
+const routeSelectedTransactionId = computed(() => queryStringValue(route.query.selected));
 
+const activeRegionOptions = computed(() => regionGroupBySido.get(activeSido.value)?.items ?? []);
 const regionName = computed(() => regionNameByCode.get(activeRegion.value) ?? '지역');
 const mapCenter = computed(() => regionCentroid(activeRegion.value) ?? undefined);
 
@@ -105,35 +150,28 @@ const listState = computed<'loading' | 'empty' | 'ready'>(() => {
 });
 // 지도 마커는 실좌표가 있는 건물만(좌표 없는 건 위치가 부정확해 제외).
 // 마커 색은 선택한 비교 기간(YoY/6개월/MoM)을 따른다 → 기간 전환 시 지도 색이 함께 바뀜.
-const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(geocodedItems.value, activeTrendPeriod.value));
+const markers = computed<TransactionMapMarker[]>(() => toTransactionMarkers(geocodedItems.value, pageTrendPeriod.value));
 const selectedItem = computed(
   () => visibleItems.value.find((item) => item.id === selectedId.value) ?? null
+);
+const transactionMapCenter = computed(() =>
+  isDetailOpen.value && selectedItem.value
+    ? { lat: selectedItem.value.lat, lng: selectedItem.value.lng }
+    : mapCenter.value
 );
 // 선택 매물 주변(1km 이내) 지하철역/버스정류장/편의점·마트/학교 검색. 선택이 바뀔 때마다 재검색.
 const nearbyState = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
 const nearbyFacilities = ref<NearbyFacilities | null>(null);
 
-// 단지명으로 targetId를 찾아 커뮤니티 반응/관련 콘텐츠/정책 타임라인을 조회한다.
-// 등록된 단지 타겟이 없으면(검색 미매칭) '데이터 없음'으로 표시한다.
-const relatedState = ref<'idle' | 'loading' | 'ready' | 'unavailable'>('idle');
-const reactionSnapshot = ref<RealEstateReactionSnapshotDetail | null>(null);
-const relatedContent = ref<NewsroomFeedItem[]>([]);
-const relatedTimeline = ref<RealEstateTimelineEvent[]>([]);
-
-watch(selectedId, async (id) => {
+watch(selectedId, (id) => {
   const target = selectedItem.value;
   if (!id || !target) {
     nearbyState.value = 'idle';
     nearbyFacilities.value = null;
-    relatedState.value = 'idle';
-    reactionSnapshot.value = null;
-    relatedContent.value = [];
-    relatedTimeline.value = [];
     return;
   }
 
   nearbyState.value = 'loading';
-  relatedState.value = 'loading';
 
   void fetchNearbyFacilities({ lat: target.lat, lng: target.lng }).then((result) => {
     if (selectedId.value !== id) return; // 검색 도중 다른 매물이 선택된 경우 결과 무시.
@@ -145,46 +183,12 @@ watch(selectedId, async (id) => {
     nearbyFacilities.value = result;
     nearbyState.value = 'ready';
   });
-
-  try {
-    const targetId = await fetchRealEstateTargetIdByName(target.name);
-    if (selectedId.value !== id) return;
-    if (!targetId) {
-      relatedState.value = 'unavailable';
-      return;
-    }
-
-    const [snapshot, content, timeline] = await Promise.all([
-      fetchRealEstateTargetReactionSnapshot(targetId).catch(() => null),
-      fetchRealEstateTargetContent(targetId, { limit: 3 }).catch(() => []),
-      fetchRealEstateTargetTimeline(targetId, { limit: 5 }).catch(() => [])
-    ]);
-    if (selectedId.value !== id) return;
-    reactionSnapshot.value = snapshot;
-    relatedContent.value = buildNewsroomFeedItems(content).slice(0, 3);
-    relatedTimeline.value = timeline;
-    relatedState.value = 'ready';
-  } catch {
-    if (selectedId.value !== id) return;
-    relatedState.value = 'unavailable';
+});
+watch(routeSearchQuery, (value) => {
+  if (query.value !== value) {
+    query.value = value;
   }
 });
-const statusLabel = computed(() => {
-  if (loadState.value === 'loading') return '실거래 데이터 불러오는 중';
-  if (loadState.value === 'live') return `국토교통부 실거래 · ${regionName.value} · ${visibleItems.value.length}곳`;
-  if (loadState.value === 'fallback') return 'mock fallback · 실데이터 수집 전';
-  return '실거래 데이터 API 오류';
-});
-const coordSummary = computed(() => {
-  const geocoded = visibleItems.value.filter((item) => item.coordSource === 'geocoded').length;
-  return { geocoded, total: visibleItems.value.length };
-});
-const coordStatusLabel = computed(() => {
-  const { geocoded, total } = coordSummary.value;
-  if (!total) return '';
-  return geocoded ? `실좌표 ${geocoded}/${total}` : '구 중심 좌표(실좌표 0)';
-});
-
 const refreshComplexes = async () => {
   const token = ++loadToken;
   loadState.value = 'loading';
@@ -220,16 +224,82 @@ const selectPropertyType = (value: PropertyType) => {
 };
 
 const onRegionChange = () => {
+  activeSido.value = sidoByRegionCode.get(activeRegion.value) ?? activeSido.value;
   void refreshComplexes();
 };
 
-const selectComplex = (item: TransactionItem) => {
+const onSidoChange = () => {
+  const firstRegion = activeRegionOptions.value[0]?.code;
+  if (firstRegion) {
+    activeRegion.value = firstRegion;
+  }
+  void refreshComplexes();
+};
+
+const transactionRecentHref = (item: TransactionItem) => {
+  const params = new URLSearchParams({
+    region: activeRegion.value,
+    property: item.propertyType,
+    deal: item.dealType,
+    selected: item.id
+  });
+
+  return `/realestate/transactions?${params.toString()}`;
+};
+
+const transactionWatchLandingPath = (item: TransactionItem) => {
+  const params = new URLSearchParams({
+    region: activeRegion.value,
+    selected: item.id
+  });
+
+  return `/realestate/transactions?${params.toString()}`;
+};
+
+const transactionRouteQuery = (item: TransactionItem) => ({
+  region: activeRegion.value,
+  property: item.propertyType,
+  deal: item.dealType,
+  selected: item.id
+});
+
+const recordTransactionRecentView = (item: TransactionItem) => {
+  recordRecentRealEstateView({
+    id: item.id,
+    kind: 'transaction',
+    label: item.name,
+    meta: `실거래 · ${item.gu} ${item.region} · ${dealBadge(item.dealType)}`,
+    href: transactionRecentHref(item)
+  });
+};
+
+const openComplexDetail = (item: TransactionItem, updateRoute = true) => {
   selectedId.value = item.id;
   isDetailOpen.value = true;
+  detailTrendPeriod.value = pageTrendPeriod.value;
+  recordTransactionRecentView(item);
+  if (updateRoute) {
+    const navigate = typeof router.replace === 'function' ? router.replace : router.push;
+    void navigate({
+      path: '/realestate/transactions',
+      query: transactionRouteQuery(item)
+    });
+  }
+};
+
+const selectComplex = (item: TransactionItem) => {
+  openComplexDetail(item);
 };
 const onMarkerSelect = (marker: TransactionMapMarker) => {
+  const item = visibleItems.value.find((candidate) => candidate.id === marker.targetId);
+  if (item) {
+    openComplexDetail(item);
+    return;
+  }
+
   selectedId.value = marker.targetId;
   isDetailOpen.value = true;
+  detailTrendPeriod.value = pageTrendPeriod.value;
 };
 const closeDetail = () => {
   isDetailOpen.value = false;
@@ -238,17 +308,18 @@ const dealBadge = (dealType: DealType) => dealTypeLabel(dealType);
 
 type TrendPeriod = 'yoy' | '6m' | 'mom';
 const trendPeriods: { id: TrendPeriod; label: string; caption: string }[] = [
-  { id: 'yoy', label: 'YoY', caption: '전년 동월 대비' },
+  { id: 'mom', label: 'MoM', caption: '전월 대비' },
   { id: '6m', label: '6개월', caption: '6개월 전 대비' },
-  { id: 'mom', label: 'MoM', caption: '전월 대비' }
+  { id: 'yoy', label: 'YoY', caption: '전년 동월 대비' }
 ];
-const activeTrendPeriod = ref<TrendPeriod>('yoy');
-const activeTrendCaption = computed(
-  () => trendPeriods.find((period) => period.id === activeTrendPeriod.value)?.caption ?? ''
+const pageTrendPeriod = ref<TrendPeriod>('mom');
+const detailTrendPeriod = ref<TrendPeriod>(pageTrendPeriod.value);
+const detailTrendCaption = computed(
+  () => trendPeriods.find((period) => period.id === detailTrendPeriod.value)?.caption ?? ''
 );
 // 선택 단지의 활성 기간(YoY/6개월/MoM) ▲/▼ 변동률 + 이전→현재 가격. 비교 데이터 없으면 null.
 const selectedPriceTrend = computed(() =>
-  computeTransactionPriceTrend(selectedItem.value, activeTrendPeriod.value)
+  computeTransactionPriceTrend(selectedItem.value, detailTrendPeriod.value)
 );
 
 const SQUARE_METERS_PER_PYEONG = 3.3058;
@@ -271,10 +342,85 @@ const selectedDirectionsOrigin = computed<KakaoMapDirectionsPoint | null>(() => 
   const item = selectedItem.value;
   return item ? { name: item.name, lat: item.lat, lng: item.lng } : null;
 });
+const selectedTransactionWatchTarget = computed<UserWatchTargetPayload | null>(() => {
+  const item = selectedItem.value;
+  if (!item) return null;
+
+  return {
+    targetType: 'complex',
+    targetId: item.id,
+    displayName: item.name,
+    landingPath: transactionWatchLandingPath(item)
+  };
+});
+const isSelectedTransactionWatched = computed(() => {
+  const target = selectedTransactionWatchTarget.value;
+  return target ? isUserWatchTargetSaved(target.targetType, target.targetId) : false;
+});
+const selectedTransactionWatchLabel = computed(() => {
+  const target = selectedTransactionWatchTarget.value;
+  if (!target) return '관심 저장';
+  return isSelectedTransactionWatched.value ? `${target.displayName} 관심 해제` : `${target.displayName} 관심 저장`;
+});
+const trendPeriodLabel = (period: TrendPeriod) =>
+  trendPeriods.find((candidate) => candidate.id === period)?.label ?? period;
+const trendPeriodChatLabels: Record<TrendPeriod, string> = {
+  mom: '최근 1개월',
+  '6m': '최근 6개월',
+  yoy: '최근 1년'
+};
+const trendPeriodChatLabel = (period: TrendPeriod) => trendPeriodChatLabels[period] ?? trendPeriodLabel(period);
+const signedPercent = (value: number) => `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
+const selectedTransactionChatAttachment = computed<ChatAttachmentPayload | null>(() => {
+  const item = selectedItem.value;
+  if (!item) return null;
+
+  const changePercent = selectedPriceTrend.value?.changePercent ?? null;
+  return {
+    type: 'complex',
+    targetId: item.id,
+    title: item.name,
+    subtitle: `실거래 · ${item.gu} ${item.region} · ${item.priceLabel}`,
+    metricLabel: trendPeriodChatLabel(detailTrendPeriod.value),
+    metricValue: changePercent === null ? '비교데이터 없음' : signedPercent(changePercent),
+    metricTone: changePercent === null ? 'flat' : changePercent > 0 ? 'up' : changePercent < 0 ? 'down' : 'flat',
+    landingPath: transactionRecentHref(item)
+  };
+});
+const selectedTransactionChatTestId = computed(() => {
+  const target = selectedTransactionChatAttachment.value;
+  return target ? `chat-attach-complex-${safeWatchTargetTestId(target.targetId)}` : 'chat-attach-complex';
+});
+const selectedTransactionChatLabel = computed(() => {
+  const target = selectedTransactionChatAttachment.value;
+  return target ? `${target.title} 채팅에 첨부` : '실거래 채팅에 첨부';
+});
+
+const attachSelectedTransactionToChat = () => {
+  const attachment = selectedTransactionChatAttachment.value;
+  if (!attachment) return;
+  window.dispatchEvent(new CustomEvent('ybf-chat-attach', { detail: attachment }));
+};
+
+const toggleSelectedTransactionWatch = async () => {
+  const target = selectedTransactionWatchTarget.value;
+  if (!target) return;
+
+  if (!currentAuthUser.value) {
+    await router.push('/auth/login');
+    return;
+  }
+
+  if (isSelectedTransactionWatched.value) {
+    await removeUserWatchTarget(target.targetType, target.targetId);
+  } else {
+    await saveUserWatchTarget(target);
+  }
+};
 
 // 리스트 가격 색: 선택한 비교 기간(YoY/6개월/MoM) 변동이 있으면 상승=빨강/하락=파랑, 없으면 기본색.
 const priceTone = (item: TransactionItem): '' | 'up' | 'down' => {
-  const change = computeTransactionChange(item, activeTrendPeriod.value);
+  const change = computeTransactionChange(item, pageTrendPeriod.value);
   if (change === null || change === 0) return '';
   return change > 0 ? 'up' : 'down';
 };
@@ -288,8 +434,40 @@ const ageBadge = (builtYear: number | null) => {
 };
 
 onMounted(() => {
+  if (currentAuthUser.value) {
+    void loadUserWatchTargets();
+  }
   void refreshComplexes();
 });
+
+watch(
+  [routeSelectedTransactionId, routeSearchQuery, visibleItems],
+  ([selected, search]) => {
+    if (selected) {
+      const item = visibleItems.value.find((candidate) => candidate.id === selected);
+      if (item) {
+        lastAutoSelectedRouteQuery = '';
+        openComplexDetail(item, false);
+      }
+      return;
+    }
+
+    const routeQuery = search.trim();
+    if (!routeQuery) {
+      lastAutoSelectedRouteQuery = '';
+      return;
+    }
+
+    if (lastAutoSelectedRouteQuery === routeQuery && selectedId.value) return;
+
+    const item = visibleItems.value[0];
+    if (item) {
+      lastAutoSelectedRouteQuery = routeQuery;
+      openComplexDetail(item, false);
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
@@ -298,18 +476,34 @@ onMounted(() => {
       <h2 id="complex-browse-title" class="overlay-title">실거래 지도</h2>
 
       <div class="complex-filter-groups">
-        <select
-          v-model="activeRegion"
-          class="complex-region-select"
-          aria-label="지역 선택"
-          data-testid="complex-region-select"
-          @change="onRegionChange"
-        >
-          <optgroup v-for="group in regionGroups" :key="group.sido" :label="group.sido">
-            <option v-for="region in group.items" :key="region.code" :value="region.code">
-              {{ group.sido }} {{ region.name }}
+        <div class="complex-region-picker" aria-label="지역 선택">
+          <select
+            v-model="activeSido"
+            class="complex-sido-select"
+            aria-label="시도 선택"
+            data-testid="complex-sido-select"
+            @change="onSidoChange"
+          >
+            <option v-for="group in sidoOptions" :key="group.code" :value="group.code">
+              {{ group.sido }}
             </option>
-          </optgroup>
+          </select>
+
+          <select
+            v-model="activeRegion"
+            class="complex-region-select"
+            aria-label="시군구 선택"
+            data-testid="complex-region-select"
+            @change="onRegionChange"
+          >
+            <option v-for="region in activeRegionOptions" :key="region.code" :value="region.code">
+              {{ region.name }}
+            </option>
+          </select>
+        </div>
+
+        <select v-model="activeSort" class="complex-sort" aria-label="정렬 기준">
+          <option v-for="option in sortOptions" :key="option.id" :value="option.id">{{ option.label }}</option>
         </select>
 
         <div class="filter-chip-row" aria-label="매물 유형">
@@ -344,10 +538,6 @@ onMounted(() => {
           <input v-model="query" type="search" placeholder="건물·단지명·지역 검색" aria-label="건물·단지명 또는 지역 검색" />
         </label>
 
-        <select v-model="activeSort" class="complex-sort" aria-label="정렬 기준">
-          <option v-for="option in sortOptions" :key="option.id" :value="option.id">{{ option.label }}</option>
-        </select>
-
         <div class="filter-chip-row" role="radiogroup" aria-label="가격 비교 기간">
           <button
             v-for="period in trendPeriods"
@@ -355,27 +545,15 @@ onMounted(() => {
             type="button"
             class="filter-chip"
             role="radio"
-            :aria-checked="activeTrendPeriod === period.id"
-            :class="{ active: activeTrendPeriod === period.id }"
+            :aria-checked="pageTrendPeriod === period.id"
+            :class="{ active: pageTrendPeriod === period.id }"
             :title="period.caption"
-            @click="activeTrendPeriod = period.id"
+            @click="pageTrendPeriod = period.id"
           >
             {{ period.label }}
           </button>
         </div>
       </div>
-
-      <span class="status-pill" :class="{ warning: loadState !== 'live' }" data-testid="complex-status">
-        {{ statusLabel }}
-      </span>
-      <span
-        v-if="coordStatusLabel"
-        class="status-pill"
-        :class="{ warning: coordSummary.geocoded === 0 }"
-        data-testid="complex-coord-status"
-      >
-        {{ coordStatusLabel }}
-      </span>
     </header>
 
     <div class="complex-map-stage">
@@ -383,7 +561,7 @@ onMounted(() => {
         class="complex-map-canvas"
         :markers="markers"
         :selected-target-id="isDetailOpen ? selectedId : ''"
-        :center="mapCenter"
+        :center="transactionMapCenter"
         :show-inspector="false"
         :marker-source-status="loadState === 'live' ? `molit 실거래 · ${regionName}` : loadState"
         @select="onMarkerSelect"
@@ -441,7 +619,32 @@ onMounted(() => {
     >
       <button class="transaction-detail-close" type="button" aria-label="상세 정보 닫기" @click="closeDetail">×</button>
       <span class="transaction-detail-badge" :class="selectedItem.dealType">{{ dealBadge(selectedItem.dealType) }}</span>
-      <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
+      <div class="transaction-detail-title-row">
+        <strong class="transaction-detail-name">{{ selectedItem.name }}</strong>
+        <button
+          class="watch-heart-button transaction-watch-button"
+          :class="{ active: isSelectedTransactionWatched }"
+          type="button"
+          data-testid="transaction-watch-toggle"
+          :aria-label="selectedTransactionWatchLabel"
+          :aria-pressed="isSelectedTransactionWatched"
+          @click="toggleSelectedTransactionWatch"
+        >{{ isSelectedTransactionWatched ? '♥' : '♡' }}</button>
+        <button
+          v-if="selectedTransactionChatAttachment"
+          class="chat-attach-button transaction-chat-button"
+          type="button"
+          :data-testid="selectedTransactionChatTestId"
+          :aria-label="selectedTransactionChatLabel"
+          @click="attachSelectedTransactionToChat"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M7 8.5h10" />
+            <path d="M7 12h6" />
+            <path d="M5.5 4.5h13A2.5 2.5 0 0 1 21 7v8a2.5 2.5 0 0 1-2.5 2.5H12L7 21v-3.5H5.5A2.5 2.5 0 0 1 3 15V7a2.5 2.5 0 0 1 2.5-2.5Z" />
+          </svg>
+        </button>
+      </div>
       <p class="transaction-detail-price">{{ selectedItem.priceLabel }}</p>
 
       <div class="transaction-trend">
@@ -452,10 +655,10 @@ onMounted(() => {
             type="button"
             class="transaction-trend-tab"
             role="radio"
-            :aria-checked="activeTrendPeriod === period.id"
-            :class="{ active: activeTrendPeriod === period.id }"
+            :aria-checked="detailTrendPeriod === period.id"
+            :class="{ active: detailTrendPeriod === period.id }"
             :title="period.caption"
-            @click="activeTrendPeriod = period.id"
+            @click="detailTrendPeriod = period.id"
           >
             {{ period.label }}
           </button>
@@ -466,7 +669,7 @@ onMounted(() => {
             :class="selectedPriceTrend.changePercent > 0 ? 'up' : selectedPriceTrend.changePercent < 0 ? 'down' : 'flat'"
             data-testid="transaction-trend-rate"
           >
-            {{ activeTrendCaption }}
+            {{ detailTrendCaption }}
             {{ selectedPriceTrend.changePercent > 0 ? '▲' : selectedPriceTrend.changePercent < 0 ? '▼' : '–' }}
             {{ Math.abs(selectedPriceTrend.changePercent) }}%
           </p>
@@ -475,7 +678,7 @@ onMounted(() => {
           </p>
         </template>
         <p v-else class="transaction-trend-empty" data-testid="transaction-trend-empty">
-          {{ activeTrendCaption }} · 비교데이터 없음 (해당 매물유형/기간은 아직 비교월 데이터가 수집되지 않았습니다)
+          {{ detailTrendCaption }} · 비교데이터 없음 (해당 매물유형/기간은 아직 비교월 데이터가 수집되지 않았습니다)
         </p>
       </div>
       <dl class="transaction-detail-list">
@@ -551,51 +754,6 @@ onMounted(() => {
         </ul>
         <p v-else-if="nearbyState === 'loading'" class="transaction-nearby-empty">주변 시설 검색 중…</p>
         <p v-else class="transaction-nearby-empty">주변 시설 정보 없음</p>
-      </div>
-
-      <div class="transaction-related" data-testid="transaction-reaction">
-        <p class="transaction-related-title">커뮤니티 반응</p>
-        <template v-if="relatedState === 'ready' && reactionSnapshot && reactionSnapshot.mentionCount > 0">
-          <div class="transaction-reaction-bar">
-            <span
-              class="transaction-reaction-segment expectation"
-              :style="{ width: `${Math.round(reactionSnapshot.reactionDirectionRatio.expectation * 100)}%` }"
-            ></span>
-            <span
-              class="transaction-reaction-segment concern"
-              :style="{ width: `${Math.round(reactionSnapshot.reactionDirectionRatio.concern * 100)}%` }"
-            ></span>
-          </div>
-          <p class="transaction-related-meta">
-            기대 {{ Math.round(reactionSnapshot.reactionDirectionRatio.expectation * 100) }}% · 우려 {{ Math.round(reactionSnapshot.reactionDirectionRatio.concern * 100) }}% · 언급 {{ reactionSnapshot.mentionCount }}건
-          </p>
-        </template>
-        <p v-else-if="relatedState === 'loading'" class="transaction-related-empty">반응 데이터 불러오는 중…</p>
-        <p v-else class="transaction-related-empty">커뮤니티 반응 데이터 없음</p>
-      </div>
-
-      <div class="transaction-related" data-testid="transaction-content">
-        <p class="transaction-related-title">관련 뉴스/콘텐츠</p>
-        <ul v-if="relatedState === 'ready' && relatedContent.length" class="transaction-content-list">
-          <li v-for="item in relatedContent" :key="item.id">
-            <a :href="item.url" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
-            <span class="transaction-related-meta">{{ item.source }} · {{ item.meta }}</span>
-          </li>
-        </ul>
-        <p v-else-if="relatedState === 'loading'" class="transaction-related-empty">관련 콘텐츠 불러오는 중…</p>
-        <p v-else class="transaction-related-empty">관련 콘텐츠 없음</p>
-      </div>
-
-      <div class="transaction-related" data-testid="transaction-timeline">
-        <p class="transaction-related-title">정책 타임라인</p>
-        <ul v-if="relatedState === 'ready' && relatedTimeline.length" class="transaction-timeline-list">
-          <li v-for="event in relatedTimeline" :key="event.id">
-            <span class="transaction-timeline-date">{{ (event.occurredAt ?? '').slice(0, 10) || '날짜 확인 필요' }}</span>
-            <span class="transaction-timeline-title">{{ event.title }}</span>
-          </li>
-        </ul>
-        <p v-else-if="relatedState === 'loading'" class="transaction-related-empty">정책 타임라인 불러오는 중…</p>
-        <p v-else class="transaction-related-empty">정책 이벤트 없음</p>
       </div>
 
       <p class="transaction-detail-note">국토교통부 실거래 · {{ selectedItem.stale ? '지연 가능' : selectedItem.dataStatus }}</p>

@@ -9,6 +9,7 @@ public record MarketDataSourceLinkResponse(
         String link,
         String provider,
         String status,
+        String dataStatus,
         boolean stale,
         Instant lastCheckedAt
 ) {

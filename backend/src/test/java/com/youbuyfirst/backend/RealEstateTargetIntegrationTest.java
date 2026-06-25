@@ -20,6 +20,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class RealEstateTargetIntegrationTest {
 
+    private static final List<String> MOLIT_MARKET_DATASETS = List.of(
+            "molit_apt_trade",
+            "molit_apt_rent",
+            "molit_offi_trade",
+            "molit_offi_rent",
+            "molit_rh_trade",
+            "molit_rh_rent",
+            "molit_sh_trade",
+            "molit_sh_rent",
+            "molit_silv_trade"
+    );
+
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -55,7 +67,7 @@ class RealEstateTargetIntegrationTest {
         JsonNode dataTargetItems = objectMapper.readTree(dataTargets.getBody()).path("items");
         assertThat(dataTargetItems)
                 .extracting(item -> item.path("providerDataset").asText())
-                .contains("molit_apt_trade", "molit_apt_rent");
+                .containsAll(MOLIT_MARKET_DATASETS);
         JsonNode jongnoTarget = null;
         for (JsonNode item : dataTargetItems) {
             if ("region-seoul-jongno".equals(item.path("targetId").asText())
@@ -155,7 +167,7 @@ class RealEstateTargetIntegrationTest {
                 "마포"
         );
         ResponseEntity<String> dataTargets = restTemplate.getForEntity(
-                "/internal/realestate/market-data-targets?enabled=true&limit=20",
+                "/internal/realestate/market-data-targets?enabled=true&limit=500",
                 String.class
         );
 
@@ -170,7 +182,7 @@ class RealEstateTargetIntegrationTest {
         assertThat(dataTargetItems)
                 .filteredOn(item -> "region-seoul-mapo".equals(item.path("targetId").asText()))
                 .extracting(item -> item.path("providerDataset").asText())
-                .containsExactlyInAnyOrder("molit_apt_trade", "molit_apt_rent");
+                .containsExactlyInAnyOrderElementsOf(MOLIT_MARKET_DATASETS);
     }
 
     @Test
@@ -246,7 +258,6 @@ class RealEstateTargetIntegrationTest {
                 List.of(Map.ofEntries(
                         Map.entry("targetId", "complex-test-mapo-alias-search"),
                         Map.entry("regionTargetId", "region-seoul-jongno"),
-                        Map.entry("legalDongCode", "1144010100"),
                         Map.entry("jibunAddress", "alias search address"),
                         Map.entry("source", "test:alias-search"),
                         Map.entry("markerDataStatus", "ok"),
@@ -297,7 +308,120 @@ class RealEstateTargetIntegrationTest {
         assertThat(items)
                 .filteredOn(item -> "complex-test-mapo-alias-search".equals(item.path("targetId").asText()))
                 .singleElement()
-                .satisfies(item -> assertThat(item.path("targetType").asText()).isEqualTo("complex"));
+                .satisfies(item -> {
+                    assertThat(item.path("targetType").asText()).isEqualTo("complex");
+                    assertThat(item.path("parentTargetId").asText()).isEqualTo("region-seoul-jongno");
+                    assertThat(item.path("legalDongCode").asText()).isEqualTo("11110");
+                    assertThat(item.path("regionCode").asText()).isEqualTo("11010");
+                });
+    }
+
+    @Test
+    void autocompleteSearchRequiresTwoCharactersAndCapsLargeLimits() throws Exception {
+        Map<String, Object> targetRequest = Map.of(
+                "items",
+                java.util.stream.IntStream.range(0, 12)
+                        .mapToObj(index -> Map.of(
+                                "targetId", "complex-test-autocomplete-" + index,
+                                "targetType", "complex",
+                                "displayName", "검색테스트단지 " + index,
+                                "slug", "autocomplete-test-" + index,
+                                "reviewState", "approved",
+                                "dataStatus", "ok"
+                        ))
+                        .toList()
+        );
+
+        ResponseEntity<String> targetResponse = restTemplate.postForEntity(
+                "/internal/realestate/targets",
+                targetRequest,
+                String.class
+        );
+        ResponseEntity<String> tooShort = restTemplate.getForEntity(
+                "/api/realestate/targets/search?q={query}&mode=autocomplete&limit=8",
+                String.class,
+                "검"
+        );
+        ResponseEntity<String> capped = restTemplate.getForEntity(
+                "/api/realestate/targets/search?q={query}&mode=autocomplete&limit=500",
+                String.class,
+                "검색테스트"
+        );
+
+        assertThat(targetResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        assertThat(tooShort.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(objectMapper.readTree(tooShort.getBody()).path("items")).isEmpty();
+
+        assertThat(capped.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode cappedItems = objectMapper.readTree(capped.getBody()).path("items");
+        assertThat(cappedItems).hasSize(8);
+        assertThat(cappedItems)
+                .extracting(item -> item.path("targetType").asText())
+                .containsOnly("complex");
+    }
+
+    @Test
+    void autocompleteSearchFindsDongRegionsFromParentRegionAndDongTokens() throws Exception {
+        Map<String, Object> request = Map.of(
+                "items",
+                List.of(
+                        Map.ofEntries(
+                                Map.entry("targetId", "region-test-daejeon-token"),
+                                Map.entry("displayName", "Daejeon"),
+                                Map.entry("slug", "test-daejeon-token"),
+                                Map.entry("regionLevel", "sido"),
+                                Map.entry("legalDongCode", "30000"),
+                                Map.entry("regionCode", "30"),
+                                Map.entry("source", "test:token-search")
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetId", "region-test-daejeon-seogu-token"),
+                                Map.entry("displayName", "Daejeon Seo-gu"),
+                                Map.entry("slug", "test-daejeon-seogu-token"),
+                                Map.entry("regionLevel", "sigungu"),
+                                Map.entry("parentTargetId", "region-test-daejeon-token"),
+                                Map.entry("legalDongCode", "30170"),
+                                Map.entry("regionCode", "30170"),
+                                Map.entry("source", "test:token-search")
+                        ),
+                        Map.ofEntries(
+                                Map.entry("targetId", "region-test-daejeon-seogu-galma-token"),
+                                Map.entry("displayName", "Daejeon Seo-gu Galma-dong"),
+                                Map.entry("slug", "test-daejeon-seogu-galma-token"),
+                                Map.entry("regionLevel", "eupmyeondong"),
+                                Map.entry("parentTargetId", "region-test-daejeon-seogu-token"),
+                                Map.entry("legalDongCode", "3017011100"),
+                                Map.entry("regionCode", "3017011100"),
+                                Map.entry("source", "test:token-search")
+                        )
+                )
+        );
+
+        ResponseEntity<String> importResponse = restTemplate.postForEntity(
+                "/internal/realestate/regions",
+                request,
+                String.class
+        );
+        ResponseEntity<String> search = restTemplate.getForEntity(
+                "/api/realestate/targets/search?q={query}&mode=autocomplete&limit=8",
+                String.class,
+                "Daejeon Galma-dong"
+        );
+
+        assertThat(importResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(search.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode items = objectMapper.readTree(search.getBody()).path("items");
+        assertThat(items)
+                .filteredOn(item -> "region-test-daejeon-seogu-galma-token".equals(item.path("targetId").asText()))
+                .singleElement()
+                .satisfies(item -> {
+                    assertThat(item.path("targetType").asText()).isEqualTo("region");
+                    assertThat(item.path("regionLevel").asText()).isEqualTo("eupmyeondong");
+                    assertThat(item.path("parentTargetId").asText()).isEqualTo("region-test-daejeon-seogu-token");
+                    assertThat(item.path("legalDongCode").asText()).isEqualTo("3017011100");
+                });
     }
 
     @Test
@@ -338,7 +462,7 @@ class RealEstateTargetIntegrationTest {
                 "해운대"
         );
         ResponseEntity<String> dataTargets = restTemplate.getForEntity(
-                "/internal/realestate/market-data-targets?enabled=true&limit=20",
+                "/internal/realestate/market-data-targets?enabled=true&limit=500",
                 String.class
         );
 
@@ -355,7 +479,7 @@ class RealEstateTargetIntegrationTest {
         assertThat(marketTargetItems)
                 .filteredOn(item -> "region-busan-haeundae".equals(item.path("targetId").asText()))
                 .extracting(item -> item.path("providerDataset").asText())
-                .containsExactlyInAnyOrder("molit_apt_trade", "molit_apt_rent");
+                .containsExactlyInAnyOrderElementsOf(MOLIT_MARKET_DATASETS);
     }
 
     @Test

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   buildNewsroomFeedItems,
   ensureNewsroomCategoryCoverage,
@@ -21,19 +22,25 @@ import {
 } from '../lib/realestate-dashboard';
 import { fetchRealEstateMapLayer } from '../lib/realestate-map';
 import {
-  fetchRealEstateReactionRankingWithFallback,
-  type RealEstateReactionRanking,
-  type RealEstateReactionRankingItem,
-  type RealEstateReactionIssue
-} from '../lib/realestate-reactions';
+  fetchRealEstateRegionalReport,
+  type RealEstateRegionalReport
+} from '../lib/realestate-regional-reports';
 import {
   buildMarketSummaryIndicators,
   fetchRealEstateMarketSummary,
   realEstateMarketIndicatorFallbacks,
   type RealEstateMarketIndicatorCard
 } from '../lib/realestate-market-facts';
+import {
+  fetchRealEstateTargetSuggestions,
+  MIN_TARGET_SEARCH_LENGTH,
+  normalizeTargetSearchText,
+  TARGET_SEARCH_LIMIT,
+  type RealEstateTargetSearchResult
+} from '../lib/realestate-target-search';
 import { sourceIconUrl } from '../lib/source-icons';
 
+const router = useRouter();
 const marketIndicators = ref<RealEstateMarketIndicatorCard[]>([]);
 const dashboardContentItems = ref<NewsroomFeedItem[]>([]);
 const dashboardContentLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
@@ -45,36 +52,23 @@ const dashboardContentFeeds: NewsroomCategory[] = ['news', 'reports', 'videos', 
 const dashboardContentPageSize = 100;
 const isRefreshing = ref(false);
 const lastRefreshedAt = ref<Date | null>(null);
-type ReactionKeyword = { word: string; weight: number };
-type ReactionDriver = { type: string; label: string };
-type DashboardReactionItem = {
+type ReportPoint = { id: string; text: string };
+type TopWeeklyRegionItem = {
   targetId: string;
+  rank: number;
   name: string;
-  market: string;
-  previousMentionCount: number;
-  mentionCount: number;
-  mentionDeltaPct: number;
-  reactionDirectionRatio: {
-    bullish: number;
-    bearish: number;
-    neutral: number;
-  };
-  heatScore: number;
-  topKeywords: string[];
-  issueMix: RealEstateReactionIssue[];
-  positiveKeywords: ReactionKeyword[];
-  negativeKeywords: ReactionKeyword[];
-  positiveLinks: { title: string; source: string }[];
-  negativeLinks: { title: string; source: string }[];
-  priceStatus: string;
-  dataStatus: string;
-  reactionDrivers: ReactionDriver[];
-  movementReasons: string[];
+  changePct: number;
+  changeLabel: string;
+  reportPath: string;
+  expectationPoints: ReportPoint[];
+  concernPoints: ReportPoint[];
 };
-const dashboardReactionItems = ref<DashboardReactionItem[]>([]);
-const dashboardReactionRanking = ref<RealEstateReactionRanking | null>(null);
-const reactionRankingLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
-type ReactionMetric = 'bullish' | 'bearish';
+const topWeeklyRegionItems = ref<TopWeeklyRegionItem[]>([]);
+const topWeeklyRegionLoadState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+const searchQuery = ref('');
+const searchSuggestions = ref<RealEstateTargetSearchResult[]>([]);
+const searchLoadState = ref<'idle' | 'loading' | 'live' | 'empty' | 'error'>('idle');
+const isSearchFocused = ref(false);
 type DailyBriefingItem = {
   id: string;
   text: string;
@@ -140,44 +134,6 @@ const targetReportPath = (row: DashboardRegionalMomentumRow) => {
 
   return `/realestate/map/${encodeURIComponent(parentTargetId)}?${params.toString()}`;
 };
-const reactionSignalScore = (item: DashboardReactionItem, metric: ReactionMetric) =>
-  Math.round(item.mentionCount * item.reactionDirectionRatio[metric]);
-const buildReactionGroup = (id: 'positive' | 'negative', label: string, caption: string, metric: ReactionMetric) => ({
-  id,
-  label,
-  caption,
-  metric,
-  ratioLabel: metric === 'bullish' ? '기대' : '우려',
-  items: [...dashboardReactionItems.value]
-    .sort((left, right) => reactionSignalScore(right, metric) - reactionSignalScore(left, metric))
-    .slice(0, 3)
-});
-const reactionSignalGroups = computed(() => [
-  buildReactionGroup('positive', '언급+기대 TOP 3', '언급량 x 기대', 'bullish'),
-  buildReactionGroup('negative', '언급+우려 TOP 3', '언급량 x 우려', 'bearish')
-]);
-const topBriefingIssues = computed(() => {
-  const scores = new Map<string, number>();
-  dashboardReactionItems.value.slice(0, 6).forEach((item) => {
-    item.issueMix.forEach((issue) => {
-      scores.set(issue.label, (scores.get(issue.label) ?? 0) + item.mentionCount * Math.max(issue.share, 0.05));
-    });
-  });
-
-  return [...scores.entries()]
-    .sort((left, right) => right[1] - left[1])
-    .slice(0, 3)
-    .map(([label]) => label);
-});
-
-const objectParticle = (word: string) => {
-  const lastChar = word.trim().at(-1);
-  if (!lastChar) return '을';
-  const code = lastChar.charCodeAt(0);
-  if (code < 0xac00 || code > 0xd7a3) return '을';
-  return (code - 0xac00) % 28 === 0 ? '를' : '을';
-};
-
 const dailyBriefingItems = computed<DailyBriefingItem[]>(() => {
   if (latestDailyBriefing.value?.summaryHeadlines.length === 3) {
     return latestDailyBriefing.value.summaryHeadlines.map((headline, index) => ({
@@ -197,8 +153,10 @@ const dailyBriefingItems = computed<DailyBriefingItem[]>(() => {
 
 const currentSlide = ref(0);
 const isPaused = ref(false);
-const totalSlides = computed(() => Math.max(dashboardReactionItems.value.length, 1));
+const totalSlides = computed(() => Math.max(topWeeklyRegionItems.value.length, 1));
 let autoSlideTimer: ReturnType<typeof setInterval> | undefined;
+let searchRequestToken = 0;
+let searchSelectionTargetId: string | null = null;
 let batchUpdateSubscription: BatchUpdateSubscription | null = null;
 
 const startTimer = () => {
@@ -215,109 +173,88 @@ const refreshMarketSummary = async () => {
 };
 const refreshWeeklyPriceRiser = async () => {
   weeklyPriceRiserLoadState.value = 'loading';
+  topWeeklyRegionLoadState.value = 'loading';
   weeklyPriceRows.value = [];
+  topWeeklyRegionItems.value = [];
+  currentSlide.value = 0;
   try {
     const layer = await fetchRealEstateMapLayer({ layerType: 'sigungu' });
     weeklyPriceRows.value = buildRegionalMomentumRows(layer, 'week', Number.MAX_SAFE_INTEGER);
     weeklyPriceRiserLoadState.value = weeklyPriceRows.value.length ? 'live' : 'empty';
+    await refreshTopWeeklyRegionItems(weeklyPriceRows.value);
   } catch {
     weeklyPriceRows.value = [];
+    topWeeklyRegionItems.value = [];
     weeklyPriceRiserLoadState.value = 'error';
+    topWeeklyRegionLoadState.value = 'error';
   }
 };
-const reactionKeywordFromIssue = (issue: RealEstateReactionIssue, index: number): ReactionKeyword => ({
-  word: issue.label,
-  weight: Math.max(1, Math.min(5, Math.round(issue.share * 10) || 5 - index))
-});
 
-const previousMentionCount = (item: RealEstateReactionRankingItem) => {
-  const denominator = 1 + item.mentionDeltaPct / 100;
-  if (denominator <= 0) return item.mentionCount;
-  return Math.max(0, Math.round(item.mentionCount / denominator));
-};
-
-const reactionDriverType = (direction: string) => {
-  if (direction === 'expectation') return '기대';
-  if (direction === 'concern') return '우려';
-  return '쟁점';
-};
-
-const movementReasons = (item: RealEstateReactionRankingItem) => {
-  const issues = item.issueMix.slice(0, 3);
-  if (!issues.length) {
-    return [
-      '지역 언급량은 집계됐지만 쟁점 분류 표본은 아직 충분하지 않습니다.',
-      '실거래·전세 흐름과 연결하려면 다음 배치의 시장 사실 확인이 필요합니다.'
-    ];
+const refreshTopWeeklyRegionItems = async (rows: DashboardRegionalMomentumRow[]) => {
+  const topRows = rows.filter((row) => row.changePct > 0).slice(0, 5);
+  if (!topRows.length) {
+    topWeeklyRegionItems.value = [];
+    topWeeklyRegionLoadState.value = 'empty';
+    return;
   }
 
-  return issues.map((issue) =>
-    `${issue.label} 쟁점이 ${reactionDriverType(issue.direction)} 방향으로 묶이며 언급 변화에 기여했습니다.`
+  const reports = await Promise.all(
+    topRows.map((row) => fetchRealEstateRegionalReport(row.targetId).catch(() => null))
   );
+
+  topWeeklyRegionItems.value = topRows.map((row, index) =>
+    buildTopWeeklyRegionItem(row, reports[index], index)
+  );
+  topWeeklyRegionLoadState.value = topWeeklyRegionItems.value.length ? 'live' : 'empty';
 };
 
-const dashboardReactionItemFromApi = (item: RealEstateReactionRankingItem): DashboardReactionItem => {
-  const expectationIssues = item.issueMix.filter((issue) => issue.direction === 'expectation');
-  const concernIssues = item.issueMix.filter((issue) => issue.direction === 'concern');
-  const topIssues = item.issueMix.length ? item.issueMix : [
-    { issueKey: 'unknown', label: '쟁점 확인 필요', share: 0.5, direction: 'neutral', confidence: item.confidence }
-  ];
-
+const buildTopWeeklyRegionItem = (
+  row: DashboardRegionalMomentumRow,
+  report: RealEstateRegionalReport | null,
+  index: number
+): TopWeeklyRegionItem => {
+  const pointPair = reportPointPair(report);
   return {
-    targetId: item.targetId,
-    name: item.displayName,
-    market: item.targetType === 'complex' ? '단지' : item.targetType === 'living_area' ? '생활권' : '지역',
-    previousMentionCount: previousMentionCount(item),
-    mentionCount: item.mentionCount,
-    mentionDeltaPct: item.mentionDeltaPct,
-    reactionDirectionRatio: {
-      bullish: item.reactionDirectionRatio.expectation,
-      bearish: item.reactionDirectionRatio.concern,
-      neutral: item.reactionDirectionRatio.neutral
-    },
-    heatScore: Math.round(item.heatScore),
-    issueMix: item.issueMix,
-    topKeywords: topIssues.slice(0, 3).map((issue) => issue.label),
-    positiveKeywords: (expectationIssues.length ? expectationIssues : topIssues)
-      .slice(0, 5)
-      .map(reactionKeywordFromIssue),
-    negativeKeywords: (concernIssues.length ? concernIssues : topIssues)
-      .slice(0, 5)
-      .map(reactionKeywordFromIssue),
-    positiveLinks: [
-      { title: `기대 쟁점: ${(expectationIssues[0] ?? topIssues[0]).label}`, source: '반응 스냅샷' },
-      { title: `표본 신뢰도 ${Math.round(item.confidence * 100)}%`, source: coverageStatusLabel(item.coverageStatus) }
-    ],
-    negativeLinks: [
-      { title: `우려 쟁점: ${(concernIssues[0] ?? topIssues[0]).label}`, source: '반응 스냅샷' },
-      { title: item.stale ? '수집 지연 가능' : `출처 ${item.sourceCount}곳`, source: item.stale ? '갱신 지연' : '출처 범위' }
-    ],
-    priceStatus: item.stale ? '반응 스냅샷 갱신 지연' : '시장 사실 별도 확인',
-    dataStatus: item.stale ? '갱신 지연' : coverageStatusLabel(item.coverageStatus),
-    reactionDrivers: topIssues.slice(0, 4).map((issue) => ({
-      type: reactionDriverType(issue.direction),
-      label: issue.label
-    })),
-    movementReasons: movementReasons(item)
+    targetId: row.targetId,
+    rank: index + 1,
+    name: row.name,
+    changePct: row.changePct,
+    changeLabel: formatSignedPct(row.changePct),
+    reportPath: targetReportPath(row),
+    expectationPoints: pointPair.expectation,
+    concernPoints: pointPair.concern
   };
 };
 
-const refreshDashboardReactions = async () => {
-  reactionRankingLoadState.value = 'loading';
-  dashboardReactionItems.value = [];
-  dashboardReactionRanking.value = null;
-  currentSlide.value = 0;
-  try {
-    const ranking = await fetchRealEstateReactionRankingWithFallback({ type: 'region', windowMinutes: 10080, limit: 10 });
-    dashboardReactionRanking.value = ranking;
-    dashboardReactionItems.value = ranking.items.map(dashboardReactionItemFromApi);
-    reactionRankingLoadState.value = dashboardReactionItems.value.length ? 'live' : 'empty';
-  } catch {
-    dashboardReactionItems.value = [];
-    dashboardReactionRanking.value = null;
-    reactionRankingLoadState.value = 'error';
+const reportPointPair = (
+  report: RealEstateRegionalReport | null
+): { expectation: ReportPoint[]; concern: ReportPoint[] } => {
+  if (!report) {
+    return {
+      expectation: buildReportPoints(['주간 상승률 확인 지역']),
+      concern: buildReportPoints(['최신 리포트 적재 대기'])
+    };
   }
+
+  return {
+    expectation: buildReportPoints(report.expectationPoints.length ? report.expectationPoints : [report.headline]),
+    concern: buildReportPoints(report.concernPoints.length ? report.concernPoints : [report.summary])
+  };
 };
+
+const buildReportPoints = (points: string[]): ReportPoint[] =>
+  points
+    .map(normalizeReportPoint)
+    .filter((point, index, list) => point.length > 0 && list.indexOf(point) === index)
+    .slice(0, 3)
+    .map((text, index) => ({ id: `point-${index + 1}-${text.slice(0, 12)}`, text }));
+
+const normalizeReportPoint = (point: string) =>
+  point
+    .replace(/\*\*/g, '')
+    .replace(/^(기대|우려)\s*[:：-]\s*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 const refreshDashboardContent = async () => {
   dashboardContentLoadState.value = 'loading';
   dashboardContentItems.value = [];
@@ -368,69 +305,124 @@ const togglePause = () => {
   if (isPaused.value) { clearInterval(autoSlideTimer); autoSlideTimer = undefined; }
   else startTimer();
 };
-// Word-cloud placement: grid candidates sorted center-first, then collision-test each word
-const CLOUD_W = 218, CLOUD_H = 92;
-const CLOUD_CANDIDATES: [number, number][] = (() => {
-  const pts: [number, number][] = [];
-  for (let y = 4; y <= CLOUD_H - 10; y += 11)
-    for (let x = 4; x <= CLOUD_W - 8; x += 16) pts.push([x, y]);
-  return pts.sort((a, b) =>
-    Math.hypot(a[0] - CLOUD_W / 2, a[1] - CLOUD_H / 2) -
-    Math.hypot(b[0] - CLOUD_W / 2, b[1] - CLOUD_H / 2)
-  );
-})();
-
-const kwWordBox = (kw: { word: string; weight: number }) => {
-  const fs = [9, 11, 14, 18, 22][Math.min(kw.weight - 1, 4)];
-  return { w: kw.word.length * fs * 0.94 + 6, h: fs * 1.45, fs };
+const openTopWeeklyRegionReport = (path: string, event: MouseEvent) => {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  void router.push(path);
 };
-
-const placeWords = (keywords: { word: string; weight: number }[]) => {
-  const GAP = 5;
-  const placed: { x: number; y: number; w: number; h: number }[] = [];
-  const hits = (x: number, y: number, w: number, h: number) =>
-    placed.some(p => x < p.x + p.w + GAP && x + w + GAP > p.x && y < p.y + p.h + GAP && y + h + GAP > p.y);
-
-  // heaviest word placed first so it gets the prime center spot
-  const sorted = [...keywords].map((kw, i) => ({ kw, i })).sort((a, b) => b.kw.weight - a.kw.weight);
-  const styles: Record<number, Record<string, string>> = {};
-
-  sorted.forEach(({ kw, i }, rank) => {
-    const { w, h, fs } = kwWordBox(kw);
-    let px = 0, py = 0;
-    for (const [cx, cy] of CLOUD_CANDIDATES) {
-      const x = Math.max(0, Math.min(cx, CLOUD_W - w));
-      const y = Math.max(0, Math.min(cy, CLOUD_H - h));
-      if (!hits(x, y, w, h)) { px = x; py = y; break; }
-    }
-    placed.push({ x: px, y: py, w, h });
-    styles[i] = {
-      position: 'absolute',
-      left: `${px}px`,
-      top: `${py}px`,
-      fontSize: `${fs}px`,
-      '--kw-opacity': String(0.5 + kw.weight * 0.10),
-      animationDelay: `${rank * 120}ms`,
+const isSearchReady = computed(() => normalizeTargetSearchText(searchQuery.value).length >= MIN_TARGET_SEARCH_LENGTH);
+const showSearchSuggestions = computed(() =>
+  isSearchFocused.value
+  && isSearchReady.value
+  && ['loading', 'live', 'empty', 'error'].includes(searchLoadState.value)
+);
+const clearDashboardSearch = () => {
+  searchQuery.value = '';
+  searchSuggestions.value = [];
+  searchLoadState.value = 'idle';
+};
+const targetTypeLabel = (item: RealEstateTargetSearchResult) => {
+  if (item.targetType === 'complex') return '실거래 단지';
+  if (item.targetType === 'living_area') return '생활권';
+  if (item.regionLevel === 'sido') return '광역';
+  if (item.regionLevel === 'eupmyeondong') return '실거래 지역';
+  return '지역 분석';
+};
+const targetSearchMeta = (item: RealEstateTargetSearchResult) => {
+  const code = item.legalDongCode ?? item.regionCode;
+  const status = item.dataStatus && item.dataStatus !== 'ok' ? item.dataStatus : '';
+  return [code, status].filter(Boolean).join(' · ') || '근거 확인';
+};
+const transactionRegionCode = (item: RealEstateTargetSearchResult) =>
+  (item.legalDongCode || item.regionCode || '').slice(0, 5);
+const terminalRegionName = (displayName: string) => {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean);
+  return parts.at(-1) ?? displayName;
+};
+const dashboardSearchRoute = (item: RealEstateTargetSearchResult) => {
+  if (item.targetType === 'complex' || item.regionLevel === 'eupmyeondong') {
+    const regionCode = transactionRegionCode(item);
+    return {
+      path: '/realestate/transactions',
+      query: {
+        ...(regionCode ? { region: regionCode } : {}),
+        q: item.regionLevel === 'eupmyeondong' ? terminalRegionName(item.displayName) : item.displayName
+      }
     };
-  });
+  }
 
-  return (idx: number) => styles[idx] ?? {};
+  const parentTargetId = item.regionLevel === 'sido'
+    ? item.targetId
+    : item.parentTargetId || item.targetId;
+  const selectedRegionCode = item.regionCode || item.legalDongCode || item.targetId;
+  return {
+    path: `/realestate/map/${encodeURIComponent(parentTargetId)}`,
+    query: {
+      selectedTargetId: item.targetId,
+      selectedRegionCode,
+      period: 'week'
+    }
+  };
 };
+const openSearchSuggestion = (item: RealEstateTargetSearchResult) => {
+  if (searchSelectionTargetId === item.targetId) return;
 
-const kwWordStyles = computed(() => Object.fromEntries(
-  dashboardReactionItems.value.map(item => [
-    item.targetId,
-    { pos: placeWords(item.positiveKeywords), neg: placeWords(item.negativeKeywords) },
-  ])
-));
+  searchSelectionTargetId = item.targetId;
+  searchRequestToken += 1;
+  isSearchFocused.value = false;
+  searchSuggestions.value = [];
+  searchLoadState.value = 'idle';
+  void Promise.resolve(router.push(dashboardSearchRoute(item))).finally(() => {
+    if (searchSelectionTargetId === item.targetId) {
+      searchSelectionTargetId = null;
+    }
+  });
+};
+const submitDashboardSearch = () => {
+  const first = searchSuggestions.value[0];
+  if (first) {
+    openSearchSuggestion(first);
+  }
+};
+const requestDashboardTargetSearch = (value: string) => {
+  const requestToken = ++searchRequestToken;
+  searchSuggestions.value = [];
+  if (normalizeTargetSearchText(value).length < MIN_TARGET_SEARCH_LENGTH) {
+    searchLoadState.value = 'idle';
+    return;
+  }
 
+  searchLoadState.value = 'loading';
+  void fetchRealEstateTargetSuggestions(value, { limit: TARGET_SEARCH_LIMIT })
+    .then((items) => {
+      if (requestToken !== searchRequestToken) return;
+      searchSuggestions.value = items;
+      searchLoadState.value = items.length ? 'live' : 'empty';
+    })
+    .catch(() => {
+      if (requestToken !== searchRequestToken) return;
+      searchSuggestions.value = [];
+      searchLoadState.value = 'error';
+    });
+};
+const commitDashboardSearchInput = (event: Event) => {
+  const value = (event.target as HTMLInputElement).value;
+  if (searchQuery.value !== value) {
+    searchQuery.value = value;
+  }
+};
+const syncDashboardSearchInput = (event: Event) => {
+  const value = (event.target as HTMLInputElement).value;
+  if (searchQuery.value !== value) {
+    searchQuery.value = value;
+  }
+};
 const refreshAll = async () => {
   if (isRefreshing.value) return;
   isRefreshing.value = true;
   try {
     await Promise.allSettled([
       refreshDailyBriefing(),
-      refreshDashboardReactions(),
       refreshWeeklyPriceRiser(),
       refreshMarketSummary(),
       refreshDashboardContent()
@@ -462,6 +454,8 @@ onUnmounted(() => {
   batchUpdateSubscription = null;
 });
 
+watch(searchQuery, requestDashboardTargetSearch);
+
 const refreshButtonLabel = computed(() => (isRefreshing.value ? '불러오는 중…' : '실시간 데이터 불러오기'));
 const lastRefreshedLabel = computed(() => {
   if (isRefreshing.value) return '갱신 중';
@@ -481,16 +475,6 @@ const formatDateOnly = (value: string) => {
   if (!trimmed) return '기준일 확인 필요';
   return trimmed.includes('T') ? trimmed.slice(0, 10) : trimmed;
 };
-const ratioPct = (value: number) => `${Math.round(value * 100)}%`;
-const coverageStatusLabel = (status: string) => {
-  if (status === 'source_skewed') return '출처 편중';
-  if (status === 'partial') return '부분 반영';
-  if (status === 'low_sample') return '표본 부족';
-  if (status === 'ok') return '수집 확인';
-  if (status === 'empty' || status === 'insufficient' || status === 'mock') return '수집 전';
-  if (status === 'stale') return '갱신 지연';
-  return status || '확인 필요';
-};
 const weeklyPriceReferenceLabel = computed(() => {
   const referenceRow = topWeeklyPriceGainer.value ?? topWeeklyPriceDecliner.value;
   return referenceRow ? `최근 1주 · ${formatDateOnly(referenceRow.asOf)} 기준` : '최근 1주 · 기준일 확인 필요';
@@ -501,9 +485,9 @@ const weeklyPriceRiserEmptyText = computed(() => {
   return '주간 가격 상승·하락 세부지역이 아직 없습니다. 수집 전/insufficient 상태입니다.';
 });
 const dashboardReactionEmptyText = computed(() => {
-  if (reactionRankingLoadState.value === 'loading') return '지역 반응 TOP10을 불러오는 중입니다.';
-  if (reactionRankingLoadState.value === 'error') return '지역 반응 데이터를 불러오지 못했습니다. 크롤링/반응 집계 배치 상태 확인이 필요합니다.';
-  return '수집된 지역 반응 TOP10이 아직 없습니다. 수집 전/insufficient 상태입니다.';
+  if (topWeeklyRegionLoadState.value === 'loading') return '주간 상승률 TOP5와 지역 리포트 키워드를 불러오는 중입니다.';
+  if (topWeeklyRegionLoadState.value === 'error') return '주간 상승률 데이터를 불러오지 못했습니다. 지도 layer 배치 상태 확인이 필요합니다.';
+  return '주간 상승률이 양수인 세부지역이 아직 없습니다. 수집 전/insufficient 상태입니다.';
 });
 const contentItemsByCategory = (category: NewsroomCategory) =>
   computed(() => dashboardContentItems.value.filter((item) => item.category === category).slice(0, 5));
@@ -542,12 +526,54 @@ const hideBrokenIcon = (event: Event) => {
         <p class="dashboard-brand-tagline">당신을 위한 부동산 인사이트, <strong>너나사</strong></p>
       </div>
       <div class="search-line">
-        <div class="search-primary-row">
-          <button class="dashboard-search-control" type="button" disabled>
+        <form class="search-primary-row" role="search" @submit.prevent="submitDashboardSearch">
+          <label class="dashboard-search-control">
             <span class="search-icon" aria-hidden="true"></span>
             <strong>/</strong>
-            <span>지역이나 단지 검색</span>
+            <input
+              v-model="searchQuery"
+              data-testid="dashboard-search-input"
+              type="search"
+              placeholder="지역·단지·법정동 검색"
+              autocomplete="off"
+              aria-label="지역이나 단지 검색"
+              @focus="isSearchFocused = true"
+              @input="syncDashboardSearchInput"
+              @compositionend="commitDashboardSearchInput"
+            />
+            <button
+              v-if="searchQuery"
+              class="dashboard-search-clear"
+              type="button"
+              aria-label="검색어 지우기"
+              @click="clearDashboardSearch"
+            >
+              ×
+            </button>
+          </label>
+        </form>
+        <div
+          v-if="showSearchSuggestions"
+          class="dashboard-search-suggestions"
+          data-testid="dashboard-search-suggestions"
+        >
+          <button
+            v-for="item in searchSuggestions"
+            :key="item.targetId"
+            class="dashboard-search-suggestion"
+            type="button"
+            :data-testid="`dashboard-search-result-${item.targetId}`"
+            @pointerdown.prevent="openSearchSuggestion(item)"
+            @mousedown.prevent
+            @click.prevent="openSearchSuggestion(item)"
+          >
+            <span>{{ targetTypeLabel(item) }}</span>
+            <strong>{{ item.displayName }}</strong>
+            <em>{{ targetSearchMeta(item) }}</em>
           </button>
+          <p v-if="searchLoadState === 'loading'" class="dashboard-search-state">검색 중</p>
+          <p v-else-if="searchLoadState === 'empty'" class="dashboard-search-state">검색 결과 없음</p>
+          <p v-else-if="searchLoadState === 'error'" class="dashboard-search-state">검색 확인 필요</p>
         </div>
       </div>
     </section>
@@ -586,31 +612,33 @@ const hideBrokenIcon = (event: Event) => {
           <section class="mood-board region-bubble-section reaction-panel" aria-labelledby="mood-title">
             <div class="mood-header">
               <div>
-                <p class="label">지금 뜨는 반응</p>
+                <p class="label">주간 상승률 TOP5</p>
                 <h3 id="mood-title">지역·단지 반응 한눈에</h3>
               </div>
             </div>
 
-            <div class="reaction-carousel" aria-label="지역별 반응 슬라이드">
-              <p v-if="!dashboardReactionItems.length" class="newsroom-empty-state dashboard-reaction-empty">
+            <div class="reaction-carousel" aria-label="주간 상승률 상위 지역 슬라이드">
+              <p v-if="!topWeeklyRegionItems.length" class="newsroom-empty-state dashboard-reaction-empty">
                 {{ dashboardReactionEmptyText }}
               </p>
               <div class="carousel-track-wrap">
                 <div class="carousel-track" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
-                  <article
-                    v-for="item in dashboardReactionItems"
+                  <a
+                    v-for="item in topWeeklyRegionItems"
                     :key="item.targetId"
+                    :href="item.reportPath"
                     class="reaction-carousel-card"
-                    :data-tone="item.reactionDirectionRatio.bullish >= item.reactionDirectionRatio.bearish ? 'positive' : 'negative'"
+                    data-tone="positive"
+                    :aria-label="`${item.name} 지역 분석 열기`"
+                    @click="openTopWeeklyRegionReport(item.reportPath, $event)"
                   >
                     <div class="carousel-card-header">
                       <div class="carousel-card-title">
                         <strong class="carousel-region-name">{{ item.name }}</strong>
-                        <span class="carousel-region-meta">{{ item.market }} · 열기 {{ item.heatScore }}</span>
                       </div>
-                      <div class="carousel-mention-badge">
-                        <em>{{ item.mentionCount }}</em>
-                        <span>언급</span>
+                      <div class="carousel-change-badge" aria-label="주간 상승률">
+                        <span>주간</span>
+                        <em>{{ item.changeLabel }}</em>
                       </div>
                     </div>
 
@@ -625,14 +653,13 @@ const hideBrokenIcon = (event: Event) => {
                           </svg>
                           <span>기대</span>
                         </div>
-                        <div :key="`pos-${currentSlide}`" class="kw-cloud">
-                          <span
-                            v-for="(kw, idx) in item.positiveKeywords"
-                            :key="kw.word"
-                            class="kw-word kw-word-positive"
-                            :style="kwWordStyles[item.targetId]?.pos(idx)"
-                          >{{ kw.word }}</span>
-                        </div>
+                        <ul class="report-point-list report-point-list-positive">
+                          <li
+                            v-for="point in item.expectationPoints"
+                            :key="point.id"
+                            class="report-point-item"
+                          >{{ point.text }}</li>
+                        </ul>
                       </div>
                       <div class="kw-divider" aria-hidden="true"></div>
                       <div class="kw-col kw-col-negative">
@@ -647,73 +674,28 @@ const hideBrokenIcon = (event: Event) => {
                           </svg>
                           <span>우려</span>
                         </div>
-                        <div :key="`neg-${currentSlide}`" class="kw-cloud">
-                          <span
-                            v-for="(kw, idx) in item.negativeKeywords"
-                            :key="kw.word"
-                            class="kw-word kw-word-negative"
-                            :style="kwWordStyles[item.targetId]?.neg(idx)"
-                          >{{ kw.word }}</span>
-                        </div>
+                        <ul class="report-point-list report-point-list-negative">
+                          <li
+                            v-for="point in item.concernPoints"
+                            :key="point.id"
+                            class="report-point-item"
+                          >{{ point.text }}</li>
+                        </ul>
                       </div>
                     </div>
 
-                    <div class="carousel-link-section">
-                      <div class="carousel-link-col link-col-positive">
-                        <span class="link-col-heading">기대 관련</span>
-                        <a
-                          v-for="link in item.positiveLinks"
-                          :key="link.title"
-                          class="carousel-link-row"
-                          href="#"
-                          @click.prevent
-                        >
-                          <span class="link-source">{{ link.source }}</span>
-                          <span class="link-title">{{ link.title }}</span>
-                        </a>
-                      </div>
-                      <div class="carousel-link-divider" aria-hidden="true"></div>
-                      <div class="carousel-link-col link-col-negative">
-                        <span class="link-col-heading">우려 관련</span>
-                        <a
-                          v-for="link in item.negativeLinks"
-                          :key="link.title"
-                          class="carousel-link-row"
-                          href="#"
-                          @click.prevent
-                        >
-                          <span class="link-source">{{ link.source }}</span>
-                          <span class="link-title">{{ link.title }}</span>
-                        </a>
-                      </div>
-                    </div>
-
-                    <div class="reaction-track-wrap">
-                      <div class="reaction-tooltip" aria-hidden="true">
-                        <span class="st-positive">😊 기대 {{ ratioPct(item.reactionDirectionRatio.bullish) }}</span>
-                        <span class="st-divider">·</span>
-                        <span class="st-negative">😟 우려 {{ ratioPct(item.reactionDirectionRatio.bearish) }}</span>
-                        <span class="st-divider">·</span>
-                        <span class="st-neutral">중립 {{ ratioPct(item.reactionDirectionRatio.neutral) }}</span>
-                      </div>
-                      <div class="reaction-track" aria-label="긍정 부정 중립 비율">
-                        <i class="positive" :style="`width: ${ratioPct(item.reactionDirectionRatio.bullish)}`"></i>
-                        <i class="negative" :style="`width: ${ratioPct(item.reactionDirectionRatio.bearish)}`"></i>
-                        <i class="neutral" :style="`width: ${ratioPct(item.reactionDirectionRatio.neutral)}`"></i>
-                      </div>
-                    </div>
-                  </article>
+                  </a>
                 </div>
               </div>
             </div>
 
-            <div v-if="dashboardReactionItems.length" class="carousel-controls">
+            <div v-if="topWeeklyRegionItems.length" class="carousel-controls">
               <button class="carousel-btn" type="button" @click="prevSlide" aria-label="이전 지역">
                 <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 L5 8 L10 13"/></svg>
               </button>
               <div class="carousel-dots" role="tablist" aria-label="슬라이드 선택">
                 <button
-                  v-for="(item, i) in dashboardReactionItems"
+                  v-for="(item, i) in topWeeklyRegionItems"
                   :key="`dot-${item.targetId}`"
                   :class="['carousel-dot', { active: i === currentSlide }]"
                   type="button"
@@ -770,7 +752,7 @@ const hideBrokenIcon = (event: Event) => {
                   :aria-label="`${news.source} ${news.category}`"
                   role="img"
                 >
-                  <img :src="sourceIconUrl(news.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(news.iconDomain, news.tone)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="news.title">{{ news.title }}</strong>
@@ -805,7 +787,7 @@ const hideBrokenIcon = (event: Event) => {
                   :aria-label="`${report.source} ${report.category}`"
                   role="img"
                 >
-                  <img :src="sourceIconUrl(report.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(report.iconDomain, report.tone)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="report.title">{{ report.title }}</strong>
@@ -840,7 +822,7 @@ const hideBrokenIcon = (event: Event) => {
                   :aria-label="`${video.source} ${video.category}`"
                   role="img"
                 >
-                  <img :src="sourceIconUrl(video.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(video.iconDomain, video.tone)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="video.title">{{ video.title }}</strong>
@@ -875,7 +857,7 @@ const hideBrokenIcon = (event: Event) => {
                   :aria-label="`${link.source} ${link.category}`"
                   role="img"
                 >
-                  <img :src="sourceIconUrl(link.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+                  <img :src="sourceIconUrl(link.iconDomain, link.tone)" alt="" loading="lazy" @error="hideBrokenIcon" />
                 </span>
                 <span class="feed-copy">
                   <strong :title="link.title">{{ link.title }}</strong>

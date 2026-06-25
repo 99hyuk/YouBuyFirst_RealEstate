@@ -24,9 +24,10 @@ public class RealEstateTargetController {
     @GetMapping("/api/realestate/targets/search")
     public RealEstateTargetListResponse search(
             @RequestParam(required = false) String q,
-            @RequestParam(defaultValue = "20") int limit
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "default") String mode
     ) {
-        return new RealEstateTargetListResponse(service.search(q, limit));
+        return new RealEstateTargetListResponse(service.search(q, limit, "autocomplete".equalsIgnoreCase(mode)));
     }
 
     @GetMapping("/internal/realestate/market-data-targets")

@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>너나사 부동산 사용자 워크플로우</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+
+    :root {
+      --ink: #17212b;
+      --muted: #526174;
+      --subtle: #718096;
+      --line: #dfe5ec;
+      --line-strong: #c8d2df;
+      --paper: #ffffff;
+      --bg: #eef3f7;
+      --nav: #171b22;
+      --blue: #2f6fed;
+      --blue-soft: #edf5ff;
+      --orange: #f59e0b;
+      --orange-soft: #fff7ed;
+      --green: #11966a;
+      --green-soft: #eaf8f2;
+      --red: #e5484d;
+      --red-soft: #fff0f2;
+      --slate-soft: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 210mm;
+      color: var(--ink);
+      background: #d8e1eb;
+      font-family: Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif;
+      letter-spacing: 0;
+      line-height: 1.42;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 16mm 15mm 13mm;
+      background: var(--bg);
+      page-break-after: always;
+      box-shadow: 0 20px 48px rgba(23, 33, 43, 0.16);
+      overflow: hidden;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 42px;
+      margin-bottom: 16px;
+      padding: 0 14px;
+      border-radius: 8px;
+      background: var(--nav);
+      color: #f8fbff;
+    }
+
+    .brand {
+      font-size: 17px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .brand span {
+      color: #ffb15c;
+    }
+
+    .doc-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .doc-meta span,
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 23px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #dce6f4;
+      font-size: 10.6px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 64mm;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .hero-main,
+    .hero-side,
+    .card,
+    .section {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
+    .hero-main {
+      padding: 18px 20px 20px;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      margin: 0 0 13px;
+      padding: 0 9px;
+      border-radius: 6px;
+      background: var(--orange-soft);
+      color: #925f08;
+      font-size: 10.6px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 34px;
+      line-height: 1.12;
+      font-weight: 950;
+      word-break: keep-all;
+    }
+
+    .lead {
+      margin-top: 11px;
+      color: var(--muted);
+      font-size: 14.5px;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    .hero-side {
+      display: grid;
+      align-content: center;
+      gap: 10px;
+      padding: 15px;
+      background: linear-gradient(180deg, #fff8ef, #ffffff 74%);
+    }
+
+    .hero-side strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.12;
+      font-weight: 950;
+      word-break: keep-all;
+    }
+
+    .hero-side p {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .thesis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      min-height: 84px;
+      padding: 11px;
+    }
+
+    .card b {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 26px;
+      margin-bottom: 8px;
+      border-radius: 7px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 920;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+      font-weight: 910;
+      line-height: 1.22;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 11.2px;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    .section {
+      margin-bottom: 12px;
+      padding: 13px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      font-size: 17px;
+      line-height: 1.2;
+      font-weight: 930;
+    }
+
+    .flow-map {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 7px;
+      align-items: stretch;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 112px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--slate-soft);
+    }
+
+    .flow-step::after {
+      content: "";
+      position: absolute;
+      top: 48px;
+      right: -8px;
+      width: 8px;
+      height: 2px;
+      background: var(--line-strong);
+    }
+
+    .flow-step:last-child::after {
+      display: none;
+    }
+
+    .flow-step i {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin-bottom: 7px;
+      border-radius: 50%;
+      background: var(--nav);
+      color: #fff;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 900;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12.6px;
+      line-height: 1.2;
+      font-weight: 900;
+      word-break: keep-all;
+    }
+
+    .flow-step span {
+      display: block;
+      color: var(--muted);
+      font-size: 10.4px;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: 35mm minmax(0, 1fr) 42mm;
+      gap: 8px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .workflow:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .workflow:first-of-type {
+      padding-top: 0;
+    }
+
+    .persona {
+      padding: 10px;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: #164a92;
+    }
+
+    .persona strong,
+    .outcome strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+      font-weight: 920;
+    }
+
+    .persona span,
+    .outcome span {
+      display: block;
+      font-size: 10.3px;
+      font-weight: 730;
+      line-height: 1.32;
+      word-break: keep-all;
+    }
+
+    .steps {
+      display: grid;
+      gap: 6px;
+    }
+
+    .steps li {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      list-style: none;
+      color: var(--muted);
+      font-size: 11.2px;
+      font-weight: 710;
+      word-break: keep-all;
+    }
+
+    .steps {
+      margin: 0;
+      padding: 0;
+    }
+
+    .steps b {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: var(--orange-soft);
+      color: #925f08;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .outcome {
+      padding: 10px;
+      border-radius: 8px;
+      background: var(--green-soft);
+      color: #0f664c;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .info-table,
+    .state-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--paper);
+      font-size: 10.8px;
+    }
+
+    th,
+    td {
+      padding: 8px 9px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--nav);
+      color: #f8fbff;
+      font-size: 10.3px;
+      font-weight: 850;
+    }
+
+    td {
+      color: var(--muted);
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: #edf2f7;
+      color: #24415f;
+      font-family: "Cascadia Mono", Consolas, monospace;
+      font-size: 0.92em;
+      font-weight: 700;
+    }
+
+    .guardrails {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .guardrail {
+      min-height: 95px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+    }
+
+    .guardrail strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+      font-size: 12.7px;
+      font-weight: 900;
+    }
+
+    .guardrail p {
+      color: var(--muted);
+      font-size: 10.7px;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    .demo-script {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 7px;
+      counter-reset: demo;
+    }
+
+    .demo-script article {
+      position: relative;
+      min-height: 112px;
+      padding: 11px 10px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--slate-soft);
+    }
+
+    .demo-script article::before {
+      counter-increment: demo;
+      content: counter(demo, decimal-leading-zero);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 22px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      background: var(--nav);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .demo-script strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.22;
+    }
+
+    .demo-script span {
+      color: var(--muted);
+      font-size: 10.4px;
+      font-weight: 700;
+      word-break: keep-all;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .page {
+        margin: 0;
+        box-shadow: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">너나사 <span>YouBuyFirst RealEstate</span></div>
+      <div class="doc-meta">
+        <span>SSAFY 관통프로젝트</span>
+        <span>사용자 워크플로우</span>
+        <span>2026.06.25</span>
+      </div>
+    </header>
+
+    <section class="hero" aria-label="서비스 개요">
+      <div class="hero-main">
+        <p class="label">사용자 흐름</p>
+        <h1>실거래, 일정, 근거를 따라 지역 인사이트까지 확인하는 사용자 흐름</h1>
+        <p class="lead">너나사 부동산은 매수나 청약 행동을 권유하는 서비스가 아니라, 사용자가 실거래·전세·공급·정책 흐름을 차례로 확인하면서 관심 지역의 시장 상황을 이해하도록 돕는 관찰형 부동산 인사이트 서비스입니다.</p>
+      </div>
+      <aside class="hero-side" aria-label="사용자 니즈">
+        <strong>사용자 니즈</strong>
+        <p>특정 지역의 흐름을 한눈에 보고, 실거래와 일정의 근거까지 보기 좋게 모아 확인하고 싶습니다.</p>
+      </aside>
+    </section>
+
+    <section class="thesis-grid" aria-label="핵심 사용자 가치">
+      <article class="card">
+        <b>가치 1</b>
+        <strong>첫 화면에서 오늘 볼 시장 흐름 파악</strong>
+        <p>대시보드는 오늘의 핵심 변화, 주간 가격 흐름, 관련 뉴스·리포트를 먼저 보여줘 사용자가 바로 탐색을 시작하게 합니다.</p>
+      </article>
+      <article class="card">
+        <b>가치 2</b>
+        <strong>지도와 실거래로 사실 검증</strong>
+        <p>지도는 지역 흐름을 한눈에 보여주고, 실거래 화면은 조건별 거래 목록과 공개 지연 상태를 함께 보여줍니다.</p>
+      </article>
+      <article class="card">
+        <b>가치 3</b>
+        <strong>근거와 상태를 숨기지 않는 리포트</strong>
+        <p>상세 화면은 기준일, 출처, 최신 여부, 근거 링크를 함께 보여줘 사용자가 정보의 한계를 확인할 수 있게 합니다.</p>
+      </article>
+    </section>
+
+    <section class="section" aria-label="전체 사용자 여정">
+      <div class="section-header">
+        <h2>전체 사용자 여정</h2>
+      </div>
+      <div class="flow-map">
+        <article class="flow-step">
+          <i>01</i>
+          <strong>첫 화면에서 흐름 잡기</strong>
+          <span>오늘의 3줄 브리핑에서 최근 시장 변화, 주목 지역, 관련 이슈를 빠르게 훑습니다.</span>
+        </article>
+        <article class="flow-step">
+          <i>02</i>
+          <strong>관심 지역 찾기</strong>
+          <span>궁금한 지역명, 동 이름, 단지명을 검색해 바로 확인할 대상을 고릅니다.</span>
+        </article>
+        <article class="flow-step">
+          <i>03</i>
+          <strong>지도에서 비교하기</strong>
+          <span>전국과 시군구 지도를 보며 어느 지역이 오르고 내렸는지 색상과 수치로 비교합니다.</span>
+        </article>
+        <article class="flow-step">
+          <i>04</i>
+          <strong>실거래로 확인하기</strong>
+          <span>지역, 거래 방식, 비교 기간을 바꿔 실제 거래와 전월세 목록을 확인합니다.</span>
+        </article>
+        <article class="flow-step">
+          <i>05</i>
+          <strong>일정과 원문 보기</strong>
+          <span>주요 일정과 뉴스룸에서 통계 발표, 청약, 공급, 정책, 리포트 원문을 확인합니다.</span>
+        </article>
+        <article class="flow-step">
+          <i>06</i>
+          <strong>다시 볼 대상 남기기</strong>
+          <span>관심 목록, 최근 본 항목, 채팅 공유로 나중에 다시 이어볼 대상을 남깁니다.</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-label="사용자 유형">
+      <div class="section-header">
+        <h2>핵심 사용자와 성공 기준</h2>
+      </div>
+      <div class="two-col">
+        <table class="info-table">
+          <thead>
+            <tr>
+              <th>사용자 유형</th>
+              <th>진입 이유</th>
+              <th>성공 기준</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>지역 흐름을 빠르게 보고 싶은 사용자</td>
+              <td>오늘 어느 지역의 실거래·전세·공급·정책 흐름을 먼저 볼지 정해야 함</td>
+              <td>대시보드와 지도에서 확인할 지역을 고르고 상세 리포트까지 확인</td>
+            </tr>
+            <tr>
+              <td>실제 거래 데이터를 직접 보고 싶은 사용자</td>
+              <td>뉴스나 지도에서 본 흐름이 실제 거래와도 맞는지 확인하고 싶음</td>
+              <td>실거래 화면에서 조건을 좁히고 거래일, 면적, 가격, 기준일 확인</td>
+            </tr>
+            <tr>
+              <td>공식 일정과 근거를 챙기는 사용자</td>
+              <td>통계, 청약, 공급, 금리, 정책 발표를 놓치지 않고 싶음</td>
+              <td>주요 일정에서 날짜와 공식 출처를 확인하고 뉴스룸에서 원문 링크 확인</td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="info-table">
+          <thead>
+            <tr>
+              <th>화면</th>
+              <th>사용자가 보는 정보</th>
+              <th>다음 행동</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>대시보드</td>
+              <td>오늘의 3줄 브리핑, 주간 가격 흐름, 뉴스·리포트 요약</td>
+              <td>관심 지역 검색 또는 지도·실거래 화면으로 이동</td>
+            </tr>
+            <tr>
+              <td>지역 분석 지도</td>
+              <td>전국, 시도, 시군구 단위 가격·거래 흐름</td>
+              <td>지역을 눌러 상세 리포트와 근거 확인</td>
+            </tr>
+            <tr>
+              <td>실거래</td>
+              <td>조건별 거래 목록, 비교 기간, 공개 지연 상태</td>
+              <td>거래 상세를 열어 가격 흐름과 위치 확인</td>
+            </tr>
+            <tr>
+              <td>주요 일정</td>
+              <td>공식 통계, 청약, 공급, 정책, 금리 발표일</td>
+              <td>공식 출처로 이동해 발표 내용 확인</td>
+            </tr>
+            <tr>
+              <td>뉴스룸</td>
+              <td>뉴스, 리포트, 영상, 블로그·커뮤니티 원문 링크</td>
+              <td>대시보드와 상세 리포트에서 본 이슈의 원문 확인</td>
+            </tr>
+            <tr>
+              <td>지역/단지 상세</td>
+              <td>시장 흐름, 핵심 쟁점, 시간대별 변화, 근거 링크</td>
+              <td>관심 저장, 최근 본 복귀, 채팅 공유</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <section class="page">
+    <header class="topbar">
+      <div class="brand">너나사 <span>사용자 시나리오</span></div>
+      <div class="doc-meta">
+        <span>주요 흐름 1</span>
+        <span>탐색과 검증</span>
+      </div>
+    </header>
+
+    <section class="section" aria-label="워크플로우 1">
+      <div class="section-header">
+        <h2>워크플로우 1. 첫 접속 후 관심 지역 흐름 확인</h2>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>상황</strong>
+          <span>사용자는 서울·수도권 중 최근 흐름이 눈에 띄는 지역을 먼저 확인하고 싶습니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>1</b><span>대시보드에서 오늘의 3줄 브리핑을 읽습니다. 브리핑은 최근 시장 변화, 주목 지역, 관련 이슈를 짧은 문장으로 보여줍니다.</span></li>
+          <li><b>2</b><span>오른쪽 주간 가격 흐름 영역에서 이번 주 많이 오른 지역과 많이 내린 지역을 확인합니다.</span></li>
+          <li><b>3</b><span>검색창에 지역명이나 동 이름을 입력해 관심 지역을 찾고, 검색 결과를 눌러 지역 분석 지도로 이동합니다.</span></li>
+          <li><b>4</b><span>지도에서 기간 탭을 바꾸며 상승, 하락, 자료 없음 상태를 비교합니다.</span></li>
+          <li><b>5</b><span>지역 리포트 패널에서 기대 포인트, 우려 포인트, 기준일, 근거 출처를 확인합니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>사용자 결과</strong>
+          <span>오늘 먼저 살펴볼 지역을 고르고, 그 지역의 흐름이 어떤 근거를 바탕으로 표시됐는지 이해합니다.</span>
+        </aside>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>화면에서 읽는 내용</strong>
+          <span>지도와 리포트는 단순히 "좋다/나쁘다"를 말하지 않고, 사용자가 확인할 근거를 함께 보여줍니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>A</b><span>지도 색상은 공개 반응이나 분위기가 아니라 공식 가격지수 또는 확인된 시장 데이터를 기준으로 합니다.</span></li>
+          <li><b>B</b><span>지역을 누르면 해당 지역의 요약 리포트가 열리고, 기대 요인과 우려 요인이 나뉘어 보입니다.</span></li>
+          <li><b>C</b><span>근거 출처 영역에서는 어떤 공식 자료나 데이터가 리포트에 쓰였는지 확인할 수 있습니다.</span></li>
+          <li><b>D</b><span>자료가 없거나 아직 공개되지 않은 지역은 임의 수치 대신 자료 없음, 공식 지수 미공표, 확인 필요로 표시합니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>확인할 점</strong>
+          <span>상승·하락 색상만 보는 서비스가 아니라 기준일과 근거를 같이 확인하게 만든다는 점을 강조합니다.</span>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" aria-label="워크플로우 2">
+      <div class="section-header">
+        <h2>워크플로우 2. 실거래 화면에서 숫자로 검증</h2>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>상황</strong>
+          <span>사용자는 지도에서 본 지역 흐름이 최근 실거래와 전월세 데이터에서도 보이는지 확인하려고 합니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>1</b><span>상단 내비게이션의 <strong>실거래</strong> 또는 검색 결과의 법정동·단지 후보를 선택합니다.</span></li>
+          <li><b>2</b><span>시도, 시군구, 매물 유형, 거래 방식, 비교 기간을 바꿔 조건에 맞는 거래만 좁혀 봅니다.</span></li>
+          <li><b>3</b><span>지도 표시나 왼쪽 거래 목록을 눌러 선택한 거래의 요약과 가격 흐름을 봅니다.</span></li>
+          <li><b>4</b><span>상세 패널에서 거래일, 면적, 가격, 주변 시설, 기준일, 공개 지연 상태를 확인합니다.</span></li>
+          <li><b>5</b><span>로그인한 사용자는 하트 버튼으로 단지를 관심 목록에 저장하고, 말풍선 버튼으로 채팅에 첨부합니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>사용자 결과</strong>
+          <span>가격 흐름을 말로만 듣지 않고 실제 거래 조건과 거래 항목 기준으로 검증합니다.</span>
+        </aside>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>예외 처리</strong>
+          <span>공공데이터는 신고·공개 지연이 있을 수 있어 최신 거래처럼 단정하지 않습니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>A</b><span>조건에 맞는 거래가 없으면 공식 거래 없음과 공개 지연 가능성을 표시합니다.</span></li>
+          <li><b>B</b><span>비교할 이전 데이터가 없으면 가격 변화율을 억지로 계산하지 않고 비교 데이터 없음으로 둡니다.</span></li>
+          <li><b>C</b><span>좌표가 불확실한 단지는 좌표 검증 전 상태로 표시하고 확정 위치처럼 말하지 않습니다.</span></li>
+          <li><b>D</b><span>상세 패널은 커뮤니티 반응보다 거래 요약, 가격 흐름, 데이터 기준일에 집중합니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>확인할 점</strong>
+          <span>필터를 바꿀 때 사용자의 질문이 "어디가 좋나"에서 "어떤 조건의 거래가 확인되나"로 바뀝니다.</span>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" aria-label="워크플로우 3">
+      <div class="section-header">
+        <h2>워크플로우 3. 일정과 뉴스룸에서 근거 링크 확인</h2>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>상황</strong>
+          <span>사용자는 실거래·가격지수·청약·공급·정책 발표가 언제 있는지 확인하고 싶습니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>1</b><span>주요 일정 화면에서 월간 캘린더를 열고 가격·공시, 거래현황, 공급, 금융, 정책, 청약 일정을 봅니다.</span></li>
+          <li><b>2</b><span>날짜 칸의 일정 줄을 눌러 하단 요약 행으로 이동합니다.</span></li>
+          <li><b>3</b><span>공식 출처 링크가 있는 일정은 요약 행에서 실제 공표 상세, 청약 모집공고, 통화정책 일정으로 이동합니다.</span></li>
+          <li><b>4</b><span>뉴스룸에서 뉴스, 리포트, 영상, 블로그·커뮤니티 링크를 종류별로 확인합니다.</span></li>
+          <li><b>5</b><span>상세 리포트의 근거 출처와 뉴스룸 원문을 교차 확인합니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>사용자 결과</strong>
+          <span>데이터가 왜 아직 비어 있거나 오래됐는지, 다음에 무엇을 다시 확인해야 하는지 알 수 있습니다.</span>
+        </aside>
+      </div>
+    </section>
+
+  </section>
+
+  <section class="page">
+    <header class="topbar">
+      <div class="brand">너나사 <span>계정 기반 재방문 흐름</span></div>
+      <div class="doc-meta">
+        <span>주요 흐름 2</span>
+        <span>관심 · 최근 본 · 채팅</span>
+      </div>
+    </header>
+
+    <section class="section" aria-label="워크플로우 4">
+      <div class="section-header">
+        <h2>워크플로우 4. 로그인, 관심 저장, 최근 본 복귀</h2>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>상황</strong>
+          <span>사용자는 자주 보는 지역 또는 거래 상세를 저장해 다음 접속 때 빠르게 돌아오고 싶습니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>1</b><span>로그인 화면에서 아이디와 비밀번호를 입력하거나 사용할 수 있는 간편 로그인을 선택합니다.</span></li>
+          <li><b>2</b><span>로그인에 성공하면 대시보드로 돌아오고 상단에 사용자 닉네임과 로그아웃 버튼이 표시됩니다.</span></li>
+          <li><b>3</b><span>지역 분석 리포트나 실거래 상세에서 하트 버튼으로 관심 지역·단지를 저장합니다.</span></li>
+          <li><b>4</b><span>오른쪽 패널의 <strong>관심</strong> 탭에서 저장된 대상을 불러오고, 항목을 누르면 이전에 보던 화면으로 돌아갑니다.</span></li>
+          <li><b>5</b><span><strong>최근 본</strong> 탭은 로그인과 무관하게 같은 브라우저에서 본 지역·실거래를 최대 15개까지 보관합니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>사용자 결과</strong>
+          <span>관심 대상은 계정 기준으로, 최근 본 대상은 브라우저 기준으로 다시 이어볼 수 있습니다.</span>
+        </aside>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>계정 정책</strong>
+          <span>저장 목록처럼 보이는 예시 데이터는 비로그인 사용자에게 보여주지 않습니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>A</b><span>관심 목록은 로그인한 사용자에게만 보여줍니다.</span></li>
+          <li><b>B</b><span>비로그인 사용자가 관심 목록을 열면 저장 목록 대신 로그인 안내를 보여줍니다.</span></li>
+          <li><b>C</b><span>최근 본 항목은 같은 브라우저에서 빠르게 돌아가기 위한 임시 목록으로 사용합니다.</span></li>
+          <li><b>D</b><span>사용할 수 없는 간편 로그인 버튼은 비활성 상태로 보여줘 잘못된 화면으로 이동하지 않게 합니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>확인할 점</strong>
+          <span>로그인한 사용자는 관심 목록으로, 비로그인 사용자도 최근 본 목록으로 탐색을 이어갈 수 있음을 보여줍니다.</span>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" aria-label="워크플로우 5">
+      <div class="section-header">
+        <h2>워크플로우 5. 채팅에서 지역·실거래 맥락 공유</h2>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>상황</strong>
+          <span>사용자는 특정 지역 리포트나 실거래 상세를 다른 사용자와 함께 보고 싶습니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>1</b><span>사이트 첫 진입 시 오른쪽의 <strong>채팅</strong> 패널이 기본으로 열립니다.</span></li>
+          <li><b>2</b><span>로그인 사용자는 닉네임으로 바로 참여하고, 비로그인 사용자는 게스트 닉네임을 입력해 참여합니다.</span></li>
+          <li><b>3</b><span>지역 분석 리포트 또는 실거래 상세의 말풍선 버튼을 누르면 현재 대상이 채팅 입력창에 첨부됩니다.</span></li>
+          <li><b>4</b><span>첨부 카드는 종류, 제목, 필요한 설명, 기간과 등락률을 압축해서 보여줍니다.</span></li>
+          <li><b>5</b><span>전송된 첨부 카드를 클릭하면 원래 보던 지역 분석 또는 실거래 상세 화면으로 돌아갑니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>사용자 결과</strong>
+          <span>채팅이 단순 대화가 아니라 사용자가 본 리포트와 거래 상세를 다시 여는 탐색 보조 도구가 됩니다.</span>
+        </aside>
+      </div>
+      <div class="workflow">
+        <aside class="persona">
+          <strong>채팅 참여 기준</strong>
+          <span>채팅 패널을 실제로 열어 둔 사용자만 참여자로 계산합니다.</span>
+        </aside>
+        <ol class="steps">
+          <li><b>A</b><span>최근 메시지는 새로고침해도 유지되도록 서버에 저장됩니다.</span></li>
+          <li><b>B</b><span>다른 사용자가 새 메시지를 보내면 채팅창에 바로 나타납니다.</span></li>
+          <li><b>C</b><span>참여자 수는 단순 방문자 수가 아니라 채팅 패널을 열어 둔 사람 수로 보여줍니다.</span></li>
+          <li><b>D</b><span>게스트 닉네임은 기존 가입자 닉네임과 겹치지 않게 확인한 뒤 사용할 수 있습니다.</span></li>
+        </ol>
+        <aside class="outcome">
+          <strong>확인할 점</strong>
+          <span>채팅은 단순한 대화창이 아니라 사용자가 보고 있던 지역과 거래를 함께 공유하는 도구입니다.</span>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" aria-label="상태와 예외">
+      <div class="section-header">
+        <h2>사용자에게 보여주는 상태와 예외</h2>
+      </div>
+      <table class="state-table">
+        <thead>
+          <tr>
+            <th>상태</th>
+            <th>의미</th>
+            <th>사용자 화면 처리</th>
+            <th>사용자가 할 수 있는 일</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>불러오는 중</td>
+            <td>정보를 불러오는 중</td>
+            <td>빈 화면 대신 자리 표시와 확인 중 문구를 보여주고 중복 입력을 막음</td>
+            <td>잠시 기다리거나 다른 화면 탐색</td>
+          </tr>
+          <tr>
+            <td>자료 없음</td>
+            <td>조건에 맞는 공식 거래나 일정이 없음</td>
+            <td>공식 거래 없음, 일정 수집 전, 관련 화면 링크</td>
+            <td>기간·지역 조건 변경, 공식 출처 확인</td>
+          </tr>
+          <tr>
+            <td>갱신 지연</td>
+            <td>공개 지연 또는 마지막 수집 기준 초과</td>
+            <td>기준일과 마지막 확인 시각을 함께 표시</td>
+            <td>주요 일정에서 다음 공표일 확인</td>
+          </tr>
+          <tr>
+            <td>확인 필요</td>
+            <td>아직 확정하지 못한 값</td>
+            <td>확인 필요, 자료 없음, 미공표로 구분</td>
+            <td>근거 링크 또는 공식 출처로 교차 확인</td>
+          </tr>
+          <tr>
+            <td>예시 데이터</td>
+            <td>검증 전이거나 화면 예시를 위한 데이터</td>
+            <td>실제 데이터처럼 섞지 않고 예시임을 표시</td>
+            <td>실서비스 판단에는 사용하지 않음</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+  </section>
+
+  <section class="page">
+    <header class="topbar">
+      <div class="brand">너나사 <span>사용 흐름 요약</span></div>
+      <div class="doc-meta">
+        <span>서비스 경계</span>
+        <span>경계와 검증</span>
+      </div>
+    </header>
+
+    <section class="section" aria-label="대표 사용 흐름 요약">
+      <div class="section-header">
+        <h2>대표 사용 흐름 요약</h2>
+      </div>
+      <div class="demo-script">
+        <article>
+          <strong>대시보드 진입</strong>
+          <span>오늘의 3줄 브리핑과 주간 가격 흐름을 보며 오늘 확인할 지역 후보를 고릅니다.</span>
+        </article>
+        <article>
+          <strong>지역 검색</strong>
+          <span>검색 자동완성으로 지역·법정동·단지 후보를 찾고 지도 또는 실거래 화면으로 이동합니다.</span>
+        </article>
+        <article>
+          <strong>지도 리포트</strong>
+          <span>기간 탭과 시군구 drill-down으로 상승·하락 흐름과 근거 출처를 확인합니다.</span>
+        </article>
+        <article>
+          <strong>실거래 검증</strong>
+          <span>매물 유형, 거래 방식, 비교 기간을 바꾸며 실제 거래 항목과 공개 지연을 확인합니다.</span>
+        </article>
+        <article>
+          <strong>저장과 공유</strong>
+          <span>관심 저장, 최근 본 복귀, 채팅 첨부 카드로 확인한 대상을 다시 이어봅니다.</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-label="서비스 경계">
+      <div class="section-header">
+        <h2>서비스 경계와 문구 원칙</h2>
+      </div>
+      <div class="guardrails">
+        <article class="guardrail">
+          <strong>행동 권유 금지</strong>
+          <p>매수, 매도, 청약, 대출을 권유하지 않습니다. 상승 확정, 수익 보장, 진입 신호 같은 표현도 쓰지 않습니다.</p>
+        </article>
+        <article class="guardrail">
+          <strong>공식 데이터 우선</strong>
+          <p>실거래, 전세, 공급, 정책, 가격지수는 출처, 기준일, 최신 여부를 분리해 보여줍니다.</p>
+        </article>
+        <article class="guardrail">
+          <strong>커뮤니티는 보조 관찰</strong>
+          <p>공개 반응은 이슈 해석 보조 신호일 뿐 핵심 순위나 확정 판단의 기준으로 쓰지 않습니다.</p>
+        </article>
+        <article class="guardrail">
+          <strong>원문 저장 제한</strong>
+          <p>뉴스·리포트·공개 원문은 제목, 짧은 요약, 원문 링크, 출처, 시각 중심으로 제한 저장합니다.</p>
+        </article>
+        <article class="guardrail">
+          <strong>불확실성 표시</strong>
+          <p>확인할 수 없는 값은 확인 필요, 수집 전, 예시 데이터처럼 구분하고 임의로 채우지 않습니다.</p>
+        </article>
+        <article class="guardrail">
+          <strong>근거 로그 노출</strong>
+          <p>AI가 어떤 지표와 링크를 참고했는지 사용자용 요약과 주의 사항으로 남깁니다.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-label="화면별 확인 정보">
+      <div class="section-header">
+        <h2>화면별로 사용자가 확인하는 정보</h2>
+      </div>
+      <table class="info-table">
+        <thead>
+          <tr>
+            <th>사용자 화면</th>
+            <th>주요 확인 정보</th>
+            <th>사용자가 얻는 답</th>
+            <th>주의해서 보는 부분</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>대시보드</td>
+            <td>오늘의 3줄 브리핑, 주간 가격 흐름, 뉴스·리포트 요약</td>
+            <td>오늘 어느 지역과 이슈를 먼저 볼지 정합니다.</td>
+            <td>요약은 출발점이며, 상세 화면에서 근거를 다시 확인합니다.</td>
+          </tr>
+          <tr>
+            <td>지역 분석 지도</td>
+            <td>지도 색상, 상승·하락 수치, 지역 리포트, 근거 출처</td>
+            <td>관심 지역이 주변 지역과 비교해 어떤 흐름인지 봅니다.</td>
+            <td>자료 없음, 공식 지수 미공표, 기준일을 함께 확인합니다.</td>
+          </tr>
+          <tr>
+            <td>실거래</td>
+            <td>거래 목록, 거래일, 면적, 가격, 비교 기간, 공개 지연 상태</td>
+            <td>지도에서 본 흐름을 실제 거래 기준으로 확인합니다.</td>
+            <td>거래가 없다는 말이 시장에 거래가 전혀 없다는 뜻은 아닐 수 있습니다.</td>
+          </tr>
+          <tr>
+            <td>주요 일정</td>
+            <td>통계 발표일, 청약 일정, 공급·정책·금리 발표, 공식 출처</td>
+            <td>언제 어떤 데이터를 다시 확인해야 하는지 알 수 있습니다.</td>
+            <td>날짜가 확인된 공식 일정만 실제 일정처럼 표시합니다.</td>
+          </tr>
+          <tr>
+            <td>뉴스룸</td>
+            <td>뉴스, 정책·통계 리포트, 영상, 블로그·커뮤니티 링크</td>
+            <td>관심 지역과 연결된 이슈의 원문을 더 깊게 확인합니다.</td>
+            <td>원문 전문을 복제하지 않고 출처와 링크 중심으로 확인합니다.</td>
+          </tr>
+          <tr>
+            <td>관심·채팅</td>
+            <td>저장한 지역·단지, 최근 본 항목, 채팅 첨부 카드</td>
+            <td>봤던 정보를 다시 열고 다른 사용자와 공유합니다.</td>
+            <td>관심 목록은 로그인 사용자에게만 저장됩니다.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="section" aria-label="완료 정의">
+      <div class="section-header">
+        <h2>사용자 워크플로우 완료 정의</h2>
+      </div>
+      <div class="guardrails">
+        <article class="guardrail">
+          <strong>사용자는 첫 화면에서 다음 행동을 정한다</strong>
+          <p>대시보드가 소개 페이지가 아니라 검색, 브리핑, 지도, 실거래, 일정으로 이어지는 실제 시작점이어야 합니다.</p>
+        </article>
+        <article class="guardrail">
+          <strong>모든 흐름은 근거 화면으로 닫힌다</strong>
+          <p>지도, 실거래, 일정, 뉴스룸, 상세 리포트가 서로 연결되어 출처와 기준 시각을 확인할 수 있어야 합니다.</p>
+        </article>
+        <article class="guardrail">
+          <strong>다시 보기와 공유가 가능하다</strong>
+          <p>관심, 최근 본, 채팅 첨부 카드가 사용자의 재방문과 팀원 간 설명 흐름을 지원해야 합니다.</p>
+        </article>
+      </div>
+    </section>
+
+  </section>
+</body>
+</html>

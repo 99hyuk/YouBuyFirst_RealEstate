@@ -255,7 +255,7 @@ watch(activeFilter, () => {
               :aria-label="`${item.source} ${item.category}`"
               role="img"
             >
-              <img :src="sourceIconUrl(item.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+              <img :src="sourceIconUrl(item.iconDomain, item.tone)" alt="" loading="lazy" @error="hideBrokenIcon" />
             </span>
             <span class="feed-copy">
               <strong :title="item.title">{{ item.title }}</strong>
@@ -292,7 +292,7 @@ watch(activeFilter, () => {
             :aria-label="`${item.source} ${item.category}`"
             role="img"
           >
-            <img :src="sourceIconUrl(item.iconDomain)" alt="" loading="lazy" @error="hideBrokenIcon" />
+            <img :src="sourceIconUrl(item.iconDomain, item.tone)" alt="" loading="lazy" @error="hideBrokenIcon" />
           </span>
           <span class="feed-copy">
             <strong :title="item.title">{{ item.title }}</strong>

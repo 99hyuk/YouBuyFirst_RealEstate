@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>너나사 부동산 ERD - SSAFY 관통프로젝트 제출용</title>
+  <style>
+    :root {
+      --ink: #16202d;
+      --muted: #596779;
+      --line: #d4dde9;
+      --soft: #f6f8fb;
+      --paper: #ffffff;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #e9eef5; color: var(--ink); line-height: 1.48; }
+    code { font-family: "Cascadia Mono", Consolas, monospace; }
+    .book { width: min(1280px, calc(100vw - 32px)); margin: 20px auto; background: var(--paper); box-shadow: 0 14px 40px rgba(15, 23, 42, 0.14); }
+    .sheet { padding: 28px 42px; min-height: 890px; break-after: page; border-bottom: 1px solid var(--line); }
+    .sheet.compact { min-height: auto; }
+    .kicker { color: var(--muted); font-weight: 800; font-size: 13px; }
+    h1 { margin: 8px 0 12px; font-size: 36px; letter-spacing: 0; line-height: 1.14; }
+    h2 { margin: 0 0 10px; font-size: 26px; letter-spacing: 0; }
+    h3 { margin: 0 0 8px; font-size: 18px; }
+    p { margin: 0 0 16px; color: #3d4b5f; }
+    .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 22px; align-items: start; margin-top: 18px; }
+    .principles { display: grid; gap: 10px; }
+    .principle { border: 1px solid var(--line); background: #f8fafc; padding: 14px 16px; }
+    .principle strong { display: block; margin-bottom: 5px; }
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 10px 0 10px; }
+    .stat { border: 1px solid var(--line); padding: 10px 12px; background: #fff; min-height: 62px; }
+    .stat span { display: block; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .stat strong { display: block; margin-top: 3px; font-size: 22px; }
+    .legend { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 0; }
+    .legend span { border: 1px solid var(--line); background: #fff; padding: 7px 9px; font-size: 12px; }
+    .diagram-wrap { border: 1px solid var(--line); background: #fbfcfe; padding: 10px; }
+    .overview-diagram { margin-top: 8px; }
+    svg.diagram { width: 100%; height: auto; display: block; }
+    .hero-title { margin-bottom: 8px; }
+    .hero-title h1 { font-size: 30px; margin-bottom: 6px; }
+    .hero-title p { margin-bottom: 8px; }
+    .group-label { font-size: 17px; font-weight: 900; fill: #334155; }
+    .node-title { font-size: 20px; font-weight: 900; fill: #0f172a; }
+    .node-subtitle { font-size: 15px; font-weight: 800; fill: #64748b; }
+    .node-field { font-size: 13px; fill: #334155; font-family: "Cascadia Mono", Consolas, monospace; }
+    .edge { stroke: #526274; stroke-width: 2.6; fill: none; }
+    .edge.logical { stroke-dasharray: 8 7; }
+    .edge.physical { stroke: #0f766e; stroke-width: 3.2; }
+    .edge-label { font-size: 15px; font-weight: 900; fill: #0f766e; paint-order: stroke; stroke: white; stroke-width: 5px; stroke-linejoin: round; }
+    .relation-table, .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .relation-table th, .relation-table td, .summary-table th, .summary-table td { border: 1px solid var(--line); padding: 8px 9px; vertical-align: top; }
+    .relation-table th, .summary-table th { background: #f8fafc; text-align: left; }
+    .cardinality { color: #0f766e; font-weight: 900; text-align: center; white-space: nowrap; }
+    .group-section { margin-top: 18px; break-inside: avoid; }
+    .group-section h3 { padding: 10px 12px; border: 1px solid var(--line); margin-bottom: 0; }
+    .group-section table { margin-top: -1px; }
+    .row-count { color: #64748b; white-space: nowrap; text-align: right; }
+    footer { color: #64748b; font-size: 12px; padding-top: 12px; border-top: 1px solid var(--line); margin-top: 18px; }
+    @page { size: A4 landscape; margin: 10mm; }
+    @media print {
+      body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .book { width: auto; margin: 0; box-shadow: none; }
+      .sheet { border-bottom: 0; padding: 0; min-height: auto; }
+      .sheet:not(:last-child) { break-after: page; }
+      .diagram-wrap { padding: 8px; }
+      .hero-title h1 { font-size: 24px; margin: 4px 0; }
+      .hero-title p { font-size: 13px; margin-bottom: 5px; }
+      .stats { display: flex; gap: 6px; margin: 5px 0; }
+      .stat { min-height: 0; padding: 5px 8px; }
+      .stat span { display: inline; font-size: 10px; margin-right: 5px; }
+      .stat strong { display: inline; font-size: 14px; }
+      .legend { margin: 5px 0; }
+      .legend span { padding: 4px 6px; font-size: 10px; }
+      .overview-diagram svg.diagram { width: auto; height: 510px; margin: 0 auto; }
+      .sheet:first-of-type .stats, .sheet:first-of-type .legend, footer { display: none; }
+      .summary-table, .relation-table { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="book">
+    <section class="sheet">
+      <div class="hero-title">
+        <div class="kicker">SSAFY 관통프로젝트 제출용 ERD | MySQL/Flyway V68 | 2026-06-25</div>
+        <h1>너나사 부동산 데이터베이스 ERD</h1>
+        <p>테이블 목록보다 관계를 먼저 보여주는 제출용 ERD입니다. 중심 엔티티는 <strong>real_estate_targets</strong>이고, 모든 주요 기능은 target_id로 연결됩니다.</p>
+      </div>
+      <h2>핵심 ERD 전체 관계도</h2>
+      <p>가운데 real_estate_targets가 모든 지역/단지 식별자의 중심이고, 주변 기능은 target_id로 연결됩니다.</p>
+      <div class="diagram-wrap overview-diagram"><svg class="diagram" viewBox="0 0 1600 830" role="img" aria-label="핵심 ERD 전체 관계도">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#526274"></path>
+      </marker>
+      <marker id="arrowPhysical" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#0f766e"></path>
+      </marker>
+    </defs>
+    <rect x="40" y="55" width="250" height="245" rx="18" fill="#ffe8ee" stroke="#d3dce8"/><text x="58" y="89" class="group-label">사용자 기능</text>
+<rect x="475" y="230" width="420" height="355" rx="18" fill="#fff1db" stroke="#d3dce8"/><text x="493" y="264" class="group-label">부동산 대상 정본</text>
+<rect x="40" y="600" width="650" height="185" rx="18" fill="#e9f3ff" stroke="#d3dce8"/><text x="58" y="634" class="group-label">공공데이터 수집</text>
+<rect x="990" y="110" width="270" height="270" rx="18" fill="#e9f8ef" stroke="#d3dce8"/><text x="1008" y="144" class="group-label">시장/지도</text>
+<rect x="1320" y="170" width="240" height="420" rx="18" fill="#f1ebff" stroke="#d3dce8"/><text x="1338" y="204" class="group-label">리포트/근거</text>
+<rect x="810" y="620" width="720" height="170" rx="18" fill="#edf2f7" stroke="#d3dce8"/><text x="828" y="654" class="group-label">콘텐츠/반응 보조</text>
+    <line x1="165" y1="173" x2="165" y2="210" class="edge logical" marker-end="url(#arrow)"/><text x="165" y="183.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="250" y1="244" x2="590" y2="393" class="edge logical" marker-end="url(#arrow)"/><text x="420" y="310.5" text-anchor="middle" class="edge-label">N:1</text>
+<line x1="590" y1="393" x2="665" y2="291" class="edge logical" marker-end="url(#arrow)"/><text x="627.5" y="334" text-anchor="middle" class="edge-label">1:0..1</text>
+<line x1="780" y1="393" x2="720" y2="291" class="edge logical" marker-end="url(#arrow)"/><text x="750" y="334" text-anchor="middle" class="edge-label">1:0..1</text>
+<line x1="685" y1="436" x2="582.5" y2="480" class="edge logical" marker-end="url(#arrow)"/><text x="633.75" y="450" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="685" y1="436" x2="802.5" y2="480" class="edge logical" marker-end="url(#arrow)"/><text x="743.75" y="450" text-anchor="middle" class="edge-label">N:M</text>
+<line x1="260" y1="691" x2="300" y2="691" class="edge logical" marker-end="url(#arrow)"/><text x="280" y="683" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="485" y1="691" x2="525" y2="691" class="edge logical" marker-end="url(#arrow)"/><text x="505" y="683" text-anchor="middle" class="edge-label">1:0..1</text>
+<line x1="710" y1="691" x2="1015" y2="205" class="edge logical" marker-end="url(#arrow)"/><text x="862.5" y="440" text-anchor="middle" class="edge-label">promote</text>
+<line x1="780" y1="393" x2="1015" y2="205" class="edge logical" marker-end="url(#arrow)"/><text x="897.5" y="291" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="780" y1="393" x2="1015" y2="315" class="edge logical" marker-end="url(#arrow)"/><text x="897.5" y="346" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="780" y1="393" x2="1345" y2="264" class="edge logical" marker-end="url(#arrow)"/><text x="1062.5" y="320.5" text-anchor="middle" class="edge-label">1:0..1</text>
+<line x1="1440" y1="298" x2="1440" y2="330" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="1440" y="306" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="780" y1="393" x2="1345" y2="464" class="edge logical" marker-end="url(#arrow)"/><text x="1062.5" y="420.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1440" y1="498" x2="1440" y2="530" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="1440" y="506" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1020" y1="711" x2="1050" y2="711" class="edge logical" marker-end="url(#arrow)"/><text x="1035" y="703" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1050" y1="711" x2="780" y2="393" class="edge logical" marker-end="url(#arrow)"/><text x="915" y="544" text-anchor="middle" class="edge-label">N:1</text>
+<line x1="780" y1="393" x2="1250" y2="711" class="edge logical" marker-end="url(#arrow)"/><text x="1015" y="544" text-anchor="middle" class="edge-label">1:N</text>
+    <g>
+    <rect x="80" y="105" width="170" height="68" rx="10" fill="#fff8fa" stroke="#ef9fb0" stroke-width="2.4"/>
+    <text x="94" y="130" class="node-title" style="font-size:19px">app_users</text>
+    <text x="94" y="148" class="node-subtitle">사용자 계정</text>
+
+  </g>
+<g>
+    <rect x="80" y="210" width="170" height="68" rx="10" fill="#fff8fa" stroke="#ef9fb0" stroke-width="2.4"/>
+    <text x="94" y="235" class="node-title" style="font-size:19px">user_watch_targets</text>
+    <text x="94" y="253" class="node-subtitle">관심 대상</text>
+
+  </g>
+<g>
+    <rect x="590" y="350" width="190" height="86" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="604" y="375" class="node-title" style="font-size:19px">real_estate_targets</text>
+    <text x="604" y="393" class="node-subtitle">부동산 대상 정본</text>
+    <text x="604" y="411" class="node-field">PK id</text>
+<text x="604" y="428" class="node-field">target_type</text>
+<text x="604" y="445" class="node-field">slug</text>
+  </g>
+<g>
+    <rect x="500" y="260" width="165" height="62" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="514" y="285" class="node-title" style="font-size:19px">real_estate_regions</text>
+    <text x="514" y="303" class="node-subtitle">지역 프로필</text>
+
+  </g>
+<g>
+    <rect x="720" y="260" width="165" height="62" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="734" y="285" class="node-title" style="font-size:19px">real_estate_complexes</text>
+    <text x="734" y="303" class="node-subtitle">단지 프로필</text>
+
+  </g>
+<g>
+    <rect x="500" y="480" width="165" height="62" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="514" y="505" class="node-title" style="font-size:19px">real_estate_aliases</text>
+    <text x="514" y="523" class="node-subtitle">별칭 사전</text>
+
+  </g>
+<g>
+    <rect x="720" y="480" width="165" height="62" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="734" y="505" class="node-title" style="font-size:16px">real_estate_target</text>
+<text x="734" y="522" class="node-title" style="font-size:16px">edges</text>
+    <text x="734" y="540" class="node-subtitle">대상 관계</text>
+
+  </g>
+<g>
+    <rect x="75" y="660" width="185" height="62" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="89" y="685" class="node-title" style="font-size:16px">real_estate_public</text>
+<text x="89" y="702" class="node-title" style="font-size:16px">data_import_runs</text>
+    <text x="89" y="720" class="node-subtitle">수집 실행</text>
+
+  </g>
+<g>
+    <rect x="300" y="660" width="185" height="62" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="314" y="685" class="node-title" style="font-size:16px">real_estate_public</text>
+<text x="314" y="702" class="node-title" style="font-size:16px">data_raw_items</text>
+    <text x="314" y="720" class="node-subtitle">원천 raw</text>
+
+  </g>
+<g>
+    <rect x="525" y="660" width="185" height="62" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="539" y="685" class="node-title" style="font-size:16px">real_estate_market</text>
+<text x="539" y="702" class="node-title" style="font-size:16px">fact_staging</text>
+    <text x="539" y="720" class="node-subtitle">시장 사실 staging</text>
+
+  </g>
+<g>
+    <rect x="1015" y="170" width="200" height="70" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="1029" y="195" class="node-title" style="font-size:16px">real_estate_market</text>
+<text x="1029" y="212" class="node-title" style="font-size:16px">facts</text>
+    <text x="1029" y="230" class="node-subtitle">시장 사실</text>
+
+  </g>
+<g>
+    <rect x="1015" y="280" width="200" height="70" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="1029" y="305" class="node-title" style="font-size:19px">map_layer_snapshots</text>
+    <text x="1029" y="323" class="node-subtitle">지도 레이어 값</text>
+
+  </g>
+<g>
+    <rect x="1345" y="230" width="190" height="68" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="1359" y="255" class="node-title" style="font-size:16px">real_estate_regional</text>
+<text x="1359" y="272" class="node-title" style="font-size:16px">reports</text>
+    <text x="1359" y="290" class="node-subtitle">지역 분석 리포트</text>
+
+  </g>
+<g>
+    <rect x="1345" y="330" width="190" height="68" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="1359" y="355" class="node-title" style="font-size:16px">real_estate_regional</text>
+<text x="1359" y="372" class="node-title" style="font-size:16px">report_sources</text>
+    <text x="1359" y="390" class="node-subtitle">리포트 근거 출처</text>
+
+  </g>
+<g>
+    <rect x="1345" y="430" width="190" height="68" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="1359" y="455" class="node-title" style="font-size:19px">evidence_logs</text>
+    <text x="1359" y="473" class="node-subtitle">AI 근거 로그</text>
+
+  </g>
+<g>
+    <rect x="1345" y="530" width="190" height="68" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="1359" y="555" class="node-title" style="font-size:19px">evidence_log_items</text>
+    <text x="1359" y="573" class="node-subtitle">근거 항목</text>
+
+  </g>
+<g>
+    <rect x="850" y="680" width="170" height="62" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="864" y="705" class="node-title" style="font-size:19px">content_items</text>
+    <text x="864" y="723" class="node-subtitle">외부 콘텐츠</text>
+
+  </g>
+<g>
+    <rect x="1050" y="680" width="170" height="62" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1064" y="705" class="node-title" style="font-size:19px">content_target_links</text>
+    <text x="1064" y="723" class="node-subtitle">콘텐츠-대상 연결</text>
+
+  </g>
+<g>
+    <rect x="1250" y="680" width="190" height="62" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1264" y="705" class="node-title" style="font-size:16px">real_estate_reaction</text>
+<text x="1264" y="722" class="node-title" style="font-size:16px">snapshots</text>
+    <text x="1264" y="740" class="node-subtitle">반응 스냅샷</text>
+
+  </g>
+  </svg></div>
+      <div class="stats">
+        <div class="stat"><span>관계도 포함 테이블</span><strong>41</strong></div>
+        <div class="stat"><span>주요 관계</span><strong>28</strong></div>
+        <div class="stat"><span>중심 엔티티</span><strong>target</strong></div>
+        <div class="stat"><span>검증 DB row</span><strong>2,438,210</strong></div>
+      </div>
+      <div class="legend"><span>실선: 물리 FK</span><span>점선: 논리 FK/애플리케이션 참조</span><span>1:N, 1:0..1, N:M: 관계 수</span></div>
+    </section>
+    <section class="sheet">
+    <h2>부동산 대상 정본 상세 ERD</h2>
+    <p>지역과 단지는 별도 독립 ID가 아니라 real_estate_targets.id를 확장합니다. 이 구조 덕분에 지도, 실거래, 리포트가 같은 target_id를 공유합니다.</p>
+    <div class="diagram-wrap"><svg class="diagram" viewBox="0 0 1500 760" role="img" aria-label="부동산 대상 정본 상세 ERD">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#526274"></path>
+      </marker>
+      <marker id="arrowPhysical" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#0f766e"></path>
+      </marker>
+    </defs>
+    <rect x="30" y="55" width="1440" height="650" rx="18" fill="#fff1db" stroke="#d3dce8"/><text x="48" y="89" class="group-label">target graph</text>
+    <line x1="615" y1="331" x2="475" y2="173" class="edge logical" marker-end="url(#arrow)"/><text x="545" y="244" text-anchor="middle" class="edge-label">1:0..1</text>
+<line x1="865" y1="331" x2="1015" y2="173" class="edge logical" marker-end="url(#arrow)"/><text x="940" y="244" text-anchor="middle" class="edge-label">1:0..1</text>
+<path d="M 245 173 C 215 93, 215 253, 245 185" class="edge logical" marker-end="url(#arrow)"/><text x="197" y="169" class="edge-label">parent 1:N</text>
+<line x1="475" y1="173" x2="1015" y2="173" class="edge logical" marker-end="url(#arrow)"/><text x="745" y="165" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1130" y1="216" x2="1130" y2="285" class="edge logical" marker-end="url(#arrow)"/><text x="1130" y="242.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="615" y1="331" x2="475" y2="513" class="edge logical" marker-end="url(#arrow)"/><text x="545" y="414" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="740" y1="377" x2="740" y2="505" class="edge logical" marker-end="url(#arrow)"/><text x="740" y="433" text-anchor="middle" class="edge-label">N:M</text>
+    <g>
+    <rect x="615" y="285" width="250" height="92" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="629" y="310" class="node-title" style="font-size:19px">real_estate_targets</text>
+    <text x="629" y="328" class="node-subtitle">부동산 대상 정본</text>
+    <text x="629" y="346" class="node-field">PK id</text>
+<text x="629" y="363" class="node-field">target_type</text>
+<text x="629" y="380" class="node-field">display_name</text>
+<text x="629" y="397" class="node-field">slug</text>
+  </g>
+<g>
+    <rect x="245" y="130" width="230" height="86" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="259" y="155" class="node-title" style="font-size:19px">real_estate_regions</text>
+    <text x="259" y="173" class="node-subtitle">지역 프로필</text>
+    <text x="259" y="191" class="node-field">PK/L-FK target_id</text>
+<text x="259" y="208" class="node-field">parent_region_id</text>
+<text x="259" y="225" class="node-field">legal_dong_code</text>
+  </g>
+<g>
+    <rect x="1015" y="130" width="230" height="86" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="1029" y="155" class="node-title" style="font-size:19px">real_estate_complexes</text>
+    <text x="1029" y="173" class="node-subtitle">단지 프로필</text>
+    <text x="1029" y="191" class="node-field">PK/L-FK target_id</text>
+<text x="1029" y="208" class="node-field">region_target_id</text>
+<text x="1029" y="225" class="node-field">coordinate_status</text>
+  </g>
+<g>
+    <rect x="1015" y="285" width="230" height="86" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="1029" y="310" class="node-title" style="font-size:16px">real_estate_complex</text>
+<text x="1029" y="327" class="node-title" style="font-size:16px">provider_keys</text>
+    <text x="1029" y="345" class="node-subtitle">단지 외부키</text>
+    <text x="1029" y="363" class="node-field">PK id</text>
+<text x="1029" y="380" class="node-field">complex_target_id</text>
+<text x="1029" y="397" class="node-field">provider_object_id</text>
+  </g>
+<g>
+    <rect x="245" y="470" width="230" height="86" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="259" y="495" class="node-title" style="font-size:19px">real_estate_aliases</text>
+    <text x="259" y="513" class="node-subtitle">별칭 사전</text>
+    <text x="259" y="531" class="node-field">PK id</text>
+<text x="259" y="548" class="node-field">target_id</text>
+<text x="259" y="565" class="node-field">normalized_alias</text>
+  </g>
+<g>
+    <rect x="615" y="505" width="250" height="86" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="629" y="530" class="node-title" style="font-size:16px">real_estate_target</text>
+<text x="629" y="547" class="node-title" style="font-size:16px">edges</text>
+    <text x="629" y="565" class="node-subtitle">대상 관계</text>
+    <text x="629" y="583" class="node-field">PK id</text>
+<text x="629" y="600" class="node-field">from_target_id</text>
+<text x="629" y="617" class="node-field">to_target_id</text>
+<text x="629" y="634" class="node-field">edge_type</text>
+  </g>
+<g>
+    <rect x="1015" y="505" width="230" height="86" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="1029" y="530" class="node-title" style="font-size:19px">real_estate_geocode</text>
+    <text x="1029" y="548" class="node-subtitle">지오코딩 캐시</text>
+    <text x="1029" y="566" class="node-field">PK id</text>
+<text x="1029" y="583" class="node-field">query_key</text>
+<text x="1029" y="600" class="node-field">lat/lng</text>
+  </g>
+  </svg></div>
+  </section>
+<section class="sheet">
+    <h2>공공데이터 수집에서 시장 사실까지</h2>
+    <p>공식 데이터는 raw를 바로 화면에 쓰지 않고 수집 실행, 원천 row, staging 검증을 거쳐 market_facts로 승격됩니다.</p>
+    <div class="diagram-wrap"><svg class="diagram" viewBox="0 0 1500 760" role="img" aria-label="공공데이터 수집에서 시장 사실까지">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#526274"></path>
+      </marker>
+      <marker id="arrowPhysical" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#0f766e"></path>
+      </marker>
+    </defs>
+    <rect x="30" y="60" width="1040" height="300" rx="18" fill="#e9f3ff" stroke="#d3dce8"/><text x="48" y="94" class="group-label">수집 pipeline</text>
+<rect x="1090" y="60" width="380" height="590" rx="18" fill="#e9f8ef" stroke="#d3dce8"/><text x="1108" y="94" class="group-label">화면 조회용 시장/지도</text>
+<rect x="30" y="405" width="520" height="245" rx="18" fill="#fff6e6" stroke="#d3dce8"/><text x="48" y="439" class="group-label">공식 일정</text>
+    <line x1="285" y1="179" x2="325" y2="179" class="edge logical" marker-end="url(#arrow)"/><text x="305" y="171" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="535" y1="179" x2="575" y2="179" class="edge logical" marker-end="url(#arrow)"/><text x="555" y="171" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="785" y1="179" x2="825" y2="179" class="edge logical" marker-end="url(#arrow)"/><text x="805" y="171" text-anchor="middle" class="edge-label">1:0..1</text>
+<line x1="1035" y1="179" x2="1160" y2="198" class="edge logical" marker-end="url(#arrow)"/><text x="1097.5" y="180.5" text-anchor="middle" class="edge-label">promote</text>
+<line x1="655" y1="296" x2="760" y2="471" class="edge logical" marker-end="url(#arrow)"/><text x="707.5" y="375.5" text-anchor="middle" class="edge-label">N:1</text>
+<line x1="970" y1="471" x2="1160" y2="198" class="edge logical" marker-end="url(#arrow)"/><text x="1065" y="326.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1240" y1="402" x2="1240" y2="450" class="edge logical" marker-end="url(#arrow)"/><text x="1240" y="418" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="970" y1="471" x2="1135" y2="486" class="edge logical" marker-end="url(#arrow)"/><text x="1052.5" y="470.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="970" y1="471" x2="1135" y2="606" class="edge logical" marker-end="url(#arrow)"/><text x="1052.5" y="530.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1275" y1="241" x2="1240" y2="570" class="edge logical" marker-end="url(#arrow)"/><text x="1257.5" y="397.5" text-anchor="middle" class="edge-label">계산 입력</text>
+<line x1="285" y1="511" x2="325" y2="511" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="305" y="503" text-anchor="middle" class="edge-label">1:N</text>
+    <g>
+    <rect x="75" y="140" width="210" height="78" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="89" y="165" class="node-title" style="font-size:16px">real_estate_public</text>
+<text x="89" y="182" class="node-title" style="font-size:16px">data_datasets</text>
+    <text x="89" y="200" class="node-subtitle">공공 데이터셋</text>
+    <text x="89" y="218" class="node-field">PK dataset_id</text>
+<text x="89" y="235" class="node-field">provider</text>
+<text x="89" y="252" class="node-field">source_url</text>
+  </g>
+<g>
+    <rect x="325" y="140" width="210" height="78" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="339" y="165" class="node-title" style="font-size:16px">real_estate_public</text>
+<text x="339" y="182" class="node-title" style="font-size:16px">data_import_runs</text>
+    <text x="339" y="200" class="node-subtitle">수집 실행</text>
+    <text x="339" y="218" class="node-field">PK id</text>
+<text x="339" y="235" class="node-field">run_key</text>
+<text x="339" y="252" class="node-field">status</text>
+  </g>
+<g>
+    <rect x="575" y="140" width="210" height="78" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="589" y="165" class="node-title" style="font-size:16px">real_estate_public</text>
+<text x="589" y="182" class="node-title" style="font-size:16px">data_raw_items</text>
+    <text x="589" y="200" class="node-subtitle">원천 raw</text>
+    <text x="589" y="218" class="node-field">PK id</text>
+<text x="589" y="235" class="node-field">import_run_id</text>
+<text x="589" y="252" class="node-field">raw_payload_json</text>
+  </g>
+<g>
+    <rect x="825" y="140" width="210" height="78" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="839" y="165" class="node-title" style="font-size:16px">real_estate_market</text>
+<text x="839" y="182" class="node-title" style="font-size:16px">fact_staging</text>
+    <text x="839" y="200" class="node-subtitle">시장 사실 staging</text>
+    <text x="839" y="218" class="node-field">PK id</text>
+<text x="839" y="235" class="node-field">raw_item_id</text>
+<text x="839" y="252" class="node-field">validation_status</text>
+  </g>
+<g>
+    <rect x="425" y="260" width="230" height="72" rx="10" fill="#f3f8ff" stroke="#9cc6f6" stroke-width="2.4"/>
+    <text x="439" y="285" class="node-title" style="font-size:16px">real_estate_market</text>
+<text x="439" y="302" class="node-title" style="font-size:16px">data_targets</text>
+    <text x="439" y="320" class="node-subtitle">수집 대상 지역</text>
+
+  </g>
+<g>
+    <rect x="760" y="430" width="210" height="82" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="774" y="455" class="node-title" style="font-size:19px">real_estate_targets</text>
+    <text x="774" y="473" class="node-subtitle">부동산 대상 정본</text>
+    <text x="774" y="491" class="node-field">PK id</text>
+<text x="774" y="508" class="node-field">target_type</text>
+  </g>
+<g>
+    <rect x="1160" y="155" width="230" height="86" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="1174" y="180" class="node-title" style="font-size:16px">real_estate_market</text>
+<text x="1174" y="197" class="node-title" style="font-size:16px">facts</text>
+    <text x="1174" y="215" class="node-subtitle">시장 사실</text>
+    <text x="1174" y="233" class="node-field">PK id</text>
+<text x="1174" y="250" class="node-field">target_id</text>
+<text x="1174" y="267" class="node-field">fact_type</text>
+<text x="1174" y="284" class="node-field">as_of/stale</text>
+  </g>
+<g>
+    <rect x="1135" y="330" width="210" height="72" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="1149" y="355" class="node-title" style="font-size:19px">map_boundary_assets</text>
+    <text x="1149" y="373" class="node-subtitle">지도 경계 자산</text>
+
+  </g>
+<g>
+    <rect x="1135" y="450" width="210" height="72" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="1149" y="475" class="node-title" style="font-size:19px">map_features</text>
+    <text x="1149" y="493" class="node-subtitle">지도 영역</text>
+
+  </g>
+<g>
+    <rect x="1135" y="570" width="210" height="72" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="1149" y="595" class="node-title" style="font-size:19px">map_layer_snapshots</text>
+    <text x="1149" y="613" class="node-subtitle">지도 레이어 값</text>
+
+  </g>
+<g>
+    <rect x="95" y="475" width="190" height="72" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="109" y="500" class="node-title" style="font-size:19px">market_data_sources</text>
+    <text x="109" y="518" class="node-subtitle">공식 출처</text>
+
+  </g>
+<g>
+    <rect x="325" y="475" width="190" height="72" rx="10" fill="#f5fff8" stroke="#94d3ad" stroke-width="2.4"/>
+    <text x="339" y="500" class="node-title" style="font-size:19px">market_data_schedules</text>
+    <text x="339" y="518" class="node-subtitle">데이터 일정</text>
+
+  </g>
+  </svg></div>
+  </section>
+<section class="sheet">
+    <h2>리포트, 타임라인, 근거 ERD</h2>
+    <p>지역 리포트는 본문만 저장하지 않고 출처와 근거 항목을 분리합니다. 사용자가 보는 설명과 검증 근거를 함께 남기는 구조입니다.</p>
+    <div class="diagram-wrap"><svg class="diagram" viewBox="0 0 1500 760" role="img" aria-label="리포트, 타임라인, 근거 ERD">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#526274"></path>
+      </marker>
+      <marker id="arrowPhysical" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#0f766e"></path>
+      </marker>
+    </defs>
+    <rect x="45" y="80" width="590" height="500" rx="18" fill="#f1ebff" stroke="#d3dce8"/><text x="63" y="114" class="group-label">지역 분석</text>
+<rect x="690" y="80" width="360" height="500" rx="18" fill="#f1ebff" stroke="#d3dce8"/><text x="708" y="114" class="group-label">AI 근거 로그</text>
+<rect x="1090" y="80" width="360" height="500" rx="18" fill="#edf2f7" stroke="#d3dce8"/><text x="1108" y="114" class="group-label">데일리 브리핑</text>
+    <line x1="285" y1="336" x2="365" y2="223" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="325" y="271.5" text-anchor="middle" class="edge-label">1:0..1</text>
+<line x1="475" y1="266" x2="475" y2="380" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="475" y="315" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="285" y1="336" x2="365" y2="556" class="edge logical" marker-end="url(#arrow)"/><text x="325" y="438" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="285" y1="336" x2="760" y2="253" class="edge logical" marker-end="url(#arrow)"/><text x="522.5" y="286.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="870" y1="296" x2="870" y2="410" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="870" y="345" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1265" y1="248" x2="1265" y2="325" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="1265" y="278.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1265" y1="248" x2="1265" y2="480" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="1265" y="356" text-anchor="middle" class="edge-label">1:N</text>
+    <g>
+    <rect x="95" y="295" width="190" height="82" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="109" y="320" class="node-title" style="font-size:19px">real_estate_targets</text>
+    <text x="109" y="338" class="node-subtitle">부동산 대상 정본</text>
+    <text x="109" y="356" class="node-field">PK id</text>
+<text x="109" y="373" class="node-field">target_type</text>
+  </g>
+<g>
+    <rect x="365" y="180" width="220" height="86" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="379" y="205" class="node-title" style="font-size:16px">real_estate_regional</text>
+<text x="379" y="222" class="node-title" style="font-size:16px">reports</text>
+    <text x="379" y="240" class="node-subtitle">지역 분석 리포트</text>
+    <text x="379" y="258" class="node-field">PK/FK target_id</text>
+<text x="379" y="275" class="node-field">report_id</text>
+<text x="379" y="292" class="node-field">body</text>
+  </g>
+<g>
+    <rect x="365" y="380" width="220" height="86" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="379" y="405" class="node-title" style="font-size:16px">real_estate_regional</text>
+<text x="379" y="422" class="node-title" style="font-size:16px">report_sources</text>
+    <text x="379" y="440" class="node-subtitle">리포트 근거 출처</text>
+    <text x="379" y="458" class="node-field">PK id</text>
+<text x="379" y="475" class="node-field">FK report_target_id</text>
+<text x="379" y="492" class="node-field">url</text>
+  </g>
+<g>
+    <rect x="365" y="520" width="220" height="72" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="379" y="545" class="node-title" style="font-size:19px">timeline_events</text>
+    <text x="379" y="563" class="node-subtitle">상세 타임라인</text>
+
+  </g>
+<g>
+    <rect x="760" y="210" width="220" height="86" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="774" y="235" class="node-title" style="font-size:19px">evidence_logs</text>
+    <text x="774" y="253" class="node-subtitle">AI 근거 로그</text>
+    <text x="774" y="271" class="node-field">PK id</text>
+<text x="774" y="288" class="node-field">target_id</text>
+<text x="774" y="305" class="node-field">summary</text>
+  </g>
+<g>
+    <rect x="760" y="410" width="220" height="86" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="774" y="435" class="node-title" style="font-size:19px">evidence_log_items</text>
+    <text x="774" y="453" class="node-subtitle">근거 항목</text>
+    <text x="774" y="471" class="node-field">PK id</text>
+<text x="774" y="488" class="node-field">FK evidence_log_id</text>
+<text x="774" y="505" class="node-field">ref_id</text>
+  </g>
+<g>
+    <rect x="1160" y="170" width="210" height="78" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="1174" y="195" class="node-title" style="font-size:19px">daily_briefings</text>
+    <text x="1174" y="213" class="node-subtitle">데일리 브리핑</text>
+    <text x="1174" y="231" class="node-field">PK id</text>
+<text x="1174" y="248" class="node-field">briefing_date</text>
+  </g>
+<g>
+    <rect x="1160" y="325" width="210" height="78" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="1174" y="350" class="node-title" style="font-size:16px">daily_briefing</text>
+<text x="1174" y="367" class="node-title" style="font-size:16px">sections</text>
+    <text x="1174" y="385" class="node-subtitle">브리핑 섹션</text>
+    <text x="1174" y="403" class="node-field">PK id</text>
+<text x="1174" y="420" class="node-field">FK briefing_id</text>
+  </g>
+<g>
+    <rect x="1160" y="480" width="210" height="78" rx="10" fill="#faf8ff" stroke="#b6a4ee" stroke-width="2.4"/>
+    <text x="1174" y="505" class="node-title" style="font-size:16px">daily_briefing_source</text>
+<text x="1174" y="522" class="node-title" style="font-size:16px">items</text>
+    <text x="1174" y="540" class="node-subtitle">브리핑 출처</text>
+    <text x="1174" y="558" class="node-field">PK id</text>
+<text x="1174" y="575" class="node-field">FK briefing_id</text>
+  </g>
+  </svg></div>
+  </section>
+<section class="sheet">
+    <h2>사용자 기능과 커뮤니티 보조 ERD</h2>
+    <p>사용자 저장/채팅은 app_users를 기준으로 하고, 공개 글과 콘텐츠는 부동산 판단의 정본이 아니라 target에 붙는 보조 관찰 근거입니다.</p>
+    <div class="diagram-wrap"><svg class="diagram" viewBox="0 0 1500 760" role="img" aria-label="사용자 기능과 커뮤니티 보조 ERD">
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#526274"></path>
+      </marker>
+      <marker id="arrowPhysical" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+        <path d="M0,0 L0,6 L8,3 z" fill="#0f766e"></path>
+      </marker>
+    </defs>
+    <rect x="40" y="70" width="430" height="560" rx="18" fill="#ffe8ee" stroke="#d3dce8"/><text x="58" y="104" class="group-label">사용자 기능</text>
+<rect x="530" y="70" width="900" height="560" rx="18" fill="#edf2f7" stroke="#d3dce8"/><text x="548" y="104" class="group-label">콘텐츠/반응 보조</text>
+    <line x1="280" y1="189" x2="310" y2="140" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="295" y="156.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="280" y1="189" x2="310" y2="270" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="295" y="221.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="280" y1="189" x2="310" y2="400" class="edge physical" marker-end="url(#arrowPhysical)"/><text x="295" y="286.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="495" y1="270" x2="630" y2="311" class="edge logical" marker-end="url(#arrow)"/><text x="562.5" y="282.5" text-anchor="middle" class="edge-label">N:1</text>
+<line x1="755" y1="139" x2="790" y2="139" class="edge logical" marker-end="url(#arrow)"/><text x="772.5" y="131" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="970" y1="139" x2="1005" y2="139" class="edge logical" marker-end="url(#arrow)"/><text x="987.5" y="131" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1195" y1="139" x2="1225" y2="129" class="edge logical" marker-end="url(#arrow)"/><text x="1210" y="126" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1195" y1="139" x2="1225" y2="239" class="edge logical" marker-end="url(#arrow)"/><text x="1210" y="181" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1025" y1="464" x2="1060" y2="464" class="edge logical" marker-end="url(#arrow)"/><text x="1042.5" y="456" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1060" y1="464" x2="830" y2="311" class="edge logical" marker-end="url(#arrow)"/><text x="945" y="379.5" text-anchor="middle" class="edge-label">N:1</text>
+<line x1="730" y1="352" x2="947.5" y2="555" class="edge logical" marker-end="url(#arrow)"/><text x="838.75" y="445.5" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1050" y1="589" x2="1085" y2="589" class="edge logical" marker-end="url(#arrow)"/><text x="1067.5" y="581" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1025" y1="304" x2="1060" y2="304" class="edge logical" marker-end="url(#arrow)"/><text x="1042.5" y="296" text-anchor="middle" class="edge-label">1:N</text>
+<line x1="1060" y1="304" x2="830" y2="311" class="edge logical" marker-end="url(#arrow)"/><text x="945" y="299.5" text-anchor="middle" class="edge-label">N:1</text>
+    <g>
+    <rect x="95" y="150" width="185" height="78" rx="10" fill="#fff8fa" stroke="#ef9fb0" stroke-width="2.4"/>
+    <text x="109" y="175" class="node-title" style="font-size:19px">app_users</text>
+    <text x="109" y="193" class="node-subtitle">사용자 계정</text>
+    <text x="109" y="211" class="node-field">PK id</text>
+<text x="109" y="228" class="node-field">username/email</text>
+  </g>
+<g>
+    <rect x="310" y="105" width="185" height="70" rx="10" fill="#fff8fa" stroke="#ef9fb0" stroke-width="2.4"/>
+    <text x="324" y="130" class="node-title" style="font-size:19px">user_oauth_accounts</text>
+    <text x="324" y="148" class="node-subtitle">소셜 로그인</text>
+
+  </g>
+<g>
+    <rect x="310" y="235" width="185" height="70" rx="10" fill="#fff8fa" stroke="#ef9fb0" stroke-width="2.4"/>
+    <text x="324" y="260" class="node-title" style="font-size:19px">user_watch_targets</text>
+    <text x="324" y="278" class="node-subtitle">관심 대상</text>
+
+  </g>
+<g>
+    <rect x="310" y="365" width="185" height="70" rx="10" fill="#fff8fa" stroke="#ef9fb0" stroke-width="2.4"/>
+    <text x="324" y="390" class="node-title" style="font-size:19px">chat_messages</text>
+    <text x="324" y="408" class="node-subtitle">채팅 메시지</text>
+
+  </g>
+<g>
+    <rect x="630" y="270" width="200" height="82" rx="10" fill="#fffaf1" stroke="#efa83f" stroke-width="2.4"/>
+    <text x="644" y="295" class="node-title" style="font-size:19px">real_estate_targets</text>
+    <text x="644" y="313" class="node-subtitle">부동산 대상 정본</text>
+    <text x="644" y="331" class="node-field">PK id</text>
+<text x="644" y="348" class="node-field">target_type</text>
+  </g>
+<g>
+    <rect x="575" y="105" width="180" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="589" y="130" class="node-title" style="font-size:19px">crawl_targets</text>
+    <text x="589" y="148" class="node-subtitle">크롤링 대상</text>
+
+  </g>
+<g>
+    <rect x="790" y="105" width="180" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="804" y="130" class="node-title" style="font-size:19px">crawl_runs</text>
+    <text x="804" y="148" class="node-subtitle">크롤링 실행</text>
+
+  </g>
+<g>
+    <rect x="1005" y="105" width="190" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1019" y="130" class="node-title" style="font-size:19px">community_posts</text>
+    <text x="1019" y="148" class="node-subtitle">커뮤니티 게시글</text>
+
+  </g>
+<g>
+    <rect x="1225" y="95" width="190" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1239" y="120" class="node-title" style="font-size:16px">community_post</text>
+<text x="1239" y="137" class="node-title" style="font-size:16px">diffusion_events</text>
+    <text x="1239" y="155" class="node-subtitle">확산 이벤트</text>
+
+  </g>
+<g>
+    <rect x="1225" y="205" width="190" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1239" y="230" class="node-title" style="font-size:16px">community_comment</text>
+<text x="1239" y="247" class="node-title" style="font-size:16px">collection_targets</text>
+    <text x="1239" y="265" class="node-subtitle">댓글 수집 후보</text>
+
+  </g>
+<g>
+    <rect x="845" y="430" width="180" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="859" y="455" class="node-title" style="font-size:19px">content_items</text>
+    <text x="859" y="473" class="node-subtitle">외부 콘텐츠</text>
+
+  </g>
+<g>
+    <rect x="1060" y="430" width="190" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1074" y="455" class="node-title" style="font-size:19px">content_target_links</text>
+    <text x="1074" y="473" class="node-subtitle">콘텐츠-대상 연결</text>
+
+  </g>
+<g>
+    <rect x="845" y="555" width="205" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="859" y="580" class="node-title" style="font-size:16px">real_estate_reaction</text>
+<text x="859" y="597" class="node-title" style="font-size:16px">snapshots</text>
+    <text x="859" y="615" class="node-subtitle">반응 스냅샷</text>
+
+  </g>
+<g>
+    <rect x="1085" y="555" width="210" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1099" y="580" class="node-title" style="font-size:16px">real_estate_reaction</text>
+<text x="1099" y="597" class="node-title" style="font-size:16px">snapshot_issues</text>
+    <text x="1099" y="615" class="node-subtitle">반응 쟁점</text>
+
+  </g>
+<g>
+    <rect x="845" y="270" width="180" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="859" y="295" class="node-title" style="font-size:19px">policy_events</text>
+    <text x="859" y="313" class="node-subtitle">정책/공급 이벤트</text>
+
+  </g>
+<g>
+    <rect x="1060" y="270" width="190" height="68" rx="10" fill="#f8fafc" stroke="#bac4d1" stroke-width="2.4"/>
+    <text x="1074" y="295" class="node-title" style="font-size:19px">policy_event_targets</text>
+    <text x="1074" y="313" class="node-subtitle">정책 영향 대상</text>
+
+  </g>
+  </svg></div>
+  </section>
+    <section class="sheet compact">
+      <h2>주요 관계 목록</h2>
+      <p>다이어그램의 선을 표로 다시 정리한 것입니다. 물리 FK가 없는 곳도 서비스 contract상 같은 식별자로 연결되는 경우에는 논리 관계로 표시했습니다.</p>
+      <table class="relation-table"><thead><tr><th>부모/기준</th><th>관계</th><th>자식/참조</th><th>연결 키</th><th>의미</th></tr></thead><tbody><tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:0..1</td>
+    <td><code>real_estate_regions</code></td>
+    <td><code>target_id</code></td>
+    <td>지역 상세 profile</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:0..1</td>
+    <td><code>real_estate_complexes</code></td>
+    <td><code>target_id</code></td>
+    <td>단지 상세 profile</td>
+  </tr>
+<tr>
+    <td><code>real_estate_regions</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_complexes</code></td>
+    <td><code>region_target_id</code></td>
+    <td>단지가 대표 지역에 속함</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_aliases</code></td>
+    <td><code>target_id</code></td>
+    <td>검색/매칭 별칭</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">N:M</td>
+    <td><code>real_estate_target_edges</code></td>
+    <td><code>from_target_id/to_target_id</code></td>
+    <td>포함, 생활권, 영향권 graph</td>
+  </tr>
+<tr>
+    <td><code>real_estate_complexes</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_complex_provider_keys</code></td>
+    <td><code>complex_target_id</code></td>
+    <td>provider별 단지 외부키</td>
+  </tr>
+<tr>
+    <td><code>real_estate_public_data_import_runs</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_public_data_raw_items</code></td>
+    <td><code>import_run_id</code></td>
+    <td>수집 실행별 raw landing</td>
+  </tr>
+<tr>
+    <td><code>real_estate_public_data_raw_items</code></td>
+    <td class="cardinality">1:0..1</td>
+    <td><code>real_estate_market_fact_staging</code></td>
+    <td><code>raw_item_id</code></td>
+    <td>검증/정제 중간 단계</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_market_facts</code></td>
+    <td><code>target_id</code></td>
+    <td>실거래, 전세, 가격지수 등 시장 사실</td>
+  </tr>
+<tr>
+    <td><code>market_data_sources</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>market_data_schedules</code></td>
+    <td><code>source_id</code></td>
+    <td>공식 출처별 공개 일정</td>
+  </tr>
+<tr>
+    <td><code>map_boundary_assets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>map_features</code></td>
+    <td><code>boundary_asset_id</code></td>
+    <td>지도 경계 파일의 feature</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>map_features</code></td>
+    <td><code>target_id</code></td>
+    <td>지도 geometry와 내부 target 매핑</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>map_layer_snapshots</code></td>
+    <td><code>target_id</code></td>
+    <td>기간별 지도 heat 값</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:0..1</td>
+    <td><code>real_estate_regional_reports</code></td>
+    <td><code>target_id</code></td>
+    <td>지역별 최신 리포트</td>
+  </tr>
+<tr>
+    <td><code>real_estate_regional_reports</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_regional_report_sources</code></td>
+    <td><code>report_target_id</code></td>
+    <td>리포트 근거 출처</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>timeline_events</code></td>
+    <td><code>target_id</code></td>
+    <td>상세 화면 시간축 캐시</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>evidence_logs</code></td>
+    <td><code>target_id</code></td>
+    <td>AI 평가 로그</td>
+  </tr>
+<tr>
+    <td><code>evidence_logs</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>evidence_log_items</code></td>
+    <td><code>evidence_log_id</code></td>
+    <td>AI 평가가 인용한 근거 항목</td>
+  </tr>
+<tr>
+    <td><code>daily_briefings</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>daily_briefing_sections</code></td>
+    <td><code>briefing_id</code></td>
+    <td>브리핑 본문 섹션</td>
+  </tr>
+<tr>
+    <td><code>daily_briefings</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>daily_briefing_source_items</code></td>
+    <td><code>briefing_id</code></td>
+    <td>브리핑 출처</td>
+  </tr>
+<tr>
+    <td><code>app_users</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>user_oauth_accounts</code></td>
+    <td><code>user_id</code></td>
+    <td>소셜 로그인 계정 연결</td>
+  </tr>
+<tr>
+    <td><code>app_users</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>user_watch_targets</code></td>
+    <td><code>user_id</code></td>
+    <td>사용자별 관심 대상</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>user_watch_targets</code></td>
+    <td><code>target_id</code></td>
+    <td>관심 지역/단지 대상</td>
+  </tr>
+<tr>
+    <td><code>app_users</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>chat_messages</code></td>
+    <td><code>user_id</code></td>
+    <td>로그인 채팅 작성자, 게스트는 nullable</td>
+  </tr>
+<tr>
+    <td><code>content_items</code></td>
+    <td class="cardinality">N:M</td>
+    <td><code>content_target_links</code></td>
+    <td><code>content_item_id/target_id</code></td>
+    <td>뉴스/리포트와 target 연결</td>
+  </tr>
+<tr>
+    <td><code>real_estate_targets</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_reaction_snapshots</code></td>
+    <td><code>target_id</code></td>
+    <td>기간별 반응 집계</td>
+  </tr>
+<tr>
+    <td><code>real_estate_reaction_snapshots</code></td>
+    <td class="cardinality">1:N</td>
+    <td><code>real_estate_reaction_snapshot_issues</code></td>
+    <td><code>snapshot_id</code></td>
+    <td>쟁점 비율</td>
+  </tr>
+<tr>
+    <td><code>policy_events</code></td>
+    <td class="cardinality">N:M</td>
+    <td><code>policy_event_targets</code></td>
+    <td><code>policy_event_id/target_id</code></td>
+    <td>정책 영향 대상</td>
+  </tr></tbody></table>
+    </section>
+    <section class="sheet compact">
+      <h2>엔티티 요약</h2>
+      <p>부록은 컬럼 전체 나열이 아니라 ERD를 읽는 데 필요한 PK/FK와 역할 중심으로 줄였습니다.</p>
+      <div class="group-section"><h3 style="background:#ffe8ee">사용자, 인증, 채팅</h3><table class="summary-table"><thead><tr><th>엔티티</th><th>PK</th><th>주요 연결 키</th><th>현재 row</th></tr></thead><tbody><tr>
+      <td><code>app_users</code><br><span>사용자 계정</span></td>
+      <td>PK id</td>
+      <td>username, email, display_name</td>
+      <td class="row-count">11</td>
+    </tr>
+<tr>
+      <td><code>user_oauth_accounts</code><br><span>소셜 로그인</span></td>
+      <td>PK id</td>
+      <td>FK user_id</td>
+      <td class="row-count">3</td>
+    </tr>
+<tr>
+      <td><code>user_watch_targets</code><br><span>관심 대상</span></td>
+      <td>PK id</td>
+      <td>FK user_id, L-FK target_id</td>
+      <td class="row-count">3</td>
+    </tr>
+<tr>
+      <td><code>chat_messages</code><br><span>채팅 메시지</span></td>
+      <td>PK id</td>
+      <td>FK user_id nullable</td>
+      <td class="row-count">15</td>
+    </tr></tbody></table></div>
+<div class="group-section"><h3 style="background:#fff1db">부동산 대상 정본</h3><table class="summary-table"><thead><tr><th>엔티티</th><th>PK</th><th>주요 연결 키</th><th>현재 row</th></tr></thead><tbody><tr>
+      <td><code>real_estate_targets</code><br><span>부동산 대상 정본</span></td>
+      <td>PK id</td>
+      <td>target_type, slug</td>
+      <td class="row-count">61,938</td>
+    </tr>
+<tr>
+      <td><code>real_estate_regions</code><br><span>지역 프로필</span></td>
+      <td>PK/L-FK target_id</td>
+      <td>parent_region_id</td>
+      <td class="row-count">19,546</td>
+    </tr>
+<tr>
+      <td><code>real_estate_complexes</code><br><span>단지 프로필</span></td>
+      <td>PK/L-FK target_id</td>
+      <td>region_target_id</td>
+      <td class="row-count">39,357</td>
+    </tr>
+<tr>
+      <td><code>real_estate_complex_provider_keys</code><br><span>단지 외부키</span></td>
+      <td>PK id</td>
+      <td>complex_target_id</td>
+      <td class="row-count">39,186</td>
+    </tr>
+<tr>
+      <td><code>real_estate_aliases</code><br><span>별칭 사전</span></td>
+      <td>PK id</td>
+      <td>target_id</td>
+      <td class="row-count">79,014</td>
+    </tr>
+<tr>
+      <td><code>real_estate_target_edges</code><br><span>대상 관계</span></td>
+      <td>PK id</td>
+      <td>from_target_id, to_target_id</td>
+      <td class="row-count">121,458</td>
+    </tr>
+<tr>
+      <td><code>real_estate_geocode</code><br><span>지오코딩 캐시</span></td>
+      <td>PK id</td>
+      <td>query_key</td>
+      <td class="row-count">10,658</td>
+    </tr></tbody></table></div>
+<div class="group-section"><h3 style="background:#e9f3ff">공공데이터 수집과 시장 사실</h3><table class="summary-table"><thead><tr><th>엔티티</th><th>PK</th><th>주요 연결 키</th><th>현재 row</th></tr></thead><tbody><tr>
+      <td><code>real_estate_public_data_datasets</code><br><span>공공 데이터셋</span></td>
+      <td>PK dataset_id</td>
+      <td>provider</td>
+      <td class="row-count">16</td>
+    </tr>
+<tr>
+      <td><code>real_estate_public_data_import_runs</code><br><span>수집 실행</span></td>
+      <td>PK id</td>
+      <td>run_key</td>
+      <td class="row-count">5,955</td>
+    </tr>
+<tr>
+      <td><code>real_estate_public_data_raw_items</code><br><span>원천 raw</span></td>
+      <td>PK id</td>
+      <td>import_run_id</td>
+      <td class="row-count">486,218</td>
+    </tr>
+<tr>
+      <td><code>real_estate_market_fact_staging</code><br><span>시장 사실 staging</span></td>
+      <td>PK id</td>
+      <td>raw_item_id</td>
+      <td class="row-count">457,064</td>
+    </tr>
+<tr>
+      <td><code>real_estate_market_data_targets</code><br><span>수집 대상 지역</span></td>
+      <td>PK id</td>
+      <td>target_id</td>
+      <td class="row-count">2,475</td>
+    </tr>
+<tr>
+      <td><code>real_estate_market_facts</code><br><span>시장 사실</span></td>
+      <td>PK id</td>
+      <td>target_id</td>
+      <td class="row-count">547,438</td>
+    </tr>
+<tr>
+      <td><code>market_data_sources</code><br><span>공식 출처</span></td>
+      <td>PK id</td>
+      <td>provider</td>
+      <td class="row-count">14</td>
+    </tr>
+<tr>
+      <td><code>market_data_schedules</code><br><span>데이터 일정</span></td>
+      <td>PK id</td>
+      <td>FK source_id</td>
+      <td class="row-count">61</td>
+    </tr>
+<tr>
+      <td><code>map_boundary_assets</code><br><span>지도 경계 자산</span></td>
+      <td>PK id</td>
+      <td>asset_type</td>
+      <td class="row-count">2</td>
+    </tr>
+<tr>
+      <td><code>map_features</code><br><span>지도 영역</span></td>
+      <td>PK id</td>
+      <td>boundary_asset_id, target_id</td>
+      <td class="row-count">267</td>
+    </tr>
+<tr>
+      <td><code>map_layer_snapshots</code><br><span>지도 레이어 값</span></td>
+      <td>PK id</td>
+      <td>target_id</td>
+      <td class="row-count">1,051</td>
+    </tr></tbody></table></div>
+<div class="group-section"><h3 style="background:#f1ebff">리포트, 타임라인, 근거</h3><table class="summary-table"><thead><tr><th>엔티티</th><th>PK</th><th>주요 연결 키</th><th>현재 row</th></tr></thead><tbody><tr>
+      <td><code>real_estate_regional_reports</code><br><span>지역 분석 리포트</span></td>
+      <td>PK/FK target_id</td>
+      <td>report_id</td>
+      <td class="row-count">359</td>
+    </tr>
+<tr>
+      <td><code>real_estate_regional_report_sources</code><br><span>리포트 근거 출처</span></td>
+      <td>PK id</td>
+      <td>FK report_target_id</td>
+      <td class="row-count">2,848</td>
+    </tr>
+<tr>
+      <td><code>timeline_events</code><br><span>상세 타임라인</span></td>
+      <td>PK id</td>
+      <td>target_id</td>
+      <td class="row-count">546,845</td>
+    </tr>
+<tr>
+      <td><code>evidence_logs</code><br><span>AI 근거 로그</span></td>
+      <td>PK id</td>
+      <td>target_id, snapshot_id</td>
+      <td class="row-count">138</td>
+    </tr>
+<tr>
+      <td><code>evidence_log_items</code><br><span>근거 항목</span></td>
+      <td>PK id</td>
+      <td>FK evidence_log_id</td>
+      <td class="row-count">1,083</td>
+    </tr>
+<tr>
+      <td><code>daily_briefings</code><br><span>데일리 브리핑</span></td>
+      <td>PK id</td>
+      <td>briefing_date</td>
+      <td class="row-count">1</td>
+    </tr>
+<tr>
+      <td><code>daily_briefing_sections</code><br><span>브리핑 섹션</span></td>
+      <td>PK id</td>
+      <td>FK briefing_id</td>
+      <td class="row-count">4</td>
+    </tr>
+<tr>
+      <td><code>daily_briefing_source_items</code><br><span>브리핑 출처</span></td>
+      <td>PK id</td>
+      <td>FK briefing_id</td>
+      <td class="row-count">10</td>
+    </tr></tbody></table></div>
+<div class="group-section"><h3 style="background:#edf2f7">커뮤니티, 콘텐츠, 반응 보조</h3><table class="summary-table"><thead><tr><th>엔티티</th><th>PK</th><th>주요 연결 키</th><th>현재 row</th></tr></thead><tbody><tr>
+      <td><code>crawl_targets</code><br><span>크롤링 대상</span></td>
+      <td>PK id</td>
+      <td>target_id</td>
+      <td class="row-count">2</td>
+    </tr>
+<tr>
+      <td><code>crawl_runs</code><br><span>크롤링 실행</span></td>
+      <td>PK id</td>
+      <td>source, target_id</td>
+      <td class="row-count">122</td>
+    </tr>
+<tr>
+      <td><code>community_posts</code><br><span>커뮤니티 게시글</span></td>
+      <td>PK id</td>
+      <td>source, external_id</td>
+      <td class="row-count">8,024</td>
+    </tr>
+<tr>
+      <td><code>community_post_diffusion_events</code><br><span>확산 이벤트</span></td>
+      <td>PK id</td>
+      <td>post_id</td>
+      <td class="row-count">0</td>
+    </tr>
+<tr>
+      <td><code>community_comment_collection_targets</code><br><span>댓글 수집 후보</span></td>
+      <td>PK id</td>
+      <td>post_id</td>
+      <td class="row-count">490</td>
+    </tr>
+<tr>
+      <td><code>content_items</code><br><span>외부 콘텐츠</span></td>
+      <td>PK id</td>
+      <td>url_hash</td>
+      <td class="row-count">1,670</td>
+    </tr>
+<tr>
+      <td><code>content_target_links</code><br><span>콘텐츠-대상 연결</span></td>
+      <td>PK content_item_id+target_id+link_type</td>
+      <td>target_id</td>
+      <td class="row-count">1,277</td>
+    </tr>
+<tr>
+      <td><code>real_estate_reaction_snapshots</code><br><span>반응 스냅샷</span></td>
+      <td>PK id</td>
+      <td>target_id</td>
+      <td class="row-count">1,956</td>
+    </tr>
+<tr>
+      <td><code>real_estate_reaction_snapshot_issues</code><br><span>반응 쟁점</span></td>
+      <td>PK id</td>
+      <td>snapshot_id</td>
+      <td class="row-count">1,631</td>
+    </tr>
+<tr>
+      <td><code>policy_events</code><br><span>정책/공급 이벤트</span></td>
+      <td>PK id</td>
+      <td>event_type</td>
+      <td class="row-count">0</td>
+    </tr>
+<tr>
+      <td><code>policy_event_targets</code><br><span>정책 영향 대상</span></td>
+      <td>PK policy_event_id+target_id+impact_type</td>
+      <td>target_id</td>
+      <td class="row-count">0</td>
+    </tr></tbody></table></div>
+      <footer>기준: Docker MySQL <code>youbuyfirst</code>, Flyway latest <code>V68__guest_chat_messages.sql</code>. Row 수는 현재 로컬 검증 DB의 InnoDB 추정치라 구조 설명 보조값입니다.</footer>
+    </section>
+  </main>
+</body>
+</html>

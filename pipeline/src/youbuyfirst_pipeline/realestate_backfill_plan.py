@@ -233,26 +233,43 @@ def _normalize_lawd_code(value: str) -> str:
     return normalized
 
 
+_DATASET_CONTRACTS: tuple[tuple[tuple[str, ...], str, str], ...] = (
+    (("trade", "apt-trade", "molit-apt-trade"), "molit_apt_trade", "apt_trade"),
+    (("rent", "apt-rent", "molit-apt-rent", "lease"), "molit_apt_rent", "apt_rent"),
+    (("offi-trade", "offi", "officetel", "officetel-trade", "molit-offi-trade"), "molit_offi_trade", "offi_trade"),
+    (("offi-rent", "officetel-rent", "molit-offi-rent"), "molit_offi_rent", "offi_rent"),
+    (("rh-trade", "rh", "rowhouse-trade", "molit-rh-trade", "yeollip-trade"), "molit_rh_trade", "rh_trade"),
+    (("rh-rent", "rowhouse-rent", "molit-rh-rent", "yeollip-rent"), "molit_rh_rent", "rh_rent"),
+    (("sh-trade", "sh", "singlehouse-trade", "molit-sh-trade", "danok-trade"), "molit_sh_trade", "sh_trade"),
+    (("sh-rent", "singlehouse-rent", "molit-sh-rent", "danok-rent"), "molit_sh_rent", "sh_rent"),
+    (("silv-trade", "silv", "presale", "presale-trade", "bunyang", "molit-silv-trade"), "molit_silv_trade", "silv_trade"),
+)
+
+_FACT_TYPE_BY_PROVIDER_DATASET = {
+    provider_dataset: fact_type
+    for _aliases, provider_dataset, fact_type in _DATASET_CONTRACTS
+}
+
+_DATASET_SORT_RANK = {
+    provider_dataset: index
+    for index, (_aliases, provider_dataset, _fact_type) in enumerate(_DATASET_CONTRACTS)
+}
+
+
 def _dataset_contract(value: str) -> tuple[str, str]:
     normalized = value.strip().lower().replace("_", "-")
-    if normalized in {"trade", "apt-trade", "molit-apt-trade"}:
-        return ("molit_apt_trade", "apt_trade")
-    if normalized in {"rent", "apt-rent", "molit-apt-rent", "lease"}:
-        return ("molit_apt_rent", "apt_rent")
+    for aliases, provider_dataset, fact_type in _DATASET_CONTRACTS:
+        if normalized in aliases:
+            return (provider_dataset, fact_type)
     raise ValueError(f"unsupported MOLIT backfill dataset: {value}")
 
 
 def _fact_type_from_provider_dataset(provider_dataset: str) -> str:
-    if provider_dataset == "molit_apt_trade":
-        return "apt_trade"
-    if provider_dataset == "molit_apt_rent":
-        return "apt_rent"
-    raise ValueError(f"unsupported MOLIT provider dataset: {provider_dataset}")
+    try:
+        return _FACT_TYPE_BY_PROVIDER_DATASET[provider_dataset]
+    except KeyError as exc:
+        raise ValueError(f"unsupported MOLIT provider dataset: {provider_dataset}") from exc
 
 
 def _dataset_sort_rank(provider_dataset: str) -> int:
-    if provider_dataset == "molit_apt_trade":
-        return 0
-    if provider_dataset == "molit_apt_rent":
-        return 1
-    return 99
+    return _DATASET_SORT_RANK.get(provider_dataset, 99)

@@ -11,14 +11,29 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class RealEstateTargetService {
+
+    private static final List<String> MOLIT_MARKET_DATASETS = List.of(
+            "molit_apt_trade",
+            "molit_apt_rent",
+            "molit_offi_trade",
+            "molit_offi_rent",
+            "molit_rh_trade",
+            "molit_rh_rent",
+            "molit_sh_trade",
+            "molit_sh_rent",
+            "molit_silv_trade"
+    );
 
     private final RealEstateRegionRepository regionRepository;
     private final RealEstateTargetRepository targetRepository;
@@ -36,18 +51,44 @@ public class RealEstateTargetService {
 
     @Transactional(readOnly = true)
     public List<RealEstateTargetResponse> search(String query, int limit) {
-        int boundedLimit = Math.max(1, Math.min(limit, 100));
+        return search(query, limit, false);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RealEstateTargetResponse> search(String query, int limit, boolean autocomplete) {
         String rawQuery = trimToNull(query);
+        if (rawQuery == null) {
+            return List.of();
+        }
         String lowerQuery = rawQuery == null ? null : rawQuery.toLowerCase(Locale.ROOT);
         String normalizedQuery = lowerQuery == null ? null : lowerQuery.replace(" ", "");
         String aliasQuery = rawQuery == null ? null : RealEstateAlias.normalizeAlias(rawQuery);
-        return targetRepository.searchTargets(
-                lowerQuery,
-                normalizedQuery,
-                aliasQuery,
+        if (autocomplete && (aliasQuery == null || aliasQuery.length() < 2)) {
+            return List.of();
+        }
+
+        int maxLimit = autocomplete ? 8 : 100;
+        int boundedLimit = Math.max(1, Math.min(limit, maxLimit));
+        List<RealEstateTargetRepository.RealEstateTargetSearchRow> indexedRows = searchTargetsIndexed(
                 rawQuery,
-                PageRequest.of(0, boundedLimit)
+                boundedLimit
         );
+        if (autocomplete) {
+            indexedRows = appendAutocompleteTokenRows(rawQuery, indexedRows, boundedLimit);
+        }
+        List<RealEstateTargetRepository.RealEstateTargetSearchRow> rows = autocomplete || indexedRows.size() >= boundedLimit
+                ? indexedRows
+                : targetRepository.searchTargetsOptimized(
+                        lowerQuery,
+                        normalizedQuery,
+                        aliasQuery,
+                        rawQuery,
+                        PageRequest.of(0, boundedLimit)
+                );
+
+        return rows.stream()
+                .map(RealEstateTargetService::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -75,6 +116,40 @@ public class RealEstateTargetService {
                 normalizeNullable(regionLevel),
                 PageRequest.of(boundedPage, boundedLimit)
         );
+    }
+
+    private List<RealEstateTargetRepository.RealEstateTargetSearchRow> searchTargetsIndexed(
+            String rawQuery,
+            int boundedLimit
+    ) {
+        String lowerQuery = rawQuery.toLowerCase(Locale.ROOT);
+        String normalizedQuery = lowerQuery.replace(" ", "");
+        String aliasQuery = RealEstateAlias.normalizeAlias(rawQuery);
+        return targetRepository.searchTargetsIndexed(
+                normalizedQuery,
+                aliasQuery,
+                rawQuery,
+                PageRequest.of(0, boundedLimit)
+        );
+    }
+
+    private List<RealEstateTargetRepository.RealEstateTargetSearchRow> appendAutocompleteTokenRows(
+            String rawQuery,
+            List<RealEstateTargetRepository.RealEstateTargetSearchRow> indexedRows,
+            int boundedLimit
+    ) {
+        if (indexedRows.size() >= boundedLimit) {
+            return indexedRows;
+        }
+        String token = lastSearchToken(rawQuery);
+        if (token == null) {
+            return indexedRows;
+        }
+        List<RealEstateTargetRepository.RealEstateTargetSearchRow> tokenRows = searchTargetsIndexed(token, boundedLimit);
+        if (tokenRows.isEmpty()) {
+            return indexedRows;
+        }
+        return mergeSearchRows(indexedRows, tokenRows, boundedLimit);
     }
 
     @Transactional
@@ -188,6 +263,47 @@ public class RealEstateTargetService {
         return value.trim();
     }
 
+    private static String lastSearchToken(String value) {
+        String trimmed = trimToNull(value);
+        if (trimmed == null || !trimmed.matches(".*\\s+.*")) {
+            return null;
+        }
+        String[] tokens = trimmed.split("\\s+");
+        String token = trimToNull(tokens[tokens.length - 1]);
+        if (token == null || token.equals(trimmed) || RealEstateAlias.normalizeAlias(token).length() < 2) {
+            return null;
+        }
+        return token;
+    }
+
+    private static List<RealEstateTargetRepository.RealEstateTargetSearchRow> mergeSearchRows(
+            List<RealEstateTargetRepository.RealEstateTargetSearchRow> primaryRows,
+            List<RealEstateTargetRepository.RealEstateTargetSearchRow> fallbackRows,
+            int limit
+    ) {
+        List<RealEstateTargetRepository.RealEstateTargetSearchRow> merged = new ArrayList<>(limit);
+        Set<String> seenTargetIds = new HashSet<>();
+        appendSearchRows(primaryRows, merged, seenTargetIds, limit);
+        appendSearchRows(fallbackRows, merged, seenTargetIds, limit);
+        return merged;
+    }
+
+    private static void appendSearchRows(
+            List<RealEstateTargetRepository.RealEstateTargetSearchRow> sourceRows,
+            List<RealEstateTargetRepository.RealEstateTargetSearchRow> targetRows,
+            Set<String> seenTargetIds,
+            int limit
+    ) {
+        for (RealEstateTargetRepository.RealEstateTargetSearchRow row : sourceRows) {
+            if (targetRows.size() >= limit) {
+                return;
+            }
+            if (seenTargetIds.add(row.getTargetId())) {
+                targetRows.add(row);
+            }
+        }
+    }
+
     private static String normalizeNullable(String value) {
         String trimmed = trimToNull(value);
         return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
@@ -195,7 +311,7 @@ public class RealEstateTargetService {
 
     private int ensureMolitMarketDataTargets(String targetId, String lawdCode, Instant now) {
         int ensured = 0;
-        for (String dataset : List.of("molit_apt_trade", "molit_apt_rent")) {
+        for (String dataset : MOLIT_MARKET_DATASETS) {
             RealEstateMarketDataTarget target = marketDataTargetRepository
                     .findByTargetIdAndProviderAndProviderDatasetAndLawdCode(targetId, "molit", dataset, lawdCode)
                     .orElseGet(() -> new RealEstateMarketDataTarget(
@@ -239,5 +355,20 @@ public class RealEstateTargetService {
     private static String defaultIfBlank(String value, String fallback) {
         String trimmed = trimToNull(value);
         return trimmed == null ? fallback : trimmed;
+    }
+
+    private static RealEstateTargetResponse toResponse(RealEstateTargetRepository.RealEstateTargetSearchRow row) {
+        return new RealEstateTargetResponse(
+                row.getTargetId(),
+                row.getTargetType(),
+                row.getDisplayName(),
+                row.getSlug(),
+                row.getReviewState(),
+                row.getDataStatus(),
+                row.getRegionLevel(),
+                row.getParentTargetId(),
+                row.getLegalDongCode(),
+                row.getRegionCode()
+        );
     }
 }
