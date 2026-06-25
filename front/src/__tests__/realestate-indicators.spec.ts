@@ -628,6 +628,15 @@ describe('IndicatorsPage schedule calendar', () => {
     expect(styles).toContain('@keyframes schedule-request-pulse {');
   });
 
+  it('keeps the official schedule calendar dark in dark mode', async () => {
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.indicator-calendar-hero,[\s\S]*\.app-shell\.dark-mode \.calendar-month-card\s*\{[\s\S]*background: #171a21;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.calendar-day\s*\{[\s\S]*background: #11141a;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.calendar-event-strip,[\s\S]*\.app-shell\.dark-mode \.calendar-event-card,[\s\S]*\.app-shell\.dark-mode \.schedule-source-card\s*\{[\s\S]*background: #20242d;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.calendar-event-card-body strong,[\s\S]*\.app-shell\.dark-mode \.schedule-source-card strong\s*\{[\s\S]*color: #f8fafc;/);
+  });
+
   it('nudges month navigation glyphs into visual center inside their boxes', async () => {
     const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
 

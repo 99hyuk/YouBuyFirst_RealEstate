@@ -16406,6 +16406,209 @@ body:has(.complex-browse-page) .page-frame {
   box-shadow: none;
 }
 
+.app-shell.dark-mode .edge-chat-nickname-trigger,
+.app-shell.dark-mode .edge-chat-author-name,
+.app-shell.dark-mode .edge-chat-author-gradient,
+.app-shell.dark-mode .edge-chat-message .edge-chat-author-name.edge-chat-author-gradient,
+.app-shell.dark-mode .edge-chat-nickname-trigger[class*="edge-chat-author-tone-"],
+.app-shell.dark-mode .edge-chat-message .edge-chat-author-name[class*="edge-chat-author-tone-"] {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.app-shell.dark-mode .edge-chat-author-gradient::after {
+  background-image: linear-gradient(
+    100deg,
+    rgba(125, 211, 252, 0) 0%,
+    rgba(125, 211, 252, 0.04) 30%,
+    rgba(186, 230, 253, 0.22) 46%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(186, 230, 253, 0.18) 56%,
+    rgba(125, 211, 252, 0.04) 70%,
+    rgba(125, 211, 252, 0) 100%
+  );
+  opacity: 0.24;
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-0 {
+  --edge-chat-author-color: #67e8f9;
+  --edge-chat-author-glow: rgba(103, 232, 249, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-1 {
+  --edge-chat-author-color: #fbbf24;
+  --edge-chat-author-glow: rgba(251, 191, 36, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-2 {
+  --edge-chat-author-color: #86efac;
+  --edge-chat-author-glow: rgba(134, 239, 172, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-3 {
+  --edge-chat-author-color: #f9a8d4;
+  --edge-chat-author-glow: rgba(249, 168, 212, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-4 {
+  --edge-chat-author-color: #c4b5fd;
+  --edge-chat-author-glow: rgba(196, 181, 253, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-5 {
+  --edge-chat-author-color: #5eead4;
+  --edge-chat-author-glow: rgba(94, 234, 212, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-6 {
+  --edge-chat-author-color: #fda4af;
+  --edge-chat-author-glow: rgba(253, 164, 175, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-7 {
+  --edge-chat-author-color: #fdba74;
+  --edge-chat-author-glow: rgba(253, 186, 116, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-8 {
+  --edge-chat-author-color: #93c5fd;
+  --edge-chat-author-glow: rgba(147, 197, 253, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-9 {
+  --edge-chat-author-color: #d8b4fe;
+  --edge-chat-author-glow: rgba(216, 180, 254, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-10 {
+  --edge-chat-author-color: #bbf7d0;
+  --edge-chat-author-glow: rgba(187, 247, 208, 0.08);
+}
+
+.app-shell.dark-mode .edge-chat-author-tone-11 {
+  --edge-chat-author-color: #f0abfc;
+  --edge-chat-author-glow: rgba(240, 171, 252, 0.08);
+}
+
+.app-shell.dark-mode .indicator-calendar-page {
+  color: var(--ink);
+}
+
+.app-shell.dark-mode .indicator-calendar-hero,
+.app-shell.dark-mode .calendar-month-card {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: #171a21;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.app-shell.dark-mode .indicator-calendar-hero {
+  background:
+    linear-gradient(135deg, rgba(251, 146, 60, 0.1), transparent 34%),
+    #171a21;
+}
+
+.app-shell.dark-mode .indicator-calendar-hero h2,
+.app-shell.dark-mode .calendar-month-header h3,
+.app-shell.dark-mode .schedule-source-section h2,
+.app-shell.dark-mode .calendar-event-card-body strong,
+.app-shell.dark-mode .schedule-source-card strong {
+  color: #f8fafc;
+}
+
+.app-shell.dark-mode .indicator-calendar-hero span,
+.app-shell.dark-mode .calendar-tone-key,
+.app-shell.dark-mode .calendar-weekdays span,
+.app-shell.dark-mode .calendar-event-card-body span,
+.app-shell.dark-mode .calendar-event-card em {
+  color: #aab6c8;
+}
+
+.app-shell.dark-mode .calendar-month-nav {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: #20242d;
+  color: #dbeafe;
+  box-shadow: none;
+}
+
+.app-shell.dark-mode .calendar-month-nav:hover,
+.app-shell.dark-mode .calendar-month-nav:focus-visible {
+  border-color: rgba(251, 146, 60, 0.46);
+  background: #292f3a;
+  color: #fed7aa;
+  box-shadow: none;
+}
+
+.app-shell.dark-mode .calendar-month-header > span {
+  background: #20242d;
+  color: #cbd5e1;
+}
+
+.app-shell.dark-mode .calendar-day {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: #11141a;
+}
+
+.app-shell.dark-mode .calendar-day.has-events {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: #171a21;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.app-shell.dark-mode .calendar-day.today {
+  border-color: rgba(251, 146, 60, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(251, 146, 60, 0.32);
+}
+
+.app-shell.dark-mode .calendar-day.muted {
+  background: #0f1117;
+  opacity: 0.54;
+}
+
+.app-shell.dark-mode .calendar-day-number {
+  color: #e5edf7;
+}
+
+.app-shell.dark-mode .calendar-event-strip,
+.app-shell.dark-mode .calendar-event-card,
+.app-shell.dark-mode .schedule-source-card {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: #20242d;
+  color: #e5edf7;
+  box-shadow: none;
+}
+
+.app-shell.dark-mode .calendar-event-strip.published,
+.app-shell.dark-mode .calendar-event-card.published {
+  border-color: color-mix(in srgb, var(--schedule-tone, #f97316) 42%, #3a414f);
+}
+
+.app-shell.dark-mode .calendar-event-card.scheduled {
+  background: #1b2029;
+}
+
+.app-shell.dark-mode .calendar-event-strip.source_error,
+.app-shell.dark-mode .calendar-event-card.source_error,
+.app-shell.dark-mode .calendar-event-card.empty {
+  background: #171a21;
+  color: #94a3b8;
+}
+
+.app-shell.dark-mode .calendar-event-strip:hover,
+.app-shell.dark-mode .calendar-event-strip:focus-visible,
+.app-shell.dark-mode a.calendar-event-card:hover,
+.app-shell.dark-mode a.calendar-event-card:focus-visible {
+  border-color: color-mix(in srgb, var(--schedule-tone, #f97316) 54%, #4b5563);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+.app-shell.dark-mode .calendar-event-list {
+  border-top-color: rgba(148, 163, 184, 0.22);
+}
+
+.app-shell.dark-mode .calendar-event-card time,
+.app-shell.dark-mode .schedule-source-card span {
+  color: #fed7aa;
+}
+
 .app-shell.dark-mode .complex-browse-page {
   background: #0d0f13;
   color: var(--ink);
