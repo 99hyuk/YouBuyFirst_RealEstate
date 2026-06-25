@@ -47,6 +47,20 @@ except Exception:
 PY
 }
 
+# 새 매물이 들어와도 신규 건물만 골라 카카오에 질의하도록(이미 캐시된 건물은 백엔드가
+# 자동으로 건너뜀) 사전 적재를 다시 트리거한다. 백엔드가 비동기로 처리하므로 짧은
+# 타임아웃으로 호출만 하고 응답은 기다리지 않는다 - 실패해도 다음 주기에 다시 시도됨.
+trigger_geocode_preload() {
+  python3 - "$BACKEND" <<'PY'
+import sys, urllib.request
+try:
+    urllib.request.urlopen(urllib.request.Request(sys.argv[1] + "/api/realestate/geocode/preload", method="POST"), timeout=5)
+except Exception:
+    pass
+PY
+  echo "[refresh] 지오코딩 사전 적재 트리거 호출(신규 건물만 추가 적재, 백엔드에서 비동기 처리)"
+}
+
 backfill_comparison_months() {
   local comparison_yms="$(ym_offset 1) $(ym_offset 6) $(ym_offset 12)"
   echo "[refresh] 비교월($comparison_yms) 백필 확인"
@@ -97,5 +111,6 @@ while true; do
   done
   echo "[refresh] 현재월 재수집 완료"
 
+  trigger_geocode_preload
   backfill_comparison_months
 done
