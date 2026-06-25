@@ -21,6 +21,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RealEstatePublicDataRawIngestionIntegrationTest {
     private static final String PROMOTION_LAWD_CODE = "11992";
     private static final String PROMOTION_RUN_KEY = "molit_apt_rent:11992:202606";
+    private static final List<String> MOLIT_MARKET_DATASETS = List.of(
+            "molit_apt_trade",
+            "molit_apt_rent",
+            "molit_offi_trade",
+            "molit_offi_rent",
+            "molit_rh_trade",
+            "molit_rh_rent",
+            "molit_sh_trade",
+            "molit_sh_rent",
+            "molit_silv_trade"
+    );
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -322,7 +333,7 @@ class RealEstatePublicDataRawIngestionIntegrationTest {
         assertThat(targetRows)
                 .filteredOn(item -> "region-daegu-suseong".equals(item.path("targetId").asText()))
                 .extracting(item -> item.path("providerDataset").asText())
-                .containsExactlyInAnyOrder("molit_apt_trade", "molit_apt_rent");
+                .containsExactlyInAnyOrderElementsOf(MOLIT_MARKET_DATASETS);
 
         Map<String, Object> rawItem = new LinkedHashMap<>();
         rawItem.put("providerDataset", "molit_apt_trade");

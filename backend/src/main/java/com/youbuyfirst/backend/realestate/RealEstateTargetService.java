@@ -20,6 +20,18 @@ import java.util.Objects;
 @Service
 public class RealEstateTargetService {
 
+    private static final List<String> MOLIT_MARKET_DATASETS = List.of(
+            "molit_apt_trade",
+            "molit_apt_rent",
+            "molit_offi_trade",
+            "molit_offi_rent",
+            "molit_rh_trade",
+            "molit_rh_rent",
+            "molit_sh_trade",
+            "molit_sh_rent",
+            "molit_silv_trade"
+    );
+
     private final RealEstateRegionRepository regionRepository;
     private final RealEstateTargetRepository targetRepository;
     private final RealEstateMarketDataTargetRepository marketDataTargetRepository;
@@ -195,7 +207,7 @@ public class RealEstateTargetService {
 
     private int ensureMolitMarketDataTargets(String targetId, String lawdCode, Instant now) {
         int ensured = 0;
-        for (String dataset : List.of("molit_apt_trade", "molit_apt_rent")) {
+        for (String dataset : MOLIT_MARKET_DATASETS) {
             RealEstateMarketDataTarget target = marketDataTargetRepository
                     .findByTargetIdAndProviderAndProviderDatasetAndLawdCode(targetId, "molit", dataset, lawdCode)
                     .orElseGet(() -> new RealEstateMarketDataTarget(

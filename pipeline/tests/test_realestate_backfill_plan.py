@@ -13,18 +13,22 @@ def test_build_molit_backfill_plan_splits_months_lawd_codes_and_datasets():
         lawd_codes=["11110", "26000"],
         start_ym="202601",
         end_ym="202602",
-        datasets=["trade", "rent"],
+        datasets=["trade", "rent", "offi-trade"],
     )
 
     assert [item.run_key for item in plan] == [
         "molit_apt_trade:11110:202601",
         "molit_apt_rent:11110:202601",
+        "molit_offi_trade:11110:202601",
         "molit_apt_trade:26000:202601",
         "molit_apt_rent:26000:202601",
+        "molit_offi_trade:26000:202601",
         "molit_apt_trade:11110:202602",
         "molit_apt_rent:11110:202602",
+        "molit_offi_trade:11110:202602",
         "molit_apt_trade:26000:202602",
         "molit_apt_rent:26000:202602",
+        "molit_offi_trade:26000:202602",
     ]
 
 
@@ -87,6 +91,13 @@ def test_build_molit_backfill_plan_from_backend_data_targets_filters_and_dedupes
                 "enabled": True,
             },
             {
+                "targetId": "region-11110",
+                "provider": "molit",
+                "providerDataset": "molit_offi_trade",
+                "lawdCode": "11110",
+                "enabled": True,
+            },
+            {
                 "targetId": "region-11680",
                 "provider": "molit",
                 "providerDataset": "molit_apt_trade",
@@ -108,8 +119,10 @@ def test_build_molit_backfill_plan_from_backend_data_targets_filters_and_dedupes
     assert [item.run_key for item in plan] == [
         "molit_apt_trade:11110:202605",
         "molit_apt_rent:11110:202605",
+        "molit_offi_trade:11110:202605",
         "molit_apt_trade:11110:202606",
         "molit_apt_rent:11110:202606",
+        "molit_offi_trade:11110:202606",
     ]
 
 

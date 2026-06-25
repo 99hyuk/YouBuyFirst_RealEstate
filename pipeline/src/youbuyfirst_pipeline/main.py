@@ -149,6 +149,7 @@ from youbuyfirst_pipeline.realestate_source_registry import (
 )
 from youbuyfirst_pipeline.realestate_reaction_scheduler import build_real_estate_reaction_snapshot_refresh_job
 from youbuyfirst_pipeline.realestate_regions import (
+    DEFAULT_MOLIT_REGION_DATASETS,
     build_real_estate_region_alias_requests,
     build_molit_region_market_data_targets,
     parse_molit_legal_dong_code_csv,
@@ -450,7 +451,7 @@ async def async_main() -> None:
         "--realestate-datasets",
         nargs="+",
         default=_configured_realestate_datasets(os.getenv("REALESTATE_DATASETS")),
-        help="Real-estate public datasets: trade rent",
+        help="Real-estate public datasets: trade rent offi-trade offi-rent rh-trade rh-rent sh-trade sh-rent silv-trade",
     )
     parser.add_argument(
         "--realestate-use-backend-targets",
@@ -1892,7 +1893,7 @@ def _validate_real_estate_serve_refresh_flags(args) -> None:
 
 def _configured_realestate_datasets(value: str | None) -> list[str]:
     if not value:
-        return ["trade", "rent"]
+        return list(DEFAULT_MOLIT_REGION_DATASETS)
     return [dataset.strip() for dataset in value.split(",") if dataset.strip()]
 
 
@@ -2532,7 +2533,7 @@ def _real_estate_target_edge_rule_to_dict(edge: RealEstateTargetEdgeRule) -> dic
 
 def _spring_client() -> SpringIngestionClient:
     return SpringIngestionClient(
-        os.getenv("SPRING_BASE_URL", "http://localhost:8080"),
+        os.getenv("SPRING_BASE_URL", "http://127.0.0.1:8080"),
         timeout_seconds=float(os.getenv("SPRING_CLIENT_TIMEOUT_SECONDS", "60")),
     )
 

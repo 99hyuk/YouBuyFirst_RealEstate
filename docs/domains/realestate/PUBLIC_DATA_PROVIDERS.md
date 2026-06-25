@@ -10,6 +10,13 @@
 | --- | --- | --- | --- | --- | --- |
 | 10 | `molit_apt_trade` | 국토교통부 아파트 매매 실거래가 | 지역/단지 매매 실거래 market fact | 공공데이터포털 OpenAPI, XML | 예 |
 | 20 | `molit_apt_rent` | 국토교통부 아파트 전월세 실거래가 | 전세/월세 흐름, 전세가율 보조 | 공공데이터포털 OpenAPI, XML | 예 |
+| 21 | `molit_offi_trade` | 국토교통부 오피스텔 매매 실거래가 | 오피스텔 매매 실거래 market fact | 공공데이터포털 OpenAPI, XML | 예 |
+| 22 | `molit_offi_rent` | 국토교통부 오피스텔 전월세 실거래가 | 오피스텔 전월세 흐름 | 공공데이터포털 OpenAPI, XML | 예 |
+| 23 | `molit_rh_trade` | 국토교통부 연립다세대 매매 실거래가 | 연립·다세대 매매 실거래 market fact | 공공데이터포털 OpenAPI, XML | 예 |
+| 24 | `molit_rh_rent` | 국토교통부 연립다세대 전월세 실거래가 | 연립·다세대 전월세 흐름 | 공공데이터포털 OpenAPI, XML | 예 |
+| 25 | `molit_sh_trade` | 국토교통부 단독다가구 매매 실거래가 | 단독·다가구 매매 실거래 market fact | 공공데이터포털 OpenAPI, XML | 예 |
+| 26 | `molit_sh_rent` | 국토교통부 단독다가구 전월세 실거래가 | 단독·다가구 전월세 흐름 | 공공데이터포털 OpenAPI, XML | 예 |
+| 27 | `molit_silv_trade` | 국토교통부 분양권 매매 실거래가 | 분양권 매매 실거래 market fact | 공공데이터포털 OpenAPI, XML | 예 |
 | 30 | `molit_official_apartment_price_csv` | 국토교통부 공동주택 호별 공시가격 | 공시가격, 단지/호 단위 기준 가격 | 공공데이터포털 대용량 CSV ZIP | 예 |
 | 40 | `reb_real_estate_statistics` | 한국부동산원 부동산통계 조회 서비스 | 가격지수, 실거래가격지수, 거래현황 | 공공데이터포털 OpenAPI, JSON/XML | 예 |
 | 50 | `molit_unsold_housing_stat` | 국토교통 통계누리 미분양주택현황보고 | 미분양/준공 후 미분양 공급 압력 | 통계누리 파일/API 후보 | 예 |

@@ -21,8 +21,17 @@ import {
 import regionData from '../fixtures/transaction-regions.json';
 
 type DealFilter = DealType | 'all';
+type TransactionRegionGroup = { sido: string; items: { code: string; name: string }[] };
+type SidoOption = TransactionRegionGroup & { code: string };
 
-const regionGroups = regionData.groups as { sido: string; items: { code: string; name: string }[] }[];
+const regionGroups = regionData.groups as TransactionRegionGroup[];
+const sidoOptions: SidoOption[] = regionGroups
+  .map((group) => ({ ...group, code: group.items[0]?.code.slice(0, 2) ?? '' }))
+  .filter((group) => group.code);
+const regionGroupBySido = new Map(sidoOptions.map((group) => [group.code, group]));
+const sidoByRegionCode = new Map(
+  sidoOptions.flatMap((group) => group.items.map((item) => [item.code, group.code] as const))
+);
 const regionNameByCode = new Map(regionGroups.flatMap((group) => group.items.map((item) => [item.code, item.name])));
 const regionCodes = [...regionNameByCode.keys()];
 
@@ -67,12 +76,14 @@ let loadToken = 0;
 const loadState = ref<'loading' | 'live' | 'fallback' | 'error'>('loading');
 const activePropertyType = ref<PropertyType>('apt');
 const activeRegion = ref<string>(resolveInitialRegion(route.query.region));
+const activeSido = ref<string>(sidoByRegionCode.get(activeRegion.value) ?? activeRegion.value.slice(0, 2));
 const activeDealFilter = ref<DealFilter>('all');
 const activeSort = ref<TransactionSort>('price-desc');
 const query = ref('');
 const selectedId = ref('');
 const isDetailOpen = ref(false);
 
+const activeRegionOptions = computed(() => regionGroupBySido.get(activeSido.value)?.items ?? []);
 const regionName = computed(() => regionNameByCode.get(activeRegion.value) ?? '지역');
 const mapCenter = computed(() => regionCentroid(activeRegion.value) ?? undefined);
 
@@ -121,22 +132,6 @@ watch(selectedId, async (id) => {
   nearbyFacilities.value = result;
   nearbyState.value = 'ready';
 });
-const statusLabel = computed(() => {
-  if (loadState.value === 'loading') return '실거래 데이터 불러오는 중';
-  if (loadState.value === 'live') return `국토교통부 실거래 · ${regionName.value} · ${visibleItems.value.length}곳`;
-  if (loadState.value === 'fallback') return 'mock fallback · 실데이터 수집 전';
-  return '실거래 데이터 API 오류';
-});
-const coordSummary = computed(() => {
-  const geocoded = visibleItems.value.filter((item) => item.coordSource === 'geocoded').length;
-  return { geocoded, total: visibleItems.value.length };
-});
-const coordStatusLabel = computed(() => {
-  const { geocoded, total } = coordSummary.value;
-  if (!total) return '';
-  return geocoded ? `실좌표 ${geocoded}/${total}` : '구 중심 좌표(실좌표 0)';
-});
-
 const refreshComplexes = async () => {
   const token = ++loadToken;
   loadState.value = 'loading';
@@ -172,6 +167,15 @@ const selectPropertyType = (value: PropertyType) => {
 };
 
 const onRegionChange = () => {
+  activeSido.value = sidoByRegionCode.get(activeRegion.value) ?? activeSido.value;
+  void refreshComplexes();
+};
+
+const onSidoChange = () => {
+  const firstRegion = activeRegionOptions.value[0]?.code;
+  if (firstRegion) {
+    activeRegion.value = firstRegion;
+  }
   void refreshComplexes();
 };
 
@@ -229,19 +233,31 @@ onMounted(() => {
       <h2 id="complex-browse-title" class="overlay-title">실거래 지도</h2>
 
       <div class="complex-filter-groups">
-        <select
-          v-model="activeRegion"
-          class="complex-region-select"
-          aria-label="지역 선택"
-          data-testid="complex-region-select"
-          @change="onRegionChange"
-        >
-          <optgroup v-for="group in regionGroups" :key="group.sido" :label="group.sido">
-            <option v-for="region in group.items" :key="region.code" :value="region.code">
-              {{ group.sido }} {{ region.name }}
+        <div class="complex-region-picker" aria-label="지역 선택">
+          <select
+            v-model="activeSido"
+            class="complex-sido-select"
+            aria-label="시도 선택"
+            data-testid="complex-sido-select"
+            @change="onSidoChange"
+          >
+            <option v-for="group in sidoOptions" :key="group.code" :value="group.code">
+              {{ group.sido }}
             </option>
-          </optgroup>
-        </select>
+          </select>
+
+          <select
+            v-model="activeRegion"
+            class="complex-region-select"
+            aria-label="시군구 선택"
+            data-testid="complex-region-select"
+            @change="onRegionChange"
+          >
+            <option v-for="region in activeRegionOptions" :key="region.code" :value="region.code">
+              {{ region.name }}
+            </option>
+          </select>
+        </div>
 
         <div class="filter-chip-row" aria-label="매물 유형">
           <button
@@ -295,18 +311,6 @@ onMounted(() => {
           </button>
         </div>
       </div>
-
-      <span class="status-pill" :class="{ warning: loadState !== 'live' }" data-testid="complex-status">
-        {{ statusLabel }}
-      </span>
-      <span
-        v-if="coordStatusLabel"
-        class="status-pill"
-        :class="{ warning: coordSummary.geocoded === 0 }"
-        data-testid="complex-coord-status"
-      >
-        {{ coordStatusLabel }}
-      </span>
     </header>
 
     <div class="complex-map-stage">

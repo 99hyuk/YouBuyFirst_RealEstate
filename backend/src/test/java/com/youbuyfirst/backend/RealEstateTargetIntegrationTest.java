@@ -20,6 +20,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class RealEstateTargetIntegrationTest {
 
+    private static final List<String> MOLIT_MARKET_DATASETS = List.of(
+            "molit_apt_trade",
+            "molit_apt_rent",
+            "molit_offi_trade",
+            "molit_offi_rent",
+            "molit_rh_trade",
+            "molit_rh_rent",
+            "molit_sh_trade",
+            "molit_sh_rent",
+            "molit_silv_trade"
+    );
+
     @Autowired
     private TestRestTemplate restTemplate;
 
@@ -55,7 +67,7 @@ class RealEstateTargetIntegrationTest {
         JsonNode dataTargetItems = objectMapper.readTree(dataTargets.getBody()).path("items");
         assertThat(dataTargetItems)
                 .extracting(item -> item.path("providerDataset").asText())
-                .contains("molit_apt_trade", "molit_apt_rent");
+                .containsAll(MOLIT_MARKET_DATASETS);
         JsonNode jongnoTarget = null;
         for (JsonNode item : dataTargetItems) {
             if ("region-seoul-jongno".equals(item.path("targetId").asText())
@@ -170,7 +182,7 @@ class RealEstateTargetIntegrationTest {
         assertThat(dataTargetItems)
                 .filteredOn(item -> "region-seoul-mapo".equals(item.path("targetId").asText()))
                 .extracting(item -> item.path("providerDataset").asText())
-                .containsExactlyInAnyOrder("molit_apt_trade", "molit_apt_rent");
+                .containsExactlyInAnyOrderElementsOf(MOLIT_MARKET_DATASETS);
     }
 
     @Test
@@ -355,7 +367,7 @@ class RealEstateTargetIntegrationTest {
         assertThat(marketTargetItems)
                 .filteredOn(item -> "region-busan-haeundae".equals(item.path("targetId").asText()))
                 .extracting(item -> item.path("providerDataset").asText())
-                .containsExactlyInAnyOrder("molit_apt_trade", "molit_apt_rent");
+                .containsExactlyInAnyOrderElementsOf(MOLIT_MARKET_DATASETS);
     }
 
     @Test

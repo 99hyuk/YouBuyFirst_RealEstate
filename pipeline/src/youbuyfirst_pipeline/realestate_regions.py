@@ -7,6 +7,17 @@ from dataclasses import dataclass
 
 LEGAL_DONG_CODE_SOURCE = "import:molit-legal-dong-code"
 REGION_ALIAS_SOURCE = "import:region-registry-alias"
+DEFAULT_MOLIT_REGION_DATASETS = [
+    "trade",
+    "rent",
+    "offi-trade",
+    "offi-rent",
+    "rh-trade",
+    "rh-rent",
+    "sh-trade",
+    "sh-rent",
+    "silv-trade",
+]
 
 _SIDO_SHORT_LABELS = {
     "서울특별시": "서울",
@@ -97,7 +108,7 @@ def build_molit_region_market_data_targets(
     *,
     datasets: list[str] | None = None,
 ) -> list[RealEstateMarketDataTargetImport]:
-    provider_datasets = [_normalize_molit_provider_dataset(dataset) for dataset in (datasets or ["trade", "rent"])]
+    provider_datasets = [_normalize_molit_provider_dataset(dataset) for dataset in (datasets or DEFAULT_MOLIT_REGION_DATASETS)]
     targets: list[RealEstateMarketDataTargetImport] = []
     seen_keys: set[tuple[str, str, str]] = set()
     for region in regions:
@@ -226,6 +237,20 @@ def _normalize_molit_provider_dataset(value: str) -> str:
         return "molit_apt_trade"
     if normalized in {"rent", "apt-rent", "molit-apt-rent", "lease"}:
         return "molit_apt_rent"
+    if normalized in {"offi-trade", "offi", "officetel", "officetel-trade", "molit-offi-trade"}:
+        return "molit_offi_trade"
+    if normalized in {"offi-rent", "officetel-rent", "molit-offi-rent"}:
+        return "molit_offi_rent"
+    if normalized in {"rh-trade", "rh", "rowhouse-trade", "molit-rh-trade", "yeollip-trade"}:
+        return "molit_rh_trade"
+    if normalized in {"rh-rent", "rowhouse-rent", "molit-rh-rent", "yeollip-rent"}:
+        return "molit_rh_rent"
+    if normalized in {"sh-trade", "sh", "singlehouse-trade", "molit-sh-trade", "danok-trade"}:
+        return "molit_sh_trade"
+    if normalized in {"sh-rent", "singlehouse-rent", "molit-sh-rent", "danok-rent"}:
+        return "molit_sh_rent"
+    if normalized in {"silv-trade", "silv", "presale", "presale-trade", "bunyang", "molit-silv-trade"}:
+        return "molit_silv_trade"
     raise ValueError(f"unsupported MOLIT region dataset: {value}")
 
 

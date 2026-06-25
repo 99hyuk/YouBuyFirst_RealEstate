@@ -13,6 +13,13 @@ def test_public_data_catalog_confirms_first_wave_sources():
     assert {
         "molit_apt_trade",
         "molit_apt_rent",
+        "molit_offi_trade",
+        "molit_offi_rent",
+        "molit_rh_trade",
+        "molit_rh_rent",
+        "molit_sh_trade",
+        "molit_sh_rent",
+        "molit_silv_trade",
         "molit_official_apartment_price_csv",
         "reb_real_estate_statistics",
         "molit_unsold_housing_stat",
@@ -29,6 +36,9 @@ def test_public_data_catalog_uses_readable_korean_provider_labels():
     assert payload_by_id["molit_apt_trade"]["providerName"] == "국토교통부"
     assert payload_by_id["molit_apt_trade"]["displayName"] == "아파트 매매 실거래가"
     assert payload_by_id["molit_apt_rent"]["displayName"] == "아파트 전월세 실거래가"
+    assert payload_by_id["molit_offi_trade"]["displayName"] == "오피스텔 매매 실거래가"
+    assert payload_by_id["molit_rh_rent"]["displayName"] == "연립다세대 전월세 실거래가"
+    assert payload_by_id["molit_silv_trade"]["displayName"] == "분양권 매매 실거래가"
     assert payload_by_id["molit_official_apartment_price_csv"]["displayName"] == "공동주택 호별 공시가격"
     assert payload_by_id["reb_real_estate_statistics"]["providerName"] == "한국부동산원"
     assert payload_by_id["molit_unsold_housing_stat"]["providerName"] == "국토교통 통계누리"
@@ -62,6 +72,13 @@ def test_enabled_backfill_dataset_ids_excludes_reference_only_sources():
     assert enabled_backfill_dataset_ids() == [
         "molit_apt_trade",
         "molit_apt_rent",
+        "molit_offi_trade",
+        "molit_offi_rent",
+        "molit_rh_trade",
+        "molit_rh_rent",
+        "molit_sh_trade",
+        "molit_sh_rent",
+        "molit_silv_trade",
         "molit_official_apartment_price_csv",
         "reb_real_estate_statistics",
         "molit_unsold_housing_stat",
@@ -71,9 +88,11 @@ def test_enabled_backfill_dataset_ids_excludes_reference_only_sources():
 
 def test_backend_public_data_dataset_seed_matches_catalog_without_broken_korean():
     migration = (
-        REPO_ROOT
-        / "backend/src/main/resources/db/migration/V27__real_estate_public_data_catalog_and_raw_ingestion.sql"
-    ).read_text(encoding="utf-8")
+        "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in sorted((REPO_ROOT / "backend/src/main/resources/db/migration").glob("V*.sql"))
+        )
+    )
 
     for dataset in PUBLIC_DATA_DATASETS:
         assert f"'{dataset.dataset_id}'" in migration

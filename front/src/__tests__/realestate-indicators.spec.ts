@@ -323,16 +323,16 @@ describe('IndicatorsPage schedule calendar', () => {
       month: '2026-06',
       scheduleEvents: [
         {
-          id: 'reb-r-one-weekly-2026-06-03',
-          date: '2026-06-03',
-          title: '주간 아파트 가격동향 확인',
+          id: 'reb-r-one-published-pres01-3931',
+          date: '2026-06-18',
+          title: '2026년 6월 15일 기준 주간아파트가격 동향',
           category: '가격지수',
           source: '한국부동산원 R-ONE',
-          summary: '매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.',
-          link: 'https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01',
+          summary: '한국부동산원 주간아파트가격동향조사 공표자료입니다.',
+          link: 'https://www.reb.or.kr/r-one/portal/bbs/pres/selectBulletinPage.do?bbsCd=PRES&seq=3931&noticeYn=N',
           tone: 'market',
-          status: '확인 예정',
-          dataStatus: 'scheduled',
+          status: '공표 확인',
+          dataStatus: 'published',
           stale: false
         },
         {
@@ -375,7 +375,7 @@ describe('IndicatorsPage schedule calendar', () => {
     expect(fetcher).toHaveBeenCalledWith('/api/realestate/market-data-schedules?month=2026-06');
     expect(wrapper.find('.indicator-calendar-page').exists()).toBe(true);
     expect(wrapper.text()).toContain('주요 일정');
-    expect(wrapper.text()).toContain('가격지수, 실거래, 공급, 금리, 청약 일정을 캘린더로 확인합니다.');
+    expect(wrapper.text()).toContain('가격·거래현황, 공급, 금융, 청약, 정책·공시 일정을 캘린더로 확인합니다.');
     expect(wrapper.text()).not.toContain('공식 통계 확인');
     expect(wrapper.find('.calendar-primary-link').exists()).toBe(false);
     expect(wrapper.find('.calendar-agenda-panel').exists()).toBe(false);
@@ -386,19 +386,19 @@ describe('IndicatorsPage schedule calendar', () => {
     expect(wrapper.findAll('.calendar-event-card')).toHaveLength(2);
     expect(wrapper.text()).not.toContain('주요 공개·점검 일정');
     expect(wrapper.find('.calendar-tone-legend').exists()).toBe(true);
-    expect(wrapper.find('.calendar-tone-legend').text()).toContain('가격지수');
-    expect(wrapper.find('.calendar-tone-legend').text()).toContain('실거래');
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('가격·공시');
+    expect(wrapper.find('.calendar-tone-legend').text()).toContain('거래현황');
     expect(wrapper.find('.calendar-tone-legend').text()).toContain('공급');
     expect(wrapper.find('.calendar-tone-legend').text()).toContain('금융');
     expect(wrapper.find('.calendar-tone-legend').text()).toContain('정책');
     expect(wrapper.find('.calendar-tone-legend').text()).toContain('청약');
-    expect(wrapper.find('.calendar-event-strip').text()).toContain('주간 아파트 가격동향 확인');
-    expect(wrapper.find('.calendar-event-strip').text()).toContain('매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.');
-    expect(wrapper.text()).toContain('매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.');
+    expect(wrapper.find('.calendar-event-strip').text()).toContain('2026년 6월 15일 기준 주간아파트가격 동향');
+    expect(wrapper.find('.calendar-event-strip').text()).toContain('한국부동산원 주간아파트가격동향조사 공표자료입니다.');
+    expect(wrapper.text()).toContain('한국부동산원 주간아파트가격동향조사 공표자료입니다.');
     expect(wrapper.text()).toContain('모집공고일 2026-06-23, 청약기간 2026-07-03~2026-07-06, 당첨자 발표 2026-07-10인 청약Home 공고입니다.');
     expect(wrapper.find('.calendar-event-strip[href]').exists()).toBe(false);
     expect(wrapper.find('.calendar-event-card[href="https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2026000289&pblancNo=2026000289"]').exists()).toBe(true);
-    expect(wrapper.find('.calendar-event-card[href="https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01"]').exists()).toBe(true);
+    expect(wrapper.find('.calendar-event-card[href="https://www.reb.or.kr/r-one/portal/bbs/pres/selectBulletinPage.do?bbsCd=PRES&seq=3931&noticeYn=N"]').exists()).toBe(true);
     expect(wrapper.find('.calendar-event-card[href="https://applyhome.co.kr/"]').exists()).toBe(false);
     expect(wrapper.findAll('.schedule-source-card')).toHaveLength(2);
     expect(wrapper.text()).not.toContain('지표 반영');
@@ -463,16 +463,16 @@ describe('IndicatorsPage schedule calendar', () => {
       month: '2026-06',
       scheduleEvents: [
         {
-          id: 'reb-r-one-weekly-2026-06-03',
-          date: '2026-06-03',
-          title: '주간 아파트 가격동향 확인',
+          id: 'reb-r-one-published-pres01-3931',
+          date: '2026-06-18',
+          title: '2026년 6월 15일 기준 주간아파트가격 동향',
           category: '가격지수',
           source: '한국부동산원 R-ONE',
-          summary: '매매·전세 가격 흐름과 상승/하락 지역을 먼저 확인합니다.',
-          link: 'https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01',
+          summary: '한국부동산원 주간아파트가격동향조사 공표자료입니다.',
+          link: 'https://www.reb.or.kr/r-one/portal/bbs/pres/selectBulletinPage.do?bbsCd=PRES&seq=3931&noticeYn=N',
           tone: 'market',
-          status: '확인 예정',
-          dataStatus: 'scheduled',
+          status: '공표 확인',
+          dataStatus: 'published',
           stale: false
         }
       ],
@@ -481,12 +481,12 @@ describe('IndicatorsPage schedule calendar', () => {
 
     const wrapper = await mountIndicatorsPage();
     const strip = wrapper.get('.calendar-event-strip');
-    const card = wrapper.get('[data-schedule-event-id="reb-r-one-weekly-2026-06-03"]');
+    const card = wrapper.get('[data-schedule-event-id="reb-r-one-published-pres01-3931"]');
 
     expect(strip.element.tagName).toBe('BUTTON');
     expect(strip.attributes('href')).toBeUndefined();
     expect(card.element.tagName).toBe('A');
-    expect(card.attributes('href')).toBe('https://www.reb.or.kr/r-one/portal/bbs/pres/searchBulletinPage.do?listSubCd=PRES01');
+    expect(card.attributes('href')).toBe('https://www.reb.or.kr/r-one/portal/bbs/pres/selectBulletinPage.do?bbsCd=PRES&seq=3931&noticeYn=N');
 
     await strip.trigger('click');
     await flushPromises();
@@ -508,9 +508,9 @@ describe('IndicatorsPage schedule calendar', () => {
             category: '금융',
             source: '한국은행',
             summary: '6월 기준금리 일정을 확인합니다.',
-            link: 'https://www.bok.or.kr/',
+            link: 'https://www.bok.or.kr/portal/singl/crncyPolicyDrcMtg/listYear.do?menuNo=200755&mtgSe=A',
             tone: 'finance',
-            status: '확인 예정',
+            status: '공식 일정',
             dataStatus: 'scheduled',
             stale: false
           }
@@ -527,9 +527,9 @@ describe('IndicatorsPage schedule calendar', () => {
             category: '실거래',
             source: '국토교통부 실거래가 공개시스템',
             summary: '7월 신고 거래 반영 여부를 확인합니다.',
-            link: 'https://rt.molit.go.kr/',
+            link: 'https://stat.molit.go.kr/portal/cate/viewChk.do?hRsId=32',
             tone: 'deal',
-            status: '확인 예정',
+            status: '공식 일정',
             dataStatus: 'scheduled',
             stale: false
           }
@@ -546,9 +546,9 @@ describe('IndicatorsPage schedule calendar', () => {
             category: '금융',
             source: '한국은행',
             summary: '6월 기준금리 일정을 확인합니다.',
-            link: 'https://www.bok.or.kr/',
+            link: 'https://www.bok.or.kr/portal/singl/crncyPolicyDrcMtg/listYear.do?menuNo=200755&mtgSe=A',
             tone: 'finance',
-            status: '확인 예정',
+            status: '공식 일정',
             dataStatus: 'scheduled',
             stale: false
           }
@@ -601,7 +601,7 @@ describe('IndicatorsPage schedule calendar', () => {
     const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
 
     expect(wrapper.find('.schedule-source-section').exists()).toBe(true);
-    expect(wrapper.findAll('.schedule-source-card')).toHaveLength(6);
+    expect(wrapper.findAll('.schedule-source-card')).toHaveLength(13);
     expect(styles).toContain('.schedule-source-section {\n  justify-self: end;\n  width: 33.333%;');
     expect(styles).toContain('.schedule-source-section .section-title-row {\n  justify-content: flex-end;\n  margin-bottom: 6px;\n  text-align: right;');
     expect(styles).toContain('.schedule-source-grid {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));');

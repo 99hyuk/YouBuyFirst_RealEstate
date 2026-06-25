@@ -57,7 +57,7 @@
 ### 주요 일정
 
 - `/indicators`는 지표 상세가 아니라 일정 캘린더로 운영한다.
-- 가격지수, 실거래 공개, 공급/미분양, 금리, 청약, 정책 발표 일정을 provider/source URL과 함께 표시한다.
+- 가격지수·거래현황, 공급/미분양, 금리, 청약, 정책·공시가격 발표 일정을 provider/source URL과 함께 표시하고, 실거래 공개는 freshness/status로 분리한다.
 - 기존 `/indicators/:category`는 북마크 호환 route로 같은 일정 화면을 보여준다.
 
 ### 단지/지역 상세

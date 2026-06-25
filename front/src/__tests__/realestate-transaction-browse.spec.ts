@@ -1,14 +1,31 @@
-import { describe, expect, it } from 'vitest';
+import { flushPromises, mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   aggregateTransactions,
   computeTransactionChange,
   transactionCoordinate,
+  regionCentroid,
   fetchTransactions,
   filterTransactions,
   toTransactionMarkers
 } from '../lib/realestate-transaction-browse';
 import type { RealEstateMarketFact } from '../lib/realestate-market-facts';
+import transactionRegions from '../fixtures/transaction-regions.json';
+import TransactionMapPage from '../pages/TransactionMapPage.vue';
+
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: {} }),
+}));
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+type TransactionRegionGroup = {
+  sido: string;
+  items: Array<{ code: string; name: string }>;
+};
 
 const facts: RealEstateMarketFact[] = [
   {
@@ -109,6 +126,79 @@ describe('complex browse filter + markers', () => {
     // within ~2km of 강남구 centroid
     expect(Math.abs(a.lat - 37.5172)).toBeLessThan(0.02);
     expect(Math.abs(a.lng - 127.0473)).toBeLessThan(0.02);
+  });
+});
+
+describe('transaction region select coverage', () => {
+  it('includes the regional-analysis legal-dong coverage instead of only hand-picked districts', () => {
+    const codes = (transactionRegions.groups as Array<{ items: Array<{ code: string }> }>)
+      .flatMap((group) => group.items.map((item) => item.code));
+
+    expect(new Set(codes).size).toBeGreaterThanOrEqual(250);
+    expect(codes).toEqual(expect.arrayContaining([
+      '11110',
+      '26110',
+      '30200',
+      '41110',
+      '50110'
+    ]));
+  });
+
+  it('has a map center seed for newly exposed transaction regions', () => {
+    expect(regionCentroid('26110')).not.toBeNull();
+    expect(regionCentroid('30200')).not.toBeNull();
+    expect(regionCentroid('50110')).not.toBeNull();
+  });
+});
+
+describe('transaction page region picker', () => {
+  it('splits region selection into linked sido and sigungu selects', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ items: [] }), { status: 200 })),
+    );
+
+    const wrapper = mount(TransactionMapPage, {
+      global: {
+        stubs: {
+          RealEstateTransactionMap: {
+            template: '<div data-testid="map-stub" />',
+          },
+        },
+      },
+    });
+
+    await flushPromises();
+
+    const sidoSelect = wrapper.get('[data-testid="complex-sido-select"]')
+      .element as HTMLSelectElement;
+    const regionSelect = wrapper.get('[data-testid="complex-region-select"]')
+      .element as HTMLSelectElement;
+    const sidoCodes = Array.from(sidoSelect.options).map((option) => option.value);
+
+    expect(sidoSelect.value).toBe('11');
+    expect(sidoCodes).toEqual(expect.arrayContaining(['11', '30']));
+    expect(Array.from(regionSelect.options).map((option) => option.value)).toContain('11680');
+
+    await wrapper.get('[data-testid="complex-sido-select"]').setValue('30');
+
+    const daejeonCodes = (transactionRegions.groups as TransactionRegionGroup[])
+      .find((group) => group.items.some((item) => item.code.startsWith('30')))
+      ?.items.map((item) => item.code);
+
+    expect((wrapper.get('[data-testid="complex-sido-select"]').element as HTMLSelectElement).value).toBe(
+      '30',
+    );
+    expect(
+      Array.from(
+        (wrapper.get('[data-testid="complex-region-select"]').element as HTMLSelectElement).options,
+      ).map((option) => option.value),
+    ).toEqual(daejeonCodes);
+    expect((wrapper.get('[data-testid="complex-region-select"]').element as HTMLSelectElement).value).toBe(
+      daejeonCodes?.[0],
+    );
+
+    wrapper.unmount();
   });
 });
 

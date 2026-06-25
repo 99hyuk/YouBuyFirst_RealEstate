@@ -7,6 +7,22 @@ import {
   type RealEstateReactionRankingItem
 } from './lib/realestate-reactions';
 import { currentAuthUser, loadCurrentUser, logout } from './lib/auth-session';
+import {
+  buildNewsroomFeedItems,
+  fetchRealEstateNewsroom,
+  type RealEstateContentItem,
+  type NewsroomFeedItem
+} from './lib/realestate-content';
+import {
+  currentMonth,
+  fetchMarketDataSchedules,
+  type MarketDataScheduleEvent
+} from './lib/realestate-schedules';
+import {
+  fetchRealEstateMapLayer,
+  type PeriodKey,
+  type RealEstateMapLayerTarget
+} from './lib/realestate-map';
 
 const railItems = [
   { id: 'watch', label: '관심', shortcut: 'W' },
@@ -20,6 +36,8 @@ const railExpanded = ref(false);
 const newsroomMenuDismissed = ref(false);
 const shellRankingItems = ref<RealEstateReactionRankingItem[]>([]);
 const shellReactionState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
+const shellTickerItems = ref<ShellTickerItem[]>([]);
+const shellTickerState = ref<'loading' | 'live' | 'empty' | 'error'>('loading');
 const authState = ref<'checking' | 'guest' | 'authenticated'>('checking');
 const route = useRoute();
 const router = useRouter();
@@ -49,6 +67,50 @@ const loadShellSignals = async () => {
   }
 };
 
+type ShellTickerTone = 'news' | 'policy' | 'report' | 'schedule' | 'up' | 'down' | 'issue' | 'state';
+
+type ShellTickerItem = {
+  id: string;
+  label: string;
+  text: string;
+  tone: ShellTickerTone;
+  score: number;
+};
+
+const tickerContentPageSize = 12;
+const tickerContentLimit = 4;
+const tickerScheduleLimit = 2;
+const tickerTotalLimit = 8;
+const tickerMinimumContentImportance = 1;
+
+const loadShellTicker = async () => {
+  shellTickerState.value = 'loading';
+  const [newsroomResult, schedulesResult, mapLayerResult] = await Promise.allSettled([
+    fetchRealEstateNewsroom({ feed: 'all', page: 1, pageSize: tickerContentPageSize }),
+    fetchMarketDataSchedules({ month: currentMonth() }),
+    fetchRealEstateMapLayer({ layerType: 'sido' })
+  ]);
+
+  const items: ShellTickerItem[] = [];
+
+  if (newsroomResult.status === 'fulfilled') {
+    items.push(...buildContentTickerItems(newsroomResult.value));
+  }
+  if (schedulesResult.status === 'fulfilled') {
+    items.push(...buildScheduleTickerItems(schedulesResult.value.scheduleEvents));
+  }
+  if (mapLayerResult.status === 'fulfilled') {
+    items.push(...buildMovementTickerItems(mapLayerResult.value.targets));
+  }
+
+  shellTickerItems.value = rankShellTickerItems(items).slice(0, tickerTotalLimit);
+  shellTickerState.value = shellTickerItems.value.length ? 'live' : 'empty';
+
+  if (newsroomResult.status === 'rejected' && schedulesResult.status === 'rejected' && mapLayerResult.status === 'rejected') {
+    shellTickerState.value = 'error';
+  }
+};
+
 const loadAuthState = async () => {
   authState.value = 'checking';
   try {
@@ -62,6 +124,7 @@ const loadAuthState = async () => {
 
 onMounted(() => {
   void loadShellSignals();
+  void loadShellTicker();
   void loadAuthState();
 });
 
@@ -73,21 +136,20 @@ const shellStatusLabel = computed(() => {
 });
 
 const liveTopics = computed(() => {
-  if (!shellRankingItems.value.length) {
+  if (!shellTickerItems.value.length) {
     return [
       {
-        label: shellReactionState.value === 'loading' ? '확인' : '상태',
-        text: shellReactionState.value === 'error'
-          ? '시장 흐름 데이터 확인 필요 · 지표/실거래 갱신 상태 확인 필요'
-          : '실거래·시장 데이터 확인 전 · 공개 데이터 갱신 대기'
+        id: 'ticker-state',
+        label: shellTickerState.value === 'loading' ? '확인' : '상태',
+        tone: 'state' as ShellTickerTone,
+        text: shellTickerState.value === 'error'
+          ? '주요 뉴스·정책·시장 흐름 확인 필요'
+          : '최신 뉴스·정책·상승·하락 후보 확인 중'
       }
     ];
   }
 
-  return shellRankingItems.value.slice(0, 4).map((item) => ({
-    label: item.stale ? 'STALE' : 'LIVE',
-    text: `${item.displayName} 언급 ${formatDelta(item.mentionDeltaPct)} · ${issueLabel(item)}`
-  }));
+  return shellTickerItems.value;
 });
 
 const watchTargets = computed(() =>
@@ -111,6 +173,138 @@ function formatDelta(value: number): string {
 function issueLabel(item: RealEstateReactionRankingItem): string {
   const issue = item.issueMix[0]?.label;
   return issue ? `${issue} 쟁점` : '쟁점 확인 필요';
+}
+
+function buildContentTickerItems(contentItems: RealEstateContentItem[]): ShellTickerItem[] {
+  const displayItems = buildNewsroomFeedItems(contentItems);
+  const sourceById = new Map(contentItems.map((item) => [item.contentId, item]));
+
+  const tickerItems: Array<ShellTickerItem | null> = displayItems.map((item) => {
+    const source = sourceById.get(item.id);
+    const timestamp = timestampValue(source?.publishedAt ?? source?.ingestedAt);
+    const isPolicy = isPolicyContent(item, source);
+    const isReport = item.category === 'reports';
+    const importance = contentImportanceScore(item, source);
+
+    if (importance < tickerMinimumContentImportance) return null;
+
+    return {
+      id: `content-${item.id}`,
+      label: isPolicy ? '정책' : isReport ? '리포트' : '이슈',
+      text: item.title,
+      tone: isPolicy ? 'policy' : isReport ? 'report' : 'issue',
+      score: timestamp + importance
+    } satisfies ShellTickerItem;
+  });
+
+  return tickerItems
+    .filter((item): item is ShellTickerItem => Boolean(item))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, tickerContentLimit);
+}
+
+function buildScheduleTickerItems(events: MarketDataScheduleEvent[]): ShellTickerItem[] {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+  return events
+    .filter((event) => {
+      const time = timestampValue(event.date);
+      return time >= startOfToday && !event.stale;
+    })
+    .map((event) => ({
+      id: `schedule-${event.id}`,
+      label: '일정',
+      text: `${formatScheduleDate(event.date)} ${event.title}`,
+      tone: event.tone === 'policy' ? 'policy' : 'schedule',
+      score: 3_000_000_000_000 - timestampValue(event.date)
+    } satisfies ShellTickerItem))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, tickerScheduleLimit);
+}
+
+function buildMovementTickerItems(targets: RealEstateMapLayerTarget[]): ShellTickerItem[] {
+  const movements = targets
+    .map((target) => {
+      const period = latestUsablePeriod(target);
+      return period ? { target, changePct: period.changePct, asOf: timestampValue(period.asOf) } : null;
+    })
+    .filter((item): item is { target: RealEstateMapLayerTarget; changePct: number; asOf: number } => Boolean(item));
+  const highestGain = movements.filter((item) => item.changePct > 0).sort((left, right) => right.changePct - left.changePct)[0];
+  const largestDrop = movements.filter((item) => item.changePct < 0).sort((left, right) => left.changePct - right.changePct)[0];
+
+  const tickerItems: Array<ShellTickerItem | null> = [
+    highestGain
+      ? {
+          id: `movement-up-${highestGain.target.targetId}`,
+          label: '상승',
+          text: `${highestGain.target.displayName} ${formatPct(highestGain.changePct)}`,
+          tone: 'up',
+          score: highestGain.asOf + Math.abs(highestGain.changePct) * 100
+        } satisfies ShellTickerItem
+      : null,
+    largestDrop
+      ? {
+          id: `movement-down-${largestDrop.target.targetId}`,
+          label: '하락',
+          text: `${largestDrop.target.displayName} ${formatPct(largestDrop.changePct)}`,
+          tone: 'down',
+          score: largestDrop.asOf + Math.abs(largestDrop.changePct) * 100
+        } satisfies ShellTickerItem
+      : null
+  ];
+
+  return tickerItems.filter((item): item is ShellTickerItem => Boolean(item));
+}
+
+function rankShellTickerItems(items: ShellTickerItem[]): ShellTickerItem[] {
+  const seen = new Set<string>();
+
+  return items
+    .sort((left, right) => right.score - left.score)
+    .filter((item) => {
+      const key = `${item.label}:${item.text}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function isPolicyContent(item: NewsroomFeedItem, source?: RealEstateContentItem): boolean {
+  const searchable = `${item.title} ${source?.snippet ?? ''} ${source?.metricLabel ?? ''}`.toLowerCase();
+  return /정책|공급|청약|대출|금융|공시|규제|국토부|금융위|lh|sh|gh|ih|hug/.test(searchable);
+}
+
+function contentImportanceScore(item: NewsroomFeedItem, source?: RealEstateContentItem): number {
+  const searchable = `${item.title} ${source?.snippet ?? ''} ${source?.metricLabel ?? ''}`.toLowerCase();
+  const isReport = item.category === 'reports';
+  const marketIssueMatches = searchable.match(/정책|공급|청약|대출|금리|금융|가계부채|세제|규제|공시|pf|미분양|전세|월세|실거래|거래량|가격|분양|주택시장|통계|지수|보고서|리포트|재건축|재개발/g)?.length ?? 0;
+  const fillerPenalty = /이벤트|할인|제휴|프로모션|광고|브랜드|수상|채용|앱 출시|해외사업|온도차|실적/.test(searchable) ? 120 : 0;
+
+  return (isPolicyContent(item, source) ? 90 : 0) + (isReport ? 70 : 0) + marketIssueMatches * 15 - fillerPenalty;
+}
+
+function latestUsablePeriod(target: RealEstateMapLayerTarget) {
+  const periodOrder: PeriodKey[] = ['week', 'month', 'quarter', 'halfYear', 'year'];
+  return periodOrder
+    .map((period) => target.periods[period])
+    .find((period) => period && period.dataStatus !== 'mock' && !period.stale) ?? null;
+}
+
+function timestampValue(value?: string | null): number {
+  if (!value) return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatScheduleDate(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' }).format(parsed);
+}
+
+function formatPct(value: number): string {
+  return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
 }
 
 const openRail = (id: string) => {
@@ -201,12 +395,21 @@ const handleLogout = async () => {
       <div class="topbar-live-strip">
         <section class="live-strip" aria-label="상단 실시간 속보">
           <div class="live-strip-track">
-            <span class="live-dot">반응</span>
-            <span v-for="topic in liveTopics" :key="`${topic.label}-${topic.text}`" class="live-topic">
-              <strong>{{ topic.label }}</strong>
-              {{ topic.text }}
-            </span>
-            <span class="live-edge-test">{{ shellStatusLabel }}</span>
+            <div
+              v-for="cycle in 4"
+              :key="`ticker-cycle-${cycle}`"
+              class="live-strip-sequence"
+              :aria-hidden="cycle > 1"
+            >
+              <span
+                v-for="topic in liveTopics"
+                :key="`${cycle}-${topic.id}`"
+                :class="['live-topic', `tone-${topic.tone}`]"
+              >
+                <strong>{{ topic.label }}</strong>
+                {{ topic.text }}
+              </span>
+            </div>
           </div>
         </section>
       </div>

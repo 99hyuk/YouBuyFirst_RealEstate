@@ -10,6 +10,6 @@ describe('vite backend proxy config', () => {
   });
 
   it('keeps the Spring Boot default when no override is provided', () => {
-    expect(resolveBackendProxyTarget({})).toBe('http://localhost:8080');
+    expect(resolveBackendProxyTarget({})).toBe('http://127.0.0.1:8080');
   });
 });

@@ -89,6 +89,35 @@ beforeAll(() => {
                   stale: false
                 }
               }
+            },
+            {
+              targetId: 'region-gwangju',
+              targetType: 'region',
+              displayName: '광주',
+              regionLevel: 'sido',
+              regionCode: '24',
+              periods: {
+                week: {
+                  changePct: -0.42,
+                  sampleCount: 2,
+                  confidence: 1,
+                  asOf: '2026-06-18T00:00:00Z',
+                  provider: 'reb',
+                  sourceLabel: 'map_layer_snapshots',
+                  dataStatus: 'ok',
+                  stale: false
+                },
+                month: {
+                  changePct: -0.61,
+                  sampleCount: 2,
+                  confidence: 1,
+                  asOf: '2026-05-01T00:00:00Z',
+                  provider: 'reb',
+                  sourceLabel: 'map_layer_snapshots',
+                  dataStatus: 'ok',
+                  stale: false
+                }
+              }
             }
           ]
         }), {
@@ -228,6 +257,34 @@ beforeAll(() => {
         });
       }
 
+      if (url.includes('/api/realestate/targets/region-daejeon-yuseong/regional-report')) {
+        return new Response(JSON.stringify({
+          reportId: 'regional-report-region-daejeon-yuseong-test',
+          targetId: 'region-daejeon-yuseong',
+          targetName: 'Daejeon Yuseong',
+          regionLevel: 'sigungu',
+          regionCode: '25040',
+          reportVersion: 'test-v1',
+          promptVersion: 'test-prompt-v1',
+          modelName: null,
+          generatedBy: 'test',
+          title: 'Stored regional report',
+          headline: 'SHOULD_NOT_RENDER_HEADLINE',
+          summary: 'Stored regional report summary',
+          body: 'SHOULD_RENDER_IN_ANALYSIS_ONLY 매매 실거래와 전월세 흐름은 아래 분석 리포트에서만 다룬다.',
+          expectationPoints: ['Stored expectation point 1', 'Stored expectation point 2', 'Stored expectation point 3'],
+          concernPoints: ['Stored concern point 1', 'Stored concern point 2', 'Stored concern point 3'],
+          dataQuality: 'deep_researched',
+          confidence: 0.82,
+          asOf: '2026-06-24T00:00:00Z',
+          publishedAt: '2026-05-01T00:00:00Z',
+          sources: []
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
       if (url.includes('/api/realestate/daily-briefings/latest')) {
         return new Response(JSON.stringify({
           briefingId: 'daily-briefing-20260624-v1',
@@ -241,6 +298,117 @@ beforeAll(() => {
           sections: [],
           focusRegions: [],
           sourceItems: []
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      if (url.includes('/api/realestate/newsroom') && url.includes('pageSize=12')) {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              contentId: 'old-news',
+              contentType: 'news',
+              title: '오래된 부동산 뉴스',
+              snippet: '오래된 뉴스 후보입니다.',
+              url: 'https://example.com/old-news',
+              domain: 'example.com',
+              publishedAt: '2026-06-01T00:00:00Z',
+              statusLabel: '수집 완료'
+            },
+            {
+              contentId: 'latest-filler-news',
+              contentType: 'news',
+              title: '부동산 앱 제휴 이벤트',
+              snippet: '시장 흐름과 직접 관련이 낮은 홍보성 후보입니다.',
+              url: 'https://example.com/latest-filler-news',
+              domain: 'example.com',
+              publishedAt: '2026-06-25T09:30:00Z',
+              statusLabel: '수집 완료'
+            },
+            {
+              contentId: 'latest-policy-news',
+              contentType: 'news',
+              title: '주택 공급 정책 발표 후속 점검',
+              snippet: '정책 발표 이후 공급 일정과 지역 영향을 함께 봅니다.',
+              url: 'https://example.com/latest-policy-news',
+              domain: 'example.com',
+              publishedAt: '2026-06-25T08:20:00Z',
+              statusLabel: '수집 완료'
+            },
+            {
+              contentId: 'latest-report',
+              contentType: 'report',
+              title: '전세 가격 흐름 리포트',
+              snippet: '전세 가격과 거래 흐름을 정리한 최신 리포트입니다.',
+              url: 'https://example.com/latest-report',
+              domain: 'example.com',
+              publishedAt: '2026-06-24T23:00:00Z',
+              statusLabel: '수집 완료'
+            },
+            {
+              contentId: 'latest-loan-policy',
+              contentType: 'news',
+              title: '주택담보대출 금리 점검',
+              snippet: '대출 금리와 가계부채 정책 변화를 함께 점검합니다.',
+              url: 'https://example.com/latest-loan-policy',
+              domain: 'example.com',
+              publishedAt: '2026-06-24T21:00:00Z',
+              statusLabel: '수집 완료'
+            }
+          ]
+        }), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      if (url.includes('/api/realestate/market-data-schedules')) {
+        return new Response(JSON.stringify({
+          month: '2026-06',
+          scheduleEvents: [
+            {
+              id: 'old-schedule',
+              date: '2026-06-10',
+              title: '과거 일정',
+              category: 'market',
+              source: '한국부동산원',
+              summary: '이미 지난 일정입니다.',
+              link: 'https://example.com/old-schedule',
+              tone: 'market',
+              status: 'published',
+              dataStatus: 'ok',
+              stale: false
+            },
+            {
+              id: 'latest-schedule',
+              date: '2026-06-26',
+              title: '청약Home 모집공고 발표',
+              category: 'subscription',
+              source: '청약Home',
+              summary: '내일 확인해야 하는 청약 일정입니다.',
+              link: 'https://example.com/latest-schedule',
+              tone: 'subscription',
+              status: 'scheduled',
+              dataStatus: 'ok',
+              stale: false
+            },
+            {
+              id: 'weekly-price-index',
+              date: '2026-06-27',
+              title: '한국부동산원 주간 가격동향 공표',
+              category: 'market',
+              source: '한국부동산원',
+              summary: '주간 가격지수 공표 일정입니다.',
+              link: 'https://example.com/weekly-price-index',
+              tone: 'market',
+              status: 'scheduled',
+              dataStatus: 'ok',
+              stale: false
+            }
+          ],
+          sourceLinks: []
         }), {
           headers: { 'Content-Type': 'application/json' },
           status: 200
@@ -343,6 +511,22 @@ describe('front dashboard shell', () => {
     expect(wrapper.find('.topbar').text()).not.toContain('MOCK');
     expect(wrapper.find('.topbar').text()).not.toContain('참고용');
     expect(wrapper.find('.topbar-live-strip').text()).not.toContain('mock data');
+    expect(wrapper.get('.topbar-live-strip').text()).not.toContain('주요');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('정책');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('주택 공급 정책 발표 후속 점검');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('주택담보대출 금리 점검');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('리포트');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('전세 가격 흐름 리포트');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('일정');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('청약Home 모집공고 발표');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('한국부동산원 주간 가격동향 공표');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('상승');
+    expect(wrapper.get('.topbar-live-strip').text()).toContain('하락');
+    expect(wrapper.get('.topbar-live-strip').text()).not.toContain('오래된 부동산 뉴스');
+    expect(wrapper.get('.topbar-live-strip').text()).not.toContain('부동산 앱 제휴 이벤트');
+    expect(wrapper.get('.topbar-live-strip').text()).not.toContain('최신 중요 후보 우선');
+    expect(wrapper.get('.topbar-live-strip').text()).not.toContain('시장 이슈 확인 중');
+    expect(wrapper.findAll('.live-strip-sequence')).toHaveLength(4);
     expect(wrapper.get('.dashboard-brand-hero').text()).toContain('YouBuyFirst');
     expect(wrapper.get('.dashboard-brand-hero').text()).toContain('당신을 위한 부동산 인사이트');
     expect(wrapper.text()).not.toContain('콘텐츠 반영');
@@ -423,12 +607,26 @@ describe('front dashboard shell', () => {
     expect(wrapper.find('.nav-menu-parent').classes()).toContain('menu-dismissed');
   });
 
+  it('keeps the transaction map and filter bar clear of the right rail', () => {
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(styles).toContain('body:has(.complex-browse-page) .app-shell {');
+    expect(styles).toContain('--complex-browse-right-offset: var(--edge-rail-width);');
+    expect(styles).toContain('body:has(.complex-browse-page) .app-shell.edge-panel-open {');
+    expect(styles).toContain('--complex-browse-right-offset: calc(var(--edge-rail-width) + var(--edge-panel-open-width));');
+    expect(styles).toMatch(
+      /body:has\(\.complex-browse-page\) \.page-frame\s*\{[\s\S]*width: calc\(100% - var\(--complex-browse-right-offset\)\);[\s\S]*margin: 0 var\(--complex-browse-right-offset\) 0 0;/
+    );
+  });
+
   it('renders the core product pages with the expanded planning content', async () => {
     const transactions = await mountAt('/realestate/transactions');
     await flushPromises();
 
     expect(transactions.find('.complex-browse-page').exists()).toBe(true);
     expect(transactions.text()).toContain('실거래 지도');
+    expect(transactions.find('[data-testid="complex-status"]').exists()).toBe(false);
+    expect(transactions.find('[data-testid="complex-coord-status"]').exists()).toBe(false);
 
     const legacyReactions = await mountAt('/realestate/reactions');
     await flushPromises();
@@ -519,14 +717,15 @@ describe('front dashboard shell', () => {
     const indicators = await mountAt('/indicators');
     expect(indicators.find('.indicator-calendar-page').exists()).toBe(true);
     expect(indicators.text()).toContain('주요 일정');
-    expect(indicators.text()).toContain('가격지수, 실거래, 공급, 금리, 청약 일정을 캘린더로 확인합니다.');
+    expect(indicators.text()).toContain('가격·거래현황, 공급, 금융, 청약, 정책·공시 일정을 캘린더로 확인합니다.');
     expect(indicators.find('.calendar-agenda-panel').exists()).toBe(false);
     expect(indicators.text()).toContain('공식 출처');
     expect(indicators.text()).toContain('한국부동산원 R-ONE');
     expect(indicators.text()).toContain('국토교통부 실거래가 공개시스템');
-    expect(indicators.findAll('.calendar-event-strip').length).toBeGreaterThan(0);
-    expect(indicators.findAll('.calendar-event-card').length).toBeGreaterThan(0);
-    expect(indicators.findAll('.schedule-source-card')).toHaveLength(6);
+    expect(indicators.findAll('.calendar-event-strip')).toHaveLength(0);
+    expect(indicators.find('.calendar-event-card.empty').exists()).toBe(true);
+    expect(indicators.text()).toContain('공식 일정 수집 전');
+    expect(indicators.findAll('.schedule-source-card')).toHaveLength(13);
     expect(indicators.text()).not.toContain('주요 부동산 지표');
     expect(indicators.text()).not.toContain('지표와 반응이 엇갈린 지역');
     expect(indicators.text()).not.toContain('지표별 반응 히트맵');
@@ -568,6 +767,10 @@ describe('front dashboard shell', () => {
     expect(periodButtons[1].classes()).toContain('active');
     expect(periodButtons[0].classes()).not.toContain('active');
     expect(wrapper.get('[data-testid="map-zoom-percent"]').text()).toBe('100%');
+    expect(wrapper.text()).toContain('가장 높은 상승');
+    expect(wrapper.text()).toContain('가장 많은 하락');
+    expect(wrapper.text()).toContain('지역 단위');
+    expect(wrapper.text()).not.toContain('다음 단계');
 
     wrapper.get('[data-testid="korea-map-shell"]').element.dispatchEvent(new WheelEvent('wheel', {
       bubbles: true,
@@ -611,7 +814,12 @@ describe('front dashboard shell', () => {
     expect(drilldown.find('[data-testid="map-zoom-percent"]').exists()).toBe(true);
     expect(drilldown.text()).toContain('동구');
     expect(drilldown.text()).toContain('유성구');
-    expect(drilldown.get('[data-testid="subregion-layer-status"]').text()).toContain('한국부동산원 · 공공데이터 반영 · 최신 반영 · 2026. 05. 01. 09:00 KST');
+    expect(drilldown.text()).toContain('가장 높은 상승');
+    expect(drilldown.text()).toContain('가장 많은 하락');
+    expect(drilldown.text()).toContain('하위지역');
+    expect(drilldown.text()).not.toContain('다음 단계');
+    expect(drilldown.get('[data-testid="subregion-layer-status"]').text()).toBe('하위지역 기준');
+    expect(drilldown.text()).not.toContain('한국부동산원 · 공공데이터 반영 · 최신 반영 · 2026. 05. 01. 09:00 KST');
 
     const unavailableButton = drilldown.findAll('[data-testid^="subregion-button-"]')
       .find((button) => button.attributes('data-testid') !== 'subregion-button-25040');
@@ -634,6 +842,12 @@ describe('front dashboard shell', () => {
     expect(drilldown.find('[data-testid="realestate-map-layout"]').classes()).toContain('split');
     const reportPanel = drilldown.get('[data-testid="map-report-panel"]');
     const reportText = reportPanel.text();
+    const briefingSection = reportPanel.get('[data-testid="report-section-ai-briefing"]');
+    const analysisSection = reportPanel.get('[data-testid="report-section-ai-analysis"]');
+
+    expect(briefingSection.text()).not.toContain('SHOULD_NOT_RENDER_HEADLINE');
+    expect(reportPanel.find('#map-ai-report-title').exists()).toBe(false);
+    expect(analysisSection.text()).toContain('SHOULD_RENDER_IN_ANALYSIS_ONLY');
     expect(reportText).toContain('유성구');
     expect(reportText).toContain('AI 핵심 브리핑');
     expect(reportText).not.toContain('최근 변화율');
