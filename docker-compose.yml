@@ -45,7 +45,9 @@ services:
     command: ["bash", "/workspace/scripts/seed-realestate.sh"]
 
   # 실거래(MOLIT) "현재월"을 주기적으로 재수집(지각 신고 반영). 기본 하루 1회.
-  # 실거래는 월 단위라 분 단위 폴링이 불필요 → 하루 1회로 충분. 과거 비교월은 고정.
+  # 실거래는 월 단위라 분 단위 폴링이 불필요 → 하루 1회로 충분.
+  # 현재월/비교월(MoM·6개월·YoY)은 스크립트가 매 주기 "지금" 기준으로 자동 계산해서
+  # 빠진 비교월을 자동 백필한다 - REALESTATE_CURRENT_DEAL_YM은 테스트용 override일 때만 채운다.
   realestate-refresh:
     build:
       context: ./pipeline
@@ -53,7 +55,7 @@ services:
       SPRING_BASE_URL: http://backend:8080
       DATA_GO_SERVICE_KEY: ${DATA_GO_SERVICE_KEY:-}
       REALESTATE_REFRESH_INTERVAL_MINUTES: ${REALESTATE_REFRESH_INTERVAL_MINUTES:-1440}
-      REALESTATE_CURRENT_DEAL_YM: ${REALESTATE_CURRENT_DEAL_YM:-202605}
+      REALESTATE_CURRENT_DEAL_YM: ${REALESTATE_CURRENT_DEAL_YM:-}
     depends_on:
       - backend
     restart: unless-stopped

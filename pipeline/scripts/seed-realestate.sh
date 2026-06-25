@@ -7,12 +7,25 @@ BACKEND="${SPRING_BASE_URL:-http://backend:8080}"
 
 # 현재 전체 범위(서울/부산/인천/대구/대전/광주/울산/경기 주요 시군구 21곳).
 REGIONS="11680 11650 11710 11440 11110 11500 11350 11560 11170 26350 26500 26230 28185 27260 30200 29200 31140 41135 41117 41285 41465"
-# 현재 기준월 + 기간 비교월(MoM/6개월/YoY).
-CURRENT_YM="202605"
-COMPARISON_YMS="202604 202511 202505"
 # 현재월은 전체 매물유형, 비교월은 아파트(트렌드 계산용)만 적재 → 현재 DB 범위와 동일.
 ALL_DATASETS="trade rent offi-trade offi-rent rh-trade rh-rent sh-trade sh-rent silv-trade"
 APT_DATASETS="trade rent"
+
+# 오늘 기준 n개월 전의 YYYYMM (월이 바뀌어도 매번 자동 계산, 하드코딩 제거).
+ym_offset() {
+  python3 - "$1" <<'PY'
+import sys, datetime
+months_ago = int(sys.argv[1])
+today = datetime.date.today()
+total = today.year * 12 + (today.month - 1) - months_ago
+print(f"{total // 12:04d}{total % 12 + 1:02d}")
+PY
+}
+
+# 현재 기준월 + 기간 비교월(MoM/6개월/YoY) - 항상 "지금" 기준으로 자동 계산한다.
+# REALESTATE_CURRENT_DEAL_YM을 명시적으로 지정하면 그 값을 그대로 쓴다(테스트/백필용 override).
+CURRENT_YM="${REALESTATE_CURRENT_DEAL_YM:-$(ym_offset 0)}"
+COMPARISON_YMS="$(ym_offset 1) $(ym_offset 6) $(ym_offset 12)"
 
 # 백엔드가 응답 가능한지(urllib, curl 의존 제거).
 http_ok() {

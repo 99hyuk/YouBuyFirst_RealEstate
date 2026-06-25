@@ -4,6 +4,7 @@ import {
   buildRegionRankingRows,
   fetchRealEstateReactionRanking,
   fetchRealEstateReactionRankingWithFallback,
+  fetchRealEstateTargetReactionSnapshot,
   reactionRankingWindowLabel
 } from '../lib/realestate-reactions';
 
@@ -174,6 +175,40 @@ describe('real-estate reaction ranking adapter', () => {
       'complex-molit-1111011500-sajik-palace'
     ]);
     expect(ranking.items[0].rank).toBe(1);
+  });
+
+  it('fetches a single target reaction snapshot with the default window', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+      targetId: 'complex-molit-1111011500-sajik-palace',
+      targetType: 'complex',
+      displayName: '사직팰리스',
+      mentionCount: 12,
+      reactionDirectionRatio: { expectation: 0.6, concern: 0.25, neutral: 0.15 },
+      heatScore: 70
+    })));
+
+    const snapshot = await fetchRealEstateTargetReactionSnapshot('complex-molit-1111011500-sajik-palace', {}, fetcher);
+
+    expect(fetcher).toHaveBeenCalledWith(
+      '/api/realestate/targets/complex-molit-1111011500-sajik-palace/reaction-snapshot?windowMinutes=10080'
+    );
+    expect(snapshot.mentionCount).toBe(12);
+    expect(snapshot.reactionDirectionRatio).toEqual({ expectation: 0.6, concern: 0.25, neutral: 0.15 });
+  });
+
+  it('defaults missing reaction snapshot fields to empty/zero values', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({})));
+
+    const snapshot = await fetchRealEstateTargetReactionSnapshot('region-seoul-mapo', {}, fetcher);
+
+    expect(snapshot.mentionCount).toBe(0);
+    expect(snapshot.reactionDirectionRatio).toEqual({ expectation: 0, concern: 0, neutral: 0 });
+  });
+
+  it('throws when the target reaction snapshot request fails', async () => {
+    const fetcher = vi.fn(async () => new Response('error', { status: 404 }));
+
+    await expect(fetchRealEstateTargetReactionSnapshot('unknown-target', {}, fetcher)).rejects.toThrow();
   });
 
   it('maps backend reaction rows to the region reaction table shape', () => {
