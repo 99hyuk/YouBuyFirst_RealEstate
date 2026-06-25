@@ -33,7 +33,7 @@ public class ChatMessageController {
 
     @GetMapping
     public List<ChatMessageResponse> recent(
-            @RequestParam(defaultValue = "50") int limit,
+            @RequestParam(defaultValue = "100") int limit,
             Authentication authentication,
             HttpServletRequest request
     ) {

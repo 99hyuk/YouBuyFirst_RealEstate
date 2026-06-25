@@ -72,6 +72,7 @@ const edgeChatFontLevel = ref(5);
 let edgeChatPresenceTimer: number | null = null;
 let edgeChatMessageStream: EventSource | null = null;
 const chatInputRef = ref<HTMLTextAreaElement | null>(null);
+const edgeChatFeedRef = ref<HTMLDivElement | null>(null);
 const edgeChatNicknameInputRef = ref<HTMLInputElement | null>(null);
 const edgeChatGuestNameInputRef = ref<HTMLInputElement | null>(null);
 const edgeChatNicknameDraft = ref('');
@@ -212,6 +213,7 @@ const edgeChatSeedMessages: EdgeChatMessage[] = [
   }
 ];
 
+const EDGE_CHAT_VISIBLE_LIMIT = 100;
 const edgeChatMessages = ref<EdgeChatMessage[]>([...edgeChatSeedMessages]);
 
 const tickerContentPageSize = 12;
@@ -376,34 +378,46 @@ const mapChatMessageResponse = (message: ChatMessageResponse): EdgeChatMessage =
   attachment: normalizeChatAttachment(message.attachment)
 });
 
+const scrollEdgeChatToBottom = async () => {
+  await nextTick();
+  const feed = edgeChatFeedRef.value;
+  if (!feed) return;
+  feed.scrollTop = feed.scrollHeight;
+};
+
+const setEdgeChatMessages = (messages: EdgeChatMessage[]) => {
+  edgeChatMessages.value = messages.slice(-EDGE_CHAT_VISIBLE_LIMIT);
+  void scrollEdgeChatToBottom();
+};
+
 const upsertEdgeChatMessage = (message: ChatMessageResponse) => {
   const nextMessage = mapChatMessageResponse(message);
   const existing = edgeChatMessages.value.find((item) => item.id === nextMessage.id);
-  edgeChatMessages.value = [
+  setEdgeChatMessages([
     ...edgeChatMessages.value.filter((item) => item.id !== nextMessage.id),
     {
       ...nextMessage,
       mine: Boolean(existing?.mine || nextMessage.mine)
     }
-  ];
+  ]);
 };
 
 const loadEdgeChatMessages = async () => {
   try {
-    const response = await fetch('/api/chat/messages?limit=50', {
+    const response = await fetch(`/api/chat/messages?limit=${EDGE_CHAT_VISIBLE_LIMIT}`, {
       credentials: 'include'
     });
     if (!response.ok) {
       throw new Error('chat messages request failed');
     }
     const payload = await response.json() as ChatMessageResponse[];
-    edgeChatMessages.value = [
+    setEdgeChatMessages([
       ...edgeChatSeedMessages,
       ...payload.map(mapChatMessageResponse)
-    ];
+    ]);
   } catch {
     if (!edgeChatMessages.value.length) {
-      edgeChatMessages.value = [...edgeChatSeedMessages];
+      setEdgeChatMessages([...edgeChatSeedMessages]);
     }
   }
 };
@@ -713,6 +727,7 @@ const openRail = (id: string) => {
   railExpanded.value = true;
   if (id === 'chat') {
     startEdgeChatPresence();
+    void scrollEdgeChatToBottom();
     return;
   }
   stopEdgeChatPresence();
@@ -725,6 +740,7 @@ const toggleRail = () => {
   railExpanded.value = !railExpanded.value;
   if (railExpanded.value && activeRailItem.value === 'chat') {
     startEdgeChatPresence();
+    void scrollEdgeChatToBottom();
   } else {
     stopEdgeChatPresence();
   }
@@ -1142,6 +1158,7 @@ const handleLogout = async () => {
 
           <div class="edge-chat-feed-frame" data-testid="edge-chat-feed-frame">
             <div
+              ref="edgeChatFeedRef"
               class="edge-chat-feed"
               :class="{ 'guest-locked': showGuestChatGate }"
               data-testid="edge-chat-feed"

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -1257,11 +1258,72 @@ describe('front dashboard shell', () => {
     const wrapper = await mountAt('/dashboard');
     await flushPromises();
 
-    expect(globalThis.fetch).toHaveBeenCalledWith('/api/chat/messages?limit=50', { credentials: 'include' });
+    expect(globalThis.fetch).toHaveBeenCalledWith('/api/chat/messages?limit=100', { credentials: 'include' });
     expect(wrapper.get('[data-testid="edge-chat-feed"]').text()).toContain('터널사용자');
     expect(wrapper.get('[data-testid="edge-chat-feed"]').text()).toContain('터널에서도 보여야 하는 서버 메시지');
     const legacyMetric = wrapper.get('[data-testid="edge-chat-attachment-complex-apt-old-hanyang"] .edge-chat-attachment-metric');
     expect(legacyMetric.text()).toBe('최근 1개월 +2.2%');
+  });
+
+  it('keeps only the latest 100 chat messages visible and starts at the bottom', async () => {
+    const scrollAssignments: number[] = [];
+    const previousScrollHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    const previousScrollTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollTop');
+
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get: () => 987
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollTop', {
+      configurable: true,
+      get: () => 0,
+      set: (value: number) => {
+        scrollAssignments.push(value);
+      }
+    });
+
+    shellChatMessages = Array.from({ length: 105 }, (_, index) => {
+      const sequence = index + 1;
+      return {
+        id: `server-chat-limit-${sequence}`,
+        author: 'LimitUser',
+        badge: 'chat',
+        body: `limit-message-${String(sequence).padStart(3, '0')}`,
+        timeLabel: 'now',
+        category: 'chat' as const,
+        mine: false,
+        tone: 'blue' as const,
+        verified: false,
+        createdAt: `2026-06-25T00:${String(sequence).padStart(2, '0')}:00Z`,
+        attachment: null
+      };
+    });
+
+    try {
+      const wrapper = await mountAt('/dashboard');
+      await flushPromises();
+      await nextTick();
+
+      const feed = wrapper.get('[data-testid="edge-chat-feed"]');
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/chat/messages?limit=100', { credentials: 'include' });
+      expect(wrapper.findAll('.edge-chat-message')).toHaveLength(100);
+      expect(feed.text()).not.toContain('limit-message-001');
+      expect(feed.text()).not.toContain('limit-message-005');
+      expect(feed.text()).toContain('limit-message-006');
+      expect(feed.text()).toContain('limit-message-105');
+      expect(scrollAssignments).toContain(987);
+    } finally {
+      if (previousScrollHeight) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollHeight', previousScrollHeight);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollHeight');
+      }
+      if (previousScrollTop) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollTop', previousScrollTop);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollTop');
+      }
+    }
   });
 
   it('streams new chat messages into an open chat panel without refreshing', async () => {

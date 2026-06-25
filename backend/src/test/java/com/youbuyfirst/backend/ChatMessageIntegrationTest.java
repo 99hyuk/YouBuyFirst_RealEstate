@@ -195,6 +195,39 @@ class ChatMessageIntegrationTest {
     }
 
     @Test
+    void capsRecentChatMessagesAtOneHundredEvenWhenClientRequestsMore() throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        for (int i = 1; i <= 105; i++) {
+            String body = String.format("limit-msg-%03d", i);
+            HttpRequest request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/chat/messages"))
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            "{\"body\":\"" + body + "\",\"displayName\":\"LimitGuest\"}",
+                            StandardCharsets.UTF_8
+                    ))
+                    .build();
+            HttpResponse<String> posted = client.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+
+            assertThat(posted.statusCode()).isEqualTo(HttpStatus.CREATED.value());
+        }
+
+        ResponseEntity<String> readWithOversizedLimit = restTemplate.getForEntity(
+                "/api/chat/messages?limit=500",
+                String.class
+        );
+
+        assertThat(readWithOversizedLimit.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode messages = objectMapper.readTree(readWithOversizedLimit.getBody());
+        assertThat(messages).hasSize(100);
+        assertThat(messages.get(0).path("body").asText()).isEqualTo("limit-msg-006");
+        assertThat(messages.get(99).path("body").asText()).isEqualTo("limit-msg-105");
+        assertThat(readWithOversizedLimit.getBody()).doesNotContain("limit-msg-001");
+    }
+
+    @Test
     void streamsCreatedChatMessagesToOpenClientsWithoutRefresh() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest streamRequest = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/chat/messages/stream"))

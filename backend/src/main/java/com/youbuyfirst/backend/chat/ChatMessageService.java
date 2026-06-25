@@ -24,8 +24,8 @@ import java.util.List;
 @Service
 public class ChatMessageService {
 
-    private static final int DEFAULT_LIMIT = 50;
     private static final int MAX_LIMIT = 100;
+    private static final int DEFAULT_LIMIT = MAX_LIMIT;
 
     private final ChatMessageRepository repository;
     private final ChatMessageStream stream;
