@@ -16106,7 +16106,6 @@ body:has(.complex-browse-page) .page-frame {
   .panel.content-feed-card,
   .panel.content-feed-card .panel-header,
   .content-feed-card,
-  .reaction-panel,
   .drawer-card,
   .hot-region-panel,
   .edge-panel-screen,
@@ -16142,6 +16141,12 @@ body:has(.complex-browse-page) .page-frame {
     #171a21;
   border-color: rgba(148, 163, 184, 0.28);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+}
+
+.app-shell.dark-mode .reaction-panel.region-bubble-section {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .app-shell.dark-mode :is(
@@ -16300,8 +16305,8 @@ body:has(.complex-browse-page) .page-frame {
 }
 
 .app-shell.dark-mode .edge-chat-message-bubble {
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: #1b1f27;
+  border: 0;
+  background: transparent;
   color: #dbe7f5;
   box-shadow: none;
 }
@@ -16399,6 +16404,89 @@ body:has(.complex-browse-page) .page-frame {
   background: #20242d;
   color: #7f8ea4;
   box-shadow: none;
+}
+
+.app-shell.dark-mode .complex-browse-page {
+  background: #0d0f13;
+  color: var(--ink);
+}
+
+.app-shell.dark-mode .complex-filter-bar.floating {
+  border-color: rgba(148, 163, 184, 0.26);
+  background: rgba(17, 20, 26, 0.97);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+}
+
+.app-shell.dark-mode .overlay-title {
+  color: #f8fafc;
+}
+
+.app-shell.dark-mode .complex-filter-groups {
+  --complex-region-surface: #1b222c;
+  --complex-region-surface-strong: #202833;
+  --complex-region-border: rgba(125, 211, 252, 0.32);
+  --complex-region-border-strong: rgba(125, 211, 252, 0.46);
+  --complex-region-text: #bae6fd;
+  --complex-region-text-strong: #e0f2fe;
+  --complex-chip-surface: #1f232c;
+  --complex-chip-surface-hover: #292f3a;
+  --complex-chip-border: rgba(251, 146, 60, 0.26);
+  --complex-chip-border-strong: rgba(251, 146, 60, 0.48);
+  --complex-chip-text: #fed7aa;
+  --complex-focus: rgba(251, 146, 60, 0.28);
+  --complex-shadow: none;
+}
+
+.app-shell.dark-mode .filter-chip-row {
+  border-left-color: rgba(148, 163, 184, 0.24);
+}
+
+.app-shell.dark-mode .filter-chip:not(.active) {
+  background: var(--complex-chip-surface);
+  color: var(--complex-chip-text);
+  box-shadow: none;
+}
+
+.app-shell.dark-mode .filter-chip:hover:not(:disabled):not(.active) {
+  background: var(--complex-chip-surface-hover);
+  box-shadow: none;
+}
+
+.app-shell.dark-mode :is(.complex-search input, .complex-sort, .complex-sido-select, .complex-region-select) {
+  border-color: rgba(148, 163, 184, 0.3);
+  background-color: #151922;
+  color: #e5edf7;
+  box-shadow: none;
+}
+
+.app-shell.dark-mode .complex-search input::placeholder {
+  color: #7f8ea4;
+}
+
+.app-shell.dark-mode :is(.complex-sido-select, .complex-region-select) {
+  border-color: var(--complex-region-border);
+  color: var(--complex-region-text);
+}
+
+.app-shell.dark-mode .complex-sido-select {
+  border-color: var(--complex-region-border-strong);
+  background-color: var(--complex-region-surface-strong);
+  color: var(--complex-region-text-strong);
+}
+
+.app-shell.dark-mode .complex-region-select {
+  background-color: var(--complex-region-surface);
+}
+
+.app-shell.dark-mode .complex-list-panel.floating {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: rgba(18, 21, 28, 0.95);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.34);
+}
+
+.app-shell.dark-mode .complex-stale {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fed7aa;
 }
 
 .app-shell.dark-mode .theme-toggle {

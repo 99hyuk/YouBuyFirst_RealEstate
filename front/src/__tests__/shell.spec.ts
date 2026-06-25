@@ -1507,6 +1507,10 @@ describe('front dashboard shell', () => {
     expect(styles).toContain("html[data-theme='dark'] body");
     expect(styles).toContain('.app-shell.dark-mode');
     expect(styles).toContain(".edge-rail .theme-toggle[aria-pressed='true']");
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.reaction-panel\.region-bubble-section\s*\{[\s\S]*background: transparent;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.edge-chat-message-bubble\s*\{[\s\S]*background: transparent;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.complex-filter-bar\.floating\s*\{[\s\S]*background: rgba\(17, 20, 26, 0\.97\);/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.overlay-title\s*\{[\s\S]*color: #f8fafc;/);
   });
 
   it('shows guest join choices instead of linking the toolbar identity to login', async () => {
