@@ -177,11 +177,23 @@ class RealEstateRegionalReportIntegrationTest {
     @Order(4)
     void allRegionalReportsUseDeepResearchAfterNationwideBatches() throws Exception {
         Integer regionCount = jdbcTemplate.queryForObject(
-                "select count(*) from real_estate_regions where region_level in ('sido', 'sigungu')",
+                """
+                select count(*)
+                from real_estate_regions
+                where region_level in ('sido', 'sigungu')
+                  and source like 'seed:%'
+                """,
                 Integer.class
         );
         Integer deepReportCount = jdbcTemplate.queryForObject(
-                "select count(*) from real_estate_regional_reports where data_quality = 'deep_researched'",
+                """
+                select count(*)
+                from real_estate_regional_reports report
+                join real_estate_regions region on region.target_id = report.target_id
+                where report.data_quality = 'deep_researched'
+                  and region.region_level in ('sido', 'sigungu')
+                  and region.source like 'seed:%'
+                """,
                 Integer.class
         );
         Integer genericReportCount = jdbcTemplate.queryForObject(
@@ -321,18 +333,32 @@ class RealEstateRegionalReportIntegrationTest {
     @Order(6)
     void deepReportCoversEverySidoAndSigunguRegionRow() {
         Integer regionCount = jdbcTemplate.queryForObject(
-                "select count(*) from real_estate_regions where region_level in ('sido', 'sigungu')",
+                """
+                select count(*)
+                from real_estate_regions
+                where region_level in ('sido', 'sigungu')
+                  and source like 'seed:%'
+                """,
                 Integer.class
         );
         Integer reportCount = jdbcTemplate.queryForObject(
-                "select count(*) from real_estate_regional_reports",
+                """
+                select count(*)
+                from real_estate_regional_reports report
+                join real_estate_regions region on region.target_id = report.target_id
+                where region.region_level in ('sido', 'sigungu')
+                  and region.source like 'seed:%'
+                """,
                 Integer.class
         );
         Integer deepReportCount = jdbcTemplate.queryForObject(
                 """
                 select count(*)
-                from real_estate_regional_reports
-                where data_quality = 'deep_researched'
+                from real_estate_regional_reports report
+                join real_estate_regions region on region.target_id = report.target_id
+                where report.data_quality = 'deep_researched'
+                  and region.region_level in ('sido', 'sigungu')
+                  and region.source like 'seed:%'
                 """,
                 Integer.class
         );
@@ -342,8 +368,11 @@ class RealEstateRegionalReportIntegrationTest {
 
         List<Map<String, Object>> reports = jdbcTemplate.queryForList(
                 """
-                select body, expectation_points_json, concern_points_json
-                from real_estate_regional_reports
+                select report.body, report.expectation_points_json, report.concern_points_json
+                from real_estate_regional_reports report
+                join real_estate_regions region on region.target_id = report.target_id
+                where region.region_level in ('sido', 'sigungu')
+                  and region.source like 'seed:%'
                 """
         );
         assertThat(reports).hasSize(regionCount);

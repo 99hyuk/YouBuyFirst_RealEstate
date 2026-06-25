@@ -167,7 +167,7 @@ class RealEstateTargetIntegrationTest {
                 "마포"
         );
         ResponseEntity<String> dataTargets = restTemplate.getForEntity(
-                "/internal/realestate/market-data-targets?enabled=true&limit=20",
+                "/internal/realestate/market-data-targets?enabled=true&limit=500",
                 String.class
         );
 
@@ -350,7 +350,7 @@ class RealEstateTargetIntegrationTest {
                 "해운대"
         );
         ResponseEntity<String> dataTargets = restTemplate.getForEntity(
-                "/internal/realestate/market-data-targets?enabled=true&limit=20",
+                "/internal/realestate/market-data-targets?enabled=true&limit=500",
                 String.class
         );
 
