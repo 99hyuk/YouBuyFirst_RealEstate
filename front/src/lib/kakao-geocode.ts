@@ -61,12 +61,18 @@ function blockStyleAliases(item: TransactionItem): string[] {
 
 export function buildGeocodeQueriesForItem(item: TransactionItem): string[] {
   const queries: string[] = [];
+  const aliases = blockStyleAliases(item);
+  pushQuery(queries, item.jibun ? `${item.gu} ${item.region} ${item.jibun}` : null);
+  pushQuery(queries, item.jibun ? `${item.region} ${item.jibun}` : null);
   pushQuery(queries, `${item.gu} ${item.region} ${item.name}`);
-  pushQuery(queries, `${item.gu} ${item.name}`);
   pushQuery(queries, `${item.region} ${item.name}`);
-  pushQuery(queries, item.name);
 
-  for (const alias of blockStyleAliases(item)) {
+  if (aliases.length) {
+    pushQuery(queries, `${item.gu} ${item.name}`);
+    pushQuery(queries, item.name);
+  }
+
+  for (const alias of aliases) {
     pushQuery(queries, alias);
   }
 
@@ -103,6 +109,11 @@ function coordinateForItem(
   return null;
 }
 
+function isDefaultTestFetch(fetcher: Fetcher): boolean {
+  const env = (import.meta as ImportMeta & { env?: { MODE?: string } }).env;
+  return env?.MODE === 'test' && fetcher === fetch;
+}
+
 /**
  * 좌표를 백엔드에서 한 번에 받아 적용한다. 백엔드가 비활성이거나 실패하면 원본
  * (구 중심 좌표)을 그대로 돌려준다. 테스트 모드에서는 기본 fetch 네트워크를 타지 않는다.
@@ -111,7 +122,7 @@ export async function geocodeTransactionItems(
   items: TransactionItem[],
   fetcher: Fetcher = fetch
 ): Promise<TransactionItem[]> {
-  if (!items.length || (import.meta.env.MODE === 'test' && fetcher === fetch)) return items;
+  if (!items.length || isDefaultTestFetch(fetcher)) return items;
 
   const queriesByItem = items.map(buildGeocodeQueriesForItem);
   const queries = [...new Set(queriesByItem.flat())].filter((query) => query.length > 0);

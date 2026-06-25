@@ -180,4 +180,57 @@ const defaultSourceIcon = iconSvg(
   '<circle cx="16" cy="16" r="10" fill="none" stroke="#64748b" stroke-width="3"/><path d="M12 16h8M16 12v8" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>'
 );
 
-export const sourceIconUrl = (domain: string) => sourceIcons[domain] ?? defaultSourceIcon;
+export type SourceIconFallback = 'news' | 'report' | 'video' | 'link';
+
+const fallbackSourceIcons: Record<SourceIconFallback, string> = {
+  news: iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#1d4ed8"/><path d="M10 12h12M10 17h11M10 22h8" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>'
+  ),
+  report: iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#0f766e"/><path d="M10 21h12M11 17l4-4 4 4 3-6" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>'
+  ),
+  video: iconSvg(
+    '<rect x="4" y="9" width="24" height="14" rx="4.5" fill="#ff0033"/><path d="M14 13v6l6-3z" fill="#fff"/>'
+  ),
+  link: iconSvg(
+    '<rect x="5" y="6" width="22" height="20" rx="5" fill="#7c3aed"/><path d="M12 16h8M10 20h7M15 12h7" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/>'
+  )
+};
+
+const faviconIconUrl = (domain: string) =>
+  `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+
+const normalizeDomain = (domain: string) => {
+  const normalized = domain.trim().toLowerCase();
+  if (!normalized) return '';
+
+  try {
+    const parsed = new URL(normalized.includes('://') ? normalized : `https://${normalized}`);
+    return parsed.hostname.replace(/\.$/, '');
+  } catch {
+    return normalized.split('/')[0].replace(/:\d+$/, '').replace(/\.$/, '');
+  }
+};
+
+const domainCandidates = (domain: string) => {
+  const normalized = normalizeDomain(domain);
+  if (!normalized) return [];
+  const withoutPrefix = normalized.replace(/^(www\.|m\.)/, '');
+  return [
+    normalized,
+    withoutPrefix,
+    `www.${withoutPrefix}`,
+    `m.${withoutPrefix}`
+  ];
+};
+
+export const sourceIconUrl = (domain: string, fallback?: SourceIconFallback) => {
+  const siteDomain = normalizeDomain(domain);
+  if (fallback && siteDomain) return faviconIconUrl(siteDomain);
+
+  for (const candidate of domainCandidates(domain)) {
+    const icon = sourceIcons[candidate];
+    if (icon) return icon;
+  }
+  return fallback ? fallbackSourceIcons[fallback] : defaultSourceIcon;
+};

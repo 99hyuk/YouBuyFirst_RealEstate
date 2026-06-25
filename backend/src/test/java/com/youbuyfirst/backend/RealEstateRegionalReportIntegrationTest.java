@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class RealEstateRegionalReportIntegrationTest {
 
-    private static final String FINANCIAL_OUTLOOK_GENERATOR = "codex-quality-rewrite:financial-outlook-20260625";
+    private static final String REGIONAL_ASSESSMENT_GENERATOR = "codex-quality-rewrite:regional-assessment-20260625";
     private static final List<String> FORBIDDEN_POINT_WORDS = List.of(
             "합니다",
             "됩니다",
@@ -33,7 +33,7 @@ class RealEstateRegionalReportIntegrationTest {
             "수 있습니다",
             "."
     );
-    private static final List<String> OUTLOOK_WORDS = List.of("관망", "선별", "상승 지속 가능성", "보수적");
+    private static final List<String> OUTLOOK_WORDS = List.of("관망", "선별", "회복 가능성", "방어력", "조정");
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -62,7 +62,7 @@ class RealEstateRegionalReportIntegrationTest {
         JsonNode mapoRoot = objectMapper.readTree(mapo.getBody());
         assertThat(mapoRoot.path("targetId").asText()).isEqualTo("region-seoul-mapo");
         assertThat(mapoRoot.path("regionLevel").asText()).isEqualTo("sigungu");
-        assertThat(mapoRoot.path("generatedBy").asText()).isEqualTo(FINANCIAL_OUTLOOK_GENERATOR);
+        assertThat(mapoRoot.path("generatedBy").asText()).isEqualTo(REGIONAL_ASSESSMENT_GENERATOR);
         assertThat(mapoRoot.path("title").asText()).isNotBlank();
         assertThat(mapoRoot.path("body").asText()).isNotBlank();
         assertThat(mapoRoot.path("expectationPoints")).hasSizeBetween(1, 2);
@@ -103,7 +103,7 @@ class RealEstateRegionalReportIntegrationTest {
 
         assertThat(seoul.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode seoulRoot = objectMapper.readTree(seoul.getBody());
-        assertThat(seoulRoot.path("generatedBy").asText()).isEqualTo(FINANCIAL_OUTLOOK_GENERATOR);
+        assertThat(seoulRoot.path("generatedBy").asText()).isEqualTo(REGIONAL_ASSESSMENT_GENERATOR);
         assertThat(seoulRoot.path("body").asText()).contains("강남3구와 용산");
         assertThat(seoulRoot.path("body").asText()).contains("서리풀2지구 2,000호");
         assertThat(seoulRoot.path("body").asText()).contains("전세 압력");
@@ -151,7 +151,7 @@ class RealEstateRegionalReportIntegrationTest {
         assertThat(gyeonggi.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode gyeonggiRoot = objectMapper.readTree(gyeonggi.getBody());
         assertThat(gyeonggiRoot.path("generatedBy").asText())
-                .isEqualTo(FINANCIAL_OUTLOOK_GENERATOR);
+                .isEqualTo(REGIONAL_ASSESSMENT_GENERATOR);
         assertThat(gyeonggiRoot.path("body").asText()).contains("1기 신도시 정비");
         assertThat(gyeonggiRoot.path("body").asText()).contains("3기 신도시");
         assertThat(gyeonggiRoot.path("body").asText()).contains("용인 반도체");
@@ -227,7 +227,7 @@ class RealEstateRegionalReportIntegrationTest {
 
         assertThat(busanHaeundae.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode busanRoot = objectMapper.readTree(busanHaeundae.getBody());
-        assertThat(busanRoot.path("generatedBy").asText()).isEqualTo(FINANCIAL_OUTLOOK_GENERATOR);
+        assertThat(busanRoot.path("generatedBy").asText()).isEqualTo(REGIONAL_ASSESSMENT_GENERATOR);
         assertThat(busanRoot.path("body").asText()).contains("북항");
         assertThat(busanRoot.path("body").asText()).contains("해운대");
 
@@ -281,7 +281,7 @@ class RealEstateRegionalReportIntegrationTest {
         JsonNode cheonanRoot = objectMapper.readTree(cheonanSeobuk.getBody());
         JsonNode dangjinRoot = objectMapper.readTree(dangjin.getBody());
 
-        assertThat(chungnamRoot.path("generatedBy").asText()).isEqualTo(FINANCIAL_OUTLOOK_GENERATOR);
+        assertThat(chungnamRoot.path("generatedBy").asText()).isEqualTo(REGIONAL_ASSESSMENT_GENERATOR);
         assertThat(chungnamRoot.path("body").asText()).contains("천안·아산");
         assertThat(chungnamRoot.path("body").asText()).contains("서해안 산업축");
 
@@ -297,18 +297,176 @@ class RealEstateRegionalReportIntegrationTest {
 
         for (JsonNode report : List.of(chungnamRoot, asanRoot, cheonanRoot, dangjinRoot)) {
             assertThat(report.path("body").asText())
-                    .contains("단기 판단:")
+                    .contains("평가:")
+                    .contains("전망:")
                     .doesNotContain("같은 지역 target")
                     .doesNotContain("공통 시장 배경")
                     .doesNotContain("최신본으로 다시 교체")
                     .doesNotContain("AI API 자동 갱신")
-                    .doesNotContain("투자자는");
+                    .doesNotContain("투자자는")
+                    .doesNotContain("군는");
             assertThat(OUTLOOK_WORDS.stream().anyMatch(report.path("body").asText()::contains)).isTrue();
             assertThat(report.path("expectationPoints")).hasSizeBetween(1, 2);
             assertThat(report.path("concernPoints")).hasSizeBetween(1, 2);
             assertNounLikePointStyle(report.path("expectationPoints"));
             assertNounLikePointStyle(report.path("concernPoints"));
         }
+    }
+
+    @Test
+    @Order(6)
+    void localReportsDoNotReuseProvinceLevelAssessmentTemplates() throws Exception {
+        List<Map<String, Object>> chungnamRows = jdbcTemplate.queryForList(
+                """
+                select report.target_id, target.display_name, report.expectation_points_json,
+                       report.concern_points_json, report.body
+                from real_estate_regional_reports report
+                join real_estate_targets target on target.id = report.target_id
+                where report.target_id like 'region-chungnam%'
+                  and report.target_id <> 'region-chungnam'
+                order by report.target_id
+                """
+        );
+
+        assertThat(chungnamRows).hasSizeGreaterThanOrEqualTo(15);
+        assertThat(chungnamRows.stream()
+                .map(row -> (String) row.get("expectation_points_json"))
+                .distinct()
+                .count()).isGreaterThanOrEqualTo(13);
+        assertThat(chungnamRows.stream()
+                .map(row -> (String) row.get("concern_points_json"))
+                .distinct()
+                .count()).isGreaterThanOrEqualTo(13);
+
+        for (Map<String, Object> row : chungnamRows) {
+            String targetId = (String) row.get("target_id");
+            String expectation = (String) row.get("expectation_points_json");
+            String body = (String) row.get("body");
+            assertThat(body)
+                    .contains("평가:")
+                    .contains("전망:")
+                    .doesNotContain("군는")
+                    .doesNotContain("천안·아산 축과 자체 생활권 수요");
+            if (!targetId.contains("asan") && !targetId.contains("cheonansi")) {
+                assertThat(expectation).doesNotContain("천안·아산 전세 동행");
+            }
+        }
+
+        Map<String, Object> boryeong = rowByTargetId(chungnamRows, "region-chungnam-boryeong");
+        assertThat((String) boryeong.get("body")).contains("관광").contains("상주 수요");
+        assertThat((String) boryeong.get("expectation_points_json")).contains("해양관광 체류 수요");
+
+        Map<String, Object> gongju = rowByTargetId(chungnamRows, "region-chungnam-gongju");
+        assertThat((String) gongju.get("body")).contains("세종").contains("대학");
+
+        Map<String, Object> gyeryong = rowByTargetId(chungnamRows, "region-chungnam-gyeryongsi");
+        assertThat((String) gyeryong.get("body")).contains("대전").contains("군 주거");
+    }
+
+    @Test
+    @Order(7)
+    void visibleCapitalAreaReportsDoNotShareGenericPointSets() {
+        List<String> visibleTargetIds = List.of(
+                "region-gyeonggi-hwaseongsi",
+                "region-gyeonggi-gwangmyeong",
+                "region-gyeonggi-seongnamsisujeonggu",
+                "region-gyeonggi-seongnamsijungwongu",
+                "region-gyeonggi-seongnamsibundanggu",
+                "region-seoul-seongbuk",
+                "region-seoul-guro",
+                "region-seoul-dobong"
+        );
+        List<Map<String, Object>> reportRows = jdbcTemplate.queryForList(
+                """
+                select target_id, expectation_points_json, concern_points_json, body
+                from real_estate_regional_reports
+                where target_id in (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                visibleTargetIds.toArray()
+        );
+
+        assertThat(reportRows).hasSize(visibleTargetIds.size());
+        assertThat(reportRows.stream()
+                .map(row -> (String) row.get("expectation_points_json"))
+                .distinct()
+                .count()).isEqualTo((long) visibleTargetIds.size());
+        assertThat(reportRows.stream()
+                .map(row -> (String) row.get("concern_points_json"))
+                .distinct()
+                .count()).isEqualTo((long) visibleTargetIds.size());
+
+        for (Map<String, Object> row : reportRows) {
+            String expectation = (String) row.get("expectation_points_json");
+            String concern = (String) row.get("concern_points_json");
+            String body = (String) row.get("body");
+
+            assertPointJsonUsesNounLikeStyle(expectation);
+            assertPointJsonUsesNounLikeStyle(concern);
+            assertThat(expectation)
+                    .doesNotContain("교통·산업축 실수요 확인")
+                    .doesNotContain("정비사업 일정 구체화");
+            assertThat(concern)
+                    .doesNotContain("입주 시점 전세 약세")
+                    .doesNotContain("거래량 없는 신고가");
+            assertThat(body)
+                    .contains("평가:")
+                    .contains("전망:");
+        }
+
+        assertThat((String) rowByTargetId(reportRows, "region-gyeonggi-hwaseongsi").get("expectation_points_json"))
+                .contains("GTX-A");
+        assertThat((String) rowByTargetId(reportRows, "region-gyeonggi-gwangmyeong").get("expectation_points_json"))
+                .contains("광명뉴타운");
+        assertThat((String) rowByTargetId(reportRows, "region-gyeonggi-seongnamsibundanggu").get("concern_points_json"))
+                .contains("재건축 일정");
+        assertThat((String) rowByTargetId(reportRows, "region-seoul-guro").get("expectation_points_json"))
+                .contains("G밸리");
+    }
+
+    @Test
+    @Order(8)
+    void visibleCapitalAreaReportsExposePointEvidenceSources() {
+        List<String> visibleTargetIds = List.of(
+                "region-gyeonggi-hwaseongsi",
+                "region-gyeonggi-gwangmyeong",
+                "region-gyeonggi-seongnamsisujeonggu",
+                "region-gyeonggi-seongnamsijungwongu",
+                "region-gyeonggi-seongnamsibundanggu",
+                "region-seoul-seongbuk",
+                "region-seoul-guro",
+                "region-seoul-dobong"
+        );
+        List<Map<String, Object>> evidenceRows = jdbcTemplate.queryForList(
+                """
+                select report_target_id, ref_id, label, title, url
+                from real_estate_regional_report_sources
+                where report_target_id in (?, ?, ?, ?, ?, ?, ?, ?)
+                  and label = '지역 쟁점 근거'
+                order by report_target_id, display_order
+                """,
+                visibleTargetIds.toArray()
+        );
+
+        for (String targetId : visibleTargetIds) {
+            assertThat(evidenceRows.stream()
+                    .filter(row -> targetId.equals(row.get("report_target_id")))
+                    .count()).isGreaterThanOrEqualTo(2);
+        }
+        assertThat(evidenceRows)
+                .extracting(row -> row.get("ref_id"))
+                .contains(
+                        "molit-gtx-a-suseo-dongtan-20240321",
+                        "samsung-semiconductor-giheung-hwaseong-campus",
+                        "gwangmyeong-newtown-overview",
+                        "gwangmyeong-cheolsan-haan-rebuild",
+                        "seongnam-hightech-valley-status",
+                        "pangyo-technovalley-2025-company-status",
+                        "gyeonggi-first-newtown-master-plan-20250528",
+                        "seoul-garibong-gvalley-shintong",
+                        "seoul-balanced-changdong-sanggye"
+                );
+        assertThat(evidenceRows)
+                .allSatisfy(row -> assertThat((String) row.get("url")).startsWith("https://"));
     }
 
     private void assertNounLikePointStyle(JsonNode points) {
@@ -329,8 +487,15 @@ class RealEstateRegionalReportIntegrationTest {
         }
     }
 
+    private Map<String, Object> rowByTargetId(List<Map<String, Object>> rows, String targetId) {
+        return rows.stream()
+                .filter(row -> targetId.equals(row.get("target_id")))
+                .findFirst()
+                .orElseThrow();
+    }
+
     @Test
-    @Order(6)
+    @Order(9)
     void deepReportCoversEverySidoAndSigunguRegionRow() {
         Integer regionCount = jdbcTemplate.queryForObject(
                 """
@@ -377,14 +542,18 @@ class RealEstateRegionalReportIntegrationTest {
         );
         assertThat(reports).hasSize(regionCount);
         for (Map<String, Object> report : reports) {
-            assertThat((String) report.get("body")).contains("단기 판단:");
+            assertThat((String) report.get("body"))
+                    .contains("평가:")
+                    .contains("전망:")
+                    .doesNotContain("단기 판단")
+                    .doesNotContain("군는");
             assertPointJsonUsesNounLikeStyle((String) report.get("expectation_points_json"));
             assertPointJsonUsesNounLikeStyle((String) report.get("concern_points_json"));
         }
     }
 
     @Test
-    @Order(7)
+    @Order(10)
     void upsertsOneLatestReportPerTargetForFutureAiAutomation() throws Exception {
         Map<String, Object> firstRequest = Map.of(
                 "reports",

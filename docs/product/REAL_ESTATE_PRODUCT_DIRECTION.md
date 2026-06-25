@@ -54,7 +54,7 @@
 
 - 대상 정본은 `region`, `complex`, `living_area`, `policy_area`, `real_estate_target`입니다.
 - 시장 사실은 `transaction`, `rent`, `listing`, `policy event`, `market fact`로 나눕니다.
-- 사용자 화면은 거래 판단이 아니라 관찰형 분석, 실거래 탐색, 마이페이지 저장 지역 관리, 근거 로그 확인에 집중합니다.
+- 사용자 화면은 거래 판단이 아니라 관찰형 분석, 실거래 탐색, 주요 일정 확인, 근거 로그 확인에 집중합니다.
 - freshness는 실거래/매물/전세/정책 데이터별 `provider`, `asOf`, `stale`, `ingestedAt` 기준으로 분리합니다.
 
 ## 주요 기능 후보

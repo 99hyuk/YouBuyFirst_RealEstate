@@ -16,6 +16,7 @@ export type TransactionItem = {
   priceValue: number;
   dealCount: number;
   areaLabel: string;
+  jibun?: string | null;
   builtYear: number | null;
   asOf: string;
   dataStatus: string;
@@ -123,6 +124,50 @@ function stringValue(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
+function normalizeSearchText(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, '');
+}
+
+function pushSearchAlias(aliases: string[], value: string | null | undefined): void {
+  const alias = value?.trim();
+  if (alias && !aliases.includes(alias)) {
+    aliases.push(alias);
+  }
+}
+
+function blockStyleSearchAliases(item: Pick<TransactionItem, 'name' | 'gu'>): string[] {
+  const aliases: string[] = [];
+  const city = item.gu.trim().split(/\s+/)[0] ?? '';
+  const compactName = item.name.replace(/\s+/g, '');
+  const nameWithoutCity = city && compactName.startsWith(city)
+    ? compactName.slice(city.length)
+    : compactName;
+  const match = nameWithoutCity.match(/^(.+?\d+지구)(.+?)(\d+)블록$/);
+  if (!match) return aliases;
+
+  const [, district, complexName, blockNumber] = match;
+  const districtCore = district.replace(/\d+지구$/, '');
+
+  pushSearchAlias(aliases, `${districtCore}${complexName}`);
+  pushSearchAlias(aliases, `${districtCore}${complexName}${blockNumber}단지`);
+  pushSearchAlias(aliases, `${districtCore}${complexName}${blockNumber}블록`);
+  pushSearchAlias(aliases, `${districtCore} ${complexName}`);
+  pushSearchAlias(aliases, `${districtCore} ${complexName} ${blockNumber}단지`);
+  pushSearchAlias(aliases, `${item.gu} ${districtCore} ${complexName}`);
+  pushSearchAlias(aliases, `${item.gu} ${districtCore} ${complexName} ${blockNumber}단지`);
+
+  return aliases;
+}
+
+function transactionSearchText(item: TransactionItem): string {
+  return [
+    item.name,
+    item.region,
+    item.gu,
+    ...blockStyleSearchAliases(item)
+  ].map(normalizeSearchText).join(' ');
+}
+
 // 단지명이 없는 실거래(단독·다가구 등)의 표시 라벨: 지번 주소 > 동+주택유형 > 동.
 function addressLabel(valueJson: Record<string, unknown>, region: string): string | null {
   const jibun = stringValue(valueJson.jibun);
@@ -166,6 +211,7 @@ type Accumulator = {
   dealCount: number;
   minArea: number | null;
   maxArea: number | null;
+  jibun: string | null;
   builtYear: number | null;
   deposit: number;
   monthlyRent: number;
@@ -194,6 +240,8 @@ export function aggregateTransactions(facts: RealEstateMarketFact[]): Transactio
 
     const area = numberValue(valueJson.exclusiveAreaM2);
     const builtYear = numberValue(valueJson.builtYear);
+    const raw = (valueJson.raw ?? {}) as Record<string, unknown>;
+    const jibun = stringValue(valueJson.jibun) ?? stringValue(raw.jibun);
     const dealAmount = numberValue(valueJson.dealAmountManwon) ?? 0;
     const deposit = numberValue(valueJson.depositAmountManwon) ?? numberValue(valueJson.depositManwon) ?? 0;
     const monthlyRent = numberValue(valueJson.monthlyRentAmountManwon) ?? numberValue(valueJson.monthlyRentManwon) ?? 0;
@@ -212,6 +260,7 @@ export function aggregateTransactions(facts: RealEstateMarketFact[]): Transactio
         dealCount: 1,
         minArea: area,
         maxArea: area,
+        jibun,
         builtYear,
         deposit,
         monthlyRent,
@@ -233,6 +282,9 @@ export function aggregateTransactions(facts: RealEstateMarketFact[]): Transactio
         existing.priceValue = dealType === 'trade' ? dealAmount : deposit;
         existing.deposit = deposit;
         existing.monthlyRent = monthlyRent;
+      }
+      if (!existing.jibun && jibun) {
+        existing.jibun = jibun;
       }
       existing.stale = existing.stale || Boolean(fact.stale);
     }
@@ -265,6 +317,7 @@ export function aggregateTransactions(facts: RealEstateMarketFact[]): Transactio
       priceValue: group.priceValue,
       dealCount: group.dealCount,
       areaLabel: areaLabel(group.minArea, group.maxArea),
+      jibun: group.jibun,
       builtYear: group.builtYear,
       asOf: group.asOf ? group.asOf.slice(0, 10) : 'asOf 확인 필요',
       dataStatus: group.dataStatus,
@@ -340,14 +393,14 @@ export function filterTransactions(
   filter: TransactionFilter = {},
   sort: TransactionSort = 'price-desc'
 ): TransactionItem[] {
-  const query = (filter.query ?? '').trim().toLowerCase();
+  const query = normalizeSearchText(filter.query ?? '');
   const dealType = filter.dealType ?? 'all';
   const propertyType = filter.propertyType ?? 'all';
 
   const filtered = items.filter((item) => {
     if (propertyType !== 'all' && item.propertyType !== propertyType) return false;
     if (dealType !== 'all' && item.dealType !== dealType) return false;
-    if (query && !`${item.name} ${item.region} ${item.gu}`.toLowerCase().includes(query)) return false;
+    if (query && !transactionSearchText(item).includes(query)) return false;
     return true;
   });
 
@@ -435,8 +488,8 @@ function mockComplexItems(): TransactionItem[] {
 type Fetcher = (input: string) => Promise<Response>;
 
 // 현재 실거래 기준 월과 기간 비교용 과거 월(YoY/6개월/MoM). 데이터 적재 월에 맞춰 둔다.
-const CURRENT_DEAL_YM = '202605';
-const COMPARISON_DEAL_YMS = ['202604', '202511', '202505']; // MoM(-1), 6개월(-6), YoY(-12)
+const CURRENT_DEAL_YM = '202606';
+const COMPARISON_DEAL_YMS = ['202605', '202512', '202506']; // MoM(-1), 6개월(-6), YoY(-12)
 
 /** 비교 월 실거래에서 단지별 월 평단가를 계산해 현재 목록 아이템에 병합한다(기간 비교용). */
 function attachComparisonMonths(items: TransactionItem[], facts: RealEstateMarketFact[]): void {

@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WBS</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 12mm;
+    }
+
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5d6679;
+      --line: #d6dce7;
+      --soft: #f5f7fb;
+      --panel: #ffffff;
+      --green: #0f7a5f;
+      --blue: #245f9f;
+      --orange: #b45c17;
+      --red: #b42318;
+      --navy: #22314d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #eef2f7;
+      color: var(--ink);
+      font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .sheet {
+      width: 297mm;
+      min-height: 210mm;
+      margin: 18px auto;
+      padding: 13mm 14mm;
+      background: var(--panel);
+      box-shadow: 0 18px 45px rgba(20, 32, 51, 0.15);
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sheet:last-child {
+      page-break-after: auto;
+    }
+
+    .doc-kicker {
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      margin: 0 0 7px;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: 38px;
+      line-height: 1.16;
+      font-weight: 900;
+    }
+
+    h2 {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 13px;
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 900;
+    }
+
+    h2::before {
+      content: "";
+      width: 7px;
+      height: 22px;
+      border-radius: 3px;
+      background: var(--green);
+      flex: 0 0 auto;
+    }
+
+    h3 {
+      margin: 12px 0 8px;
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .subtitle {
+      max-width: 820px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .cover-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      margin-top: 30px;
+      align-items: stretch;
+    }
+
+    .info-card, .note-card, .metric, .box {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 8px;
+    }
+
+    .info-card {
+      padding: 18px;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .info-row:last-child {
+      border-bottom: 0;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .value {
+      color: var(--ink);
+      font-weight: 750;
+    }
+
+    .note-card {
+      padding: 17px;
+      background: #fbfcfe;
+    }
+
+    .note-card strong {
+      color: var(--navy);
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 4px 9px;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 11px;
+      margin: 14px 0 18px;
+    }
+
+    .metric {
+      min-height: 86px;
+      padding: 13px;
+      background: #fbfcff;
+    }
+
+    .metric b {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--navy);
+      font-size: 13px;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin: 12px 0 18px;
+    }
+
+    .flow div {
+      min-height: 58px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .flow span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 650;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      vertical-align: top;
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+    }
+
+    th {
+      background: #edf3f9;
+      color: #203047;
+      font-size: 10.5px;
+      font-weight: 850;
+      text-align: left;
+    }
+
+    td {
+      background: #ffffff;
+      font-size: 10.3px;
+    }
+
+    .compact td {
+      padding: 6px 7px;
+      font-size: 9.8px;
+      line-height: 1.45;
+    }
+
+    .wbs-code {
+      color: var(--green);
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .owner {
+      color: var(--blue);
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .phase {
+      color: var(--orange);
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .status {
+      display: inline-block;
+      min-width: 52px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #e9f7f2;
+      color: var(--green);
+      font-size: 9.5px;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .status.review {
+      background: #fff3e6;
+      color: var(--orange);
+    }
+
+    .status.guard {
+      background: #fef3f2;
+      color: var(--red);
+    }
+
+    .schedule th, .schedule td {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .schedule td:first-child,
+    .schedule th:first-child {
+      text-align: left;
+    }
+
+    .bar {
+      display: block;
+      height: 18px;
+      border-radius: 999px;
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+    }
+
+    .bar.green {
+      background: #dff4ec;
+      border-color: #81c7ad;
+    }
+
+    .bar.orange {
+      background: #ffedd5;
+      border-color: #fdba74;
+    }
+
+    .bar.gray {
+      background: #e5e7eb;
+      border-color: #cbd5e1;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 13px;
+      margin-top: 12px;
+    }
+
+    .box {
+      padding: 13px;
+      background: #fbfcff;
+    }
+
+    .box ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+
+    .box li {
+      margin: 4px 0;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 10.5px;
+    }
+
+    .footer {
+      position: absolute;
+      right: 14mm;
+      bottom: 8mm;
+      left: 14mm;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 6px;
+      color: #7a8496;
+      font-size: 9.5px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin: 8px 0 12px;
+      color: var(--muted);
+      font-size: 10.5px;
+    }
+
+    .legend span::before {
+      content: "";
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 5px;
+      border-radius: 3px;
+      vertical-align: -2px;
+      background: #dbeafe;
+      border: 1px solid #93c5fd;
+    }
+
+    .legend span:nth-child(2)::before {
+      background: #dff4ec;
+      border-color: #81c7ad;
+    }
+
+    .legend span:nth-child(3)::before {
+      background: #ffedd5;
+      border-color: #fdba74;
+    }
+
+    .callout {
+      margin-top: 16px;
+      padding: 13px 15px;
+      border-left: 5px solid var(--green);
+      background: #f2fbf7;
+      border-radius: 8px;
+      color: #244236;
+      font-weight: 700;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        font-size: 9.4px;
+      }
+
+      .sheet {
+        width: auto;
+        min-height: 186mm;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        overflow: visible;
+      }
+
+      .sheet + .sheet {
+        page-break-before: always;
+      }
+
+      .footer {
+        right: 0;
+        bottom: 0;
+        left: 0;
+      }
+
+      .doc-kicker {
+        margin-bottom: 4px;
+        font-size: 10px;
+      }
+
+      h1 {
+        font-size: 32px;
+        line-height: 1.1;
+      }
+
+      h2 {
+        margin-bottom: 8px;
+        font-size: 17px;
+      }
+
+      h2::before {
+        height: 18px;
+      }
+
+      h3 {
+        margin: 7px 0 5px;
+        font-size: 12px;
+      }
+
+      .subtitle {
+        margin-top: 9px;
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .cover-grid {
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .info-card,
+      .note-card {
+        padding: 12px;
+      }
+
+      .info-row {
+        grid-template-columns: 88px 1fr;
+        gap: 8px;
+        padding: 6px 0;
+      }
+
+      .label,
+      .tag,
+      .small,
+      .legend {
+        font-size: 8px;
+      }
+
+      .tag-row {
+        gap: 5px;
+        margin-top: 10px;
+      }
+
+      .tag {
+        min-height: 19px;
+        padding: 2px 6px;
+      }
+
+      .callout {
+        margin-top: 12px;
+        padding: 9px 10px;
+      }
+
+      .summary-grid {
+        gap: 8px;
+        margin: 9px 0 12px;
+      }
+
+      .metric {
+        min-height: 60px;
+        padding: 8px;
+      }
+
+      .metric b {
+        margin-bottom: 3px;
+        font-size: 10px;
+      }
+
+      .metric span {
+        font-size: 8.5px;
+      }
+
+      .flow {
+        gap: 5px;
+        margin: 7px 0 11px;
+      }
+
+      .flow div {
+        min-height: 43px;
+        padding: 6px;
+        font-size: 9px;
+      }
+
+      .flow span {
+        margin-top: 2px;
+        font-size: 7.5px;
+      }
+
+      th {
+        padding: 4px 5px;
+        font-size: 8px;
+      }
+
+      td {
+        padding: 4px 5px;
+        font-size: 8px;
+        line-height: 1.32;
+      }
+
+      .compact td {
+        padding: 3px 4px;
+        font-size: 7.4px;
+        line-height: 1.22;
+      }
+
+      .compact th {
+        padding: 3px 4px;
+        font-size: 7.4px;
+      }
+
+      .schedule td,
+      .schedule th {
+        padding: 4px;
+        font-size: 8px;
+      }
+
+      .bar {
+        height: 12px;
+      }
+
+      .two-col {
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .box {
+        padding: 8px;
+      }
+
+      .box ul {
+        margin-top: 4px;
+        padding-left: 14px;
+      }
+
+      .box li {
+        margin: 1px 0;
+      }
+
+      .status {
+        min-width: 42px;
+        padding: 1px 4px;
+        font-size: 7.2px;
+      }
+
+      th {
+        background-color: #edf3f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .tag, .metric, .box, .note-card, .info-card, .flow div, .callout, .bar, .status {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <section class="sheet">
+    <p class="doc-kicker">SSAFY 관통프로젝트 제출 문서</p>
+    <h1>너나사 부동산<br />WBS 작업분류체계</h1>
+    <p class="subtitle">
+      공식 실거래, 전세, 공급, 정책, 주요 일정 데이터를 지역과 단지 기준으로 묶어 보여주는
+      부동산 인사이트 탐색 서비스의 기획, 데이터, 백엔드, 프론트엔드, AI 근거 로그, 검증 작업을
+      제출용 WBS로 정리한 문서입니다.
+    </p>
+
+    <div class="cover-grid">
+      <div class="info-card">
+        <div class="info-row">
+          <div class="label">프로젝트명</div>
+          <div class="value">너나사 부동산 YouBuyFirst RealEstate</div>
+        </div>
+        <div class="info-row">
+          <div class="label">프로젝트 유형</div>
+          <div class="value">SSAFY 관통프로젝트 / 웹 서비스 / 데이터 기반 부동산 인사이트</div>
+        </div>
+        <div class="info-row">
+          <div class="label">일정 기준</div>
+          <div class="value">5주차 WBS 기준안. 실제 제출 일정에 맞춰 날짜만 치환 가능</div>
+        </div>
+        <div class="info-row">
+          <div class="label">담당 표기</div>
+          <div class="value">PM, BE, DATA, FE, AI, QA 역할 기준. 제출 전 팀원명으로 교체</div>
+        </div>
+      </div>
+
+      <div class="note-card">
+        <h3>문서 목적</h3>
+        <p>
+          평가자가 프로젝트 범위, 일정, 역할, 산출물, 선행 의존성, 검증 기준을 한눈에 확인할 수 있도록
+          작업을 기능 단위가 아니라 산출 가능한 work package 단위로 나눕니다.
+        </p>
+        <div class="tag-row">
+          <span class="tag">Spring Boot</span>
+          <span class="tag">MySQL</span>
+          <span class="tag">Python Pipeline</span>
+          <span class="tag">Vue 3</span>
+          <span class="tag">Kakao Map</span>
+          <span class="tag">Evidence Log</span>
+          <span class="tag">SSAFY HOME SQL</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>너나사 부동산 WBS</span>
+      <span>1 / 5</span>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>프로젝트 범위 요약</h2>
+    <div class="summary-grid">
+      <div class="metric">
+        <b>핵심 사용자 경험</b>
+        <span>대시보드, 지도, 실거래 탐색, 지역/단지 상세, 주요 일정, 근거 로그</span>
+      </div>
+      <div class="metric">
+        <b>핵심 데이터</b>
+        <span>SSAFY HOME SQL, 공공 실거래/전세, market fact, 정책/공급 일정</span>
+      </div>
+      <div class="metric">
+        <b>핵심 기술</b>
+        <span>Spring Boot API, MySQL/Flyway, Python 수집 파이프라인, Vue 3 UI</span>
+      </div>
+      <div class="metric">
+        <b>품질 기준</b>
+        <span>provider, asOf, stale, 공개 지연, empty/error 상태를 화면과 API에 표시</span>
+      </div>
+    </div>
+
+    <h3>제품 흐름</h3>
+    <div class="flow">
+      <div>공식 데이터 수집<span>SSAFY HOME, 실거래, 전세, 일정</span></div>
+      <div>시장 사실 정규화<span>provider, asOf, stale 분리</span></div>
+      <div>지역 target 연결<span>region, complex, alias, graph</span></div>
+      <div>탐색 API 구성<span>대시보드, 지도, 실거래, 상세</span></div>
+      <div>근거 로그 생성<span>시장 사실, 일정, 이슈, caveat</span></div>
+      <div>프론트 시연<span>PDF/발표/테스트 검증</span></div>
+    </div>
+
+    <h3>주차별 마일스톤</h3>
+    <div class="legend">
+      <span>기획/설계</span>
+      <span>구현/연동</span>
+      <span>검증/정리</span>
+    </div>
+    <table class="schedule">
+      <colgroup>
+        <col style="width: 18%" />
+        <col style="width: 13%" />
+        <col style="width: 13%" />
+        <col style="width: 13%" />
+        <col style="width: 13%" />
+        <col style="width: 13%" />
+        <col style="width: 17%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>마일스톤</th>
+          <th>W1</th>
+          <th>W2</th>
+          <th>W3</th>
+          <th>W4</th>
+          <th>W5</th>
+          <th>완료 기준</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>기획/요구사항 확정</td>
+          <td><span class="bar"></span></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>기능 범위, 화면 흐름, 금지 표현 확정</td>
+        </tr>
+        <tr>
+          <td>DB/데이터 계약</td>
+          <td><span class="bar"></span></td>
+          <td><span class="bar"></span></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>ERD, migration, SSAFY HOME bootstrap 검증</td>
+        </tr>
+        <tr>
+          <td>백엔드 API 구현</td>
+          <td></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar green"></span></td>
+          <td></td>
+          <td>주요 화면 API와 통합 테스트 통과</td>
+        </tr>
+        <tr>
+          <td>데이터 파이프라인</td>
+          <td></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar green"></span></td>
+          <td></td>
+          <td>수집, 정규화, 갱신 job, summary 출력</td>
+        </tr>
+        <tr>
+          <td>프론트엔드 화면</td>
+          <td></td>
+          <td></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar orange"></span></td>
+          <td>대시보드, 지도, 탐색, 상세, 일정 시연 가능</td>
+        </tr>
+        <tr>
+          <td>AI 근거 로그</td>
+          <td></td>
+          <td></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar green"></span></td>
+          <td><span class="bar orange"></span></td>
+          <td>근거, caveat, 금지 문구 guardrail 확인</td>
+        </tr>
+        <tr>
+          <td>QA/배포/제출 문서</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><span class="bar orange"></span></td>
+          <td><span class="bar orange"></span></td>
+          <td>테스트, Docker 실행, 발표 시나리오, WBS/PDF</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="two-col">
+      <div class="box">
+        <h3>포함 범위</h3>
+        <ul>
+          <li>지역/단지 target graph, alias, provider key 기반 데이터 모델</li>
+          <li>실거래/전세/시장 사실/주요 일정 API와 화면 연결</li>
+          <li>공식 데이터 기준시각, stale, 공개 지연 상태 표시</li>
+          <li>지역/단지 상세의 근거 링크와 EvidenceLog 저장/조회</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>제외/주의 범위</h3>
+        <ul>
+          <li>매수, 매도, 청약, 대출 행동 권유 문구 제외</li>
+          <li>로그인 우회, CAPTCHA 우회, 프록시 회전 수집 제외</li>
+          <li>확인되지 않은 값은 unknown, null, 확인 필요, mock으로 구분</li>
+          <li>커뮤니티 반응은 핵심 결론이 아니라 보조 관찰 신호로 제한</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>프로젝트 범위 및 일정 요약</span>
+      <span>2 / 5</span>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>WBS 상세 1: 기획, 데이터, 백엔드</h2>
+    <table class="compact">
+      <colgroup>
+        <col style="width: 7%" />
+        <col style="width: 14%" />
+        <col style="width: 27%" />
+        <col style="width: 8%" />
+        <col style="width: 8%" />
+        <col style="width: 12%" />
+        <col style="width: 24%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>WBS</th>
+          <th>작업 패키지</th>
+          <th>주요 작업</th>
+          <th>담당</th>
+          <th>기간</th>
+          <th>선행 작업</th>
+          <th>산출물 / 완료 기준</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="wbs-code">0.1</td>
+          <td>프로젝트 착수</td>
+          <td>주제 확정, 문제 정의, SSAFY 관통프로젝트 제출 요구사항 확인</td>
+          <td class="owner">PM</td>
+          <td class="phase">W1</td>
+          <td>-</td>
+          <td>프로젝트 개요, 팀 역할, 제출 산출물 목록</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">0.2</td>
+          <td>일정/협업 관리</td>
+          <td>WBS 작성, Git 전략, daily task board, 회의 기록 기준 정리</td>
+          <td class="owner">PM/QA</td>
+          <td class="phase">W1-W5</td>
+          <td>0.1</td>
+          <td>WBS, 주차별 일정표, 이슈/PR 관리 기준</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">1.1</td>
+          <td>서비스 기획</td>
+          <td>핵심 사용자, 사용 흐름, 주요 화면, MVP와 후순위 기능 분리</td>
+          <td class="owner">PM/FE</td>
+          <td class="phase">W1</td>
+          <td>0.1</td>
+          <td>제품 요약, 핵심 기능 목록, 사용자 시나리오</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">1.2</td>
+          <td>도메인 정책</td>
+          <td>실거래, 전세, 공급, 정책, 시장 사실, 근거 로그 용어 기준 정리</td>
+          <td class="owner">PM/BE</td>
+          <td class="phase">W1</td>
+          <td>1.1</td>
+          <td>금지 표현, 데이터 지연/불확실성 표시 기준</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">1.3</td>
+          <td>화면 IA</td>
+          <td>대시보드, 지도, 실거래 탐색, 지역 상세, 주요 일정, 뉴스룸 흐름 정의</td>
+          <td class="owner">FE/PM</td>
+          <td class="phase">W1-W2</td>
+          <td>1.1</td>
+          <td>화면 목록, route, 화면별 API 후보</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">2.1</td>
+          <td>원천 데이터 분석</td>
+          <td>SSAFY HOME SQL dump의 dongcodes, houseinfos, housedeals 구조 분석</td>
+          <td class="owner">DATA/BE</td>
+          <td class="phase">W1</td>
+          <td>1.2</td>
+          <td>원본 테이블 매핑표, provider key 기준</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">2.2</td>
+          <td>ERD/데이터 계약</td>
+          <td>region, complex, target graph, alias, market fact, schedule, evidence log 모델 설계</td>
+          <td class="owner">BE/DATA</td>
+          <td class="phase">W1-W2</td>
+          <td>2.1</td>
+          <td>ERD, Data Contract, API 응답 shape 초안</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">2.3</td>
+          <td>DB 마이그레이션</td>
+          <td>Flyway migration, index, FK, seed data, H2 테스트 호환성 정리</td>
+          <td class="owner">BE</td>
+          <td class="phase">W2</td>
+          <td>2.2</td>
+          <td>migration SQL, schema validation, 테스트 DB 통과</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">2.4</td>
+          <td>Bootstrap</td>
+          <td>SSAFY HOME 원본을 real_estate_regions, targets, complexes, aliases, market_facts로 변환</td>
+          <td class="owner">DATA/BE</td>
+          <td class="phase">W2</td>
+          <td>2.3</td>
+          <td>bootstrap SQL, 검증 쿼리, 샘플 API 응답</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">3.1</td>
+          <td>백엔드 기반 설정</td>
+          <td>Spring Boot 설정, profile, Swagger, validation, 공통 예외 응답 정리</td>
+          <td class="owner">BE</td>
+          <td class="phase">W1-W2</td>
+          <td>2.2</td>
+          <td>실행 가능한 API 서버, 로컬/테스트 profile</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">3.2</td>
+          <td>Target API</td>
+          <td>지역/단지 검색, 상세, 근처 단지, target graph drill-down API 구현</td>
+          <td class="owner">BE</td>
+          <td class="phase">W2-W3</td>
+          <td>2.4</td>
+          <td>검색/상세 API, integration test, Swagger 확인</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">3.3</td>
+          <td>Market Fact API</td>
+          <td>실거래/전세/시장 사실 조회, provider/asOf/stale, 공개 지연 상태 응답</td>
+          <td class="owner">BE</td>
+          <td class="phase">W2-W3</td>
+          <td>2.4</td>
+          <td>대시보드/상세/지도에서 재사용 가능한 market fact API</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">3.4</td>
+          <td>실거래 탐색 API</td>
+          <td>지역, 기간, 가격, 면적, 거래유형 필터와 정렬/페이징 구현</td>
+          <td class="owner">BE</td>
+          <td class="phase">W3</td>
+          <td>3.3</td>
+          <td>거래 row 목록, 요약 통계, empty/stale 상태</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">3.5</td>
+          <td>주요 일정 API</td>
+          <td>가격지수, 거래현황, 공급, 금리, 청약, 정책 발표 일정 저장/조회</td>
+          <td class="owner">BE/DATA</td>
+          <td class="phase">W3-W4</td>
+          <td>2.2</td>
+          <td>월간 일정 API, sourceUrl, lastCheckedAt, stale 응답</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <span>WBS 상세 1</span>
+      <span>3 / 5</span>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>WBS 상세 2: 파이프라인, AI, 프론트엔드</h2>
+    <table class="compact">
+      <colgroup>
+        <col style="width: 7%" />
+        <col style="width: 14%" />
+        <col style="width: 27%" />
+        <col style="width: 8%" />
+        <col style="width: 8%" />
+        <col style="width: 12%" />
+        <col style="width: 24%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>WBS</th>
+          <th>작업 패키지</th>
+          <th>주요 작업</th>
+          <th>담당</th>
+          <th>기간</th>
+          <th>선행 작업</th>
+          <th>산출물 / 완료 기준</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="wbs-code">4.1</td>
+          <td>수집 adapter</td>
+          <td>공공데이터, CSV, SSAFY HOME 원천을 raw/staging/정본 흐름으로 처리</td>
+          <td class="owner">DATA</td>
+          <td class="phase">W2-W3</td>
+          <td>2.2</td>
+          <td>provider adapter, preflight, manifest, 실패 로그</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">4.2</td>
+          <td>정규화/백필</td>
+          <td>실거래/전세 row를 market fact로 정규화하고 chunk 단위 재시도 지원</td>
+          <td class="owner">DATA/BE</td>
+          <td class="phase">W2-W4</td>
+          <td>4.1, 3.3</td>
+          <td>백필 실행 결과, 중복 방지, 검증 쿼리</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">4.3</td>
+          <td>뉴스/리포트 근거</td>
+          <td>공개 HTTP 기준 source registry, 제목/snippet/URL 중심 제한 저장</td>
+          <td class="owner">DATA</td>
+          <td class="phase">W3-W4</td>
+          <td>1.2</td>
+          <td>source 후보표, parser smoke, 저장 정책 문서</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">4.4</td>
+          <td>일일 갱신 job</td>
+          <td>market fact, content, reaction snapshot, evidence log refresh를 한 번에 실행</td>
+          <td class="owner">DATA/BE</td>
+          <td class="phase">W4</td>
+          <td>4.2, 4.3</td>
+          <td>one-shot command, summary JSON, scheduler 옵션</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">5.1</td>
+          <td>EvidenceLog 계약</td>
+          <td>AI 평가 입력/출력, evidence, caveat, skipReason, version 필드 정의</td>
+          <td class="owner">AI/BE</td>
+          <td class="phase">W3</td>
+          <td>2.2, 3.3</td>
+          <td>EvidenceLog schema, 저장/조회 API</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">5.2</td>
+          <td>유사 과거 비교</td>
+          <td>reaction snapshot, market fact, timeline event 기반 유사 window 후보 생성</td>
+          <td class="owner">AI/DATA</td>
+          <td class="phase">W3-W4</td>
+          <td>4.2, 5.1</td>
+          <td>유사 과거 후보 JSON, 이후 market fact 비교 shape</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">5.3</td>
+          <td>AI 요약/가드레일</td>
+          <td>근거 요약, subtitle, caveat 생성과 매수/매도/청약 권유 금지 테스트</td>
+          <td class="owner">AI/QA</td>
+          <td class="phase">W4-W5</td>
+          <td>5.1</td>
+          <td>금지 문구 테스트, 사용자용 근거 로그 샘플</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">6.1</td>
+          <td>프론트 기반</td>
+          <td>Vue 3 라우팅, 레이아웃, 디자인 시스템, API client, mock fallback 정리</td>
+          <td class="owner">FE</td>
+          <td class="phase">W2-W3</td>
+          <td>1.3</td>
+          <td>공통 shell, route, API 상태 처리 패턴</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">6.2</td>
+          <td>대시보드</td>
+          <td>오늘의 지역 이슈, 시장 fact 요약, 주요 일정, 데이터 상태 카드 연결</td>
+          <td class="owner">FE</td>
+          <td class="phase">W3-W4</td>
+          <td>3.3, 3.5</td>
+          <td>대시보드 화면, API fallback, stale badge</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">6.3</td>
+          <td>지도/지역 상세</td>
+          <td>전국~동 단위 지도 흐름, 단지 marker, 상세 타임라인, 근거 링크 표시</td>
+          <td class="owner">FE</td>
+          <td class="phase">W3-W5</td>
+          <td>3.2, 3.3</td>
+          <td>지도 화면, 지역/단지 상세, Kakao Map fallback</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">6.4</td>
+          <td>실거래 탐색</td>
+          <td>필터, 거래 row, 지도 marker, 주변 시설, 공개 지연/empty/error 상태 구현</td>
+          <td class="owner">FE</td>
+          <td class="phase">W3-W5</td>
+          <td>3.4</td>
+          <td>실거래 탐색 화면, URL query, 거래 상세 표시</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">6.5</td>
+          <td>주요 일정/뉴스룸</td>
+          <td>공식 일정 캘린더, 뉴스/리포트 근거 feed, source label 표시</td>
+          <td class="owner">FE</td>
+          <td class="phase">W4-W5</td>
+          <td>3.5, 4.3</td>
+          <td>일정 화면, 뉴스룸, source/asOf 표시</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">6.6</td>
+          <td>회원/보조 기능</td>
+          <td>로그인/회원가입, 최근 조회, 관심 지역/단지 저장 등 시연 보조 기능 정리</td>
+          <td class="owner">FE/BE</td>
+          <td class="phase">W4-W5</td>
+          <td>6.1</td>
+          <td>세션 API, 화면 진입 흐름, 비로그인 fallback</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <span>WBS 상세 2</span>
+      <span>4 / 5</span>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>검증, 제출 산출물, 위험 관리</h2>
+    <table class="compact">
+      <colgroup>
+        <col style="width: 7%" />
+        <col style="width: 15%" />
+        <col style="width: 29%" />
+        <col style="width: 8%" />
+        <col style="width: 8%" />
+        <col style="width: 12%" />
+        <col style="width: 21%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>WBS</th>
+          <th>작업 패키지</th>
+          <th>주요 작업</th>
+          <th>담당</th>
+          <th>기간</th>
+          <th>상태</th>
+          <th>완료 기준</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="wbs-code">7.1</td>
+          <td>백엔드 검증</td>
+          <td>integration test, repository/service test, Swagger/API smoke, DB migration 확인</td>
+          <td class="owner">BE/QA</td>
+          <td class="phase">W4-W5</td>
+          <td><span class="status">필수</span></td>
+          <td>Maven test 통과, 주요 API 샘플 응답 확보</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">7.2</td>
+          <td>프론트 검증</td>
+          <td>Vitest, build, 화면 smoke, empty/loading/error/stale 상태 확인</td>
+          <td class="owner">FE/QA</td>
+          <td class="phase">W4-W5</td>
+          <td><span class="status">필수</span></td>
+          <td>npm test/build 통과, 시연 화면 스크린샷</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">7.3</td>
+          <td>데이터 검증</td>
+          <td>SSAFY HOME bootstrap count, market fact sample, batch summary, 중복/누락 점검</td>
+          <td class="owner">DATA/QA</td>
+          <td class="phase">W4-W5</td>
+          <td><span class="status">필수</span></td>
+          <td>검증 쿼리 결과, source/asOf/stale 샘플</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">7.4</td>
+          <td>시연 환경</td>
+          <td>Docker Compose, MySQL seed, backend/front 실행, 환경변수 예시 정리</td>
+          <td class="owner">QA/BE</td>
+          <td class="phase">W5</td>
+          <td><span class="status review">중요</span></td>
+          <td>로컬 실행 가이드, 데모 계정/데이터, 장애 대응 메모</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">7.5</td>
+          <td>발표/제출 문서</td>
+          <td>README, WBS, ERD, API 명세, 발표자료, 회고, 화면 캡처 정리</td>
+          <td class="owner">PM/QA</td>
+          <td class="phase">W5</td>
+          <td><span class="status review">제출</span></td>
+          <td>PDF 제출본, 발표 시나리오, 최종 점검표</td>
+        </tr>
+        <tr>
+          <td class="wbs-code">7.6</td>
+          <td>정책/법적 리스크 점검</td>
+          <td>CAPTCHA/로그인 우회 금지, 원문 제한 저장, 행동 권유 문구 제거 확인</td>
+          <td class="owner">PM/QA</td>
+          <td class="phase">W5</td>
+          <td><span class="status guard">게이트</span></td>
+          <td>금지 행위 없음, 원문 저장 범위 제한, 사용자 문구 검수</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="two-col">
+      <div class="box">
+        <h3>Definition of Done</h3>
+        <ul>
+          <li>대시보드에서 시장 fact와 주요 일정이 API 또는 명확한 mock fallback으로 보인다.</li>
+          <li>실거래 탐색에서 지역, 기간, 가격, 면적 조건으로 거래 row를 확인할 수 있다.</li>
+          <li>지역/단지 상세에서 provider, asOf, stale, 근거 링크, caveat가 함께 보인다.</li>
+          <li>백엔드 테스트, 프론트 테스트/build, 데이터 bootstrap smoke를 수행한다.</li>
+          <li>발표자는 데이터 지연, 공식 데이터 없음, 보조 반응의 한계를 설명할 수 있다.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>주요 위험과 대응</h3>
+        <ul>
+          <li>공공데이터 지연: 실시간처럼 표현하지 않고 기준시각과 stale 상태를 분리한다.</li>
+          <li>데이터 중복: provider key, alias, target graph 기준으로 중복 merge 후보를 관리한다.</li>
+          <li>시연 실패: mock fallback과 sample seed를 준비하고 API smoke URL을 별도 보관한다.</li>
+          <li>AI 과장 표현: 행동 권유, 상승 단정, 수익 보장 문구를 guardrail 테스트로 차단한다.</li>
+          <li>수집 정책 리스크: 공개 HTTP 우선, 로그인/CAPTCHA/프록시 우회 금지를 문서와 코드 기준으로 유지한다.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>제출 전 수정해야 할 항목</h3>
+    <table class="compact">
+      <colgroup>
+        <col style="width: 23%" />
+        <col style="width: 45%" />
+        <col style="width: 32%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>현재 값</th>
+          <th>수정 방법</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>팀명/팀원명</td>
+          <td>역할 기반 PM, BE, DATA, FE, AI, QA로 표기</td>
+          <td>제출 전 실제 팀원 이름으로 교체</td>
+        </tr>
+        <tr>
+          <td>프로젝트 기간</td>
+          <td>W1-W5 주차 기준</td>
+          <td>SSAFY 제출 기간이 확정되어 있으면 날짜 열 추가</td>
+        </tr>
+        <tr>
+          <td>기능 상태</td>
+          <td>WBS 계획/산출물 중심</td>
+          <td>최종 완료 기능만 남기거나 상태 열을 추가</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="small" style="margin-top: 12px;">
+      출력 권장: Chrome 또는 Edge에서 인쇄, 용지 A4, 방향 가로, 여백 기본 또는 없음, 배경 그래픽 포함.
+    </p>
+
+    <div class="footer">
+      <span>검증 및 제출 기준</span>
+      <span>5 / 5</span>
+    </div>
+  </section>
+</body>
+</html>

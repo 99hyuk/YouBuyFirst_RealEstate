@@ -22,6 +22,35 @@ describe('source icons', () => {
     expect(fallbackIcon).not.toContain('<text');
   });
 
+  it('uses the site favicon for newly discovered publisher domains in feed cards', () => {
+    const iconUrl = sourceIconUrl('peoplepower21.org', 'news');
+
+    expect(iconUrl).toBe('https://www.google.com/s2/favicons?domain=peoplepower21.org&sz=64');
+  });
+
+  it('prefers the site favicon over curated pictograms for feed cards', () => {
+    const iconUrl = sourceIconUrl('www.mk.co.kr', 'news');
+
+    expect(iconUrl).toBe('https://www.google.com/s2/favicons?domain=www.mk.co.kr&sz=64');
+  });
+
+  it('uses site favicons for blog and community-style link feed cards', () => {
+    expect(sourceIconUrl('blog.naver.com', 'link'))
+      .toBe('https://www.google.com/s2/favicons?domain=blog.naver.com&sz=64');
+    expect(sourceIconUrl('auctionguide.tistory.com', 'link'))
+      .toBe('https://www.google.com/s2/favicons?domain=auctionguide.tistory.com&sz=64');
+    expect(sourceIconUrl('brunch.co.kr', 'link'))
+      .toBe('https://www.google.com/s2/favicons?domain=brunch.co.kr&sz=64');
+  });
+
+  it('falls back to a feed-specific pictogram when a feed card has no source domain', () => {
+    const fallbackIcon = decodeIcon(sourceIconUrl('', 'news'));
+
+    expect(fallbackIcon).toContain('fill="#1d4ed8"');
+    expect(fallbackIcon).not.toContain('stroke="#64748b"');
+    expect(fallbackIcon).not.toContain('<text');
+  });
+
   it('covers newsroom batch and official schedule source domains', () => {
     const googleNewsIcon = decodeIcon(sourceIconUrl('news.google.com'));
     const bokIcon = decodeIcon(sourceIconUrl('www.bok.or.kr'));

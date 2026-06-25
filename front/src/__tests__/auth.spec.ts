@@ -30,6 +30,32 @@ const currentUser: AuthUser = {
   lastSeenAt: '2026-06-23T00:00:00Z'
 };
 
+const configuredOAuthProviders = [
+  {
+    provider: 'google',
+    displayName: 'Google',
+    authorizationUrl: '/oauth2/authorization/google',
+    configured: true
+  },
+  {
+    provider: 'naver',
+    displayName: 'Naver',
+    authorizationUrl: '/oauth2/authorization/naver',
+    configured: true
+  },
+  {
+    provider: 'kakao',
+    displayName: 'Kakao',
+    authorizationUrl: '/oauth2/authorization/kakao',
+    configured: true
+  }
+];
+
+const unconfiguredOAuthProviders = configuredOAuthProviders.map((provider) => ({
+  ...provider,
+  configured: false
+}));
+
 const mountAppAt = async (path: string) => {
   const router = createRouter({
     history: createMemoryHistory(),
@@ -98,6 +124,70 @@ describe('session auth UI', () => {
     expect(wrapper.get('[data-testid="login-username"]').attributes('pattern')).toBe('[A-Za-z0-9]+');
     expect(wrapper.get('[data-testid="register-link"]').attributes('href')).toBe('/auth/register');
     expect(wrapper.get('[data-testid="find-account-link"]').attributes('href')).toBe('/auth/find-account');
+  });
+
+  it('renders OAuth login entry points for Google, Naver, and Kakao', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === '/api/auth/me') {
+        return new Response(null, { status: 401 });
+      }
+      if (url === '/api/auth/oauth/providers') {
+        return new Response(JSON.stringify(configuredOAuthProviders), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      return new Response(JSON.stringify({ items: [] }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }));
+
+    const { wrapper } = await mountAppAt('/auth/login');
+
+    expect(wrapper.get('[data-testid="oauth-login-google"]').attributes('href')).toBe('/oauth2/authorization/google');
+    expect(wrapper.get('[data-testid="oauth-login-naver"]').attributes('href')).toBe('/oauth2/authorization/naver');
+    expect(wrapper.get('[data-testid="oauth-login-kakao"]').attributes('href')).toBe('/oauth2/authorization/kakao');
+    expect(wrapper.get('[data-testid="oauth-login-google"]').attributes('aria-label')).toBe('Google 로그인');
+    expect(wrapper.find('[data-testid="oauth-login-google"] .oauth-provider-icon.google').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="oauth-login-naver"] .oauth-provider-icon.naver').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="oauth-login-kakao"] .oauth-provider-icon.kakao').exists()).toBe(true);
+  });
+
+  it('disables OAuth login and registration entry points before provider credentials are configured', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === '/api/auth/me') {
+        return new Response(null, { status: 401 });
+      }
+      if (url === '/api/auth/oauth/providers') {
+        return new Response(JSON.stringify(unconfiguredOAuthProviders), {
+          headers: { 'Content-Type': 'application/json' },
+          status: 200
+        });
+      }
+
+      return new Response(JSON.stringify({ items: [] }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200
+      });
+    }));
+
+    const login = await mountAppAt('/auth/login');
+
+    expect(login.wrapper.get('[data-testid="oauth-login-google"]').element.tagName).toBe('BUTTON');
+    expect(login.wrapper.get('[data-testid="oauth-login-google"]').attributes('disabled')).toBeDefined();
+    expect(login.wrapper.get('[data-testid="oauth-login-google"]').attributes('href')).toBeUndefined();
+
+    login.wrapper.unmount();
+
+    const register = await mountAppAt('/auth/register');
+
+    expect(register.wrapper.get('[data-testid="oauth-register-kakao"]').element.tagName).toBe('BUTTON');
+    expect(register.wrapper.get('[data-testid="oauth-register-kakao"]').attributes('disabled')).toBeDefined();
+    expect(register.wrapper.get('[data-testid="oauth-register-kakao"]').attributes('href')).toBeUndefined();
   });
 
   it('renders registration as a separate page with strict field constraints', async () => {
@@ -180,7 +270,7 @@ describe('session auth UI', () => {
       username: 'happy01',
       password: 'watch-1234!'
     });
-    expect(router.currentRoute.value.path).toBe('/realestate/mypage');
+    expect(router.currentRoute.value.path).toBe('/dashboard');
   });
 
   it('centers auth flow panels and styles every enabled auth button as clickable', () => {
@@ -192,6 +282,9 @@ describe('session auth UI', () => {
     expect(styles).toContain('.login-button:focus-visible');
     expect(styles).toContain('.auth-submit-button:hover:not(:disabled)');
     expect(styles).toContain('.auth-submit-button:focus-visible');
+    expect(styles).toContain('.oauth-login-list.icon-row');
+    expect(styles).toContain('grid-template-columns: repeat(3, 48px);');
+    expect(styles).toContain('.oauth-provider-icon');
     expect(styles).toContain('cursor: pointer');
   });
 });

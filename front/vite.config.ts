@@ -10,9 +10,17 @@ const backendProxyTarget = resolveBackendProxyTarget(process.env);
 export default defineConfig({
   plugins: [vue()],
   server: {
-    allowedHosts: ['.trycloudflare.com'],
+    allowedHosts: ['.trycloudflare.com', '.ngrok-free.dev', '.ngrok-free.app'],
     proxy: {
       '/api': {
+        target: backendProxyTarget,
+        changeOrigin: true
+      },
+      '/oauth2': {
+        target: backendProxyTarget,
+        changeOrigin: true
+      },
+      '/login/oauth2': {
         target: backendProxyTarget,
         changeOrigin: true
       }

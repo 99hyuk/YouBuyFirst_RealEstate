@@ -72,6 +72,25 @@ class AuthSessionIntegrationTest {
     }
 
     @Test
+    void reportsOAuthProvidersAsUnavailableWhenClientCredentialsAreMissing() throws Exception {
+        ResponseEntity<String> providers = restTemplate.getForEntity("/api/auth/oauth/providers", String.class);
+
+        assertThat(providers.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(providers.getBody());
+        assertThat(body).hasSize(3);
+        assertThat(body.findValuesAsText("provider")).containsExactly("google", "naver", "kakao");
+        assertThat(body.findValuesAsText("displayName")).containsExactly("Google", "Naver", "Kakao");
+        assertThat(body.findValues("configured")).allSatisfy(configured ->
+                assertThat(configured.asBoolean()).isFalse()
+        );
+        assertThat(body.findValuesAsText("authorizationUrl")).containsExactly(
+                "/oauth2/authorization/google",
+                "/oauth2/authorization/naver",
+                "/oauth2/authorization/kakao"
+        );
+    }
+
+    @Test
     void logsInWithPasswordAndInvalidatesSessionOnLogout() throws Exception {
         restTemplate.postForEntity(
                 "/api/auth/register",

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { register } from '../lib/auth-session';
+import { loadOAuthProviders, register, type OAuthProviderStatus } from '../lib/auth-session';
 
 const router = useRouter();
 const usernamePattern = '[A-Za-z0-9]+';
@@ -16,9 +16,14 @@ const registerForm = reactive({
 });
 const registerError = ref('');
 const registerPending = ref(false);
+const oauthProviders = ref<OAuthProviderStatus[]>([]);
 
 const normalizeUsername = (value: string) => value.trim().toLowerCase();
 const normalizeText = (value: string) => value.trim();
+
+onMounted(async () => {
+  oauthProviders.value = await loadOAuthProviders();
+});
 
 const handleRegister = async () => {
   registerError.value = '';
@@ -30,7 +35,7 @@ const handleRegister = async () => {
       displayName: normalizeText(registerForm.displayName),
       password: registerForm.password
     });
-    await router.push('/realestate/mypage');
+    await router.push('/dashboard');
   } catch (error) {
     registerError.value = error instanceof Error ? error.message : '회원가입 요청을 처리하지 못했습니다.';
   } finally {
@@ -44,7 +49,7 @@ const handleRegister = async () => {
     <div class="auth-header">
       <p class="label">계정</p>
       <h2 id="register-title">회원가입</h2>
-      <span>저장 지역, 알림 조건, 관찰 메모를 사용자 계정 기준으로 관리합니다.</span>
+      <span>계정 생성 후 상단 계정 상태와 채팅 참여 상태를 사용자 세션 기준으로 관리합니다.</span>
     </div>
 
     <section class="auth-grid auth-single-grid" aria-label="회원가입">
@@ -112,6 +117,30 @@ const handleRegister = async () => {
         <button class="auth-submit-button" :disabled="registerPending" type="submit">
           {{ registerPending ? '생성 중' : '회원가입' }}
         </button>
+        <div class="oauth-login-list" aria-label="간편 회원가입">
+          <p>간편 회원가입</p>
+          <template v-for="provider in oauthProviders" :key="provider.provider">
+            <a
+              v-if="provider.configured"
+              class="oauth-login-button"
+              :class="provider.provider"
+              :data-testid="`oauth-register-${provider.provider}`"
+              :href="provider.authorizationUrl"
+            >
+              {{ provider.displayName }}로 시작
+            </a>
+            <button
+              v-else
+              class="oauth-login-button disabled"
+              :class="provider.provider"
+              :data-testid="`oauth-register-${provider.provider}`"
+              disabled
+              type="button"
+            >
+              {{ provider.displayName }} 설정 필요
+            </button>
+          </template>
+        </div>
         <div class="auth-secondary-actions" aria-label="회원가입 보조 작업">
           <RouterLink data-testid="register-login-link" to="/auth/login">로그인으로 돌아가기</RouterLink>
         </div>

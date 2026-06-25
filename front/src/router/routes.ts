@@ -5,7 +5,6 @@ import DashboardPage from '../pages/DashboardPage.vue';
 import IndicatorsPage from '../pages/IndicatorsPage.vue';
 import NewsroomPage from '../pages/NewsroomPage.vue';
 import RegionDetailPage from '../pages/RegionDetailPage.vue';
-import WatchlistPage from '../pages/WatchlistPage.vue';
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -79,14 +78,5 @@ export const routes: RouteRecordRaw[] = [
     path: '/indicators/:category',
     name: 'indicator-detail',
     component: IndicatorsPage
-  },
-  {
-    path: '/realestate/mypage',
-    name: 'realestate-mypage',
-    component: WatchlistPage
-  },
-  {
-    path: '/realestate/watchlist',
-    redirect: '/realestate/mypage'
   }
 ];

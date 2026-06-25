@@ -24,7 +24,6 @@
 | `indicators` | `/indicators`, `/indicators/:category` | `indicators.md` | active | 공식 통계·실거래·청약·정책 주요 일정 |
 | `transaction-explorer` | `/realestate/transactions` | `transaction-explorer.md` | active | 실거래·전월세 필터링, 거래 row, 지역 집계 |
 | `region-detail` | `/realestate/targets/:targetId` | `region-detail/README.md` | active | 지역/단지 상세 리포트 |
-| `mypage` | `/realestate/mypage` (`/realestate/watchlist` redirect) | `watchlist.md` | active | 사용자 저장 지역/단지, 알림 조건, 개인 메모, 저장 지역 비교 |
 
 ## Screen Brief 템플릿
 

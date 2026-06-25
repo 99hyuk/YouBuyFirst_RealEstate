@@ -20,11 +20,68 @@ export type RegisterPayload = LoginPayload & {
   displayName: string;
 };
 
+export type OAuthProviderStatus = {
+  provider: 'google' | 'naver' | 'kakao';
+  displayName: string;
+  authorizationUrl: string;
+  configured: boolean;
+};
+
 export const currentAuthUser = ref<AuthUser | null>(null);
 
 const jsonHeaders = {
   'Content-Type': 'application/json'
 };
+
+const defaultOAuthProviders: OAuthProviderStatus[] = [
+  {
+    provider: 'google',
+    displayName: 'Google',
+    authorizationUrl: '/oauth2/authorization/google',
+    configured: false
+  },
+  {
+    provider: 'naver',
+    displayName: 'Naver',
+    authorizationUrl: '/oauth2/authorization/naver',
+    configured: false
+  },
+  {
+    provider: 'kakao',
+    displayName: 'Kakao',
+    authorizationUrl: '/oauth2/authorization/kakao',
+    configured: false
+  }
+];
+
+const isOAuthProviderList = (value: unknown): value is OAuthProviderStatus[] => (
+  Array.isArray(value)
+  && value.every((provider) => (
+    typeof provider === 'object'
+    && provider !== null
+    && ['google', 'naver', 'kakao'].includes(String((provider as OAuthProviderStatus).provider))
+    && typeof (provider as OAuthProviderStatus).displayName === 'string'
+    && typeof (provider as OAuthProviderStatus).authorizationUrl === 'string'
+    && typeof (provider as OAuthProviderStatus).configured === 'boolean'
+  ))
+);
+
+export async function loadOAuthProviders(): Promise<OAuthProviderStatus[]> {
+  try {
+    const response = await fetch('/api/auth/oauth/providers', {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      return defaultOAuthProviders;
+    }
+
+    const providers = await response.json() as unknown;
+    return isOAuthProviderList(providers) ? providers : defaultOAuthProviders;
+  } catch {
+    return defaultOAuthProviders;
+  }
+}
 
 export async function loadCurrentUser(): Promise<AuthUser | null> {
   const response = await fetch('/api/auth/me', {

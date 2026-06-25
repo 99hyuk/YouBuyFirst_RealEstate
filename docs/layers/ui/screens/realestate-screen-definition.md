@@ -12,8 +12,8 @@
 
 ## 2. 공통 화면 원칙
 
-- 공통 내비게이션은 `대시보드`, `뉴스룸`, `지역 분석`, `실거래`, `주요 일정`, `마이페이지`로 유지한다.
-- 공통 내비게이션 바로 아래의 움직이는 strip은 `뉴스룸`, `주요 일정`, `지역 지도`의 최신 중요 후보를 조합해 정책, 리포트, 일정, 상승, 하락을 우선 노출한다. 정적 mock 문구나 낮은 가치의 filler는 반복 노출하지 않는다.
+- 공통 내비게이션은 `대시보드`, `뉴스룸`, `지역 분석`, `실거래`, `주요 일정`으로 유지한다.
+- 공통 내비게이션 바로 아래의 움직이는 strip은 뉴스룸의 오늘자 뉴스(`feed=news`, KST 발행일 기준), 주요 일정의 오늘 이후 일정, 전국 지도 레이어의 최대 상승 지역과 최대 하락 지역을 함께 노출한다. 뉴스 항목 라벨은 `뉴스`로 통일하고, 별도 `정책`/`리포트` 라벨은 쓰지 않는다. 일정은 `일정`, 지역 등락은 `상승`/`하락` 라벨을 쓴다. 발행일이 오늘로 확인되지 않거나 홍보성 filler인 뉴스는 반복 노출하지 않는다.
 - 너나사 시리즈의 UI 패턴은 유지하되, 부동산 서비스의 대표 포인트 컬러는 주황 계열을 쓴다.
 - 상승, 기대, 긍정 방향은 빨강 계열로 표시한다.
 - 하락, 우려, 냉각 방향은 파랑 계열로 표시한다.
@@ -91,7 +91,6 @@
 | 실거래 | `/realestate/transactions` | 팀원 구현 전까지 빈 shell만 유지하고, 이후 지역·기간·거래 유형 기준의 실거래/전세 탐색을 붙인다 | transaction fact, filters, summary, evidence |
 | 주요 일정 | `/indicators`, `/indicators/:category` | 공식 통계·정책·청약·금리 확인 일정 | market data schedules, source links |
 | 뉴스룸 | `/newsroom?feed=&page=` | 뉴스, 리포트, 영상, 블로그/커뮤니티 원문 모음 | content item, content-target link |
-| 마이페이지 | `/realestate/mypage` | 사용자가 저장한 지역을 관리하고 지난 방문 이후 바뀐 시장 사실을 확인 | user watch, alert rule/event, observation log |
 | 지역/단지 상세 | `/realestate/targets/:targetId` | 특정 지역의 종합 리포트와 근거 확인. 단지는 검증된 경우 보조 상세로 확장 | target, aliases, snapshot, market facts, timeline, evidence |
 
 ## 5. 대시보드 정의
@@ -124,10 +123,10 @@
   - 블로그·커뮤니티
   - 영상과 블로그·커뮤니티에는 순위 번호를 붙이지 않고 일반 콘텐츠 목록으로 표시
 - 오른쪽 빠른 패널
-  - 인사이트, 거래, 관심 탭 미리보기
-  - 인사이트 탭: 지금 확인할 지역 시장 변화와 공개 지연 상태
-  - 거래 탭: 최근 실거래/전세 요약과 탐색 진입
-  - 관심 탭: 관심 대상
+  - 공통 오른쪽 고정 rail은 `관심`, `최근 본`, `채팅` 순서로만 노출
+  - `반응`, `실시간` 탭은 제거하고, 공개 반응/뉴스는 본문 카드와 전용 화면에서만 다룸
+  - 채팅 탭: 로그인 사용자와 비로그인 게스트 닉네임 기반의 좁은 채팅 피드와 입력창. 사이트 첫 진입 기본값은 채팅 패널이 열린 상태이며, 최근 메시지 조회, SSE 연결, `/api/chat/presence` heartbeat를 바로 시작한다. 사용자가 패널을 닫거나 `관심`/`최근 본`으로 전환하면 채팅 heartbeat를 멈춘다. 채팅방 내부에는 `전체/채팅/뉴스` 필터 탭을 두지 않고 메시지 닉네임 옆에 채팅/뉴스 텍스트 badge를 붙이지 않는다. 참여자 수는 `/api/chat/presence`의 `activeSessionCount`로 받은 최근 45초 채팅 패널 heartbeat 세션 수를 왼쪽 상태값으로 표시한다. 글자 크기/닉네임은 오른쪽 끝 액션 묶음으로 둔다. 로그인 사용자의 닉네임 텍스트를 클릭하면 `닉네임 변경` 팝업에서 채팅 닉네임을 로컬 수정한다. 비로그인 사용자는 블러/모자이크 오버레이에서 `로그인 하기` 또는 `비로그인으로 참여하기`를 선택하고, 게스트 닉네임 입력 후 채팅한다. 로그인/게스트 닉네임은 닉네임 문자열 해시 기반의 고정 색상 팔레트를 사용해 같은 닉네임이면 같은 색상으로 표시하고, 채팅 헤더와 작성자명에는 같은 얇은 하이라이트 띠 오버레이를 얹는다. 가입자 작성 메시지만 인증 마크를 함께 표시하며, 게스트 닉네임은 `/api/chat/nickname-availability`와 `POST /api/chat/messages`에서 기존 가입자 닉네임과 충돌하지 않아야 한다. 메시지는 `/api/chat/messages`로 서버 저장/조회하며, 지역 분석 리포트와 실거래 상세는 채팅 첨부 카드로 함께 저장/조회한다. 첨부 카드 마지막 줄은 기간+등락률로 통일하고, 지역 분석처럼 설명 줄이 기간 라벨과 같으면 해당 설명 줄을 숨긴다
+  - 관심 탭: 로그인 사용자 전용 저장 목록. 지역 리포트나 실거래 상세에서 하트로 저장한 `region`/`complex` 관심 대상을 `GET /api/realestate/watch-targets`로 불러오고, 항목 클릭 시 저장된 `landingPath`로 복귀한다. 비로그인 사용자는 로그인 진입만 보여주며 mock 저장 목록을 두지 않는다.
 
 ### 5.3 ERD 매핑
 
@@ -136,7 +135,7 @@
 | 오늘의 부동산 브리핑 | `real_estate_market_facts`, `market_indicator_values`, `market_data_schedules`, `content_items` |
 | 지역 시장 흐름 | `map_layer_snapshots`, `real_estate_market_facts`, `market_indicator_values`, `policy_event_targets` |
 | 뉴스/리포트/영상/링크 | `content_items`, `content_target_links`, `crawl_sources` |
-| 빠른 패널 | `user_watch_targets`, `alert_events`, `real_estate_market_facts`, `market_data_schedules` |
+| 빠른 패널 | `app_users`, `user_watch_targets`, `chat_messages`, `alert_events`. WebSocket/STOMP 실시간 전송 테이블은 아직 확정 전 후보 |
 
 ### 5.4 API 후보
 
@@ -150,7 +149,7 @@
 - `scheduleSummary`: 이번 주/이번 달 확인할 공식 일정 요약
 - `contentFeeds`: 뉴스, 리포트, 영상, 링크
 - `dataFreshness`: provider별 stale/mock/asOf
-- `quickPanel`: 인사이트/거래/관심 미리보기
+- `quickPanel`: 관심/최근 본 미리보기. 관심은 로그인 세션 기반 `user_watch_targets` 목록을 사용하고, 최근 본은 front 로컬 상태로 표시한다. 사이트 첫 진입에서는 채팅 패널이 기본으로 열려 `GET /api/chat/messages?limit=50`, `/api/chat/messages/stream`, `/api/chat/presence`를 바로 연결한다. 로그인 사용자와 게스트 닉네임 입력은 `POST /api/chat/messages`로 저장한다. 게스트 메시지는 `session_id`로 같은 브라우저 세션의 내 메시지를 구분하고 인증마크 없이 표시한다. 게스트 닉네임은 저장 전 `GET /api/chat/nickname-availability`로 가입자 닉네임 충돌을 확인하고, 서버 POST도 같은 충돌을 거절한다. 열린 채팅창은 `/api/chat/messages/stream` SSE로 새 메시지를 즉시 추가하며, 주기 재조회는 stream 장애 fallback으로 둔다. 채팅 메시지는 선택적으로 `attachment`를 포함하며, `region`/`complex` 타입, 대상 id, 제목, 보조 설명, 기간 라벨, 등락률 표시값, 내부 복귀 경로를 저장한다. 첨부 카드는 `종류+제목 / 필요할 때만 보이는 설명 / 기간+등락률`로 렌더링한다. 실거래는 지역·동·가격 설명을 유지해 3줄, 지역 분석은 기간 설명이 중복되면 숨겨 2줄로 보인다
 
 ### 5.5 상태 정의
 
@@ -267,7 +266,8 @@ API:
 - 응답 shape는 전국 지도와 같고, `targets[]`는 해당 시도 하위 시군구 target이다.
 - 지역 리포트 응답은 `reportId`, `targetId`, `targetName`, `regionLevel`, `regionCode`, `title`, `headline`, `summary`, `body`, `expectationPoints[]`, `concernPoints[]`, `dataQuality`, `confidence`, `asOf`, `publishedAt`, `sources[]`를 포함한다.
 - `expectationPoints[]`와 `concernPoints[]`는 화면에서 문장 설명처럼 보이지 않도록 `전세·실거래 동행`, `입주 물량 부담` 같은 짧은 명사형만 사용한다. 3개를 억지로 채우지 않고 1-2개를 기본으로 한다.
-- `body`는 금융권 리포트형 문체로 `단기 판단:` 전망 문장을 포함한다. 예: `단기 판단: 관망 우위`, `단기 판단: 선별 접근`, `단기 판단: 상승 지속 가능성 우위`. 이 문장은 시장 방향성 관찰이지 매수·매도·청약·대출 행동 권유가 아니다.
+- `body`는 금융권 리포트형 문체로 `평가:`와 `전망:`을 포함한다. `평가:`는 해당 지역의 수요·공급·전세·정책·산업 변수를 해석하고, `전망:`은 `관망 우위`, `선별 관망`, `선별 회복 가능성`, `방어력 우위`처럼 시장 방향성 관찰을 드러낸다. 화면에서는 `평가`와 `전망` 라벨을 굵게 표시하고 각 문단을 명확히 줄바꿈해 한 문단처럼 붙어 보이지 않게 한다. 매수·매도·청약·대출 행동 권유는 아니다.
+- 하위 시군구 리포트는 상위 시도 리포트 문장을 재사용하지 않는다. 같은 광역권 안에서도 생활권, 산업축, 전세 방어, 공급 부담이 다르면 기대/우려 포인트와 본문 판단을 각각 다르게 저장한다.
 - `sources[]`는 근거 적재소에 표시하며 `url`이 있으면 원문 링크로 열고, 없으면 수집 전/확인 필요 row로 남긴다.
 - 1차 구현은 DB snapshot이 있는 하위 지역만 실제 API 값으로 덮어쓴다. `seed/mock` snapshot은 가격지도 API에서 제외되며, 공식 가격지수나 실거래 fact가 없는 지역은 검정에 가까운 회색 `공식 지수 미공표` 상태로 남긴다. 이 지역의 버튼은 disabled 상태로 두고 클릭해도 오른쪽 지역 리포트를 열지 않는다.
 - 하위 snapshot이 없으면 기존 도식화 topology fallback을 유지하고, 하단 상태에 `하위 레이어 fallback`을 표시한다.
@@ -421,69 +421,15 @@ Route: `/newsroom?feed=all|news|reports|videos|links&page=`
 - `GET /api/realestate/content-items/:id`
 - `GET /api/realestate/targets/:targetId/content?feed=`
 
-## 10. 마이페이지 화면 정의
-
-Route: `/realestate/mypage`
-
-레거시 북마크 호환을 위해 `/realestate/watchlist`는 `/realestate/mypage`로 redirect한다.
-
-### 10.1 목적
-
-사용자가 저장한 지역/단지의 시장 변화, 주요 일정, 알림 조건, 개인 메모, 저장 지역 비교를 확인한다. 로그인/사용자 저장 API가 열리기 전에는 실제 저장 목록처럼 보이는 mock watchlist를 두지 않고 준비 상태를 분리해서 보여준다.
-
-### 10.2 현재 화면 구성
-
-- 마이페이지 요약 상태
-  - 저장 지역/단지
-  - 지난 방문 이후 바뀐 것
-  - 알림 조건
-  - 관찰 메모
-- 내 저장 지역/단지
-  - 로그인 전에는 실제 저장 목록처럼 보이는 mock 목록을 두지 않고 빈 상태를 표시
-  - 저장 이유 태그 후보: 실거주, 전세, 청약, 투자관찰, 교통, 재건축, 공급
-- 지난 방문 이후 바뀐 것
-  - 새 실거래/전세 거래
-  - 주요 일정 도래
-  - 정책/공급/청약 이슈 추가
-  - 근거 리포트 갱신
-  - 데이터 stale 또는 공식 데이터 없음 상태
-- 내 알림 조건
-  - `알림 조건 준비 중` 또는 `조건 관리` 상태로 표시
-- 지역별 관찰 메모
-  - 개인 기록으로만 표현하고 투자 행동을 권유하지 않음
-- 저장 지역 비교
-  - 실거래, 전세, 공급, 주요 일정, 근거 갱신 상태를 저장 지역끼리 비교
-
-### 10.3 ERD 매핑
-
-- `app_users`: 사용자
-- `user_watch_targets`: 관심 대상 저장
-- `alert_rules`: 알림 조건
-- `alert_events`: 발생한 알림
-- `observation_logs`: 관찰/복기 로그
-- `real_estate_aliases`: 별칭 DB 연결 준비
-- `crawl_sources`, `source_boards`: 원문 수집 후보
-- `real_estate_market_facts`: 공공데이터 후보
-
-### 10.4 API 후보
-
-- `GET /api/users/me/watch-targets`
-- `POST /api/users/me/watch-targets`
-- `GET /api/users/me/alerts`
-- `GET /api/users/me/observation-logs`
-- 저장 기능 전 임시 후보: `GET /api/realestate/transactions/summary?windowMinutes=10080&limit=10`
-
-현재 로그인은 화면상 버튼만 존재한다. 실제 사용자 기능이 열리기 전에는 저장된 관심 목록처럼 보이는 mock watchlist를 두지 않고, 저장 대상 없음/로그인 연동 준비 중/데이터 확인 전 상태를 분리해 표시한다. API가 비거나 실패하면 `데이터 확인 전/insufficient` 또는 오류 상태를 표시한다.
-
-## 11. 지역/단지 상세 화면 정의
+## 10. 지역/단지 상세 화면 정의
 
 Route: `/realestate/targets/:targetId`
 
-### 11.1 목적
+### 10.1 목적
 
 특정 지역/단지에 대해 어떤 시장 사실이 바뀌었는지, 어떤 지표와 원문이 근거인지, 신뢰도와 데이터 지연 상태는 어떤지 리포트 형태로 보여준다.
 
-### 11.2 현재 화면 구성
+### 10.2 현재 화면 구성
 
 - 지역 한줄 브리핑
 - 지역 상세 리포트 헤더
@@ -531,7 +477,9 @@ Route: `/realestate/targets/:targetId`
 
 ## 12. 공통 컴포넌트 정의
 
-공통 shell의 상단 인사이트 strip과 오른쪽 rail은 정적 mock 문구를 두지 않는다. 로그인/사용자 저장 기능이 열리기 전에는 `GET /api/realestate/transactions/summary?windowMinutes=10080&limit=6` 또는 dashboard summary 응답을 우선 사용하고, 응답이 비면 `데이터 확인 전/insufficient`, 실패하면 `시장 데이터 API 오류`를 표시한다.
+공통 shell의 상단 인사이트 strip과 오른쪽 rail은 정적 mock 문구를 두지 않는다. 상단 인사이트 strip은 `GET /api/realestate/newsroom?feed=news&page=1&pageSize=12`, `GET /api/realestate/market-data-schedules?month=YYYY-MM`, `GET /api/realestate/map/layers?layerType=sido` 응답을 조합해 오늘자 뉴스, 다가오는 일정, 최대 상승/하락 지역을 반복 노출하고, 뉴스룸/일정/지도 배치 갱신 이벤트가 오면 다시 불러온다. 오른쪽 rail의 관심 탭은 `JSESSIONID` 로그인 사용자만 사용하며, `GET /api/realestate/watch-targets` 응답이 비면 저장된 관심이 없다고 표시하고 실패하면 관심 목록 오류를 표시한다. 비로그인 상태에서는 저장 목록처럼 보이는 fallback을 두지 않는다.
+
+오른쪽 고정 rail의 탭은 `관심`, `최근 본`, `채팅` 순서로 제한한다. `반응`, `실시간` 탭은 노출하지 않는다. 사이트 첫 진입 기본값은 채팅 패널이 열린 상태이며, 최근 메시지 조회, SSE 연결, `/api/chat/presence` heartbeat를 바로 시작한다. 사용자가 패널을 닫거나 `관심`/`최근 본`으로 전환하면 채팅 heartbeat를 멈춘다. 채팅 탭은 알파벳이 아니라 가로형 말풍선 아이콘으로 표시하고, 로그인 사용자는 `JSESSIONID` 사용자 `displayName`, 비로그인 사용자는 게스트 닉네임을 보여준다. 채팅방 내부에는 `전체/채팅/뉴스` 필터 탭을 두지 않고, 메시지 닉네임 옆에는 채팅/뉴스 텍스트 badge 대신 가입자 인증 마크만 조건부로 표시한다. 로그인/게스트 닉네임은 닉네임 문자열 해시 기반의 고정 색상 팔레트를 사용해 같은 닉네임이면 같은 색상으로 표시한다. 로그인/게스트 닉네임 모두 채팅 헤더와 메시지 작성자명에서 해당 고정 색상 텍스트를 기본으로 유지하고, 천천히 흐르는 얇은 하이라이트 띠 오버레이만 얹는다. 로그인한 내 새 메시지는 응답에서 인증 필드가 잠깐 빠져도 가입자 스타일을 유지한다. 게스트 닉네임은 인증마크 없이 같은 색상/하이라이트 스타일만 적용하고, 입력 시 기존 가입자 닉네임과 충돌하면 저장하지 않는다. 메시지는 `chat_messages`에 저장하고 `GET /api/chat/messages?limit=50`으로 최근 피드를 읽으며, 로그인 사용자와 게스트 입력은 `POST /api/chat/messages`로 등록한다. 게스트 닉네임 입력은 `GET /api/chat/nickname-availability`로 가입자 닉네임 충돌을 먼저 확인하고, `POST /api/chat/messages`도 비로그인 충돌을 `409`로 거절한다. 열린 채팅창은 `/api/chat/messages/stream` SSE(EventSource)를 유지하고, 서버가 `chat-message` 이벤트를 보내면 새로고침 없이 피드에 추가한다. 참여자 수는 버튼이 아니라 초록 점과 숫자가 같은 줄에 놓이는 상태 표시값으로 왼쪽에 두고, `/api/chat/presence`의 `activeSessionCount` 기반 최근 45초 채팅 패널 heartbeat 세션 수를 표시한다. 글자 크기와 닉네임은 오른쪽 끝 액션 묶음으로 둔다. 로그인 사용자는 닉네임 텍스트 클릭 시 `닉네임 변경` 제목이 있는 팝업에서 채팅 닉네임을 로컬 수정하며, 비로그인 사용자는 블러/모자이크 오버레이에서 `로그인 하기` 또는 `비로그인으로 참여하기`를 선택하고 닉네임 입력 후 인증마크 없이 채팅한다. `닉네임 설정` 문구 버튼, 톱니, 팝업, 닫기 버튼은 두지 않는다. 채팅 패널은 본문 배경과 구분되는 블루그레이 톤을 사용하고, 본문과의 경계에는 두꺼운 왼쪽 선과 그림자를 둔다. 내가 쓴 메시지는 오른쪽 정렬의 옅은 배경 말풍선으로 구분한다. 지역 리포트와 실거래 상세의 말풍선 버튼은 현재 대상을 채팅 입력창에 첨부 카드로 올리고, 전송된 첨부 카드는 `종류+제목 / 필요할 때만 보이는 설명 / 기간+등락률`로 압축한다. 실거래는 지역·동·가격 설명을 남겨 3줄, 지역 분석은 기간 설명 중복을 접어 2줄로 보이며, 클릭 시 해당 지역 분석 또는 실거래 상세 URL로 이동한다. WebSocket/STOMP 확장은 별도 contract 후보로 둔다.
 
 ### 12.1 상태 배지
 
@@ -589,9 +537,7 @@ ERD 후보:
    - 공식 통계·정책·청약·금리 확인 일정을 캘린더와 출처 링크로 정리한다.
 5. 뉴스룸
    - 시장 fact와 일정의 근거 링크를 확인하는 보조 탐색 화면이다.
-6. 마이페이지
-   - 사용자가 저장한 지역을 관리하고, 지난 방문 이후 바뀐 시장 사실을 확인하는 개인화 공간으로 둔다.
-7. 지역/단지 상세
+6. 지역/단지 상세
    - 지도와 실거래에서 클릭해 들어가는 최종 리포트다.
 
 ## 14. 구현 체크리스트
@@ -604,7 +550,6 @@ ERD 후보:
 - [ ] 상승 빨강, 하락 파랑 색상 토큰 공통화
 - [ ] 뉴스/리포트/보조 공개 원문 링크의 출처 icon fallback 정리
 - [ ] 지역/단지 상세의 evidence log 구조 확정
-- [ ] 마이페이지는 로그인 전 준비 상태와 로그인 후 실제 사용자 저장 상태 분리
 
 ## 15. 아직 결정이 필요한 부분
 

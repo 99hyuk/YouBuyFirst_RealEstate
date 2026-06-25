@@ -2,6 +2,7 @@ package com.youbuyfirst.backend.auth;
 
 import com.youbuyfirst.backend.auth.dto.CurrentUserResponse;
 import com.youbuyfirst.backend.auth.dto.LoginRequest;
+import com.youbuyfirst.backend.auth.dto.OAuthProviderStatusResponse;
 import com.youbuyfirst.backend.auth.dto.RegisterRequest;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,16 +26,24 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
+    private final OAuthProviderStatusService oauthProviderStatusService;
 
-    public AuthController(AuthService authService, AuthenticationManager authenticationManager) {
+    public AuthController(
+            AuthService authService,
+            AuthenticationManager authenticationManager,
+            OAuthProviderStatusService oauthProviderStatusService
+    ) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
+        this.oauthProviderStatusService = oauthProviderStatusService;
     }
 
     @PostMapping("/register")
@@ -63,6 +72,11 @@ public class AuthController {
     public CurrentUserResponse me(Authentication authentication) {
         AppUserPrincipal principal = currentPrincipal(authentication);
         return CurrentUserResponse.from(authService.markSeen(principal.getUserId()));
+    }
+
+    @GetMapping("/oauth/providers")
+    public List<OAuthProviderStatusResponse> oauthProviders() {
+        return oauthProviderStatusService.providers();
     }
 
     @PostMapping("/logout")

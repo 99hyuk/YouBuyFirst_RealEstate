@@ -33,6 +33,16 @@ import {
   fetchRealEstateRegionalReport,
   type RealEstateRegionalReport
 } from '../lib/realestate-regional-reports';
+import { currentAuthUser } from '../lib/auth-session';
+import { recordRecentRealEstateView } from '../lib/realestate-recent-views';
+import {
+  isUserWatchTargetSaved,
+  loadUserWatchTargets,
+  removeUserWatchTarget,
+  safeWatchTargetTestId,
+  saveUserWatchTarget,
+  type UserWatchTargetPayload
+} from '../lib/user-watch-targets';
 
 type ReportKey =
   | 'priceFlow'
@@ -52,6 +62,16 @@ type MapTarget = FixtureMapTarget & {
   stale?: boolean;
   targetId: string;
 };
+type ChatAttachmentPayload = {
+  type: 'region' | 'complex';
+  targetId: string;
+  title: string;
+  subtitle: string;
+  metricLabel?: string;
+  metricValue?: string;
+  metricTone?: 'up' | 'down' | 'flat';
+  landingPath: string;
+};
 type ProvinceProperties = {
   base_year: string;
   code: string;
@@ -67,6 +87,11 @@ type KoreaTopology = Topology<{
 type MunicipalityTopology = Topology<{
   skorea_municipalities_2018_geo: GeometryCollection<MunicipalityProperties>;
 }>;
+type ReportAnalysisSegment = {
+  key: string;
+  label: '평가' | '전망' | null;
+  text: string;
+};
 type MapFeature = {
   code: string;
   depthTransform: string;
@@ -1190,6 +1215,7 @@ const selectedReport = computed(() => {
         `분석 근거와 공식 시장 사실이 연결되면 최신 기준의 지역 브리핑으로 전환합니다.`,
         '매매 실거래, 전월세, 공급 일정은 각각 별도 근거로 확인한 뒤 같은 리포트에 적재합니다.'
       ];
+  const analysisSegments = reportAnalysisSegments(analysisParagraphs);
   const relatedReports = storedReport?.sources.length
     ? storedReport.sources.map((source) => ({
         label: source.label,
@@ -1343,6 +1369,7 @@ const selectedReport = computed(() => {
     expectationPoints,
     concernPoints,
     analysisParagraphs,
+    analysisSegments,
     relatedReports,
     title: '보조 반응',
     mentionSummary: hasLivePeriod
@@ -1372,6 +1399,122 @@ const reportPanelStyle = computed(() =>
         transition: 'none'
       }
     : undefined
+);
+
+const selectedRegionRecentView = computed(() => {
+  const region = selectedRegion.value;
+  if (!region) return null;
+
+  const subregion = selectedSubregion.value;
+  if (!subregion) {
+    return {
+      id: region.targetId,
+      kind: 'region' as const,
+      label: region.name,
+      meta: `지역 분석 · ${periodLabelById[activePeriod.value]}`,
+      href: `/realestate/map/${region.targetId}`
+    };
+  }
+
+  const params = new URLSearchParams();
+  const selectedTargetId = selectedEvidenceLayerTarget.value?.targetId ?? selectedEvidenceTargetId.value;
+  if (selectedTargetId) {
+    params.set('selectedTargetId', selectedTargetId);
+  }
+  params.set('selectedRegionCode', subregion.code);
+  params.set('period', activePeriod.value);
+
+  return {
+    id: selectedTargetId ?? `${region.targetId}-${subregion.code}`,
+    kind: 'region' as const,
+    label: selectedReport.value?.name ?? `${region.name} ${subregion.name}`,
+    meta: `지역 분석 · ${region.name} · ${periodLabelById[activePeriod.value]}`,
+    href: `/realestate/map/${region.targetId}?${params.toString()}`
+  };
+});
+const selectedRegionWatchTarget = computed<UserWatchTargetPayload | null>(() => {
+  const view = selectedRegionRecentView.value;
+  if (!view) return null;
+
+  return {
+    targetType: 'region',
+    targetId: view.id,
+    displayName: view.label,
+    landingPath: view.href
+  };
+});
+const isSelectedRegionWatched = computed(() => {
+  const target = selectedRegionWatchTarget.value;
+  return target ? isUserWatchTargetSaved(target.targetType, target.targetId) : false;
+});
+const selectedRegionWatchTestId = computed(() => {
+  const target = selectedRegionWatchTarget.value;
+  return target ? `watch-toggle-region-${safeWatchTargetTestId(target.targetId)}` : 'watch-toggle-region';
+});
+const selectedRegionWatchLabel = computed(() => {
+  const target = selectedRegionWatchTarget.value;
+  if (!target) return '관심 저장';
+  return isSelectedRegionWatched.value ? `${target.displayName} 관심 해제` : `${target.displayName} 관심 저장`;
+});
+const selectedRegionChatAttachment = computed<ChatAttachmentPayload | null>(() => {
+  const target = selectedRegionWatchTarget.value;
+  const report = selectedReport.value;
+  if (!target || !report) return null;
+
+  return {
+    type: 'region',
+    targetId: target.targetId,
+    title: target.displayName,
+    subtitle: `지역 분석 · ${periodLabelById[activePeriod.value]}`,
+    metricLabel: periodLabelById[activePeriod.value],
+    metricValue: report.hasLivePeriod ? formatChange(report.change) : '자료 없음',
+    metricTone: report.hasLivePeriod ? changeTone(report.change) : 'flat',
+    landingPath: target.landingPath
+  };
+});
+const selectedRegionChatTestId = computed(() => {
+  const target = selectedRegionChatAttachment.value;
+  return target ? `chat-attach-region-${safeWatchTargetTestId(target.targetId)}` : 'chat-attach-region';
+});
+const selectedRegionChatLabel = computed(() => {
+  const target = selectedRegionChatAttachment.value;
+  return target ? `${target.title} 채팅에 첨부` : '지역 리포트 채팅에 첨부';
+});
+
+const dispatchChatAttachment = (attachment: ChatAttachmentPayload) => {
+  window.dispatchEvent(new CustomEvent('ybf-chat-attach', { detail: attachment }));
+};
+
+const attachSelectedRegionToChat = () => {
+  const attachment = selectedRegionChatAttachment.value;
+  if (!attachment) return;
+  dispatchChatAttachment(attachment);
+};
+
+const toggleSelectedRegionWatch = async () => {
+  const target = selectedRegionWatchTarget.value;
+  if (!target) return;
+
+  if (!currentAuthUser.value) {
+    await router.push('/auth/login');
+    return;
+  }
+
+  if (isSelectedRegionWatched.value) {
+    await removeUserWatchTarget(target.targetType, target.targetId);
+  } else {
+    await saveUserWatchTarget(target);
+  }
+};
+
+watch(
+  selectedRegionRecentView,
+  (view) => {
+    if (view) {
+      recordRecentRealEstateView(view);
+    }
+  },
+  { immediate: true }
 );
 
 const clampMapPan = (scale: number, panX: number, panY: number, shell?: HTMLElement) => {
@@ -1493,6 +1636,41 @@ function reportBodyParagraphs(body?: string | null): string[] {
     .split(/\n+/)
     .map((paragraph) => paragraph.trim())
     .filter((paragraph) => paragraph.length > 0);
+}
+
+function reportAnalysisSegments(paragraphs: string[]): ReportAnalysisSegment[] {
+  const segments = paragraphs.flatMap((paragraph, paragraphIndex) => {
+    const normalized = paragraph.replace(/\s+/g, ' ').trim();
+    if (!normalized) return [];
+
+    const matches = Array.from(normalized.matchAll(/(평가|전망)\s*:/g));
+    if (!matches.length) {
+      return [{
+        key: `paragraph-${paragraphIndex}`,
+        label: null,
+        text: normalized
+      }];
+    }
+
+    const parsed = matches
+      .map((match, matchIndex) => {
+        const start = (match.index ?? 0) + match[0].length;
+        const nextStart = matches[matchIndex + 1]?.index ?? normalized.length;
+        return {
+          key: `${match[1]}-${paragraphIndex}-${matchIndex}`,
+          label: match[1] as '평가' | '전망',
+          text: normalized.slice(start, nextStart).trim()
+        };
+      })
+      .filter((segment) => segment.text.length > 0);
+
+    const leadingText = normalized.slice(0, matches[0]?.index ?? 0).trim();
+    return leadingText
+      ? [{ key: `lead-${paragraphIndex}`, label: null, text: leadingText }, ...parsed]
+      : parsed;
+  });
+
+  return segments.length ? segments : [{ key: 'empty', label: null, text: '분석 리포트 본문 수집 전입니다.' }];
 }
 
 function regionalReportSourceMeta(source: RealEstateRegionalReport['sources'][number]): string {
@@ -1633,6 +1811,9 @@ watch(
   { immediate: true }
 );
 onMounted(() => {
+  if (currentAuthUser.value) {
+    void loadUserWatchTargets();
+  }
   void refreshNationalMapLayer();
   batchUpdateSubscription = subscribeRealEstateBatchUpdates((event) => {
     if (event.topic !== 'map-layers') {
@@ -2019,9 +2200,34 @@ onBeforeUnmount(() => {
         aria-labelledby="map-report-title"
       >
         <div class="map-report-header">
-          <div>
+          <div class="map-report-heading">
             <p class="label">지역 리포트</p>
-            <h3 id="map-report-title">{{ selectedReport.name }}</h3>
+            <div class="map-report-title-row">
+              <h3 id="map-report-title">{{ selectedReport.name }}</h3>
+              <button
+                class="watch-heart-button report-watch-button"
+                :class="{ active: isSelectedRegionWatched }"
+                type="button"
+                :data-testid="selectedRegionWatchTestId"
+                :aria-label="selectedRegionWatchLabel"
+                :aria-pressed="isSelectedRegionWatched"
+                @click="toggleSelectedRegionWatch"
+              >{{ isSelectedRegionWatched ? '♥' : '♡' }}</button>
+              <button
+                v-if="selectedRegionChatAttachment"
+                class="chat-attach-button report-chat-button"
+                type="button"
+                :data-testid="selectedRegionChatTestId"
+                :aria-label="selectedRegionChatLabel"
+                @click="attachSelectedRegionToChat"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M7 8.5h10" />
+                  <path d="M7 12h6" />
+                  <path d="M5.5 4.5h13A2.5 2.5 0 0 1 21 7v8a2.5 2.5 0 0 1-2.5 2.5H12L7 21v-3.5H5.5A2.5 2.5 0 0 1 3 15V7a2.5 2.5 0 0 1 2.5-2.5Z" />
+                </svg>
+              </button>
+            </div>
             <span>{{ selectedRegion?.regionCode }} · {{ selectedReport.subregionCode }}</span>
           </div>
           <button class="icon-button" data-testid="close-map-report" type="button" aria-label="지역 리포트 닫기" @click="closeReport">
@@ -2083,9 +2289,16 @@ onBeforeUnmount(() => {
                   {{ selectedReport.hasLivePeriod ? formatChange(selectedReport.change) : '자료 없음' }}
                 </strong>
               </div>
-              <p v-for="paragraph in selectedReport.analysisParagraphs" :key="paragraph">
-                {{ paragraph }}
-              </p>
+              <div class="map-report-analysis-sections">
+                <article
+                  v-for="segment in selectedReport.analysisSegments"
+                  :key="segment.key"
+                  :class="['map-report-analysis-segment', { labeled: segment.label }]"
+                >
+                  <strong v-if="segment.label">{{ segment.label }}</strong>
+                  <p>{{ segment.text }}</p>
+                </article>
+              </div>
             </div>
           </section>
 

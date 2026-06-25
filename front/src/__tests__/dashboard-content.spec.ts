@@ -62,11 +62,231 @@ const mountDashboardPage = async () => {
 };
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   TestEventSource.instances = [];
 });
 
 describe('dashboard newsroom content', () => {
+  it('loads target search suggestions immediately and opens a result with one press', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const rawUrl = String(input);
+      const url = new URL(rawUrl, 'http://localhost');
+
+      if (url.pathname === '/api/realestate/targets/search') {
+        return new Response(JSON.stringify({
+          items: [
+            {
+              targetId: 'region-seoul-mapo',
+              targetType: 'region',
+              displayName: '서울 마포구',
+              slug: 'seoul-mapo',
+              reviewState: 'approved',
+              dataStatus: 'ok',
+              regionLevel: 'sigungu',
+              parentTargetId: 'region-seoul',
+              legalDongCode: '11440',
+              regionCode: '11440'
+            },
+            {
+              targetId: 'complex-mapo-raemian-prugio',
+              targetType: 'complex',
+              displayName: '마포래미안푸르지오',
+              slug: 'mapo-raemian-prugio',
+              reviewState: 'candidate',
+              dataStatus: 'mock',
+              regionLevel: 'complex',
+              parentTargetId: 'region-seoul-mapo',
+              legalDongCode: '1144010100',
+              regionCode: null
+            }
+          ]
+        }));
+      }
+      if (url.pathname === '/api/realestate/daily-briefings/latest') {
+        return new Response(JSON.stringify({ summaryHeadlines: [] }));
+      }
+      if (url.pathname === '/api/realestate/map/layers') {
+        return new Response(JSON.stringify({ layerType: 'sigungu', periods: ['week'], targets: [] }));
+      }
+      if (url.pathname === '/api/realestate/dashboard/market-summary') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+      if (url.pathname === '/api/realestate/newsroom') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountDashboardPage();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="dashboard-search-input"]').trigger('focus');
+    await wrapper.get('[data-testid="dashboard-search-input"]').setValue('마');
+    await flushPromises();
+    expect(fetcher.mock.calls.some(([input]) => String(input).includes('/api/realestate/targets/search'))).toBe(false);
+
+    await wrapper.get('[data-testid="dashboard-search-input"]').setValue('마포');
+    await flushPromises();
+
+    const searchUrl = fetcher.mock.calls.map(([input]) => String(input)).find((url) => url.includes('/api/realestate/targets/search'));
+    expect(searchUrl).toContain('q=%EB%A7%88%ED%8F%AC');
+    expect(searchUrl).toContain('limit=8');
+    expect(searchUrl).toContain('mode=autocomplete');
+    expect(wrapper.get('[data-testid="dashboard-search-suggestions"]').text()).toContain('서울 마포구');
+    expect(wrapper.get('[data-testid="dashboard-search-suggestions"]').text()).toContain('마포래미안푸르지오');
+
+    await wrapper.get('[data-testid="dashboard-search-result-region-seoul-mapo"]').trigger('pointerdown');
+    await flushPromises();
+
+    expect(wrapper.vm.$route.path).toBe('/realestate/map/region-seoul');
+    expect(wrapper.vm.$route.query.selectedTargetId).toBe('region-seoul-mapo');
+    expect(wrapper.vm.$route.query.selectedRegionCode).toBe('11440');
+    expect(wrapper.vm.$route.query.period).toBe('week');
+    expect(wrapper.find('[data-testid="dashboard-search-suggestions"]').exists()).toBe(false);
+  });
+
+  it('searches when Korean composition completes at exactly two characters', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), 'http://localhost');
+
+      if (url.pathname === '/api/realestate/targets/search') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+      if (url.pathname === '/api/realestate/daily-briefings/latest') {
+        return new Response(JSON.stringify({ summaryHeadlines: [] }));
+      }
+      if (url.pathname === '/api/realestate/map/layers') {
+        return new Response(JSON.stringify({ layerType: 'sigungu', periods: ['week'], targets: [] }));
+      }
+      if (url.pathname === '/api/realestate/dashboard/market-summary') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+      if (url.pathname === '/api/realestate/newsroom') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountDashboardPage();
+    await flushPromises();
+
+    const input = wrapper.get('[data-testid="dashboard-search-input"]');
+    await input.trigger('focus');
+    (input.element as HTMLInputElement).value = '\uAC15\uB0A8';
+    await input.trigger('compositionend');
+    await flushPromises();
+
+    const searchUrl = fetcher.mock.calls
+      .map(([calledInput]) => String(calledInput))
+      .find((url) => url.includes('/api/realestate/targets/search'));
+
+    expect(searchUrl).toContain('q=%EA%B0%95%EB%82%A8');
+    expect(searchUrl).toContain('limit=8');
+    expect(searchUrl).toContain('mode=autocomplete');
+  });
+
+  it('searches while the second Korean character is still composing', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), 'http://localhost');
+
+      if (url.pathname === '/api/realestate/targets/search') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+      if (url.pathname === '/api/realestate/daily-briefings/latest') {
+        return new Response(JSON.stringify({ summaryHeadlines: [] }));
+      }
+      if (url.pathname === '/api/realestate/map/layers') {
+        return new Response(JSON.stringify({ layerType: 'sigungu', periods: ['week'], targets: [] }));
+      }
+      if (url.pathname === '/api/realestate/dashboard/market-summary') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+      if (url.pathname === '/api/realestate/newsroom') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountDashboardPage();
+    await flushPromises();
+
+    const input = wrapper.get('[data-testid="dashboard-search-input"]');
+    await input.trigger('focus');
+    await input.trigger('compositionstart');
+    (input.element as HTMLInputElement).value = '\uAC15\uB0A8';
+    await input.trigger('input');
+    await flushPromises();
+
+    const searchUrl = fetcher.mock.calls
+      .map(([calledInput]) => String(calledInput))
+      .find((url) => url.includes('/api/realestate/targets/search'));
+
+    expect(searchUrl).toContain('q=%EA%B0%95%EB%82%A8');
+    expect(searchUrl).toContain('limit=8');
+    expect(searchUrl).toContain('mode=autocomplete');
+  });
+
+  it('opens eupmyeondong search results in transaction filtering instead of regional analysis', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const url = new URL(String(input), 'http://localhost');
+
+      if (url.pathname === '/api/realestate/targets/search') {
+        return new Response(JSON.stringify({
+          items: [{
+            targetId: 'region-daejeon-seogu-galma',
+            targetType: 'region',
+            displayName: '\uB300\uC804\uAD11\uC5ED\uC2DC \uC11C\uAD6C \uAC08\uB9C8\uB3D9',
+            slug: 'daejeon-seogu-galma',
+            reviewState: 'approved',
+            dataStatus: 'ok',
+            regionLevel: 'eupmyeondong',
+            parentTargetId: 'region-daejeon-seogu',
+            legalDongCode: '3017010100',
+            regionCode: null
+          }]
+        }));
+      }
+      if (url.pathname === '/api/realestate/daily-briefings/latest') {
+        return new Response(JSON.stringify({ summaryHeadlines: [] }));
+      }
+      if (url.pathname === '/api/realestate/map/layers') {
+        return new Response(JSON.stringify({ layerType: 'sigungu', periods: ['week'], targets: [] }));
+      }
+      if (url.pathname === '/api/realestate/dashboard/market-summary') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+      if (url.pathname === '/api/realestate/newsroom') {
+        return new Response(JSON.stringify({ items: [] }));
+      }
+
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountDashboardPage();
+    await flushPromises();
+
+    await wrapper.get('[data-testid="dashboard-search-input"]').trigger('focus');
+    await wrapper.get('[data-testid="dashboard-search-input"]').setValue('\uAC08\uB9C8');
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('실거래 지역');
+
+    await wrapper.get('[data-testid="dashboard-search-result-region-daejeon-seogu-galma"]').trigger('pointerdown');
+    await flushPromises();
+
+    expect(wrapper.vm.$route.path).toBe('/realestate/transactions');
+    expect(wrapper.vm.$route.query.region).toBe('30170');
+    expect(wrapper.vm.$route.query.q).toBe('\uAC08\uB9C8\uB3D9');
+  });
+
   it('renders dashboard headlines from the stored daily briefing API', async () => {
     const fetcher = vi.fn(async (input: RequestInfo | URL) => {
       const rawUrl = String(input);
@@ -179,6 +399,157 @@ describe('dashboard newsroom content', () => {
     expect(wrapper.find('.reaction-panel .section-actions').exists()).toBe(false);
     expect(wrapper.find('.reaction-panel .mood-period-tabs').exists()).toBe(false);
     expect(wrapper.find('.reaction-panel .detail-link').exists()).toBe(false);
+  });
+
+  it('renders weekly gain top five regions with report-derived expectation and concern sentences', async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => {
+      const rawUrl = String(input);
+      const url = new URL(rawUrl, 'http://localhost');
+
+      if (url.pathname === '/api/realestate/daily-briefings/latest') {
+        return new Response(JSON.stringify({
+          briefingId: 'daily-briefing-20260624-v1',
+          briefingDate: '2026-06-24',
+          title: 'Dashboard briefing',
+          summaryHeadlines: ['Headline A', 'Headline B', 'Headline C'],
+          sections: [],
+          focusRegions: [],
+          sourceItems: []
+        }));
+      }
+      if (url.pathname === '/api/realestate/map/layers' && url.searchParams.get('layerType') === 'sigungu') {
+        return new Response(JSON.stringify({
+          layerType: 'sigungu',
+          asOf: '2026-06-24T00:00:00Z',
+          sourceLabel: 'REB R-ONE weekly apartment sale price index',
+          dataStatus: 'ok',
+          stale: false,
+          periods: ['week'],
+          targets: [
+            {
+              targetId: 'region-top-1',
+              targetType: 'region',
+              displayName: '경기도 화성시',
+              regionLevel: 'sigungu',
+              regionCode: '41111',
+              periods: { week: { changePct: 1.24, sampleCount: 4, confidence: 0.91, provider: 'reb', asOf: '2026-06-17T00:00:00Z', dataStatus: 'ok', stale: false } }
+            },
+            {
+              targetId: 'region-top-2',
+              targetType: 'region',
+              displayName: 'Top Two Region',
+              regionLevel: 'sigungu',
+              regionCode: '41112',
+              periods: { week: { changePct: 0.95, sampleCount: 4, confidence: 0.88, provider: 'reb', asOf: '2026-06-17T00:00:00Z', dataStatus: 'ok', stale: false } }
+            },
+            {
+              targetId: 'region-top-3',
+              targetType: 'region',
+              displayName: 'Top Three Region',
+              regionLevel: 'sigungu',
+              regionCode: '41113',
+              periods: { week: { changePct: 0.72, sampleCount: 4, confidence: 0.86, provider: 'reb', asOf: '2026-06-17T00:00:00Z', dataStatus: 'ok', stale: false } }
+            },
+            {
+              targetId: 'region-top-4',
+              targetType: 'region',
+              displayName: 'Top Four Region',
+              regionLevel: 'sigungu',
+              regionCode: '41114',
+              periods: { week: { changePct: 0.51, sampleCount: 4, confidence: 0.84, provider: 'reb', asOf: '2026-06-17T00:00:00Z', dataStatus: 'ok', stale: false } }
+            },
+            {
+              targetId: 'region-top-5',
+              targetType: 'region',
+              displayName: 'Top Five Region',
+              regionLevel: 'sigungu',
+              regionCode: '41115',
+              periods: { week: { changePct: 0.33, sampleCount: 4, confidence: 0.82, provider: 'reb', asOf: '2026-06-17T00:00:00Z', dataStatus: 'ok', stale: false } }
+            },
+            {
+              targetId: 'region-top-6',
+              targetType: 'region',
+              displayName: 'Hidden Sixth Region',
+              regionLevel: 'sigungu',
+              regionCode: '41116',
+              periods: { week: { changePct: 0.22, sampleCount: 4, confidence: 0.8, provider: 'reb', asOf: '2026-06-17T00:00:00Z', dataStatus: 'ok', stale: false } }
+            }
+          ]
+        }));
+      }
+      if (url.pathname.startsWith('/api/realestate/targets/') && url.pathname.endsWith('/regional-report')) {
+        const targetId = decodeURIComponent(url.pathname.split('/')[4] ?? 'region-top-1');
+        const isSecondRegion = targetId === 'region-top-2';
+        return new Response(JSON.stringify({
+          reportId: `report-${targetId}`,
+          targetId,
+          targetName: targetId === 'region-top-1' ? '경기도 화성시' : targetId,
+          title: 'Top weekly region report',
+          headline: 'GTX 역세권 수요와 정비사업 기대가 가격 흐름을 지지합니다.',
+          summary: '전세압력과 공급부담은 단기 점검이 필요합니다.',
+          body: '**평가** GTX 교통 개선과 정비사업 기대가 우세합니다.\n**전망** 공급부담과 대출 금리는 우려 요인입니다.',
+          expectationPoints: isSecondRegion
+            ? ['전세 안정 기대', '교통·산업축 실수요 확인', 'GTX 역세권 수요 유입']
+            : ['화성시 실거래 회복', '교통·산업축 실수요 확인', 'GTX 역세권 수요 유입'],
+          concernPoints: isSecondRegion
+            ? ['입주 시점 전세 약세', '입주·전세 부담', '대출 금리 부담']
+            : ['화성시 입주·전세 부담', '입주 시점 전세 약세', '대출 금리 부담'],
+          sources: []
+        }));
+      }
+
+      return new Response(JSON.stringify({ items: [] }));
+    });
+    vi.stubGlobal('fetch', fetcher);
+
+    const wrapper = await mountDashboardPage();
+    await flushPromises();
+
+    const cards = wrapper.findAll('.reaction-carousel-card');
+    const card = cards[0];
+    const labels = card.findAll('.kw-col-label span');
+    const positivePoints = card.findAll('.kw-col-positive .report-point-item').map((point) => point.text());
+    const negativePoints = card.findAll('.kw-col-negative .report-point-item').map((point) => point.text());
+    const secondPositivePoints = cards[1].findAll('.kw-col-positive .report-point-item').map((point) => point.text());
+    const secondNegativePoints = cards[1].findAll('.kw-col-negative .report-point-item').map((point) => point.text());
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+
+    expect(wrapper.get('.reaction-panel .label').text()).toBe('주간 상승률 TOP5');
+    expect(cards).toHaveLength(5);
+    expect(wrapper.findAll('.carousel-dot')).toHaveLength(5);
+    expect(cards.map((item) => item.find('.carousel-region-name').text())).toEqual([
+      '경기도 화성시',
+      'Top Two Region',
+      'Top Three Region',
+      'Top Four Region',
+      'Top Five Region'
+    ]);
+    expect(wrapper.text()).not.toContain('Hidden Sixth Region');
+    expect(card.text()).toContain('+1.24%');
+    expect(labels).toHaveLength(2);
+    expect(positivePoints).toEqual(['화성시 실거래 회복', '교통·산업축 실수요 확인', 'GTX 역세권 수요 유입']);
+    expect(negativePoints).toEqual(['화성시 입주·전세 부담', '입주 시점 전세 약세', '대출 금리 부담']);
+    expect(secondPositivePoints).toEqual(['전세 안정 기대', '교통·산업축 실수요 확인', 'GTX 역세권 수요 유입']);
+    expect(secondNegativePoints).toEqual(['입주 시점 전세 약세', '입주·전세 부담', '대출 금리 부담']);
+    expect(card.attributes('href')).toBe('/realestate/map/region-gyeonggi?selectedTargetId=region-top-1&selectedRegionCode=41111&period=week');
+    expect(wrapper.find('.carousel-change-badge').exists()).toBe(true);
+    expect(wrapper.find('.carousel-mention-badge').exists()).toBe(false);
+    expect(wrapper.find('.carousel-region-meta').exists()).toBe(false);
+    expect(wrapper.find('.carousel-link-section').exists()).toBe(false);
+    expect(wrapper.find('.reaction-carousel-card .reaction-track-wrap').exists()).toBe(false);
+    expect(wrapper.find('.kw-word').exists()).toBe(false);
+    expect(styles).toMatch(/\.carousel-region-name\s*\{[^}]*font-size:\s*25px;/s);
+    expect(styles).toMatch(/\.carousel-change-badge\s*\{[^}]*display:\s*flex;[^}]*align-items:\s*baseline;[^}]*transform:\s*translateY\(-4px\);/s);
+    expect(styles).toMatch(/\.kw-col-label\s+span\s*\{[^}]*font-size:\s*17px;[^}]*font-weight:\s*940;/s);
+    expect(styles).toMatch(/\.report-point-list\s*\{[^}]*overflow-y:\s*auto;/s);
+    expect(styles).toMatch(/\.report-point-list\s*\{[^}]*justify-content:\s*stretch;/s);
+    expect(styles).toMatch(/\.report-point-item\s*\{[^}]*flex:\s*1 1 0;[^}]*min-height:\s*54px;/s);
+    expect(styles).not.toMatch(/\.report-point-item\s*\{[^}]*white-space/s);
+    expect(styles).not.toContain('.carousel-mention-badge');
+    expect(styles).not.toContain('.carousel-link-section');
+    expect(styles).not.toContain('.kw-word');
+    expect(fetcher.mock.calls.some(([input]) => String(input).includes('/api/realestate/reactions/rankings'))).toBe(false);
+    expect(fetcher.mock.calls.filter(([input]) => String(input).includes('/regional-report'))).toHaveLength(5);
   });
 
   it('renders the live drawer as weekly top gain and loss regions instead of reaction mentions', async () => {

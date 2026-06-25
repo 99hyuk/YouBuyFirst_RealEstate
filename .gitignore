@@ -30,6 +30,8 @@ artifacts/
 output/
 .codex/
 .playwright-mcp/
+.playwright-cli/
+.run-logs/
 /indicators-domestic-snapshot.md
 /dashboard-feed-title-snapshot.md
 /complex-trade-history-card.png
