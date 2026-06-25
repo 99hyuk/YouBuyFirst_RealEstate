@@ -1476,6 +1476,39 @@ describe('front dashboard shell', () => {
     expect(wrapper.get('[data-testid="edge-chat-feed"]').text()).not.toContain('뉴스룸');
   });
 
+  it('toggles and persists dark mode from the right rail', async () => {
+    const wrapper = await mountAt('/dashboard');
+    await flushPromises();
+
+    const toggle = wrapper.get('[data-testid="theme-toggle"]');
+    expect(wrapper.get('.app-shell').classes()).not.toContain('dark-mode');
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(toggle.attributes('aria-pressed')).toBe('false');
+    expect(toggle.text()).toContain('다크모드');
+
+    await toggle.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('.app-shell').classes()).toContain('dark-mode');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.style.colorScheme).toBe('dark');
+    expect(window.localStorage.getItem('ybf-theme-mode')).toBe('dark');
+    expect(toggle.attributes('aria-pressed')).toBe('true');
+    expect(toggle.text()).toContain('라이트모드');
+
+    await toggle.trigger('click');
+    await flushPromises();
+
+    expect(wrapper.get('.app-shell').classes()).not.toContain('dark-mode');
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(window.localStorage.getItem('ybf-theme-mode')).toBe('light');
+
+    const styles = readFileSync(resolve(testDir, '../styles.css'), 'utf8');
+    expect(styles).toContain("html[data-theme='dark'] body");
+    expect(styles).toContain('.app-shell.dark-mode');
+    expect(styles).toContain(".edge-rail .theme-toggle[aria-pressed='true']");
+  });
+
   it('shows guest join choices instead of linking the toolbar identity to login', async () => {
     const wrapper = await mountAt('/dashboard');
     await flushPromises();

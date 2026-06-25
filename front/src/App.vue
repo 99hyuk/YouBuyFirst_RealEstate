@@ -87,6 +87,19 @@ const recentViews = ref<RecentRealEstateView[]>(loadRecentRealEstateViews());
 const route = useRoute();
 const router = useRouter();
 const authUser = currentAuthUser;
+const THEME_STORAGE_KEY = 'ybf-theme-mode';
+const loadInitialThemeMode = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (stored === 'dark') return true;
+    if (stored === 'light') return false;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  } catch {
+    return false;
+  }
+};
+const isDarkMode = ref(loadInitialThemeMode());
 const activeRailLabel = computed(() => railItems.find((item) => item.id === activeRailItem.value)?.label ?? '관심');
 const newsroomFeeds = [
   { label: '뉴스', feed: 'news' },
@@ -280,6 +293,21 @@ const loadAuthState = async () => {
   }
 };
 
+const applyThemeMode = (enabled: boolean) => {
+  if (typeof document === 'undefined') return;
+  document.documentElement.dataset.theme = enabled ? 'dark' : 'light';
+  document.documentElement.style.colorScheme = enabled ? 'dark' : 'light';
+  document.body.classList.toggle('dark-mode', enabled);
+};
+
+const persistThemeMode = (enabled: boolean) => {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, enabled ? 'dark' : 'light');
+  } catch {
+    // Theme still works for the current session if storage is unavailable.
+  }
+};
+
 const loadEdgeChatPresence = async () => {
   edgeChatPresenceState.value = 'loading';
   try {
@@ -464,6 +492,7 @@ const stopEdgeChatPresence = () => {
 };
 
 onMounted(() => {
+  applyThemeMode(isDarkMode.value);
   recentViews.value = loadRecentRealEstateViews();
   recentViewsUnsubscribe = subscribeRecentRealEstateViews((items) => {
     recentViews.value = items;
@@ -479,6 +508,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  applyThemeMode(false);
   stopEdgeChatPresence();
   window.removeEventListener(CHAT_ATTACH_EVENT, handleChatAttachmentEvent);
   shellTickerBatchUpdateSubscription?.close();
@@ -922,10 +952,16 @@ const handleLogout = async () => {
   authState.value = 'guest';
   resetUserWatchTargets('unauthenticated');
 };
+
+const toggleThemeMode = () => {
+  isDarkMode.value = !isDarkMode.value;
+  applyThemeMode(isDarkMode.value);
+  persistThemeMode(isDarkMode.value);
+};
 </script>
 
 <template>
-  <div :class="['app-shell', { 'edge-panel-open': railExpanded }]">
+  <div :class="['app-shell', { 'edge-panel-open': railExpanded, 'dark-mode': isDarkMode }]">
     <header class="topbar">
       <div class="topbar-inner">
         <div class="brand-lockup">
@@ -1441,9 +1477,16 @@ const handleLogout = async () => {
         </span>
         <em>{{ item.label }}</em>
       </button>
-      <button class="theme-toggle" type="button" aria-label="라이트 다크 모드 전환">
-        <span>◐</span>
-        <em>다크모드</em>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-testid="theme-toggle"
+        :aria-pressed="isDarkMode"
+        :aria-label="isDarkMode ? '라이트 모드로 전환' : '다크 모드로 전환'"
+        @click="toggleThemeMode"
+      >
+        <span>{{ isDarkMode ? '☼' : '☾' }}</span>
+        <em>{{ isDarkMode ? '라이트모드' : '다크모드' }}</em>
       </button>
     </aside>
   </div>
