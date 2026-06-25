@@ -635,6 +635,7 @@ describe('IndicatorsPage schedule calendar', () => {
     expect(styles).toMatch(/\.app-shell\.dark-mode \.calendar-day\s*\{[\s\S]*background: #11141a;/);
     expect(styles).toMatch(/\.app-shell\.dark-mode \.calendar-event-strip,[\s\S]*\.app-shell\.dark-mode \.calendar-event-card,[\s\S]*\.app-shell\.dark-mode \.schedule-source-card\s*\{[\s\S]*background: #20242d;/);
     expect(styles).toMatch(/\.app-shell\.dark-mode \.calendar-event-card-body strong,[\s\S]*\.app-shell\.dark-mode \.schedule-source-card strong\s*\{[\s\S]*color: #f8fafc;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.calendar-event-card,[\s\S]*\.app-shell\.dark-mode a\.calendar-event-card:focus-visible\s*\{[\s\S]*border-left-color: var\(--schedule-tone, #f97316\);/);
   });
 
   it('nudges month navigation glyphs into visual center inside their boxes', async () => {

@@ -1513,6 +1513,11 @@ describe('front dashboard shell', () => {
     expect(styles).toMatch(/\.app-shell\.dark-mode \.overlay-title\s*\{[\s\S]*color: #f8fafc;/);
     expect(styles).toMatch(/\.app-shell\.dark-mode \.edge-chat-author-gradient::after\s*\{[\s\S]*opacity: 0\.24;/);
     expect(styles).toMatch(/\.app-shell\.dark-mode \.edge-chat-author-tone-0\s*\{[\s\S]*--edge-chat-author-color: #67e8f9;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.newsroom-hero\s*\{[\s\S]*background:[\s\S]*#171a21;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.newsroom-hero h2\s*\{[\s\S]*color: #f8fafc;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.realestate-map-page \.map-report-panel\s*\{[\s\S]*#171a21;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.realestate-map-page \.map-report-card:not\(\.featured\),[\s\S]*\.app-shell\.dark-mode \.realestate-map-page \.report-fact-list small\s*\{[\s\S]*#20242d;/);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.realestate-map-page \.map-report-analysis-copy \.analysis-delta\s*\{[\s\S]*rgba\(251, 146, 60, 0\.2\)/);
   });
 
   it('shows guest join choices instead of linking the toolbar identity to login', async () => {
