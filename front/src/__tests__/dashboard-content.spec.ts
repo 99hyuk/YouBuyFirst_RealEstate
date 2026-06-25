@@ -353,6 +353,9 @@ describe('dashboard newsroom content', () => {
     expect(styles).toMatch(/\.daily-briefing-cta\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+28px;/s);
     expect(styles).toMatch(/\.daily-briefing-cta\s*\{[^}]*background:\s*linear-gradient\(135deg,\s*#111827\s*0%,\s*#243244\s*100%\);/s);
     expect(styles).toMatch(/\.daily-briefing-cta::after\s*\{[^}]*content:\s*"→";/s);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.daily-briefing-cta\s*\{[^}]*background:\s*linear-gradient\(135deg,\s*#fff7ed\s*0%,\s*#fed7aa/s);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.daily-briefing-card \.daily-briefing-dashboard-headlines \.daily-briefing-headline-index\s*\{[^}]*background:/s);
+    expect(styles).toMatch(/\.app-shell\.dark-mode \.daily-briefing-card \.daily-briefing-dashboard-headlines \.daily-briefing-headline-card:nth-child\(2\)\s*\{[^}]*--briefing-card-accent:\s*#60a5fa;/s);
     expect(styles).toMatch(/\.daily-briefing-dashboard-headlines\s+\.daily-briefing-headline-card\s*\{[^}]*border-radius:\s*10px;/s);
     expect(styles).toMatch(/\.daily-briefing-dashboard-headlines\s+\.daily-briefing-headline-card\s+small\s*\{[^}]*font-size:\s*13px;/s);
     expect(styles).toMatch(/\.daily-briefing-dashboard-headlines\s+\.daily-briefing-headline-card\s+strong\s*\{[^}]*font-size:\s*20px;/s);
