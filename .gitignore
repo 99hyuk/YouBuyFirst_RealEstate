@@ -37,3 +37,6 @@ output/
 
 # Local tunnel binary
 tools/cloudflared/
+
+# Personal scratch docs (not part of the repo's planning docs)
+hamdocs/
