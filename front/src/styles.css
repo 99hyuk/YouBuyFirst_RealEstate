@@ -16045,15 +16045,15 @@ body:has(.complex-browse-page) .page-frame {
 
 /* Dark mode shell theme. Kept at the end so it can override page-specific light surfaces. */
 .app-shell.dark-mode {
-  --bg: #0b1220;
-  --ink: #e5edf7;
-  --muted: #aab6c8;
-  --muted-2: #78879c;
+  --bg: #0d0f13;
+  --ink: #f1f5f9;
+  --muted: #b8c0cc;
+  --muted-2: #858f9f;
   --line: rgba(148, 163, 184, 0.24);
   --line-strong: rgba(148, 163, 184, 0.38);
-  --surface: #121c2b;
-  --surface-soft: #0f1726;
-  --nav: #080d16;
+  --surface: #171a21;
+  --surface-soft: #11141a;
+  --nav: #08090c;
   --brand-soft: rgba(240, 138, 43, 0.15);
   --brand-line: rgba(251, 146, 60, 0.32);
   --brand-badge-bg: rgba(251, 146, 60, 0.18);
@@ -16062,21 +16062,19 @@ body:has(.complex-browse-page) .page-frame {
   --shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
   min-height: 100vh;
   background:
-    radial-gradient(circle at 16% 0%, rgba(47, 111, 237, 0.12), transparent 28%),
-    radial-gradient(circle at 84% 10%, rgba(240, 138, 43, 0.11), transparent 30%),
-    #0b1220;
+    linear-gradient(180deg, #11141a 0%, #0d0f13 34%, #0b0d10 100%);
   color: var(--ink);
 }
 
 .app-shell.dark-mode .topbar {
-  background: rgba(8, 13, 22, 0.98);
+  background: rgba(8, 9, 12, 0.98);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
 }
 
 .app-shell.dark-mode .topbar-live-strip {
   border-top-color: rgba(148, 163, 184, 0.18);
   border-bottom-color: rgba(148, 163, 184, 0.22);
-  background: linear-gradient(90deg, #0d1524 0%, #111d2f 48%, #0d1524 100%);
+  background: linear-gradient(90deg, #111318 0%, #181b22 48%, #111318 100%);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
 }
 
@@ -16102,6 +16100,12 @@ body:has(.complex-browse-page) .page-frame {
   .dashboard-search-control,
   .dashboard-search-suggestions,
   .dashboard-search-suggestion,
+  .daily-briefing-headline-card,
+  .panel,
+  .panel-header,
+  .panel.content-feed-card,
+  .panel.content-feed-card .panel-header,
+  .content-feed-card,
   .reaction-panel,
   .drawer-card,
   .hot-region-panel,
@@ -16121,9 +16125,23 @@ body:has(.complex-browse-page) .page-frame {
   .auth-card
 ) {
   border-color: var(--line);
-  background: rgba(18, 28, 43, 0.94);
+  background: rgba(23, 26, 33, 0.96);
   color: var(--ink);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.app-shell.dark-mode .panel.content-feed-card .panel-header {
+  background:
+    linear-gradient(90deg, rgba(251, 146, 60, 0.14), rgba(23, 26, 33, 0.96) 58%),
+    #171a21;
+}
+
+.app-shell.dark-mode .daily-briefing-headline-card {
+  background:
+    linear-gradient(90deg, rgba(251, 146, 60, 0.08), transparent 42%),
+    #171a21;
+  border-color: rgba(148, 163, 184, 0.28);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
 }
 
 .app-shell.dark-mode :is(
@@ -16132,6 +16150,11 @@ body:has(.complex-browse-page) .page-frame {
   .briefing-headline,
   .site-footer-brand h2,
   .footer-column h3,
+  .panel h3,
+  .feed-panel-title,
+  .feed-row strong,
+  .daily-briefing-headline-card strong,
+  .daily-briefing-header h3,
   .edge-panel-header h2,
   .edge-empty-state strong,
   .dashboard-search-suggestion strong,
@@ -16140,7 +16163,7 @@ body:has(.complex-browse-page) .page-frame {
   .hot-region-panel h3,
   .hot-region-panel > strong
 ) {
-  color: #f3f7ff;
+  color: #f8fafc;
 }
 
 .app-shell.dark-mode :is(
@@ -16151,6 +16174,9 @@ body:has(.complex-browse-page) .page-frame {
   .site-footer-bottom,
   .edge-empty-state p,
   .dashboard-search-suggestion em,
+  .feed-row em,
+  .daily-briefing-headline-card small,
+  .content-feed-card .label,
   .edge-watch-row p,
   .edge-recent-row p,
   .hot-region-panel > span
@@ -16158,9 +16184,48 @@ body:has(.complex-browse-page) .page-frame {
   color: var(--muted);
 }
 
+.app-shell.dark-mode .feed-row {
+  border-top-color: rgba(148, 163, 184, 0.2);
+}
+
+.app-shell.dark-mode .feed-row:hover,
+.app-shell.dark-mode .feed-row:focus-visible {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.app-shell.dark-mode .feed-row:hover strong,
+.app-shell.dark-mode .feed-row:focus-visible strong {
+  color: #fed7aa;
+}
+
+.app-shell.dark-mode .dashboard-search-control strong {
+  background: #242832;
+  color: #cbd5e1;
+}
+
+.app-shell.dark-mode :is(.news-source, .source-badge, .site-icon.youtube, .site-icon.naver-blog, .site-icon.naver, .site-icon.news-research) {
+  background: #242832;
+  color: #fed7aa;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
+}
+
+.app-shell.dark-mode .site-icon.naver-blog::before,
+.app-shell.dark-mode .site-icon.naver::before {
+  background: #28d979;
+}
+
+.app-shell.dark-mode .site-icon.youtube::before {
+  background: #ff445f;
+}
+
+.app-shell.dark-mode .hot-region-title-band {
+  background: #f08a2b;
+  color: #15100a;
+}
+
 .app-shell.dark-mode :is(input, textarea, select) {
   border-color: var(--line-strong);
-  background: #0b1424;
+  background: #101218;
   color: var(--ink);
 }
 
@@ -16176,7 +16241,7 @@ body:has(.complex-browse-page) .page-frame {
 
 .app-shell.dark-mode .edge-rail {
   border-left-color: rgba(148, 163, 184, 0.22);
-  background: rgba(10, 16, 28, 0.96);
+  background: rgba(10, 11, 15, 0.96);
   box-shadow: -16px 0 34px rgba(0, 0, 0, 0.34);
 }
 
@@ -16197,23 +16262,23 @@ body:has(.complex-browse-page) .page-frame {
 
 .app-shell.dark-mode .edge-panel {
   border-left-color: rgba(148, 163, 184, 0.24);
-  background: #0d1625;
+  background: #11141a;
   box-shadow: -18px 0 44px rgba(0, 0, 0, 0.32);
 }
 
 .app-shell.dark-mode .edge-panel.chat-open.open {
-  border-left-color: #35506f;
-  background: #0d1625;
+  border-left-color: #343a46;
+  background: #11141a;
   box-shadow: -24px 0 54px rgba(0, 0, 0, 0.42);
 }
 
 .app-shell.dark-mode .edge-chat-room {
-  background: linear-gradient(180deg, #101a2b 0%, #0d1727 52%, #0a1322 100%);
+  background: linear-gradient(180deg, #171a21 0%, #12151c 52%, #0f1117 100%);
 }
 
 .app-shell.dark-mode .edge-chat-toolbar {
   border-bottom-color: rgba(148, 163, 184, 0.24);
-  background: #101a2b;
+  background: #171a21;
 }
 
 .app-shell.dark-mode .edge-chat-toolbar-actions button,
@@ -16231,17 +16296,19 @@ body:has(.complex-browse-page) .page-frame {
 
 .app-shell.dark-mode .edge-chat-feed-frame,
 .app-shell.dark-mode .edge-chat-feed {
-  background: #0d1727;
+  background: #12151c;
 }
 
 .app-shell.dark-mode .edge-chat-message-bubble {
-  background: #182437;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: #1b1f27;
   color: #dbe7f5;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+  box-shadow: none;
 }
 
 .app-shell.dark-mode .edge-chat-message.mine .edge-chat-message-bubble {
-  background: linear-gradient(180deg, #203859 0%, #172c49 100%);
+  border-color: rgba(251, 146, 60, 0.24);
+  background: #241f19;
   color: #eef6ff;
 }
 
@@ -16253,14 +16320,19 @@ body:has(.complex-browse-page) .page-frame {
   color: #7f8ea4;
 }
 
+.app-shell.dark-mode .edge-chat-composer {
+  border-top-color: rgba(148, 163, 184, 0.22);
+  background: #151922;
+}
+
 .app-shell.dark-mode .edge-chat-nickname-popover,
 .app-shell.dark-mode .edge-chat-guest-panel,
 .app-shell.dark-mode .edge-chat-pending-attachment,
 .app-shell.dark-mode .edge-chat-attachment {
-  border-color: rgba(148, 163, 184, 0.3);
-  background: rgba(18, 28, 43, 0.96);
+  border-color: rgba(148, 163, 184, 0.24);
+  background: rgba(23, 26, 33, 0.96);
   color: var(--ink);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 
 .app-shell.dark-mode .edge-chat-nickname-popover-title,
@@ -16276,20 +16348,57 @@ body:has(.complex-browse-page) .page-frame {
   color: #aab6c8;
 }
 
+.app-shell.dark-mode .edge-chat-guest-form input {
+  border-color: rgba(148, 163, 184, 0.34);
+  background: #101218;
+  color: #eef5ff;
+}
+
+.app-shell.dark-mode :is(.edge-chat-attachment-head i, .edge-chat-pending-attachment-head i) {
+  background: #242832;
+  color: #93c5fd;
+}
+
+.app-shell.dark-mode :is(.edge-chat-guest-join, .edge-chat-guest-form-actions button[type='button'], .edge-chat-pending-attachment button) {
+  border-color: rgba(148, 163, 184, 0.3);
+  background: #20242d;
+  color: #dbeafe;
+}
+
+.app-shell.dark-mode :is(.edge-chat-guest-join, .edge-chat-guest-form-actions button[type='button'], .edge-chat-pending-attachment button):hover,
+.app-shell.dark-mode :is(.edge-chat-guest-join, .edge-chat-guest-form-actions button[type='button'], .edge-chat-pending-attachment button):focus-visible {
+  border-color: rgba(251, 146, 60, 0.42);
+  color: #fed7aa;
+}
+
 .app-shell.dark-mode .edge-chat-guest-gate {
   background:
-    linear-gradient(180deg, rgba(13, 23, 39, 0.78), rgba(10, 19, 34, 0.9)),
-    repeating-linear-gradient(45deg, rgba(251, 146, 60, 0.11) 0 1px, transparent 1px 9px);
+    linear-gradient(180deg, rgba(17, 20, 26, 0.72), rgba(12, 14, 19, 0.84)),
+    repeating-linear-gradient(45deg, rgba(148, 163, 184, 0.08) 0 1px, transparent 1px 10px);
 }
 
 .app-shell.dark-mode .edge-chat-form textarea {
   border-color: rgba(148, 163, 184, 0.3);
-  background: #0b1424;
+  background: #101218;
   color: #eef5ff;
 }
 
+.app-shell.dark-mode .edge-chat-form textarea:disabled {
+  color: #7f8ea4;
+}
+
 .app-shell.dark-mode .edge-chat-submit {
-  box-shadow: 0 12px 26px rgba(240, 138, 43, 0.24);
+  border-color: rgba(251, 146, 60, 0.42);
+  background: #f08a2b;
+  color: #16100a;
+  box-shadow: 0 12px 26px rgba(240, 138, 43, 0.18);
+}
+
+.app-shell.dark-mode .edge-chat-submit:disabled {
+  border-color: rgba(148, 163, 184, 0.24);
+  background: #20242d;
+  color: #7f8ea4;
+  box-shadow: none;
 }
 
 .app-shell.dark-mode .theme-toggle {
